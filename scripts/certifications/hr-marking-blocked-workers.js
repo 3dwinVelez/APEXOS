@@ -214,7 +214,7 @@ function horaColombia(isoUtc) {
   return new Date(new Date(isoUtc).getTime() - COLOMBIA_OFFSET_HOURS * 3600 * 1000).toISOString().replace("T", " ").slice(0, 16);
 }
 
-function construirRescate({ jornadasSinRegistro, jornadasSinCierre, marcasPorTrabajadorDia, intentosPorUsuarioDia, rutasPorEmpleadoDia, identidades }) {
+function construirRescate({ jornadasSinRegistro, jornadasSinCierre, marcasPorTrabajadorDia, intentosPorUsuarioDia, rutasPorEmpleadoDia, identidades, ahora = Date.now() }) {
   const ficha = new Map(identidades.map((row) => [row.id, row]));
   const dias = new Map();
   const registrar = (empleadoId, dia) => {
@@ -314,13 +314,20 @@ function construirRescate({ jornadasSinRegistro, jornadasSinCierre, marcasPorTra
     }
   }
   // Ultimo filtro antes de escribir: la escalera es ordenada, asi que una pierna que caiga antes de
-  // la anterior del mismo dia es un artefacto de la evidencia y no una marcacion que registrar.
+  // la anterior del mismo dia es un artefacto de la evidencia y no una marcacion que registrar. Y una
+  // pierna con hora futura es peor: seria firmar que alguien salio a una hora que aun no llego, sobre
+  // una jornada que sigue abierta. Esa se descarta y se queda esperando a que el dia cierre.
   const descartadas = [];
   for (const [, rows] of groupBy(filas, (row) => `${row.empleado_id}|${row.dia}`)) {
     rows.sort((a, b) => ORDEN_MARCAS.indexOf(a.tipo) - ORDEN_MARCAS.indexOf(b.tipo));
     let anterior = null;
     for (const row of rows) {
       const ms = new Date(row.punched_at).getTime();
+      if (ms > ahora) {
+        descartadas.push({ empleado_id: row.empleado_id, dia: row.dia, tipo: row.tipo, hora_colombia: row.hora_colombia, motivo: "hora futura: la jornada de ese dia sigue abierta" });
+        filas.splice(filas.indexOf(row), 1);
+        continue;
+      }
       if (anterior != null && ms < anterior) {
         descartadas.push({ empleado_id: row.empleado_id, dia: row.dia, tipo: row.tipo, hora_colombia: row.hora_colombia, motivo: "antes de la pierna anterior de la escalera" });
         filas.splice(filas.indexOf(row), 1);
@@ -444,6 +451,20 @@ async function main() {
       && rescate.descartadas.length === 1
       && rescate.every((row) => row.payload.correccion_administrativa === true && String(row.payload.motivo_correccion).length >= 12 && row.payload.idempotency_key.length >= 8);
     console.log(`${rescateOk ? "ok  " : "FALLO"} el rescate no presta la hora de un reintento, no inventa almuerzos ni toca dias sin rechazos (rojo provocado: ${uno || "nada"} | descartadas ${JSON.stringify(rescate.descartadas)})`);
+    // La hora que aun no llega tampoco se firma: las mismas fichas con el reloj puesto a mitad de la
+    // jornada (13:00 CO) solo pueden proponer la entrada; la salida de las 14:00 espera a que cierre.
+    const aMediodia = construirRescate({
+      jornadasSinRegistro: [{ empleado_id: 1, dia: "2026-11-18", sin_registro: true }],
+      jornadasSinCierre: [],
+      marcasPorTrabajadorDia: marcas,
+      intentosPorUsuarioDia: intentos,
+      rutasPorEmpleadoDia: rutas,
+      identidades,
+      ahora: Date.parse("2026-11-18T18:00:00.000Z")
+    });
+    const futuraOk = aMediodia.length === 1 && aMediodia[0].tipo === "entrada"
+      && aMediodia.descartadas.some((row) => row.tipo === "salida" && /hora futura/.test(row.motivo));
+    console.log(`${futuraOk ? "ok  " : "FALLO"} una pierna con hora futura se descarta en vez de firmarse (propuestas: ${aMediodia.map((row) => row.tipo).join(",") || "nada"} | descartadas ${JSON.stringify(aMediodia.descartadas.map((row) => row.motivo))})`);
     const ventanaOk = minutosDeHora("05:30:00") === 330 && minutosDeHora(null) === null
       && minutosDelDiaColombia("2026-11-18T10:30:00.000Z") === 5 * 60 + 30;
     console.log(`${ventanaOk ? "ok  " : "FALLO"} minutos del dia en Colombia (la ventana de apertura compara horas locales, no UTC)`);

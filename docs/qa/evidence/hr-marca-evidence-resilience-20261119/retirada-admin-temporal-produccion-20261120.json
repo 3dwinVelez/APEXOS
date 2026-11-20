@@ -1,0 +1,18 @@
+{
+  "retirado_en": "2026-11-20T18:04:37.253Z",
+  "ambiente": "config/production.env",
+  "base_url": "https://apexos-api-prod-production.up.railway.app",
+  "accion": "PATCH /api/v1/admin/users/<id>/status {active:false}",
+  "usuario_id": 245,
+  "estado_desactivacion": 200,
+  "sesiones_revocadas": "el endpoint del API revoca todas las sesiones al desactivar (authorizationState.revokeAllUserSessions)",
+  "login_posterior_estado": 401,
+  "veredicto": "la cuenta temporal del rescate queda inactiva y ya no autentica",
+  "nota": "el correo y la contrasena de la cuenta nunca se versionan; la credencial muri6 con el archivo de trabajo fuera del repositorio",
+  "verificado_en_almacen": {
+    "consulta": "prisma.user.findFirst({id:245, __includeInactive:true}) sobre Produccion (pooler aws-1-sa-east-1)",
+    "active": false,
+    "tenant_id_prefijo": "67a5dcb8"
+  },
+  "hallazgo_asociada": "PATCH /api/v1/admin/users/:id/status no puede reactivar un usuario inactivo: la lectura de entrada (apps/api/src/modules/admin/service.js:1399) omite __includeInactive y el alcance global de prisma.js:112-119 inyecta active:true. La retirada qued6 efectiva y reversible solo por almacenamiento directo. Se reporta como pendiente, no se corrige en esta intervenci6n."
+}

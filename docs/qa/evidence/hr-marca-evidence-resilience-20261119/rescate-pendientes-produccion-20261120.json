@@ -1,0 +1,463 @@
+{
+  "generado_en": "2026-11-20T18:00:36.482Z",
+  "manifiesto_sha256": "7b65bfc7e9b831d7",
+  "ambiente_archivo": "config/production.env",
+  "base_url": "https://apexos-api-prod-production.up.railway.app",
+  "es_produccion": true,
+  "modo": "aplicar",
+  "filas_seleccionadas": 15,
+  "escrituras": 15,
+  "resultados": [
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-14",
+      "tipo": "entrada",
+      "punched_at": "2026-11-14T12:21:58.025Z",
+      "fuente": "intento_real_en_log",
+      "estado": 422,
+      "ok": false,
+      "code": "JUSTIFICACION_LLEGADA_TARDE_REQUERIDA",
+      "message": "Justifica por que estas llegando despues de tu hora de entrada.",
+      "replay": false
+    },
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-14",
+      "tipo": "salida",
+      "punched_at": "2026-11-14T19:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 409,
+      "ok": false,
+      "code": "MARCACION_FUERA_DE_SECUENCIA",
+      "message": "La siguiente marcacion permitida es entrada.",
+      "replay": false
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-14",
+      "tipo": "salida",
+      "punched_at": "2026-11-14T19:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 400,
+      "ok": false,
+      "code": "KILOMETRAJE_REQUERIDO",
+      "message": "El kilometraje del dia es obligatorio.",
+      "replay": false
+    },
+    {
+      "empleado_id": 547,
+      "dia": "2026-11-14",
+      "tipo": "salida",
+      "punched_at": "2026-11-14T19:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 400,
+      "ok": false,
+      "code": "KILOMETRAJE_REQUERIDO",
+      "message": "El kilometraje del dia es obligatorio.",
+      "replay": false
+    },
+    {
+      "empleado_id": 495,
+      "dia": "2026-11-17",
+      "tipo": "salida",
+      "punched_at": "2026-11-17T21:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 400,
+      "ok": false,
+      "code": "KILOMETRAJE_REQUERIDO",
+      "message": "El kilometraje del dia es obligatorio.",
+      "replay": false
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-17",
+      "tipo": "salida",
+      "punched_at": "2026-11-17T21:30:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 400,
+      "ok": false,
+      "code": "KILOMETRAJE_REQUERIDO",
+      "message": "El kilometraje del dia es obligatorio.",
+      "replay": false
+    },
+    {
+      "empleado_id": 539,
+      "dia": "2026-11-17",
+      "tipo": "salida",
+      "punched_at": "2026-11-17T22:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 409,
+      "ok": false,
+      "code": "MARCACION_FUERA_DE_SECUENCIA",
+      "message": "La siguiente marcacion permitida es fin_almuerzo.",
+      "replay": false
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-18",
+      "tipo": "salida",
+      "punched_at": "2026-11-18T20:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 409,
+      "ok": false,
+      "code": "MARCACION_FUERA_DE_SECUENCIA",
+      "message": "La siguiente marcacion permitida es inicio_almuerzo.",
+      "replay": false
+    },
+    {
+      "empleado_id": 507,
+      "dia": "2026-11-18",
+      "tipo": "salida",
+      "punched_at": "2026-11-18T20:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 400,
+      "ok": false,
+      "code": "KILOMETRAJE_REQUERIDO",
+      "message": "El kilometraje del dia es obligatorio.",
+      "replay": false
+    },
+    {
+      "empleado_id": 511,
+      "dia": "2026-11-18",
+      "tipo": "salida",
+      "punched_at": "2026-11-18T21:30:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 400,
+      "ok": false,
+      "code": "KILOMETRAJE_REQUERIDO",
+      "message": "El kilometraje del dia es obligatorio.",
+      "replay": false
+    },
+    {
+      "empleado_id": 539,
+      "dia": "2026-11-18",
+      "tipo": "salida",
+      "punched_at": "2026-11-18T22:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 409,
+      "ok": false,
+      "code": "MARCACION_FUERA_DE_SECUENCIA",
+      "message": "La siguiente marcacion permitida es fin_almuerzo.",
+      "replay": false
+    },
+    {
+      "empleado_id": 547,
+      "dia": "2026-11-18",
+      "tipo": "salida",
+      "punched_at": "2026-11-18T19:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 400,
+      "ok": false,
+      "code": "KILOMETRAJE_REQUERIDO",
+      "message": "El kilometraje del dia es obligatorio.",
+      "replay": false
+    },
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-19",
+      "tipo": "salida",
+      "punched_at": "2026-11-19T19:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 409,
+      "ok": false,
+      "code": "MARCACION_FUERA_DE_SECUENCIA",
+      "message": "La siguiente marcacion permitida es inicio_almuerzo.",
+      "replay": false
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-19",
+      "tipo": "salida",
+      "punched_at": "2026-11-19T21:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 409,
+      "ok": false,
+      "code": "MARCACION_FUERA_DE_SECUENCIA",
+      "message": "La siguiente marcacion permitida es inicio_almuerzo.",
+      "replay": false
+    },
+    {
+      "empleado_id": 547,
+      "dia": "2026-11-19",
+      "tipo": "salida",
+      "punched_at": "2026-11-19T22:00:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 400,
+      "ok": false,
+      "code": "KILOMETRAJE_REQUERIDO",
+      "message": "El kilometraje del dia es obligatorio.",
+      "replay": false
+    }
+  ],
+  "verificacion": [
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-14",
+      "tipo": "entrada",
+      "tipos_lectos": [],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": false,
+      "lectura_estado": 200,
+      "filas_leidas": 19
+    },
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-14",
+      "tipo": "salida",
+      "tipos_lectos": [],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": false,
+      "lectura_estado": 200,
+      "filas_leidas": 19
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-14",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 19
+    },
+    {
+      "empleado_id": 547,
+      "dia": "2026-11-14",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 19
+    },
+    {
+      "empleado_id": 495,
+      "dia": "2026-11-17",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 18
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-17",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 18
+    },
+    {
+      "empleado_id": 539,
+      "dia": "2026-11-17",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada",
+        "inicio_almuerzo"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 18
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-18",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 18
+    },
+    {
+      "empleado_id": 507,
+      "dia": "2026-11-18",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 18
+    },
+    {
+      "empleado_id": 511,
+      "dia": "2026-11-18",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 18
+    },
+    {
+      "empleado_id": 539,
+      "dia": "2026-11-18",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada",
+        "inicio_almuerzo"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 18
+    },
+    {
+      "empleado_id": 547,
+      "dia": "2026-11-18",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 18
+    },
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-19",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 19
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-19",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 19
+    },
+    {
+      "empleado_id": 547,
+      "dia": "2026-11-19",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 19
+    }
+  ]
+}

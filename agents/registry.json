@@ -95,9 +95,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.69.1",
+      "version": "2.70.0",
       "updated_at": "2026-11-20",
-      "sha256": "fe1060f6f5cac636903100b2b73049f388efcf6c0b1f3fcf9f3b62b1563d4dcd",
+      "sha256": "ec2d7b47f8122e9dbff43941f76f354942d2d7d0a7c1d9c1ce32a42e6e359d70",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -152,7 +152,9 @@
         "sonda-se-nombra-segun-lo-que-demuestra",
         "pregunta-de-alcance-contestada-en-el-brief",
         "brief-declara-el-estado-actual-del-mundo",
-        "cierre-de-corte-con-run-del-pipeline"
+        "cierre-de-corte-con-run-del-pipeline",
+        "excepcion-contada-en-filas",
+        "manifiesto-una-sola-fuente-de-filas"
       ]
     },
     {
@@ -309,9 +311,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.91.0",
+      "version": "2.92.0",
       "updated_at": "2026-11-20",
-      "sha256": "d3b79df4f0beb72c2a06ac1a0fd3d098dea8921801143b7fa81f4ceecec0b9b1",
+      "sha256": "5890bdd1edcebb7f6324e298c6d6c965c05ce5f673b11f23dce991c7327e25a5",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -392,7 +394,9 @@
         "barrido-de-familia-con-autoverificacion",
         "sustrato-declara-el-incidente",
         "rojo-heredado-se-clasifica-y-se-repara",
-        "rojo-atribuido-por-insumos"
+        "rojo-atribuido-por-insumos",
+        "lista-vacia-es-lectura-ciega",
+        "control-negro-contra-el-mismo-ambiente"
       ]
     },
     {
@@ -443,9 +447,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.52.0",
-      "updated_at": "2026-11-19",
-      "sha256": "de5df9d040aab64e802ba1542fcb27d1b79dea03024129a74fa94f4e5fb9b047",
+      "version": "2.53.0",
+      "updated_at": "2026-11-20",
+      "sha256": "bcc6a94ee6b982b89056bc0176a072074e73217c5f99f335a749823e6f8599a7",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -489,7 +493,9 @@
         "autorizacion-abierta-no-alcanza-la-nube",
         "rojo-repetido-es-causa-raiz",
         "premisas-de-dato-y-canal-antes-del-desbloqueo",
-        "recurso-de-prueba-se-construye-y-defectos-se-separan"
+        "recurso-de-prueba-se-construye-y-defectos-se-separan",
+        "premisa-re-medida-antes-de-autorizar",
+        "privilegio-retirado-en-el-almacen"
       ]
     }
   ],
