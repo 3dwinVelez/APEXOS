@@ -33,6 +33,7 @@ const punchSchema = {
       idempotency_key: { type: "string", minLength: 8, maxLength: 120 },
       extra_reason: { type: "string" },
       extra_detail: { type: "string" },
+      identity_photo: { anyOf: [{type:"null"},{type:"object",properties:{base64:{type:"string"},base64_data:{type:"string"},name:{type:"string"},type:{type:"string"},size:{type:"integer"}}}] },
       extra_evidence: {
         anyOf: [
           { type: "null" },

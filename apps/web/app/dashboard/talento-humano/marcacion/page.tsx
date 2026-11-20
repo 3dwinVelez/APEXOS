@@ -89,7 +89,7 @@ const punchLabels: Record<string, { title: string; desc: string; color: string }
 const pendingSyncKey = "apexos_hr_mobile_pending_sync";
 const hrSnapshotKey = "apexos_hr_mobile_snapshot";
 const pendingSyncLimit = 50;
-const evidencePayloadKeys = ["photo", "extra_evidence"] as const;
+const evidencePayloadKeys = ["photo", "extra_evidence", "identity_photo"] as const;
 let pendingSyncInFlight = false;
 
 const messageToneStyles: Record<MessageTone, { className: string; role: "alert" | "status" }> = {
@@ -398,6 +398,8 @@ export default function MobilePunchPage() {
   const [extraReason, setExtraReason] = useState("");
   const [extraDetail, setExtraDetail] = useState("");
   const [extraEvidence, setExtraEvidence] = useState<CapturedFile | null>(null);
+  const [identitySelfie, setIdentitySelfie] = useState<CapturedFile | null>(null);
+  const [selfieType, setSelfieType] = useState("");
   const [dayMileage, setDayMileage] = useState("");
   const [gps, setGps] = useState<GpsFix | null>(null);
   const [gpsUpdatedAt, setGpsUpdatedAt] = useState(0);
@@ -788,6 +790,10 @@ export default function MobilePunchPage() {
         notify(decision.userMessage, "error");
         return;
       }
+      if (!identitySelfie || selfieType !== type) {
+        notify("Toma la selfie de validacion antes de marcar.", "error");
+        return;
+      }
       if (type === "salida" && isClosingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
         notify("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.", "error");
         return;
@@ -830,6 +836,7 @@ export default function MobilePunchPage() {
           ...routeSyncMetadata(route)
         }
       };
+      payload.identity_photo = { base64: identitySelfie.base64, name: identitySelfie.name, type: identitySelfie.type, size: identitySelfie.size };
       if (type === "salida") {
         const closingDetail = extraDetail.trim();
         if (extraReason) payload.extra_reason = extraReason;
@@ -840,6 +847,8 @@ export default function MobilePunchPage() {
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
+      setIdentitySelfie(null);
+      setSelfieType("");
       if (type === "salida") setDayMileage("");
       const queued = await enqueuePendingSync("/api/v1/hr/self/time-punches", payload, punchLabels[type].title);
       const savedQueue = readPendingSync();
@@ -1138,6 +1147,7 @@ export default function MobilePunchPage() {
             <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
               <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Marcando en horario ${route.id} - ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin horario seleccionado para este usuario/equipo"}
             </div>
+            {nextType ? <div className="mt-3"><PhotoCapture facing="user" label={`Selfie de ${punchLabels[nextType]?.title.toLowerCase() || "validación"}`} required value={selfieType === nextType ? identitySelfie : null} onChange={photo => { setIdentitySelfie(photo); setSelfieType(nextType); }} /><p className="mt-2 text-xs text-neutral-500">Las cuatro marcaciones requieren una foto del rostro: entrada, almuerzo, retorno y salida.</p></div> : null}
             {nextType === "salida" && isClosingLate ? (
               <div className="mt-3 space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3">
                 <div>

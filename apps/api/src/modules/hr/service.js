@@ -3076,6 +3076,7 @@ function ownOperationalInput(input, employee, user) {
 async function createOwnPunch(tenantId, user, input) {
   const employee = await getCurrentEmployee(tenantId, user);
   await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
+  input = require("./webPunchSelfie").prepareWebPunchSelfie(input);
   return createPunch(tenantId, ownOperationalInput(input, employee, user), user, { scope: "own" });
 }
 
