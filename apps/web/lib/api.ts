@@ -207,7 +207,7 @@ function alertsAreSilenced(options: ApiRequestOptions) {
 }
 
 function isPlatformLogsPath(path: string) {
-  return path.includes("/admin/platform-logs");
+  return path.includes("/admin/platform-logs") || path.includes("/public/telemetry/client-logs");
 }
 
 // Un fallo de red, un 5xx o un 429 no son una ventana: son un registro. Viajan a platform-logs
@@ -231,31 +231,51 @@ function platformModuleFromPath(path: string) {
   return parts[apiIndex + 1] || parts[0] || "frontend";
 }
 
+const CLIENT_LOG_ENDPOINT = "/api/v1/admin/platform-logs/client";
+const CLIENT_LOG_PUBLIC_ENDPOINT = "/api/v1/public/telemetry/client-logs";
+
 function reportClientFailure(path: string, status: number | null, detail: string, method = "GET") {
   if (typeof window === "undefined" || isPlatformLogsPath(path)) return;
   if (!HAS_CONFIGURED_API_URL) return;
   const token = localStorage.getItem("token");
-  if (!token) return;
-  const payload = {
-    source: "frontend",
+  const technical = {
     module: platformModuleFromPath(path),
     route: path,
     method,
     status_code: status,
     message: status === null ? "Backend no disponible desde frontend" : "Solicitud frontend fallida",
-    detail: String(detail || "").slice(0, 1600),
+    detail: String(detail || "").slice(0, 1600)
+  };
+  // Sin sesion no hay tenant que atribuir y el correo del navegador tampoco es evidencia: el
+  // reporte anonimo lleva solo la ruta tecnica. La autenticada conserva su forma certificada.
+  const anonymousPayload = {
+    ...technical,
+    metadata: { href: window.location.pathname, provider: localStorage.getItem("auth_provider") || "local" }
+  };
+  const post = (endpoint: string, payload: unknown, withSession: boolean) => fetch(`${API_URL}${endpoint}`, {
+    method: "POST",
+    keepalive: true,
+    headers: withSession && token
+      ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
+      : { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!token) {
+    post(CLIENT_LOG_PUBLIC_ENDPOINT, anonymousPayload, false).catch(() => undefined);
+    return;
+  }
+  const authenticatedPayload = {
+    source: "frontend",
+    ...technical,
     metadata: {
       href: window.location.href,
       user_email: localStorage.getItem("user_email") || "",
       provider: localStorage.getItem("auth_provider") || "local"
     }
   };
-  fetch(`${API_URL}/api/v1/admin/platform-logs/client`, {
-    method: "POST",
-    keepalive: true,
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(payload)
-  }).catch(() => undefined);
+  post(CLIENT_LOG_ENDPOINT, authenticatedPayload, true)
+    .then((response) => (response.status === 401 || response.status === 403 ? post(CLIENT_LOG_PUBLIC_ENDPOINT, anonymousPayload, false) : undefined))
+    .catch(() => undefined);
 }
 
 function shouldPreferOperationalApi(path: string) {

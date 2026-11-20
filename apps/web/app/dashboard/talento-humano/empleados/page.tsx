@@ -163,6 +163,8 @@ export default function EmployeesMasterPage() {
   const [mode, setMode] = useState<"view" | "edit" | "create">("view");
   const [saving, setSaving] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [contractError, setContractError] = useState("");
   const [userId, setUserId] = useState("");
   const [affiliations, setAffiliations] = useState<Affiliation[]>([]);
   const [salaryHistory, setSalaryHistory] = useState<SalaryHistory[]>([]);
@@ -302,6 +304,8 @@ export default function EmployeesMasterPage() {
     setSelected(null);
     setMode("create");
     setModalMessage("");
+    setFormErrors({});
+    setContractError("");
     setAffiliations([]);
     setSalaryHistory([]);
     setContractHistory([]);
@@ -322,6 +326,8 @@ export default function EmployeesMasterPage() {
     setSelected(employee);
     setMode(nextMode);
     setModalMessage("");
+    setFormErrors({});
+    setContractError("");
     setAffiliationForm(emptyAffiliationForm());
     setSalaryForm({ monthly_salary: employee.salary_base ? String(employee.salary_base) : "", valid_from: today(), reason: "Cambio salarial" });
     setContractForm({ valid_from: today(), new_hire_date: today(), contract_type: employee.contract_type || "indefinite", end_date: displayDate(employee.end_date), salary_base: employee.salary_base ? String(employee.salary_base) : "", cost_center: employee.metadata?.cost_center || "", reason: employee.active === false ? "Recontratacion" : "Otrosi contractual", notes: "" });
@@ -360,7 +366,17 @@ export default function EmployeesMasterPage() {
     void loadContractHistory(employee.id);
   }
 
+  function clearFormError(key: string) {
+    setFormErrors((current) => {
+      if (!(key in current)) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  }
+
   function updateNamePart(key: keyof Pick<EmployeeForm, "first_name" | "middle_name" | "last_name" | "second_last_name">, value: string) {
+    clearFormError("name");
     setForm((current) => {
       const next = { ...current, [key]: value };
       return { ...next, name: fullNameFromParts(next) };
@@ -369,21 +385,18 @@ export default function EmployeesMasterPage() {
 
   async function saveEmployee() {
     const requiresEndDate = form.contract_type === "fixed";
+    const errors: Record<string, string> = {};
     if (requiresEndDate && !form.end_date) {
-      window.alert("La fecha de vencimiento del contrato es obligatoria para termino fijo.");
-      return;
+      errors.end_date = "La fecha de vencimiento del contrato es obligatoria para termino fijo.";
     }
     if (!form.name.trim()) {
-      window.alert("Completa nombres y apellidos para generar el nombre completo.");
-      return;
+      errors.name = "Completa nombres y apellidos para generar el nombre completo.";
     }
     if (!form.document.trim()) {
-      window.alert("El numero de documento es obligatorio y no se puede repetir.");
-      return;
+      errors.document = "El numero de documento es obligatorio y no se puede repetir.";
     }
     if (form.exoneration_eligible && !form.exoneration_support.trim()) {
-      window.alert("La elegibilidad ET 114-1 requiere soporte explícito.");
-      return;
+      errors.exoneration_support = "La elegibilidad ET 114-1 requiere soporte explícito.";
     }
     const selectedAccounting = selected?.metadata?.accounting || {
       society_code: selected?.metadata?.society_code,
@@ -401,13 +414,12 @@ export default function EmployeesMasterPage() {
       cost_center_code: assignmentChanged ? form.cost_center : ""
     }, { requireAssignment: mode === "create" || assignmentChanged });
     if (resolvedOrganization && "error" in resolvedOrganization) {
-      window.alert(resolvedOrganization.error);
-      return;
+      errors.organization = resolvedOrganization.error;
+    } else if (mode === "create" && !resolvedOrganization) {
+      errors.organization = "Selecciona la sucursal y el centro de costo contable del empleado.";
     }
-    if (mode === "create" && !resolvedOrganization) {
-      window.alert("Selecciona la sucursal y el centro de costo contable del empleado.");
-      return;
-    }
+    setFormErrors(errors);
+    if (Object.keys(errors).length) return;
     setSaving(true);
     setModalMessage("");
     try {
@@ -470,13 +482,14 @@ export default function EmployeesMasterPage() {
     const isRehire = kind === "rehire";
     const effectiveDate = isRehire ? contractForm.new_hire_date : contractForm.valid_from;
     if (!effectiveDate || !contractForm.salary_base) {
-      window.alert("Completa fecha de vigencia y salario para registrar el movimiento contractual.");
+      setContractError("Completa fecha de vigencia y salario para registrar el movimiento contractual.");
       return;
     }
     if (contractForm.contract_type === "fixed" && !contractForm.end_date) {
-      window.alert("La fecha de vencimiento del contrato es obligatoria para termino fijo.");
+      setContractError("La fecha de vencimiento del contrato es obligatoria para termino fijo.");
       return;
     }
+    setContractError("");
     setSaving(true);
     try {
       const body = {
@@ -639,21 +652,22 @@ export default function EmployeesMasterPage() {
                 <EmployeeField label="Segundo nombre" readOnly={mode === "view"} value={form.middle_name} onChange={(value) => updateNamePart("middle_name", value)} />
                 <EmployeeField label="Primer apellido" readOnly={mode === "view"} value={form.last_name} onChange={(value) => updateNamePart("last_name", value)} />
                 <EmployeeField label="Segundo apellido" readOnly={mode === "view"} value={form.second_last_name} onChange={(value) => updateNamePart("second_last_name", value)} />
-                <EmployeeField label="Nombre completo" readOnly value={form.name} onChange={() => undefined} />
+                <EmployeeField label="Nombre completo" readOnly value={form.name} onChange={() => undefined} error={formErrors.name} />
                 <div className="rounded-md border border-line bg-paper p-3 text-sm text-neutral-700">
                   <p className="font-semibold">Identificador interno</p>
                   <p className="mt-1">{form.document ? `Se generara desde el documento ${form.document}.` : employeeCodeHelp()}</p>
                 </div>
                 <SelectField label="Tipo documento" disabled={mode === "view"} value={form.document_type} onChange={(value) => setForm((current) => ({ ...current, document_type: value }))} options={documentTypes.map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))} />
-                <EmployeeField label="Numero documento" readOnly={mode === "view"} value={form.document} onChange={(value) => setForm((current) => ({ ...current, document: value }))} />
+                <EmployeeField label="Numero documento" readOnly={mode === "view"} value={form.document} onChange={(value) => { clearFormError("document"); setForm((current) => ({ ...current, document: value })); }} error={formErrors.document} />
                 <EmployeeField label="Cargo" readOnly={mode === "view"} value={form.position} onChange={(value) => setForm((current) => ({ ...current, position: value }))} />
                 {organization.societies.length ? <SelectField label="Sociedad contable" disabled={mode === "view"} value={form.society_code} onChange={(value) => setForm((current) => ({ ...current, society_code: value, branch_code: "", cost_center: "" }))} options={[{ value: "", label: "Seleccionar sociedad" }, ...activeOrganizationRows(organization.societies).map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} /> : null}
-                {organization.branches.length ? <SelectField label="Sucursal contable" disabled={mode === "view"} value={form.branch_code} onChange={(value) => setForm((current) => ({ ...current, branch_code: value, society_code: current.society_code || organization.branches.find((branch) => branch.code === value)?.society_code || "", cost_center: "" }))} options={[{ value: "", label: mode === "create" ? "Seleccionar sucursal" : "Sin sucursal nueva" }, ...branchesForSociety(organization, form.society_code).map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} /> : null}
-                {organization.cost_centers.length ? <SelectField label="Centro de costos contable" disabled={mode === "view"} value={form.cost_center} onChange={(value) => setForm((current) => ({ ...current, cost_center: value }))} options={[{ value: "", label: mode === "create" ? "Seleccionar centro" : "Sin centro nuevo" }, ...costCentersForBranch(organization, form.society_code, form.branch_code).map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} /> : mode === "create" ? <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800" role="alert">No hay maestro contable disponible. Configura la estructura contable para habilitar el alta.</p> : <SelectField label="Centro de costos legado" disabled={mode === "view"} value={form.cost_center} onChange={(value) => setForm((current) => ({ ...current, cost_center: value }))} options={[{ value: "", label: "Sin centro" }, ...costCenters.map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} />}
+                {organization.branches.length ? <SelectField label="Sucursal contable" disabled={mode === "view"} value={form.branch_code} onChange={(value) => { clearFormError("organization"); setForm((current) => ({ ...current, branch_code: value, society_code: current.society_code || organization.branches.find((branch) => branch.code === value)?.society_code || "", cost_center: "" })); }} options={[{ value: "", label: mode === "create" ? "Seleccionar sucursal" : "Sin sucursal nueva" }, ...branchesForSociety(organization, form.society_code).map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} /> : null}
+                {organization.cost_centers.length ? <SelectField label="Centro de costos contable" disabled={mode === "view"} value={form.cost_center} onChange={(value) => { clearFormError("organization"); setForm((current) => ({ ...current, cost_center: value })); }} options={[{ value: "", label: mode === "create" ? "Seleccionar centro" : "Sin centro nuevo" }, ...costCentersForBranch(organization, form.society_code, form.branch_code).map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} /> : mode === "create" ? <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800" role="alert">No hay maestro contable disponible. Configura la estructura contable para habilitar el alta.</p> : <SelectField label="Centro de costos legado" disabled={mode === "view"} value={form.cost_center} onChange={(value) => { clearFormError("organization"); setForm((current) => ({ ...current, cost_center: value })); }} options={[{ value: "", label: "Sin centro" }, ...costCenters.map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} />}
+                {formErrors.organization ? <p className="md:col-span-2 rounded-md border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800" role="alert">{formErrors.organization}</p> : null}
                 {mode === "edit" && !form.branch_code && !form.cost_center ? <p className="md:col-span-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800" role="status">Este empleado es legado y no tiene asignación contable. Puedes conservarlo así o asignar sucursal y centro antes de guardar.</p> : null}
                 <EmployeeField label="Fecha de ingreso" readOnly={mode === "view"} type="date" value={form.hire_date} onChange={(value) => setForm((current) => ({ ...current, hire_date: value }))} />
                 <SelectField label="Tipo de contrato" disabled={mode === "view"} value={form.contract_type} onChange={(value) => setForm((current) => ({ ...current, contract_type: value, end_date: value === "fixed" ? current.end_date : "" }))} options={contractTypes.map((item) => ({ value: item.code, label: item.name }))} />
-                {form.contract_type === "fixed" ? <EmployeeField label="Fecha de vencimiento del contrato" readOnly={mode === "view"} type="date" value={form.end_date} onChange={(value) => setForm((current) => ({ ...current, end_date: value }))} /> : null}
+                {form.contract_type === "fixed" ? <EmployeeField label="Fecha de vencimiento del contrato" readOnly={mode === "view"} type="date" value={form.end_date} onChange={(value) => { clearFormError("end_date"); setForm((current) => ({ ...current, end_date: value })); }} error={formErrors.end_date} /> : null}
                 <EmployeeField label="Salario mensual" readOnly={mode === "view"} value={form.salary_base} prefix="$" type="number" onChange={(value) => setForm((current) => ({ ...current, salary_base: value }))} />
                 <EmployeeField label="Jornada semanal" readOnly={mode === "view"} value={form.weekly_hours} suffix="h" type="number" onChange={(value) => setForm((current) => ({ ...current, weekly_hours: value }))} />
                 <SelectField label="Riesgo ARL" disabled={mode === "view"} value={form.arl_risk_class} onChange={(value) => setForm((current) => ({ ...current, arl_risk_class: value }))} options={[
@@ -667,8 +681,8 @@ export default function EmployeesMasterPage() {
                 <SelectField label="Sector" disabled={mode === "view"} value={form.sector} onChange={(value) => setForm((current) => ({ ...current, sector: value }))} options={[{ value: "private", label: "Privado" }, { value: "public", label: "Público (bloqueado por alcance)" }]} />
                 {form.regime !== "ordinary" || form.sector !== "private" ? <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 md:col-span-2">Este régimen/sector se conserva en el maestro, pero el cálculo IBC de novedades actual bloqueará la liquidación hasta contar con reglas específicas.</p> : null}
                 <EmployeeField label="Pensión patronal SLN (%)" readOnly={mode === "view"} type="number" value={form.sln_pension_employer_percent} onChange={(value) => setForm((current) => ({ ...current, sln_pension_employer_percent: value }))} />
-                <label className="flex items-center gap-2 rounded-md border border-line bg-paper p-3 text-sm font-semibold"><input checked={form.exoneration_eligible} disabled={mode === "view"} onChange={(event) => setForm((current) => ({ ...current, exoneration_eligible: event.target.checked }))} type="checkbox" /> Empresa/trabajador elegible ET 114-1 explícitamente</label>
-                <EmployeeField label="Soporte elegibilidad ET 114-1" readOnly={mode === "view"} value={form.exoneration_support} onChange={(value) => setForm((current) => ({ ...current, exoneration_support: value }))} />
+                <label className="flex items-center gap-2 rounded-md border border-line bg-paper p-3 text-sm font-semibold"><input checked={form.exoneration_eligible} disabled={mode === "view"} onChange={(event) => { if (!event.target.checked) clearFormError("exoneration_support"); setForm((current) => ({ ...current, exoneration_eligible: event.target.checked })); }} type="checkbox" /> Empresa/trabajador elegible ET 114-1 explícitamente</label>
+                <EmployeeField label="Soporte elegibilidad ET 114-1" readOnly={mode === "view"} value={form.exoneration_support} onChange={(value) => { clearFormError("exoneration_support"); setForm((current) => ({ ...current, exoneration_support: value })); }} error={formErrors.exoneration_support} />
                 {mode === "create" ? (
                   <section className="md:col-span-2 rounded-md border border-line bg-white p-3">
                     <h3 className="text-base font-semibold">Afiliaciones iniciales</h3>
@@ -730,17 +744,18 @@ export default function EmployeesMasterPage() {
                 </div>
                 {mode === "edit" && selected ? (
                   <div className="mt-3 grid gap-2 md:grid-cols-[145px_150px_160px_160px_minmax(180px,1fr)]">
-                    <input className="h-10 rounded-md border border-line px-3 text-sm" type="date" value={selected.active === false ? contractForm.new_hire_date : contractForm.valid_from} onChange={(event) => setContractForm((current) => selected.active === false ? { ...current, new_hire_date: event.target.value } : { ...current, valid_from: event.target.value })} />
+                    <input className="h-10 rounded-md border border-line px-3 text-sm" type="date" value={selected.active === false ? contractForm.new_hire_date : contractForm.valid_from} onChange={(event) => { setContractError(""); setContractForm((current) => selected.active === false ? { ...current, new_hire_date: event.target.value } : { ...current, valid_from: event.target.value }); }} />
                     <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={contractForm.contract_type} onChange={(event) => setContractForm((current) => ({ ...current, contract_type: event.target.value, end_date: event.target.value === "fixed" ? current.end_date : "" }))}>
                       {contractTypes.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
                     </select>
-                    {contractForm.contract_type === "fixed" ? <input className="h-10 rounded-md border border-line px-3 text-sm" aria-label="Fecha de vencimiento del contrato" type="date" value={contractForm.end_date} onChange={(event) => setContractForm((current) => ({ ...current, end_date: event.target.value }))} /> : null}
-                    <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Salario" type="number" value={contractForm.salary_base} onChange={(event) => setContractForm((current) => ({ ...current, salary_base: event.target.value }))} />
+                    {contractForm.contract_type === "fixed" ? <input className="h-10 rounded-md border border-line px-3 text-sm" aria-label="Fecha de vencimiento del contrato" type="date" value={contractForm.end_date} onChange={(event) => { setContractError(""); setContractForm((current) => ({ ...current, end_date: event.target.value })); }} /> : null}
+                    <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Salario" type="number" value={contractForm.salary_base} onChange={(event) => { setContractError(""); setContractForm((current) => ({ ...current, salary_base: event.target.value })); }} />
                     <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={contractForm.cost_center} onChange={(event) => setContractForm((current) => ({ ...current, cost_center: event.target.value }))}>
                       <option value="">Centro costos</option>
                       {costCenters.map((item) => <option key={item.code} value={item.code}>{item.code} - {item.name}</option>)}
                     </select>
                     <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Motivo o notas" value={contractForm.notes} onChange={(event) => setContractForm((current) => ({ ...current, notes: event.target.value }))} />
+                    {contractError ? <p className="md:col-span-5 text-xs text-rose-700" role="alert">{contractError}</p> : null}
                     <div className="md:col-span-5 flex flex-wrap justify-end gap-2">
                       {selected.active === false ? (
                         <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:bg-neutral-300" disabled={saving} onClick={() => void saveContractAction("rehire")} type="button"><UserRoundCheck size={15} /> Recontratar</button>
@@ -870,16 +885,17 @@ function BiometricEnrollmentPanel({ employee, onReset }: { employee: Employee; o
   );
 }
 
-function EmployeeField({ label, value, onChange, readOnly, suffix, prefix, type = "text", help }: { label: string; value: string; onChange: (value: string) => void; readOnly: boolean; suffix?: string; prefix?: string; type?: string; help?: string }) {
+function EmployeeField({ label, value, onChange, readOnly, suffix, prefix, type = "text", help, error }: { label: string; value: string; onChange: (value: string) => void; readOnly: boolean; suffix?: string; prefix?: string; type?: string; help?: string; error?: string }) {
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-semibold text-neutral-800">{label}</span>
       <div className="flex items-center gap-2">
         {prefix ? <span className="rounded-md bg-paper px-3 py-2 text-sm font-semibold text-neutral-600">{prefix}</span> : null}
-        <input className="h-10 min-w-0 flex-1 rounded-md border border-line px-3 text-sm disabled:bg-paper disabled:text-neutral-700" disabled={readOnly} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+        <input className={`h-10 min-w-0 flex-1 rounded-md border px-3 text-sm disabled:bg-paper disabled:text-neutral-700 ${error ? "border-rose-400" : "border-line"}`} aria-invalid={error ? true : undefined} disabled={readOnly} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
         {suffix ? <span className="rounded-md bg-paper px-3 py-2 text-sm font-semibold text-neutral-600">{suffix}</span> : null}
       </div>
       {help ? <span className="mt-1 block text-xs text-neutral-500">{help}</span> : null}
+      {error ? <span className="mt-1 block text-xs text-rose-700" role="alert">{error}</span> : null}
     </label>
   );
 }

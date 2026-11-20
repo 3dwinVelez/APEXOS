@@ -1,0 +1,113 @@
+{
+  "change_id": "technical-alert-silence-seq-main-20261120",
+  "commit": "6b749418bcffb3e553019a989e5752cc07ce0837",
+  "tree_evaluated": "punta de codex/qa-alertsilence-seq-main-20261120 medida al generar este manifiesto: 822df77716d06fd3641d33aed99c22ae26473495 (replay 6b749418 + docs del despues en QA + evidencia de la pata main + estos dos manifiestos)",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-20T00:00:00-05:00",
+    "scope": "promotion_to_main",
+    "instruction": "procede con mi autorizacion los pendientes",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "La pata main es transporte del mismo contenido que QA certifico 174/174 sobre el commit desplegado 7e02008a555b: 63 de las 69 rutas son blob-identicas a origin/develop y la unica de codigo distinta lo es por lineas de otro frente que no viajan."
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas y la activacion del buzon de telemetria en la nube. No otorga force push, reescritura de historia, borrado de ramas, otras migraciones remotas ni cambios de infraestructura o secretos distintos de esa variable.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen y se corren manifiesto v2, qa:promotion:scope, qa:approval:evidence, la certificacion E2E contra el ambiente y la verificacion de Produccion por artefacto servido y sonda de ingesta."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ],
+      "notes": "Certificacion de navegador contra el ambiente desplegado (API 7e02008a555b): 174/174 controles con la empresa modelo NYVORA, en los roles de administrador y empleado y con la validacion de Empleados pintando el motivo en el campo. El control build_desplegado_es_el_evaluado ancla la corrida al commit servido para que ningun verde se atribuya a otro ambiente."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json",
+        "../evidence/technical-alert-silence-20261119/qa-antes-secuela/certification.json",
+        "../evidence/technical-alert-silence-20261119/main-20261120/certification.json",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ],
+      "notes": "El antes de la secuela se midio contra lo que QA servia entonces: 167/173 con seis rojos de producto (la validacion de Empleados levantando alert con invalidFields 0 y la boca publica sin existir). El despues cierra 174/174 con la misma tanda mas el ancla de commit. En local, el arnes registra dialogos nativos con control positivo propio (prefijo ARNES:) y la corrida sobre el build de este arbol no levanto ninguno."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/main-20261120/suite-web-main.txt",
+        "../evidence/technical-alert-silence-20261119/main-20261120/suite-api-apuntada-main.txt",
+        "../evidence/technical-alert-silence-20261119/main-20261120/contratos-web-main.txt",
+        "../evidence/technical-alert-silence-20261119/main-20261120/soporte.txt"
+      ],
+      "notes": "Suite web del arbol de main: 832 pruebas, 831 pasan, 1 falla (autocontrol de instalacion que solo puede fallar donde react llega por junction). Contratos del enmudecimiento 17/17 y suites API apuntadas 29/29 (boca publica + RBAC administrativo del modulo admin)."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/main-20261120/equivalencia-blob-main-develop.txt",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/equivalencia-candidato.txt",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ],
+      "notes": "Equivalencia medida blob por blob entre este candidato y el arbol que QA certifico: 63 de 69 rutas identicas. Las seis restantes: cinco de evidencia y nota posteriores a la fusion de develop (viven en desarrollo) y empleados/page.tsx, donde el hunkeo de este corte es exactamente el mismo en las dos patas (44 agregadas / 28 retiradas, conjuntos de lineas iguales) y la diferencia son 22 lineas del maestro de bancos que solo existen en develop."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/main-20261120/suite-web-main.txt",
+        "../evidence/technical-alert-silence-20261119/main-20261120/suite-api-apuntada-main.txt",
+        "../evidence/technical-alert-silence-20261119/qa-buzon-sonda.txt",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ],
+      "notes": "El corte no toca Prisma ni migraciones ni cambia el esquema: la plataforma de datos queda intacta y la unica superficie nueva es una ruta publica sin autenticacion, cuyo contrato multi-tenant esta medido por prueba (llaves hostiles descartadas) y por registro real en el buzón del despliegue, con la fila de la sonda eliminada."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-qa.js",
+    "evidence": [
+      "../evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json",
+      "../evidence/technical-alert-silence-20261119/qa-buzon-sonda.txt",
+      "../certifications/technical-alert-silence-seguencia-20261119.md"
+    ],
+    "controls": 174,
+    "passed": 174,
+    "failed": 0,
+    "substrate": "ambiente QA desplegado desde la fusion 7e02008a (API 7e02008a555b, run_id 20261120045242); buzon anonimo encendido y probado por la fila que escribio"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-local.js",
+    "evidence": [
+      "../evidence/technical-alert-silence-20261119/main-20261120/certification.json",
+      "../evidence/technical-alert-silence-20261119/medicion-marcador/candidato-develop.json",
+      "../evidence/technical-alert-silence-20261119/main-20261120/soporte.txt"
+    ],
+    "basis": "El mismo arnes de 78 controles corre sobre el build de produccion de este arbol (next start, BUILD_ID GWiQsW-qSguoj2peqeCoA, API apagada) y no sobre el de otra rama: ausencia de ventanillas, motivo en el campo, reporte sin sesion, control positivo del registrador y control de contraste del marcador quedan ejercitados sobre el binario que se despliega."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-qa.js",
+    "evidence": [
+      "../evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json",
+      "../evidence/technical-alert-silence-20261119/qa-despues-secuela/qa-validacion-empleados.png",
+      "../certifications/technical-alert-silence-seguencia-20261119.md"
+    ],
+    "notes": "Corrida 20261120045242 sobre la empresa modelo real NYVORA en QA, con usuarios efimeros creados por el propio arnes y desactivados al terminar. Telemetria y registro intactos: el canal autenticado dejo sus altas habituales en platform_logs y de la boca publica no se escribio ninguna fila que quedara (la de la sonda se borro)."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "f207140d21d0b384d3a723021ae95614a19d22ac",
+    "trigger": "Si en Produccion vuelve a aparecer una ventanilla nativa o una tarjeta de fallo tecnico en Talento Humano -> Empleados, rutas, mapa, servicios, monitoreo o el lobby; si el bundle publicado vuelve a traer apex:alert; o si la boca publica escribe en un tenant distinto del del despliegue.",
+    "notes": "Revert controlado del merge sobre main (git revert del commit de fusion, sin reescribir historia compartida) y redeploy de apexos-web-prod y apexos-api-prod. No hay migraciones de esquema: al revertir, reportClientFailure vuelve a callarse sin sesion y la ruta publica deja de estar registrada. La variable APEXOS_TELEMETRY_TENANT_ID es inofensiva con el codigo revertido y puede retirarse con railway variable delete si se prefiere."
+  }
+}

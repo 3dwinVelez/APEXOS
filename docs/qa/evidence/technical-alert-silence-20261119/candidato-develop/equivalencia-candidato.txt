@@ -1,0 +1,79 @@
+# Equivalencia del candidato contra el corte certificado en desarrollo (4d4c7e1d)
+# diff promovido: origin/develop e3d82190 .. tip del candidato (7b466bcb + evidencia de esta tanda)
+#
+| estado | ruta |
+|---|---|
+| DISTINTO | M apps/api/server.js |
+| DISTINTO | A apps/api/src/modules/admin/public-routes.js |
+| DISTINTO | A apps/api/test/telemetry-client-logs-public.test.js |
+| DISTINTO | M apps/web/app/dashboard/talento-humano/empleados/page.tsx |
+| DISTINTO | M apps/web/lib/api.ts |
+| blob-identico | M apps/web/test/technical-alert-silence.test.mjs |
+| blob-identico | A docs/briefs/2026-11-19-fase-3-causas-del-fallo-tecnico.md |
+| blob-identico | A docs/qa/certifications/technical-alert-silence-seguencia-20261119.md |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/06-sesion-vencida.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/07-login-aviso-sesion.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/08-modo-diagnostico.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/09-validacion-empleados.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/certification.json |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-home-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-mapa-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-monitoreo-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-rutas-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-servicios-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-home-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-mapa-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-monitoreo-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-rutas-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-servicios-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/suite-api-apuntada.txt |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/suite-web.txt |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/medicion-marcador/candidato-develop.json |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/06-sesion-vencida.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/07-login-aviso-sesion.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/08-modo-diagnostico.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/09-validacion-empleados.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/certification.json |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-home-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-mapa-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-monitoreo-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-rutas-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-servicios-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-home-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-mapa-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-monitoreo-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-rutas-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-servicios-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/certification.json |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/qa-sesion-final.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/qa-validacion-empleados.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/certification.json |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/qa-sesion-final.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/qa-validacion-empleados.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/06-sesion-vencida.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/07-login-aviso-sesion.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/08-modo-diagnostico.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/09-validacion-empleados.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/certification.json |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-home-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-mapa-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-monitoreo-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-rutas-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-servicios-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-home-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-mapa-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-monitoreo-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-rutas-500.png |
+| blob-identico | A docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-servicios-500.png |
+| blob-identico | M scripts/certifications/technical-alert-silence-browser-local.js |
+| blob-identico | M scripts/certifications/technical-alert-silence-browser-qa.js |
+
+Resumen: 64 rutas promovidas — 59 con blob identico al corte certificado en desarrollo, 5 distintas, 0 que solo existen en el candidato (evidencia generada sobre su propio arbol).
+
+## Los cinco archivos cuyo blob difiere del corte en desarrollo
+
+- `apps/api/server.js`: el candidato agrega 2 lineas y retira 0; el patch certificado del corte agrega 2 y retira 0. Diferencia adicional entre `origin/develop` y `desarrollo` en este archivo: 69 lineas de otros frentes, que el replay NO arrastra.
+- `apps/web/app/dashboard/talento-humano/empleados/page.tsx`: el candidato agrega 44 lineas y retira 28; el patch certificado del corte agrega 44 y retira 28. Diferencia adicional entre `origin/develop` y `desarrollo` en este archivo: 94 lineas de otros frentes, que el replay NO arrastra.
+- `apps/web/lib/api.ts`: el candidato agrega 31 lineas y retira 11; el patch certificado del corte agrega 31 y retira 11. Diferencia adicional entre `origin/develop` y `desarrollo` en este archivo: 92 lineas de otros frentes, que el replay NO arrastra.
+- `apps/api/src/modules/admin/public-routes.js`: el candidato agrega 56 lineas y retira 0; el patch certificado del corte agrega 56 y retira 0. Diferencia adicional entre `origin/develop` y `desarrollo` en este archivo: 60 lineas de otros frentes, que el replay NO arrastra.
+- `apps/api/test/telemetry-client-logs-public.test.js`: el candidato agrega 155 lineas y retira 0; el patch certificado del corte agrega 155 y retira 0. Diferencia adicional entre `origin/develop` y `desarrollo` en este archivo: 183 lineas de otros frentes, que el replay NO arrastra.
