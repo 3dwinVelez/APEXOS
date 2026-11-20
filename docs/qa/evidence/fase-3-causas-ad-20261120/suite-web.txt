@@ -1,0 +1,38 @@
+# Suite web — apps/web, `node --test test/*.test.mjs` (2026-11-20)
+
+## Baseline de la rama, excluyendo el archivo nuevo de este corte
+cmd: cd apps/web && node --test $(ls test/*.test.mjs | grep -v technical-detail-not-leaked)
+  # tests 861
+  # pass 856
+  # fail 5
+  rojos heredados:
+    not ok 14 - el editor de presupuesto valida permisos, usa maestros reales y es operable por teclado
+    not ok 102 - el registro de funciones cubre todas las rutas del dashboard
+    not ok 242 - restablecer pide confirmacion y usa la ruta del API
+    not ok 722 - la falta de HR no bloquea la consulta de flota
+    not ok 851 - la ficha enlaza sucursal y crea el centro de costo en la estructura contable
+
+## Después del corte A+D (mapper de congestión + 7 sitios de app/api + contrato de biométrica reescrito)
+cmd: cd apps/web && node --test test/*.test.mjs
+  # tests 867
+  # pass 863
+  # fail 4
+  rojos restantes — todos leen archivos idénticos a HEAD; atribución uno por uno en
+  docs/briefs/2026-11-19-fase-3-causas-del-fallo-tecnico.md, sección «Estado de la fase (2026-11-20)»:
+    not ok 14 - el editor de presupuesto valida permisos, usa maestros reales y es operable por teclado
+    not ok 102 - el registro de funciones cubre todas las rutas del dashboard
+    not ok 728 - la falta de HR no bloquea la consulta de flota
+    not ok 857 - la ficha enlaza sucursal y crea el centro de costo en la estructura contable
+
+## Delta demostrable: +6 tests, +7 pasan, −1 rojo. Ningún rojo introducido por este corte.
+
+## Controles del corte, con su falsabilidad vista en rojo
+  node --test test/technical-detail-not-leaked.test.mjs      -> 5/5
+  (probe) filtración real devuelta a admin/roles/route.ts    -> not ok 3, 4 y 5 | pass 2 fail 3 | archivo restaurado
+  node --test test/hr-employee-biometric-reset.test.mjs      -> 4/4
+  (probe) fuera el key={String(selected.id)} del panel       -> not ok 3 | pass 3 fail 1 | restaurado
+  (probe) reintroducido window.confirm en reset()            -> not ok 2 | pass 3 fail 1 | restaurado
+
+## Computa de la rama (regla 52 de apexos-frontend)
+  npm run lint                            -> 0 errores / 24 warnings (exit 0)
+  npm --workspace apps/web run typecheck  -> 0 errores
