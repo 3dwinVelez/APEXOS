@@ -114,6 +114,37 @@ test("corregir el dato limpia el motivo en linea", () => {
   assert.match(empleados, /if \(!event\.target\.checked\) clearFormError\("exoneration_support"\);/, "desmarcar la casilla no puede dejar el motivo colgado");
 });
 
+test("la pantalla de Empleados no levanta ninguna ventanilla nativa (ni aviso, ni pregunta, ni captura de fecha)", () => {
+  const empleados = read("app/dashboard/talento-humano/empleados/page.tsx");
+  const ventanillas = /(?:\bwindow\.|\bglobalThis\.)(alert|confirm|prompt)\s*\(/g;
+  // Control de contraste: el mismo barrido tiene que ver una ventanilla si existe. Sin esta linea,
+  // un regex mal escrito sale verde para siempre y el contrato no afirma nada.
+  assert.deepEqual([...`window.confirm("x"); globalThis.prompt("y");`.matchAll(ventanillas)].map((m) => m[1]).sort(), ["confirm", "prompt"], "el barrido detecta las ventanillas que dice detectar");
+  ventanillas.lastIndex = 0;
+  assert.deepEqual([...empleados.matchAll(ventanillas)].map((m) => m[1]), [], "la pantalla cerro el alert, el confirm de huella y el prompt de fecha");
+});
+
+test("el cierre de vigencia pide la fecha en la propia fila y el motivo se queda debajo del campo", () => {
+  const empleados = read("app/dashboard/talento-humano/empleados/page.tsx");
+  assert.match(empleados, /aria-label="Fecha final de vigencia"[^>]*type="date"/, "la fecha se escribe en un control de fecha, no en un cuadro de texto libre");
+  assert.match(empleados, /setAffiliationClose\(\{ id: row\.id, valid_to: today\(\), reason: "" \}\)/, "el boton abre el editor de la fila en lugar de interrumpir la pantalla");
+  assert.match(empleados, /role="alert">\{affiliationClose\.reason\}<\/p>/, "el motivo se lee debajo del campo que lo incumple");
+  assert.match(empleados, /aria-invalid=\{affiliationClose\.reason \? true : undefined\}/, "el campo invalido lo declara al lector de pantalla");
+  assert.match(empleados, /current \? \{ \.\.\.current, valid_to, reason: "" \}/, "escribir la fecha retira su propio motivo");
+  assert.match(empleados, /affiliationClose\.valid_to < row\.valid_from/, "el orden de vigencias se comprueba antes de tocar la red");
+  assert.match(empleados, /setAffiliationClose\(null\);\r?\n\s*await loadAffiliations/, "el cierre exitoso cierra el editor en linea");
+});
+
+test("restablecer la huella se confirma en dos clics dentro del panel", () => {
+  const empleados = read("app/dashboard/talento-humano/empleados/page.tsx");
+  assert.match(empleados, /const \[armed, setArmed\] = useState\(false\);/, "el panel guarda el paso de confirmacion como estado propio");
+  assert.match(empleados, /onClick=\{\(\) => setArmed\(true\)\} type="button">\s*\{busy \? "Restableciendo\.\.\." : "Restablecer registro"\}/, "el primer clic arma la pregunta");
+  assert.match(empleados, /El empleado tendra que registrar su huella otra vez en la app antes de volver a marcar\./, "la advertencia se lee en la pantalla, no en un cuadro modal");
+  assert.match(empleados, /onClick=\{\(\) => void reset\(\)\} type="button">\{busy \? "Restableciendo\.\.\." : "Confirmar restablecimiento"\}/, "el segundo clic es el que ejecuta");
+  assert.match(empleados, /setArmed\(false\);\r?\n\s*setMessage\("Registro restablecido/, "al restablecer se desarma la pregunta");
+  assert.match(empleados, /<BiometricEnrollmentPanel key=\{String\(selected\.id\)\}/, "cambiar de empleado no puede heredar la pregunta armada");
+});
+
 test("un visitante sin sesion tambien deja su fallo en el buzon", () => {
   const reporte = apiSource.slice(apiSource.indexOf("function reportClientFailure"));
   assert.doesNotMatch(reporte.slice(0, 900), /if \(!token\) return;/, "la ausencia de token no puede silenciar el reporte");

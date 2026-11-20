@@ -170,6 +170,9 @@ export default function EmployeesMasterPage() {
   const [salaryHistory, setSalaryHistory] = useState<SalaryHistory[]>([]);
   const [contractHistory, setContractHistory] = useState<EmployeeContract[]>([]);
   const [affiliationForm, setAffiliationForm] = useState(emptyAffiliationForm());
+  // La fecha de cierre de una afiliacion se escribe en la propia fila: el motivo de por que no
+  // sirve se queda debajo del campo, no en una ventanilla que tapa la pantalla.
+  const [affiliationClose, setAffiliationClose] = useState<{ id: number; valid_to: string; reason: string } | null>(null);
   const [salaryForm, setSalaryForm] = useState({ monthly_salary: "", valid_from: today(), reason: "Cambio salarial" });
   const [contractForm, setContractForm] = useState({ valid_from: today(), new_hire_date: today(), contract_type: "indefinite", end_date: "", salary_base: "", cost_center: "", reason: "Otrosi contractual", notes: "" });
   const [form, setForm] = useState<EmployeeForm>({
@@ -310,6 +313,7 @@ export default function EmployeesMasterPage() {
     setSalaryHistory([]);
     setContractHistory([]);
     setAffiliationForm(emptyAffiliationForm());
+    setAffiliationClose(null);
     setSalaryForm({ monthly_salary: "", valid_from: today(), reason: "Cambio salarial" });
     setContractForm({ valid_from: today(), new_hire_date: today(), contract_type: "indefinite", end_date: "", salary_base: "", cost_center: "", reason: "Otrosi contractual", notes: "" });
     setForm(baseForm());
@@ -329,6 +333,7 @@ export default function EmployeesMasterPage() {
     setFormErrors({});
     setContractError("");
     setAffiliationForm(emptyAffiliationForm());
+    setAffiliationClose(null);
     setSalaryForm({ monthly_salary: employee.salary_base ? String(employee.salary_base) : "", valid_from: today(), reason: "Cambio salarial" });
     setContractForm({ valid_from: today(), new_hire_date: today(), contract_type: employee.contract_type || "indefinite", end_date: displayDate(employee.end_date), salary_base: employee.salary_base ? String(employee.salary_base) : "", cost_center: employee.metadata?.cost_center || "", reason: employee.active === false ? "Recontratacion" : "Otrosi contractual", notes: "" });
     setForm({
@@ -544,15 +549,38 @@ export default function EmployeesMasterPage() {
     }
   }
 
-  async function closeAffiliation(row: Affiliation) {
-    if (!selected) return;
-    const validTo = window.prompt("Fecha final de vigencia (YYYY-MM-DD)", today());
-    if (!validTo) return;
-    await api<Affiliation>(`/api/v1/talento-humano/afiliaciones/${row.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: "inactiva", valid_to: validTo })
-    });
-    await loadAffiliations(selected.id);
+  function startAffiliationClose(row: Affiliation) {
+    setAffiliationClose({ id: row.id, valid_to: today(), reason: "" });
+  }
+
+  function editAffiliationClose(valid_to: string) {
+    // Escribir retira el motivo: un rojo que sobrevive a su corrección enseña a desconfiar del rojo.
+    setAffiliationClose((current) => (current ? { ...current, valid_to, reason: "" } : current));
+  }
+
+  async function confirmAffiliationClose(row: Affiliation) {
+    if (!selected || !affiliationClose) return;
+    if (!affiliationClose.valid_to) {
+      setAffiliationClose((current) => (current ? { ...current, reason: "Indique la fecha final de vigencia." } : current));
+      return;
+    }
+    if (row.valid_from && affiliationClose.valid_to < row.valid_from) {
+      setAffiliationClose((current) => (current ? { ...current, reason: `La fecha final no puede ser anterior al inicio de vigencia (${displayDate(row.valid_from)}).` } : current));
+      return;
+    }
+    setSaving(true);
+    try {
+      await api<Affiliation>(`/api/v1/talento-humano/afiliaciones/${row.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "inactiva", valid_to: affiliationClose.valid_to })
+      });
+      setAffiliationClose(null);
+      await loadAffiliations(selected.id);
+    } catch (error) {
+      setAffiliationClose((current) => (current ? { ...current, reason: error instanceof Error ? error.message : "No fue posible cerrar la vigencia." } : current));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -644,7 +672,7 @@ export default function EmployeesMasterPage() {
             </header>
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               {modalMessage ? <p className="mb-4 rounded-md border border-line bg-white p-3 text-sm text-neutral-700">{modalMessage}</p> : null}
-              {selected && mode !== "create" ? <BiometricEnrollmentPanel employee={selected} onReset={(updated) => { setSelected(updated); setRows((current) => current.map((row) => String(row.id) === String(updated.id) ? updated : row)); }} /> : null}
+              {selected && mode !== "create" ? <BiometricEnrollmentPanel key={String(selected.id)} employee={selected} onReset={(updated) => { setSelected(updated); setRows((current) => current.map((row) => String(row.id) === String(updated.id) ? updated : row)); }} /> : null}
               {mode === "create" && organizationLoading ? <p className="mb-4 rounded-md border border-line bg-paper p-3 text-sm text-neutral-600" role="status">Cargando maestro contable...</p> : null}
               {mode === "create" && organizationError ? <p className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800" role="alert">{organizationError}</p> : null}
               <div className="grid gap-3 md:grid-cols-2">
@@ -812,7 +840,21 @@ export default function EmployeesMasterPage() {
                           <td className="px-3 py-3"><span className="font-semibold">{row.entity_legal_name || row.entity_id}</span><span className="block text-xs text-neutral-500">{row.entity_nit || ""}</span></td>
                           <td className="px-3 py-3">{displayDate(row.valid_from)} - {row.valid_to ? displayDate(row.valid_to) : "vigente"}</td>
                           <td className="px-3 py-3">{row.status}</td>
-                          <td className="px-3 py-3 text-right">{mode === "edit" ? <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold hover:bg-paper" onClick={() => void closeAffiliation(row)} type="button">Cerrar vigencia</button> : null}</td>
+                          <td className="px-3 py-3 text-right">
+                            {mode !== "edit" ? null : affiliationClose?.id === row.id ? (
+                              <div className="flex flex-wrap items-center justify-end gap-2">
+                                <label className="flex items-center gap-2 text-xs font-semibold text-neutral-700">
+                                  Fecha final
+                                  <input aria-invalid={affiliationClose.reason ? true : undefined} aria-label="Fecha final de vigencia" className={`h-9 rounded-md border px-2 text-sm ${affiliationClose.reason ? "border-rose-400" : "border-line"}`} type="date" value={affiliationClose.valid_to} onChange={(event) => editAffiliationClose(event.target.value)} />
+                                </label>
+                                <button className="inline-flex h-9 items-center rounded-md bg-apex px-3 text-xs font-semibold text-white disabled:bg-neutral-300" disabled={saving} onClick={() => void confirmAffiliationClose(row)} type="button">Confirmar cierre</button>
+                                <button className="inline-flex h-9 items-center rounded-md border border-line bg-white px-3 text-xs font-semibold hover:bg-paper" onClick={() => setAffiliationClose(null)} type="button">Cancelar</button>
+                                {affiliationClose.reason ? <p className="w-full text-right text-xs text-rose-700" role="alert">{affiliationClose.reason}</p> : null}
+                              </div>
+                            ) : (
+                              <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold hover:bg-paper" onClick={() => startAffiliationClose(row)} type="button">Cerrar vigencia</button>
+                            )}
+                          </td>
                         </tr>
                       ))}
                       {!affiliations.length ? <tr><td className="px-3 py-6 text-center text-neutral-500" colSpan={5}>Sin entidades enlazadas para este empleado.</td></tr> : null}
@@ -846,10 +888,12 @@ export default function EmployeesMasterPage() {
 function BiometricEnrollmentPanel({ employee, onReset }: { employee: Employee; onReset: (employee: Employee) => void }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  // La advertencia de lo que implica restablecer se lee en el panel y el segundo clic la confirma:
+  // la pregunta deliberada no necesita una ventanilla que tape la pantalla.
+  const [armed, setArmed] = useState(false);
   const enrollment = employee.metadata?.mobile_biometric;
 
   async function reset() {
-    if (!window.confirm("El empleado tendra que registrar su huella otra vez en la app antes de volver a marcar. ¿Restablecer el registro?")) return;
     setBusy(true);
     setMessage("");
     try {
@@ -857,6 +901,7 @@ function BiometricEnrollmentPanel({ employee, onReset }: { employee: Employee; o
       const metadata = { ...(employee.metadata || {}) };
       delete metadata.mobile_biometric;
       onReset({ ...employee, metadata });
+      setArmed(false);
       setMessage("Registro restablecido. El empleado debe registrar su huella en la app.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible restablecer el registro.");
@@ -877,9 +922,17 @@ function BiometricEnrollmentPanel({ employee, onReset }: { employee: Employee; o
         {message ? <p className="mt-1 text-xs text-neutral-700" role="status">{message}</p> : null}
       </div>
       {enrollment ? (
-        <button className="inline-flex h-9 items-center rounded-md border border-line bg-white px-3 text-sm font-semibold text-neutral-700 hover:border-apex hover:text-apex disabled:opacity-60" disabled={busy} onClick={reset} type="button">
-          {busy ? "Restableciendo..." : "Restablecer registro"}
-        </button>
+        armed ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold text-neutral-700" role="status">El empleado tendra que registrar su huella otra vez en la app antes de volver a marcar.</p>
+            <button className="inline-flex h-9 items-center rounded-md bg-rose-600 px-3 text-sm font-semibold text-white disabled:opacity-60" disabled={busy} onClick={() => void reset()} type="button">{busy ? "Restableciendo..." : "Confirmar restablecimiento"}</button>
+            <button className="inline-flex h-9 items-center rounded-md border border-line bg-white px-3 text-sm font-semibold text-neutral-700 hover:bg-paper" disabled={busy} onClick={() => setArmed(false)} type="button">Cancelar</button>
+          </div>
+        ) : (
+          <button className="inline-flex h-9 items-center rounded-md border border-line bg-white px-3 text-sm font-semibold text-neutral-700 hover:border-apex hover:text-apex disabled:opacity-60" disabled={busy} onClick={() => setArmed(true)} type="button">
+            {busy ? "Restableciendo..." : "Restablecer registro"}
+          </button>
+        )
       ) : null}
     </div>
   );

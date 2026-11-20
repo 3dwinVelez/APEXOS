@@ -94,9 +94,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.66.0",
-      "updated_at": "2026-11-19",
-      "sha256": "8f3df0579322190c629e52133f8a566946c7e63b167969dcbc23f845593541ab",
+      "version": "2.67.0",
+      "updated_at": "2026-11-20",
+      "sha256": "8acce32f206d45e779307561bf540e4c7e698aeca7d34c59c76bd757c2019f8e",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -148,7 +148,8 @@
         "brief-de-acote-separa-rama-de-nube",
         "cifra-de-brief-con-hora-e-ids",
         "autorizacion-de-mecanismo-con-premisas-verificadas",
-        "sonda-se-nombra-segun-lo-que-demuestra"
+        "sonda-se-nombra-segun-lo-que-demuestra",
+        "pregunta-de-alcance-contestada-en-el-brief"
       ]
     },
     {
@@ -181,9 +182,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.36.0",
-      "updated_at": "2026-11-19",
-      "sha256": "9bd814672eaebbbca4eea27f0accab46c06f2b30d26d5879d253992086cddbb2",
+      "version": "2.37.0",
+      "updated_at": "2026-11-20",
+      "sha256": "2ebb131ff6860ac93f4fdada63356e3897ef9608749f42d23e46c9eba6966baf",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -222,7 +223,9 @@
         "fallo-tecnico-no-es-ventana-estado-de-dato",
         "contador-sin-lectura-no-es-cero",
         "validacion-en-linea-no-ventanilla-nativa",
-        "evidencia-desprendida-antes-de-reenviar"
+        "evidencia-desprendida-antes-de-reenviar",
+        "pregunta-del-usuario-en-el-sitio-del-dato",
+        "contrato-multilineo-sobre-crlf"
       ]
     },
     {
