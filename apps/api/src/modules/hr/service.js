@@ -3259,6 +3259,7 @@ function ownOperationalInput(input, employee, user) {
 async function createOwnPunch(tenantId, user, input) {
   const employee = await getCurrentEmployee(tenantId, user);
   await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
+  input = require("./webPunchSelfie").prepareWebPunchSelfie(input);
   // Antes de crear nada: una marcacion de la app sin telefono registrado,
   // firma valida o selfie se rechaza aqui y no queda a medias.
   const identity = mobileIdentity.verifyPunchIdentity({ employee, user, input });
