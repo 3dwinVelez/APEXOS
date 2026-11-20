@@ -1,0 +1,1016 @@
+{
+  "format": "apexos-technical-alert-silence-v1",
+  "started_at": "2026-11-20T05:20:18.203Z",
+  "base": "http://127.0.0.1:3323",
+  "artifact": "technical-alert-silence-20261119/main-20261120",
+  "scenarios": {
+    "tormenta_500_light": {
+      "screens": {
+        "rutas": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": "",
+          "mounted": true,
+          "montado_en": "main",
+          "leyendas_ajenas": [],
+          "dataRequests": 7,
+          "telemetryPosts": 7,
+          "overlayText": []
+        },
+        "mapa": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": "",
+          "mounted": true,
+          "montado_en": "main",
+          "leyendas_ajenas": [],
+          "dataRequests": 1,
+          "telemetryPosts": 1,
+          "overlayText": []
+        },
+        "servicios": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": "",
+          "mounted": true,
+          "montado_en": "main",
+          "leyendas_ajenas": [],
+          "dataRequests": 5,
+          "telemetryPosts": 5,
+          "overlayText": []
+        },
+        "monitoreo": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": "",
+          "mounted": true,
+          "montado_en": "main",
+          "leyendas_ajenas": [],
+          "dataRequests": 1,
+          "telemetryPosts": 1,
+          "overlayText": []
+        },
+        "home": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": "",
+          "mounted": true,
+          "montado_en": "main",
+          "leyendas_ajenas": [],
+          "dataRequests": 0,
+          "telemetryPosts": 0,
+          "overlayText": []
+        }
+      },
+      "telemetry_posts": 14
+    },
+    "tormenta_500_dark": {
+      "screens": {
+        "rutas": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": "",
+          "mounted": true,
+          "montado_en": "main",
+          "leyendas_ajenas": [],
+          "dataRequests": 7,
+          "telemetryPosts": 7,
+          "overlayText": []
+        },
+        "mapa": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": "",
+          "mounted": true,
+          "montado_en": "main",
+          "leyendas_ajenas": [],
+          "dataRequests": 1,
+          "telemetryPosts": 1,
+          "overlayText": []
+        },
+        "servicios": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": "",
+          "mounted": true,
+          "montado_en": "main",
+          "leyendas_ajenas": [],
+          "dataRequests": 5,
+          "telemetryPosts": 5,
+          "overlayText": []
+        },
+        "monitoreo": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": "",
+          "mounted": true,
+          "montado_en": "main",
+          "leyendas_ajenas": [],
+          "dataRequests": 1,
+          "telemetryPosts": 1,
+          "overlayText": []
+        },
+        "home": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": "",
+          "mounted": true,
+          "montado_en": "main",
+          "leyendas_ajenas": [],
+          "dataRequests": 0,
+          "telemetryPosts": 0,
+          "overlayText": []
+        }
+      },
+      "telemetry_posts": 28
+    },
+    "red_cortada": {
+      "screens": {
+        "rutas": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": ""
+        },
+        "mapa": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": ""
+        },
+        "servicios": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": ""
+        },
+        "monitoreo": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": ""
+        }
+      },
+      "aborted_requests": 14
+    },
+    "tormenta_429": {
+      "screens": {
+        "rutas": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": ""
+        },
+        "mapa": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": ""
+        },
+        "servicios": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": ""
+        },
+        "monitoreo": {
+          "overlayCards": 0,
+          "technical": false,
+          "marker": ""
+        }
+      }
+    },
+    "diagnostico_activado": {
+      "peak_cards": 5,
+      "peak_text": [
+        "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes?limit=500 | Estado: 500 | Detalle: Error interno del servidor",
+        "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/employees?active=true | Estado: 500 | Detalle: Error interno del servidor",
+        "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/transport/vehicles | Estado: 500 | Detalle: Error interno del servidor",
+        "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/admin/user-master-data | Estado: 500 | Detalle: Error interno del servidor",
+        "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes/event-summaries | Estado: 500 | Detalle: Error interno del servidor"
+      ],
+      "samples": [
+        {
+          "at": 0,
+          "cards": 5,
+          "text": [
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes?limit=500 | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/employees?active=true | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/transport/vehicles | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/admin/user-master-data | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes/event-summaries | Estado: 500 | Detalle: Error interno del servidor"
+          ]
+        },
+        {
+          "at": 2,
+          "cards": 5,
+          "text": [
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes?limit=500 | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/employees?active=true | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/transport/vehicles | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/admin/user-master-data | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes/event-summaries | Estado: 500 | Detalle: Error interno del servidor"
+          ]
+        },
+        {
+          "at": 4,
+          "cards": 5,
+          "text": [
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes?limit=500 | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/employees?active=true | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/transport/vehicles | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/admin/user-master-data | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes/event-summaries | Estado: 500 | Detalle: Error interno del servidor"
+          ]
+        },
+        {
+          "at": 6,
+          "cards": 5,
+          "text": [
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes?limit=500 | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/employees?active=true | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/transport/vehicles | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/admin/user-master-data | Estado: 500 | Detalle: Error interno del servidor",
+            "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes/event-summaries | Estado: 500 | Detalle: Error interno del servidor"
+          ]
+        },
+        {
+          "at": 8,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 10,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 12,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 14,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 16,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 18,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 20,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 22,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 24,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 26,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 28,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 30,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 32,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 34,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 36,
+          "cards": 0,
+          "text": []
+        },
+        {
+          "at": 38,
+          "cards": 0,
+          "text": []
+        }
+      ]
+    },
+    "validacion_empleados": {
+      "opened": true,
+      "submitted": true,
+      "inline_alerts": [
+        "Completa nombres y apellidos para generar el nombre completo.",
+        "El numero de documento es obligatorio y no se puede repetir.",
+        "No hay maestro contable disponible. Configura la estructura contable para habilitar el alta.",
+        "Selecciona una sucursal y un centro de costo contable.",
+        "No se pudieron consultar los usuarios. Intenta nuevamente antes de asociar una cuenta."
+      ],
+      "invalid_fields": 2,
+      "overlay_cards": 0,
+      "dialogs": []
+    }
+  },
+  "checks": [
+    {
+      "name": "rutas_light_arnes_con_tormenta_real",
+      "ok": true,
+      "payload": {
+        "dataRequests": 7,
+        "url": "/dashboard/talento-humano/rutas"
+      }
+    },
+    {
+      "name": "rutas_light_sin_guard_de_acceso",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/talento-humano/rutas"
+      }
+    },
+    {
+      "name": "rutas_light_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "rutas_light_sin_detalle_tecnico",
+      "ok": true,
+      "payload": {
+        "marker": ""
+      }
+    },
+    {
+      "name": "rutas_light_pantalla_sigue_viva",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/talento-humano/rutas",
+        "montado_en": "main",
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nPERSONAS Y GESTIÓN\nOTROS\nCE\n\ncert.silence@apex.local\n\nEmpresa de ce"
+      }
+    },
+    {
+      "name": "mapa_light_arnes_con_tormenta_real",
+      "ok": true,
+      "payload": {
+        "dataRequests": 1,
+        "url": "/dashboard/talento-humano/mapa"
+      }
+    },
+    {
+      "name": "mapa_light_sin_guard_de_acceso",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/talento-humano/mapa"
+      }
+    },
+    {
+      "name": "mapa_light_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "mapa_light_sin_detalle_tecnico",
+      "ok": true,
+      "payload": {
+        "marker": ""
+      }
+    },
+    {
+      "name": "mapa_light_pantalla_sigue_viva",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/talento-humano/mapa",
+        "montado_en": "main",
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nPERSONAS Y GESTIÓN\nOTROS\nCE\n\ncert.silence@apex.local\n\nEmpresa de cer"
+      }
+    },
+    {
+      "name": "servicios_light_arnes_con_tormenta_real",
+      "ok": true,
+      "payload": {
+        "dataRequests": 5,
+        "url": "/dashboard/servicios"
+      }
+    },
+    {
+      "name": "servicios_light_sin_guard_de_acceso",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/servicios"
+      }
+    },
+    {
+      "name": "servicios_light_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "servicios_light_sin_detalle_tecnico",
+      "ok": true,
+      "payload": {
+        "marker": ""
+      }
+    },
+    {
+      "name": "servicios_light_pantalla_sigue_viva",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/servicios",
+        "montado_en": "main",
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nPERSONAS Y GESTIÓN\nOTROS\nCE\n\ncert.silence@apex.local\n\nEmpresa de certificacion -"
+      }
+    },
+    {
+      "name": "monitoreo_light_arnes_con_tormenta_real",
+      "ok": true,
+      "payload": {
+        "dataRequests": 1,
+        "url": "/dashboard/transporte/monitoreo"
+      }
+    },
+    {
+      "name": "monitoreo_light_sin_guard_de_acceso",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/transporte/monitoreo"
+      }
+    },
+    {
+      "name": "monitoreo_light_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "monitoreo_light_sin_detalle_tecnico",
+      "ok": true,
+      "payload": {
+        "marker": ""
+      }
+    },
+    {
+      "name": "monitoreo_light_pantalla_sigue_viva",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/transporte/monitoreo",
+        "montado_en": "main",
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nPERSONAS Y GESTIÓN\nOTROS\nCE\n\ncert.silence@apex.local\n\nEmpresa de ce"
+      }
+    },
+    {
+      "name": "home_light_arnes_con_tormenta_real",
+      "ok": true,
+      "payload": {
+        "dataRequests": 0,
+        "url": "/dashboard"
+      }
+    },
+    {
+      "name": "home_light_sin_guard_de_acceso",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard"
+      }
+    },
+    {
+      "name": "home_light_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "home_light_sin_detalle_tecnico",
+      "ok": true,
+      "payload": {
+        "marker": ""
+      }
+    },
+    {
+      "name": "home_light_pantalla_sigue_viva",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard",
+        "montado_en": "main",
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nPERSONAS Y GESTIÓN\nOTROS\nCE\n\ncert.silence@apex.local\n\nEmpresa de certificacion -"
+      }
+    },
+    {
+      "name": "light_marcador_discrimina_pantalla_no_cascaron",
+      "ok": true,
+      "payload": {
+        "violaciones": []
+      }
+    },
+    {
+      "name": "rutas_dark_arnes_con_tormenta_real",
+      "ok": true,
+      "payload": {
+        "dataRequests": 7,
+        "url": "/dashboard/talento-humano/rutas"
+      }
+    },
+    {
+      "name": "rutas_dark_sin_guard_de_acceso",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/talento-humano/rutas"
+      }
+    },
+    {
+      "name": "rutas_dark_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "rutas_dark_sin_detalle_tecnico",
+      "ok": true,
+      "payload": {
+        "marker": ""
+      }
+    },
+    {
+      "name": "rutas_dark_pantalla_sigue_viva",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/talento-humano/rutas",
+        "montado_en": "main",
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nPERSONAS Y GESTIÓN\nOTROS\nCE\n\ncert.silence@apex.local\n\nEmpresa de ce"
+      }
+    },
+    {
+      "name": "mapa_dark_arnes_con_tormenta_real",
+      "ok": true,
+      "payload": {
+        "dataRequests": 1,
+        "url": "/dashboard/talento-humano/mapa"
+      }
+    },
+    {
+      "name": "mapa_dark_sin_guard_de_acceso",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/talento-humano/mapa"
+      }
+    },
+    {
+      "name": "mapa_dark_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "mapa_dark_sin_detalle_tecnico",
+      "ok": true,
+      "payload": {
+        "marker": ""
+      }
+    },
+    {
+      "name": "mapa_dark_pantalla_sigue_viva",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/talento-humano/mapa",
+        "montado_en": "main",
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nPERSONAS Y GESTIÓN\nOTROS\nCE\n\ncert.silence@apex.local\n\nEmpresa de cer"
+      }
+    },
+    {
+      "name": "servicios_dark_arnes_con_tormenta_real",
+      "ok": true,
+      "payload": {
+        "dataRequests": 5,
+        "url": "/dashboard/servicios"
+      }
+    },
+    {
+      "name": "servicios_dark_sin_guard_de_acceso",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/servicios"
+      }
+    },
+    {
+      "name": "servicios_dark_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "servicios_dark_sin_detalle_tecnico",
+      "ok": true,
+      "payload": {
+        "marker": ""
+      }
+    },
+    {
+      "name": "servicios_dark_pantalla_sigue_viva",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/servicios",
+        "montado_en": "main",
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nPERSONAS Y GESTIÓN\nOTROS\nCE\n\ncert.silence@apex.local\n\nEmpresa de certificacion -"
+      }
+    },
+    {
+      "name": "monitoreo_dark_arnes_con_tormenta_real",
+      "ok": true,
+      "payload": {
+        "dataRequests": 1,
+        "url": "/dashboard/transporte/monitoreo"
+      }
+    },
+    {
+      "name": "monitoreo_dark_sin_guard_de_acceso",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/transporte/monitoreo"
+      }
+    },
+    {
+      "name": "monitoreo_dark_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "monitoreo_dark_sin_detalle_tecnico",
+      "ok": true,
+      "payload": {
+        "marker": ""
+      }
+    },
+    {
+      "name": "monitoreo_dark_pantalla_sigue_viva",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard/transporte/monitoreo",
+        "montado_en": "main",
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nPERSONAS Y GESTIÓN\nOTROS\nCE\n\ncert.silence@apex.local\n\nEmpresa de ce"
+      }
+    },
+    {
+      "name": "home_dark_arnes_con_tormenta_real",
+      "ok": true,
+      "payload": {
+        "dataRequests": 0,
+        "url": "/dashboard"
+      }
+    },
+    {
+      "name": "home_dark_sin_guard_de_acceso",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard"
+      }
+    },
+    {
+      "name": "home_dark_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "home_dark_sin_detalle_tecnico",
+      "ok": true,
+      "payload": {
+        "marker": ""
+      }
+    },
+    {
+      "name": "home_dark_pantalla_sigue_viva",
+      "ok": true,
+      "payload": {
+        "url": "/dashboard",
+        "montado_en": "main",
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nPERSONAS Y GESTIÓN\nOTROS\nCE\n\ncert.silence@apex.local\n\nEmpresa de certificacion -"
+      }
+    },
+    {
+      "name": "dark_marcador_discrimina_pantalla_no_cascaron",
+      "ok": true,
+      "payload": {
+        "violaciones": []
+      }
+    },
+    {
+      "name": "los_fallos_quedan_en_platform_logs",
+      "ok": true,
+      "payload": {
+        "posts": 28,
+        "rutas": [
+          "http://127.0.0.1:3323/api/v1/hr/routes",
+          "http://127.0.0.1:3323/api/v1/hr/employees",
+          "http://127.0.0.1:3323/api/v1/hr/routes/event-summaries",
+          "http://127.0.0.1:3323/api/v1/hr/routes",
+          "http://127.0.0.1:3323/api/v1/hr/routes",
+          "http://127.0.0.1:3323/api/v1/hr/operations-map"
+        ]
+      }
+    },
+    {
+      "name": "rutas_corte_de_red_sin_tarjeta",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technical": false,
+        "marker": ""
+      }
+    },
+    {
+      "name": "mapa_corte_de_red_sin_tarjeta",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technical": false,
+        "marker": ""
+      }
+    },
+    {
+      "name": "servicios_corte_de_red_sin_tarjeta",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technical": false,
+        "marker": ""
+      }
+    },
+    {
+      "name": "monitoreo_corte_de_red_sin_tarjeta",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technical": false,
+        "marker": ""
+      }
+    },
+    {
+      "name": "rutas_429_sin_tarjeta",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technical": false,
+        "marker": ""
+      }
+    },
+    {
+      "name": "mapa_429_sin_tarjeta",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technical": false,
+        "marker": ""
+      }
+    },
+    {
+      "name": "servicios_429_sin_tarjeta",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technical": false,
+        "marker": ""
+      }
+    },
+    {
+      "name": "monitoreo_429_sin_tarjeta",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technical": false,
+        "marker": ""
+      }
+    },
+    {
+      "name": "sesion_vencida_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "url": "/dashboard/talento-humano/rutas"
+      }
+    },
+    {
+      "name": "login_lee_el_motivo_del_cierre",
+      "ok": true,
+      "payload": {
+        "snippet": "Página cargada: Dashboard\nModo oscuro\nAPEX OS\n\nPLATAFORMA EMPRESARIAL INTELIGENTE\n\nConvierte tu operación en decisiones.\n\nInventario, compras, ventas y ejecución conectados en una sola experiencia segura, trazable y lista para crecer contigo.\n\nSeguridad, control y trazabilidad empresarial\n\nAPEX OS\n\n"
+      }
+    },
+    {
+      "name": "aviso_de_sesion_no_es_una_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0
+      }
+    },
+    {
+      "name": "modo_diagnostico_sigue_mostrando_el_detalle",
+      "ok": true,
+      "payload": {
+        "peak_text": [
+          "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes?limit=500 | Estado: 500 | Detalle: Error interno del servidor",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/employees?active=true | Estado: 500 | Detalle: Error interno del servidor",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/transport/vehicles | Estado: 500 | Detalle: Error interno del servidor",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/admin/user-master-data | Estado: 500 | Detalle: Error interno del servidor",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes/event-summaries | Estado: 500 | Detalle: Error interno del servidor"
+        ]
+      }
+    },
+    {
+      "name": "modo_diagnostico_respeta_el_presupuesto",
+      "ok": true,
+      "payload": {
+        "max": 5
+      }
+    },
+    {
+      "name": "el_detalle_tecnico_vive_en_el_canal_de_soporte",
+      "ok": true,
+      "payload": {
+        "peak_text": [
+          "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes?limit=500 | Estado: 500 | Detalle: Error interno del servidor",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/employees?active=true | Estado: 500 | Detalle: Error interno del servidor",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/transport/vehicles | Estado: 500 | Detalle: Error interno del servidor",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/admin/user-master-data | Estado: 500 | Detalle: Error interno del servidor",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud del modulo actual.Ruta: /api/v1/hr/routes/event-summaries | Estado: 500 | Detalle: Error interno del servidor"
+        ]
+      }
+    },
+    {
+      "name": "el_arnes_detecta_una_ventanilla_nativa",
+      "ok": true,
+      "payload": {
+        "registradas": 1
+      }
+    },
+    {
+      "name": "validacion_empleados_flujo_completo",
+      "ok": true,
+      "payload": {
+        "opened": true,
+        "submitted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · empleados\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nPERSONAS Y GESTIÓN\nOTROS\nCE\n\ncert.silence@apex.local\n\nEmpresa de certificacion - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCt"
+      }
+    },
+    {
+      "name": "validacion_empleados_motivo_en_el_campo",
+      "ok": true,
+      "payload": {
+        "inline": [
+          "Completa nombres y apellidos para generar el nombre completo.",
+          "El numero de documento es obligatorio y no se puede repetir.",
+          "No hay maestro contable disponible. Configura la estructura contable para habilitar el alta.",
+          "Selecciona una sucursal y un centro de costo contable.",
+          "No se pudieron consultar los usuarios. Intenta nuevamente antes de asociar una cuenta."
+        ]
+      }
+    },
+    {
+      "name": "validacion_empleados_campo_marcado_como_invalido",
+      "ok": true,
+      "payload": {
+        "invalidFields": 2
+      }
+    },
+    {
+      "name": "validacion_empleados_sin_ventanilla_nativa",
+      "ok": true,
+      "payload": {
+        "dialogs": []
+      }
+    },
+    {
+      "name": "validacion_empleados_sin_tarjeta_flotante",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0
+      }
+    },
+    {
+      "name": "cero_ventanillas_nativas_en_toda_la_corrida",
+      "ok": true,
+      "payload": {
+        "dialogs": []
+      }
+    },
+    {
+      "name": "api_no_dispara_la_alerta_de_usuario",
+      "ok": true
+    },
+    {
+      "name": "el_canal_apex_alert_esta_retirado",
+      "ok": true
+    },
+    {
+      "name": "la_ventana_queda_detras_del_modo_diagnostico",
+      "ok": true
+    },
+    {
+      "name": "la_pantalla_de_empleados_no_usa_ventanillas_de_alerta",
+      "ok": true
+    }
+  ],
+  "frontend_served_by": "next start (produccion)",
+  "build_id": "GWiQsW-qSguoj2peqeCoA",
+  "runtime": {
+    "page_errors": [
+      "No fue posible cargar esta información en este momento. La aplicación sigue funcionando: vuelve a intentar en unos segundos. Referencia para soporte: cert-silence-500.\ntT (http://127.0.0.1:3323/_next/static/chunks/3686-584ef0312ad5296b.js:1:164345)\nasync Promise.all (index 0)"
+    ],
+    "console_errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "failed_requests": [
+      "http://127.0.0.1:3323/api/v1/hr/routes",
+      "http://127.0.0.1:3323/api/v1/hr/employees",
+      "http://127.0.0.1:3323/api/v1/transport/vehicles",
+      "http://127.0.0.1:3323/api/v1/admin/user-master-data",
+      "http://127.0.0.1:3323/api/v1/hr/routes/event-summaries",
+      "http://127.0.0.1:3323/api/v1/hr/operations-map",
+      "http://127.0.0.1:3323/api/v1/services/references",
+      "http://127.0.0.1:3323/api/v1/services/technicians",
+      "http://127.0.0.1:3323/api/v1/services/service-types",
+      "http://127.0.0.1:3323/api/v1/services/service-stores",
+      "http://127.0.0.1:3323/api/v1/services/orders",
+      "http://127.0.0.1:3323/api/v1/transport/monitoring/live",
+      "http://127.0.0.1:3323/api/v1/talento-humano/empleados",
+      "http://127.0.0.1:3323/api/v1/talento-humano/entidades",
+      "http://127.0.0.1:3323/api/v1/talento-humano/usuarios-vinculables"
+    ],
+    "aborted_requests": [
+      "/api/v1/hr/routes",
+      "/api/v1/hr/employees",
+      "/api/v1/transport/vehicles",
+      "/api/v1/admin/user-master-data",
+      "/api/v1/hr/routes/event-summaries",
+      "/api/v1/hr/operations-map",
+      "/api/v1/services/references",
+      "/api/v1/services/technicians",
+      "/api/v1/services/service-types",
+      "/api/v1/services/service-stores",
+      "/api/v1/services/orders",
+      "/api/v1/transport/monitoring/live"
+    ],
+    "native_dialogs": [],
+    "telemetry_posts": 78
+  },
+  "verdict": {
+    "passed": 78,
+    "failed": 0,
+    "total": 78
+  },
+  "finished_at": "2026-11-20T05:23:41.869Z"
+}

@@ -299,9 +299,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.87.0",
+      "version": "2.88.0",
       "updated_at": "2026-11-20",
-      "sha256": "0932ac639089ba198115f00375ae6af49756ac737a42f5a85889956004f73b24",
+      "sha256": "6a8fd6bc92b7c66cfb74cf478c2af8f3885d2df2f5862dd79ac4033bfd2c698b",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -375,7 +375,10 @@
         "marcador-en-area-de-contenido",
         "certificacion-sobre-el-arbol-del-candidato",
         "despues-anclado-al-commit-desplegado",
-        "ingesta-probada-por-la-fila-escrita"
+        "ingesta-probada-por-la-fila-escrita",
+        "equivalencia-por-blob-y-hunkeo",
+        "compuerta-contra-el-arbol-que-aterriza",
+        "produccion-verificada-por-artefacto"
       ]
     },
     {

@@ -1,0 +1,184 @@
+TAP version 13
+# Subtest: reconoce administradores confiables por role_type aunque el nombre sea personalizado
+ok 1 - reconoce administradores confiables por role_type aunque el nombre sea personalizado
+  ---
+  duration_ms: 5.4168
+  type: 'test'
+  ...
+# Subtest: un gestor de usuarios cumple solo las capacidades concedidas en su matriz
+ok 2 - un gestor de usuarios cumple solo las capacidades concedidas en su matriz
+  ---
+  duration_ms: 0.9706
+  type: 'test'
+  ...
+# Subtest: admin write agregado no permite crear usuarios cuando la matriz solo concede editar
+ok 3 - admin write agregado no permite crear usuarios cuando la matriz solo concede editar
+  ---
+  duration_ms: 0.7772
+  type: 'test'
+  ...
+# Subtest: mantiene compatibilidad con roles antiguos que solo tienen permisos RBAC agregados
+ok 4 - mantiene compatibilidad con roles antiguos que solo tienen permisos RBAC agregados
+  ---
+  duration_ms: 0.7753
+  type: 'test'
+  ...
+# Subtest: la capacidad no omite suscripcion ni alcance del tenant
+ok 5 - la capacidad no omite suscripcion ni alcance del tenant
+  ---
+  duration_ms: 0.9025
+  type: 'test'
+  ...
+# Subtest: las rutas de usuarios y roles exigen capacidades granulares
+ok 6 - las rutas de usuarios y roles exigen capacidades granulares
+  ---
+  duration_ms: 1.727
+  type: 'test'
+  ...
+# Subtest: la edicion administrativa aplica los campos enviados y no conserva silenciosamente el valor anterior
+ok 7 - la edicion administrativa aplica los campos enviados y no conserva silenciosamente el valor anterior
+  ---
+  duration_ms: 1.6646
+  type: 'test'
+  ...
+# Subtest: todas las operaciones administrativas por id acotan usuario y rol al tenant autenticado
+ok 8 - todas las operaciones administrativas por id acotan usuario y rol al tenant autenticado
+  ---
+  duration_ms: 5.6037
+  type: 'test'
+  ...
+# Subtest: un administrador de empresa no puede crear un usuario con rol APEX_ADMIN
+ok 9 - un administrador de empresa no puede crear un usuario con rol APEX_ADMIN
+  ---
+  duration_ms: 554.7019
+  type: 'test'
+  ...
+# Subtest: el rol se bloquea por metadata superadmin aunque el nombre sea otro
+ok 10 - el rol se bloquea por metadata superadmin aunque el nombre sea otro
+  ---
+  duration_ms: 422.9162
+  type: 'test'
+  ...
+# Subtest: APEX_ADMIN puede crear usuarios con el rol APEX_ADMIN y la clave se guarda hasheada
+ok 11 - APEX_ADMIN puede crear usuarios con el rol APEX_ADMIN y la clave se guarda hasheada
+  ---
+  duration_ms: 509.6215
+  type: 'test'
+  ...
+# Subtest: un administrador de empresa no puede elevar a APEX_ADMIN con updateUser
+ok 12 - un administrador de empresa no puede elevar a APEX_ADMIN con updateUser
+  ---
+  duration_ms: 10.1973
+  type: 'test'
+  ...
+# Subtest: cambiar la clave de otro usuario sin confirmar la propia responde 428
+ok 13 - cambiar la clave de otro usuario sin confirmar la propia responde 428
+  ---
+  duration_ms: 427.8061
+  type: 'test'
+  ...
+# Subtest: cambiar la clave con una clave de administrador incorrecta responde 403
+ok 14 - cambiar la clave con una clave de administrador incorrecta responde 403
+  ---
+  duration_ms: 963.1402
+  type: 'test'
+  ...
+# Subtest: con la clave correcta se escribe el hash y nunca la clave en claro
+ok 15 - con la clave correcta se escribe el hash y nunca la clave en claro
+  ---
+  duration_ms: 2030.2755
+  type: 'test'
+  ...
+# Subtest: la ruta de acceso aplica la misma re-autenticacion antes de cambiar la clave
+ok 16 - la ruta de acceso aplica la misma re-autenticacion antes de cambiar la clave
+  ---
+  duration_ms: 1153.6892
+  type: 'test'
+  ...
+# Subtest: desactivar usuario responde con el registro inactivo y revoca sesiones
+ok 17 - desactivar usuario responde con el registro inactivo y revoca sesiones
+  ---
+  duration_ms: 71.1688
+  type: 'test'
+  ...
+# Subtest: el cambio de estado no puede operar sobre un usuario de otro tenant
+ok 18 - el cambio de estado no puede operar sobre un usuario de otro tenant
+  ---
+  duration_ms: 15.1986
+  type: 'test'
+  ...
+# Subtest: la ruta publica el resultado exitoso del servicio sin convertirlo en 404
+ok 19 - la ruta publica el resultado exitoso del servicio sin convertirlo en 404
+  ---
+  duration_ms: 34.2137
+  type: 'test'
+  ...
+# Subtest: acepta los nombres administrativos legitimos
+ok 20 - acepta los nombres administrativos legitimos
+  ---
+  duration_ms: 2.1336
+  type: 'test'
+  ...
+# Subtest: no acepta parecidos ni subcadenas
+ok 21 - no acepta parecidos ni subcadenas
+  ---
+  duration_ms: 0.3955
+  type: 'test'
+  ...
+# Subtest: el metadata tambien exige coincidencia exacta
+ok 22 - el metadata tambien exige coincidencia exacta
+  ---
+  duration_ms: 0.4486
+  type: 'test'
+  ...
+# Subtest: un rol ausente no es administrativo
+ok 23 - un rol ausente no es administrativo
+  ---
+  duration_ms: 0.2213
+  type: 'test'
+  ...
+# Subtest: sin buzon configurado responde honesto: no finge un ok y no escribe
+ok 24 - sin buzon configurado responde honesto: no finge un ok y no escribe
+  ---
+  duration_ms: 3423.6724
+  type: 'test'
+  ...
+# Subtest: con buzon el reporte anonimo cae en el tenant del despliegue y sin usuario
+ok 25 - con buzon el reporte anonimo cae en el tenant del despliegue y sin usuario
+  ---
+  duration_ms: 51.9284
+  type: 'test'
+  ...
+# Subtest: el cuerpo no elige tenant ni siembra PII: lo que no esta en el contrato se descarta
+ok 26 - el cuerpo no elige tenant ni siembra PII: lo que no esta en el contrato se descarta
+  ---
+  duration_ms: 32.2456
+  type: 'test'
+  ...
+# Subtest: el mensaje es obligatorio y acotado: no es un vertedero de trazas
+ok 27 - el mensaje es obligatorio y acotado: no es un vertedero de trazas
+  ---
+  duration_ms: 33.2919
+  type: 'test'
+  ...
+# Subtest: el detalle y la metadata extra se limitan por contrato, no por bondad
+ok 28 - el detalle y la metadata extra se limitan por contrato, no por bondad
+  ---
+  duration_ms: 31.5899
+  type: 'test'
+  ...
+# Subtest: la ingesta publica no hereda el limite de 25 MB de la API
+ok 29 - la ingesta publica no hereda el limite de 25 MB de la API
+  ---
+  duration_ms: 37.4504
+  type: 'test'
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7957.786

@@ -1,0 +1,41 @@
+SOPORTE DE LA MEDICION — pata main de la secuela del enmudecimiento (2026-11-20)
+
+Worktree: C:/Users/mq1/Documents/Proyectos/apexos-cand-alertsilence-seq-main-20261120
+Rama: codex/qa-alertsilence-seq-main-20261120 · HEAD d0d695a978e40b29ebd598ecfb33dec240bf674d
+Base promocionada: origin/main f207140d21d0b384d3a723021ae95614a19d22ac
+Dependencias: node_modules, apps/web/node_modules y apps/api/node_modules enlazados por junction al puesto.
+package-lock.json blob-identico en HEAD, origin/main y origin/develop: 6a62f9317f3b952f1f9099c81acbe24214ca3e00
+Node v22.23.1
+
+Build de produccion del arbol (sustrato de la certificacion local):
+  cd apps/web && node <root>/node_modules/next/dist/bin/next build --webpack    (Turbopack rechaza el enlace fuera de la raiz)
+  BUILD_ID GWiQsW-qSguoj2peqeCoA; verde completo, exito 0
+
+Certificacion local en navegador sobre ESE build, con la API apagada:
+  CERT_ARTIFACT="technical-alert-silence-20261119/main-20261120" node scripts/certifications/technical-alert-silence-browser-local.js
+  veredicto 78/78 (fallidas 0) · 2026-11-20T05:20:18.203Z -> 2026-11-20T05:23:41.869Z · base http://127.0.0.1:3323
+
+Contratos y suites sobre el arbol de main:
+  cd apps/web && node --test test/technical-alert-silence.test.mjs test/hr-monitor-refresh.test.mjs
+    -> 17 pruebas, 17 pasan, 0 fallan  (contratos-web-main.txt)
+  cd apps/api && node --test test/telemetry-client-logs-public.test.js test/admin-role-capabilities.test.js test/admin-role-escalation.test.js test/admin-user-status-regression.test.js test/rbac-administrative-role.test.js
+    -> 29 pruebas, 29 pasan, 0 fallan  (suite-api-apuntada-main.txt)
+  cd apps/web && node --test test/*.test.mjs
+    -> 832 pruebas, 831 pasan, 1 falla  (suite-web-main.txt)
+    El rojo unico es `react y react-dom/server salen de la misma instalacion de node_modules`: autocontrol de la
+    instalacion que solo puede fallar donde los paquetes llegan por junction, como este worktree. En el puesto pasa.
+    La suite se corrio desde apps/web: ibc-nomina-ui.test.mjs resuelve rutas contra process.cwd() y desde la raiz
+    del repositorio pondria roja su familia completa sin regresion de producto.
+
+QA (referencia del antes/despues, no de esta pata):
+  docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json · 174/174 sobre el API 7e02008a555b
+  docs/qa/evidence/technical-alert-silence-20261119/qa-buzon-sonda.txt · sonda anonima hostil: 202 recorded:true, fila en el tenant del despliegue, cero llaves hostiles, fila borrada
+
+Produccion (configuracion fijada antes de fusionar, sin desplegar):
+  apexos-api-prod · APEXOS_TELEMETRY_TENANT_ID = 52db0658-a184-4fa1-a47b-c90b184914c3 (APEXOS Platform)
+  El tenant se verifico presente en la tabla Tenant de Produccion antes de fijarlo. Se fijo con --skip-deploys para
+  que el despliegue del merge lleve codigo y variable en una sola corrida. La verificacion del despues en Produccion
+  se toma por artefacto servido (cero chunks con apex:alert) y por la misma sonda, nunca con navegador sobre datos de clientes.
+
+Higiene de la evidencia: las corridas usan identidades sinteticas del arnes (cert.silence@apex.local / empresa de certificacion).
+Los logs de next start quedan fuera del repositorio (*.log). Ninguna evidencia versionada trae tokens, cadenas de conexion ni datos de clientes.

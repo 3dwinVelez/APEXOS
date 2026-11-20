@@ -1,0 +1,34 @@
+{
+  "sondeo": "20261120054105",
+  "frontend": "https://apexos-web-prod-production.up.railway.app",
+  "api": "https://apexos-api-prod-production.up.railway.app",
+  "buzon_esperado": "52db0658-a184-4fa1-a47b-c90b184914c3",
+  "artefacto": {
+    "login_status": 200,
+    "chunks_leidos": 10,
+    "bytes_leidos": 629263,
+    "apex_alert_chunks": [],
+    "apex_diagnostic_chunks": [
+      "/_next/static/chunks/0n6wdjzti-4m2.js"
+    ],
+    "endpoint_publico_chunks": [],
+    "mensaje_de_validacion_chunks": []
+  },
+  "health": {
+    "status": 200,
+    "commit": "34674cac29b3",
+    "ok": "OK"
+  },
+  "sonda_publica": {
+    "status": 202,
+    "payload": {
+      "recorded": true
+    }
+  },
+  "registro": {
+    "encontrada": true,
+    "tenant_registrado": "52db0658-a184-4fa1-a47b-c90b184914c3",
+    "borrada": 1,
+    "lleve_llaves_hostiles": false
+  }
+}
