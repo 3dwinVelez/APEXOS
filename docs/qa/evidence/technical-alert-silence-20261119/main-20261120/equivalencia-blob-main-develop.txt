@@ -1,0 +1,151 @@
+EQUIVALENCIA BLOB POR BLOB — candidato a main vs el arbol que QA certifico en develop
+
+Medicion: 2026-11-20T05:25:56.685Z en la worktree del candidato.
+HEAD del candidato .......... d0d695a978e40b29ebd598ecfb33dec240bf674d
+origin/main (base) .......... f207140d21d0b384d3a723021ae95614a19d22ac
+origin/develop (QA 174/174) . 7e02008a555b1d7021b272d785ece7af8de7f83d
+Conjunto evaluado ........... git diff --name-only f207140d21..HEAD = 69 rutas
+
+RESUMEN: 63 de 69 rutas blob-identicas a origin/develop; 6 distintas, todas atribuidas abajo.
+
+== IGUALES BLOB A BLOB ==
+  1a6f4ea7f7  apps/api/server.js
+  27d6e7202c  apps/api/src/modules/admin/public-routes.js
+  a6136c1c38  apps/api/test/telemetry-client-logs-public.test.js
+  cfe5a955cd  apps/web/lib/api.ts
+  bd99eb6c2c  apps/web/test/technical-alert-silence.test.mjs
+  c17b555b59  docs/briefs/2026-11-19-fase-3-causas-del-fallo-tecnico.md
+  baf00e8a9c  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/06-sesion-vencida.png
+  0a050460fa  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/07-login-aviso-sesion.png
+  261ec49860  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/08-modo-diagnostico.png
+  ec0141c0fc  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/09-validacion-empleados.png
+  00ee57bd69  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/certification.json
+  ae66f8b0cd  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-home-500.png
+  e0b037b141  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-mapa-500.png
+  5630b27b82  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-monitoreo-500.png
+  57fc594342  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-rutas-500.png
+  e2b954a6db  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-servicios-500.png
+  96bfc4b222  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/equivalencia-candidato.txt
+  805694b9f3  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-home-500.png
+  514cf6ab53  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-mapa-500.png
+  dd8f87937c  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-monitoreo-500.png
+  93ebaaaf7e  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-rutas-500.png
+  8891ad8e64  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-servicios-500.png
+  00cd8554d4  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/suite-api-apuntada.txt
+  133ea57ff7  docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/suite-web.txt
+  b93a03bb10  docs/qa/evidence/technical-alert-silence-20261119/medicion-marcador/candidato-develop.json
+  2bac2933bd  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/06-sesion-vencida.png
+  a90e44bdc2  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/07-login-aviso-sesion.png
+  6ee9fde007  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/08-modo-diagnostico.png
+  0eb167056d  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/09-validacion-empleados.png
+  03edc38c19  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/certification.json
+  8af9e2729c  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-home-500.png
+  d011156ee3  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-mapa-500.png
+  c2e57bef8d  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-monitoreo-500.png
+  8ddba7c2b4  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-rutas-500.png
+  70cce0dcaa  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-servicios-500.png
+  beaf191794  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-home-500.png
+  5bb9540a3d  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-mapa-500.png
+  06e46d518c  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-monitoreo-500.png
+  3dbbe5cae5  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-rutas-500.png
+  3c9d2cce51  docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-servicios-500.png
+  afc55cd78a  docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/certification.json
+  a20ff7a386  docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/qa-sesion-final.png
+  869ffe804b  docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/qa-validacion-empleados.png
+  0efd9b393c  docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/certification.json
+  7b8300bba7  docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/qa-sesion-final.png
+  960da5cff7  docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/qa-validacion-empleados.png
+  6016ec8197  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/06-sesion-vencida.png
+  afd6e27008  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/07-login-aviso-sesion.png
+  4b0de80792  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/08-modo-diagnostico.png
+  e9c6212827  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/09-validacion-empleados.png
+  e8ca96286f  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/certification.json
+  734064b081  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-home-500.png
+  009f93a0ef  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-mapa-500.png
+  69d3d0a730  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-monitoreo-500.png
+  e6b6e22921  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-rutas-500.png
+  803e0539c4  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-servicios-500.png
+  beaf191794  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-home-500.png
+  f3d0a732b5  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-mapa-500.png
+  802bfd55a8  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-monitoreo-500.png
+  6bcaaba8ef  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-rutas-500.png
+  9d6de01b28  docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-servicios-500.png
+  d317103037  scripts/certifications/technical-alert-silence-browser-local.js
+  bd98bac904  scripts/certifications/technical-alert-silence-browser-qa.js
+
+== DISTINTAS ==
+
+  apps/web/app/dashboard/talento-humano/empleados/page.tsx
+    HEAD ............. b27b58d6e4a4d7e0016307d24501d6b09f32d2b0
+    origin/develop ... 3174ab9825f4a28563dd00396144431e6f4db8fa
+    // unica ruta de codigo distinta. El hunkeo de este corte es el mismo en las dos patas:
+    hunkeo sobre la base de main (f207140d..HEAD): ............ 44/28 lineas agregadas/retiradas
+    hunkeo del corte certificado (e3d82190..c9c1b2fa): ... 44/28 lineas agregadas/retiradas
+    lineas del hunkeo presentes solo en la pata de develop: 0
+    lineas del hunkeo presentes solo en la pata de main:    0
+    lineas de contenido que solo estan en origin/develop:   21
+    lineas de contenido que solo estan en el candidato:     0
+    // las lineas propias de develop son el maestro de bancos (otro frente), no de este corte:
+      -develop-only| bank_code?: string;
+      -develop-only| bank_entity_name?: string;
+      -develop-only| bank_account_code?: string;
+      -develop-only| bank_code: string;
+      -develop-only| bank_account_code: string;
+      -develop-only| const [banks, setBanks] = useState<{ code: string; name: string; active: boolean }[]>([]);
+      -develop-only| const [bankError, setBankError] = useState("");
+      -develop-only| bank_code: "", bank_account_code: "",
+      -develop-only| bank_code: "", bank_account_code: "",
+      -develop-only| try { setBanks(await api("/api/v1/talento-humano/bancos", { cache: "no-store" })); setBankError(""); }
+      -develop-only| catch { setBankError("No se pudo cargar el maestro de bancos. Recarga para modificar los datos bancarios."); }
+      -develop-only| bank_code: employee.metadata?.bank_code || "",
+      -develop-only| bank_account_code: employee.metadata?.bank_account_code || "",
+      -develop-only| ...(!bankError ? { bank_code: form.bank_code, bank_account_code: form.bank_account_code } : {}),
+      -develop-only| <section className="md:col-span-2 rounded-md border border-line p-3">
+      -develop-only| <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">Datos bancarios</h3><Link className="text-sm font-semibold text-apex" href="/dashboard/talento-humano/bancos">Administ
+      -develop-only| {bankError ? <p role="alert" className="mb-2 text-sm text-rose-700">{bankError}</p> : null}
+      -develop-only| <div className="grid gap-3 md:grid-cols-2">
+      -develop-only| <label className="text-sm">Banco<select aria-label="Banco del empleado" disabled={mode === "view" || Boolean(bankError)} className="mt-1 h-10 w-full rounded-md border border-line px-3" value={form.bank_code} onChange={ev
+      -develop-only| <label className="text-sm">Cuenta bancaria<input aria-label="Cuenta bancaria del empleado" type="text" maxLength={100} readOnly={mode === "view" || Boolean(bankError)} className="mt-1 h-10 w-full rounded-md border border
+      -develop-only| </section>
+
+  docs/qa/certifications/technical-alert-silence-seguencia-20261119.md
+    HEAD ............. 1cae79c738c6477f2c15b23ad281571e0aba0b95
+    origin/develop ... 7849571cfcc7f4c7fb6c45b5dca3fe1c1be0642f
+    // existe en develop en una version anterior: es la nota de la secuela, ampliada con la columna del despues en QA (§2.1) y el buzon encendido (§2.2), escrita despues de la fusion 7e02008a y publicada solo en desarrollo.
+
+  docs/qa/evidence/technical-alert-silence-20261119/qa-buzon-sonda.txt
+    HEAD ............. b0012b752a2a629987139c3140ae9ccc76115038
+    origin/develop ... (la ruta no existe en origin/develop)
+    // ruta nueva posterior a la fusion de develop: evidencia del despues en QA y de la sonda del buzon, versionada en desarrollo. No hay nada que equivaler en el arbol desplegado.
+
+  docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json
+    HEAD ............. 321b9bb6e22fafad846db66cee473a8c58147b31
+    origin/develop ... (la ruta no existe en origin/develop)
+    // ruta nueva posterior a la fusion de develop: evidencia del despues en QA y de la sonda del buzon, versionada en desarrollo. No hay nada que equivaler en el arbol desplegado.
+
+  docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/qa-sesion-final.png
+    HEAD ............. c3f2f1451746e52f1c323ba46154f6f8aaa2d7e4
+    origin/develop ... (la ruta no existe en origin/develop)
+    // ruta nueva posterior a la fusion de develop: evidencia del despues en QA y de la sonda del buzon, versionada en desarrollo. No hay nada que equivaler en el arbol desplegado.
+
+  docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/qa-validacion-empleados.png
+    HEAD ............. 2c14baf0ccb0386b02531bc10ab17758dc4d78cb
+    origin/develop ... (la ruta no existe en origin/develop)
+    // ruta nueva posterior a la fusion de develop: evidencia del despues en QA y de la sonda del buzon, versionada en desarrollo. No hay nada que equivaler en el arbol desplegado.
+
+== CONTROL DE CONTAMINACION (los dos sentidos) ==
+Se compara el inventario de este candidato con la tajada que QA certifico en develop (e3d82190..origin/develop).
+La tajada certificada en develop tiene 67 rutas y este candidato 69.
+
+  En develop y NO en este candidato (2) — son el contrato de la puerta a develop, que no viaja a main:
+    - docs/qa/manifests/technical-alert-silence-seq-20261119-preqa.json
+    - docs/qa/manifests/technical-alert-silence-seq-20261119-scope.json
+
+  En este candidato y NO en la tajada de develop (4) — evidencia del despues en QA y del buzon, escrita despues de la fusion 7e02008a:
+    + docs/qa/evidence/technical-alert-silence-20261119/qa-buzon-sonda.txt
+    + docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json
+    + docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/qa-sesion-final.png
+    + docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/qa-validacion-empleados.png
+
+  Ninguna pantalla, módulo, migración o ajuste de otros frentes entra por esta puerta: la superficie funcional es la misma.
+
