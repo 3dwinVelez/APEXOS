@@ -28,7 +28,6 @@ type TerminationDocument = {
 };
 type Loan = { id: number; concept_name: string; mode: string; status: string; balance_amount: number };
 type Authorization = { id: number; support: string; benefits_percent: number; legal_support: string };
-type Balance = { id: number; employee_id: number; employee_name?: string; concept_code: string; period_key: string; accrued_amount: number; paid_amount: number; balance_amount: number };
 
 const today = new Date().toISOString().slice(0, 10);
 const contractLabels: Record<string, string> = { indefinite: "Indefinido", fixed: "Término fijo", obra_labor: "Obra o labor" };
@@ -54,7 +53,6 @@ export default function EmployeeTerminationLiquidationPage() {
   const documentQuery = employeeQuery.toUpperCase().replace(/[^0-9A-Z]/g, "");
   const searchResult = employeeSearch?.query === employeeQuery ? employeeSearch : undefined;
   const [documents, setDocuments] = useState<TerminationDocument[]>([]);
-  const [balances, setBalances] = useState<Balance[]>([]);
   const [preview, setPreview] = useState<TerminationDocument | null>(null);
   const [selected, setSelected] = useState<TerminationDocument | null>(null);
   const [busy, setBusy] = useState(false);
@@ -66,12 +64,8 @@ export default function EmployeeTerminationLiquidationPage() {
   const [form, setForm] = useState({ employee_id: "", termination_date: today, termination_reason: "retiro_voluntario", contract_type: "indefinite", pending_start: "", recalculate: false, mark_inactive: false });
 
   async function load() {
-    const [documentRows, balanceRows] = await Promise.all([
-      api<TerminationDocument[]>("/api/v1/talento-humano/liquidacion-trabajador/documentos?limit=200", { cache: "no-store" }).catch(() => []),
-      api<Balance[]>("/api/v1/talento-humano/liquidacion-trabajador/saldos?limit=500", { cache: "no-store" }).catch(() => [])
-    ]);
+    const documentRows = await api<TerminationDocument[]>("/api/v1/talento-humano/liquidacion-trabajador/documentos?limit=200", { cache: "no-store" }).catch(() => []);
     setDocuments(documentRows);
-    setBalances(balanceRows);
   }
 
   useEffect(() => {
@@ -130,7 +124,6 @@ export default function EmployeeTerminationLiquidationPage() {
     });
   }
 
-  const employeeBalances = balances.filter((row) => String(row.employee_id) === String(form.employee_id));
 
   function payload() {
     return {
@@ -298,7 +291,7 @@ export default function EmployeeTerminationLiquidationPage() {
       <TerminationDayReviews employeeId={Number(form.employee_id) || null} terminationDate={form.termination_date} pendingStart={form.pending_start} refresh={reviewRefresh} disabled={busy || manualBusy} onBusy={setReviewBusy} onPendingChange={setPendingDays} onChanged={() => { setPreview(null); setSelected(null); }} />
       <TerminationManualAdjustments employeeId={Number(form.employee_id) || null} terminationDate={form.termination_date} pendingStart={form.pending_start} disabled={busy || reviewBusy} onBusy={setManualBusy} onChanged={() => { setPreview(null); setSelected(null); setPendingDays(null); setReviewRefresh(value => value + 1); }} />
 
-      <section className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
+      <section>
         <div className="rounded-md border border-line bg-white">
           <div className="flex items-center justify-between border-b border-line p-4"><h2 className="text-base font-semibold">Documentos</h2><span className="text-sm text-neutral-500">{rows.length} registros</span></div>
           <div className="overflow-x-auto">
@@ -323,18 +316,6 @@ export default function EmployeeTerminationLiquidationPage() {
           </div>
         </div>
 
-        <div className="rounded-md border border-line bg-white">
-          <div className="border-b border-line p-4"><h2 className="text-base font-semibold">Saldos de prestaciones</h2></div>
-          <div className="max-h-[360px] overflow-auto">
-            {employeeBalances.length ? employeeBalances.map((row) => (
-              <div className="border-b border-line/70 p-3 text-sm" key={row.id}>
-                <p className="font-semibold">{row.concept_code}</p>
-                <p className="text-neutral-600">{row.period_key}</p>
-                <div className="mt-1 grid grid-cols-3 gap-2 text-xs"><span>Causado {money(row.accrued_amount)}</span><span>Pagado {money(row.paid_amount)}</span><span>Saldo {money(row.balance_amount)}</span></div>
-              </div>
-            )) : <p className="p-4 text-sm text-neutral-500">Selecciona un empleado para ver saldos.</p>}
-          </div>
-        </div>
       </section>
 
       {selected ? (
