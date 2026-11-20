@@ -96,9 +96,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.70.0",
+      "version": "2.71.0",
       "updated_at": "2026-11-20",
-      "sha256": "ec2d7b47f8122e9dbff43941f76f354942d2d7d0a7c1d9c1ce32a42e6e359d70",
+      "sha256": "29b087bf818e416144354de33b243dcfa9ed4c287dc31bcc9cd69ad94d1eb3ed",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -155,7 +155,8 @@
         "brief-declara-el-estado-actual-del-mundo",
         "cierre-de-corte-con-run-del-pipeline",
         "excepcion-contada-en-filas",
-        "manifiesto-una-sola-fuente-de-filas"
+        "manifiesto-una-sola-fuente-de-filas",
+        "pendiente-con-inventario-barrido"
       ]
     },
     {
