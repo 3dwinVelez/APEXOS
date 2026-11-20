@@ -1,0 +1,106 @@
+{
+  "change_id": "hr-termination-receipt-pdf-20261119",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "efe15d7e22dc506fadcdf2a8e7b285ea1607b2c4",
+  "commit": "01aef6ae160730538d9fd892f70f8a26a510b3c5",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-termination-receipt-pdf-20261119-preqa.json",
+        "../certifications/hr-termination-receipt-pdf-20261119.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-termination-receipt-pdf-20261119-preqa.json",
+        "../certifications/hr-termination-receipt-pdf-20261119.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-termination-receipt-pdf-20261119-preqa.json",
+        "../certifications/hr-termination-receipt-pdf-20261119.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-termination-receipt-pdf-20261119-preqa.json",
+        "../certifications/hr-termination-receipt-pdf-20261119.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-termination-receipt-pdf-20261119-preqa.json",
+        "../certifications/hr-termination-receipt-pdf-20261119.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-termination-day-review-local.js",
+    "evidence": [
+      "hr-termination-receipt-pdf-20261119-preqa.json",
+      "../certifications/hr-termination-receipt-pdf-20261119.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-termination-day-review-local.js",
+    "evidence": [
+      "hr-termination-receipt-pdf-20261119-preqa.json",
+      "../certifications/hr-termination-receipt-pdf-20261119.md"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario: despliega a qa",
+    "approved_at": "2026-11-20T02:34:46.214Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "functional_commit": "01aef6ae160730538d9fd892f70f8a26a510b3c5",
+    "certification": {
+      "environment": "LOCAL",
+      "status": "passed",
+      "started_at": "2026-11-20T02:33:11.189Z",
+      "checks": [
+        "contract date precedes first punch: preview flags one day and final write is blocked without mutations",
+        "permissions, tenant, observation, eligibility and generic adjustment bypass are enforced",
+        "paid approval adds one daily salary once, retries deduplicate and unpaid correction keeps full audit",
+        "later punch supersedes review without double salary; ordinary payroll consumes same decisions",
+        "browser previews provisional salary, justifies induction, reloads, saves and reopens audited retirement"
+      ],
+      "finished_at": "2026-11-20T02:34:36.813Z"
+    },
+    "unit_regression": {
+      "passed": 65,
+      "failed": 0
+    },
+    "backend_syntax": "passed",
+    "isolation": {
+      "source_database_modified": false,
+      "unexpected_5xx": []
+    },
+    "browser_pdf_checks": [
+      "Actual PDF button and binary HTTP response",
+      "Independent pypdf extraction and Poppler render",
+      "Identification, monthly salary and untruncated start/end dates",
+      "All four paid benefits with saved amounts and matching net",
+      "Other tenant 404 and unauthorized role 403"
+    ],
+    "pagination": "Four PDF tests cover 26 concepts across three pages without truncation and historical salary metadata.",
+    "scope_note": "Presentation-only PDF correction and employee snapshot fields. Existing payments are not recalculated. Ordinary payroll keeps provision filtering. No migrations or frontend changes."
+  }
+}

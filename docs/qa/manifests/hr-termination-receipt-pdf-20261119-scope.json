@@ -1,0 +1,110 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-termination-receipt-pdf-20261119",
+  "base_commits": {
+    "develop": "efe15d7e22dc506fadcdf2a8e7b285ea1607b2c4"
+  },
+  "target_head": "efe15d7e22dc506fadcdf2a8e7b285ea1607b2c4",
+  "certified_commit": "01aef6ae160730538d9fd892f70f8a26a510b3c5",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "01aef6ae160730538d9fd892f70f8a26a510b3c5",
+    "implementation_commit": "3de26190"
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/payrollReceiptPdf.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-payroll-receipt-pdf.test.js",
+    "apps/api/test/hr-workday-novelties-contract.test.js",
+    "docs/qa/certifications/hr-termination-receipt-pdf-20261119.md",
+    "scripts/certifications/hr-termination-day-review-local.js"
+  ],
+  "change_intent": {
+    "summary": "Correct settlement PDF identity, monthly salary, full dates and title; show all paid benefits and paginate concepts while preserving existing net and ordinary payroll filtering.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/payrollReceiptPdf.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-payroll-receipt-pdf.test.js",
+    "apps/api/test/hr-workday-novelties-contract.test.js",
+    "docs/qa/certifications/hr-termination-receipt-pdf-20261119.md",
+    "scripts/certifications/hr-termination-day-review-local.js",
+    "docs/qa/manifests/hr-termination-receipt-pdf-20261119-preqa.json",
+    "docs/qa/manifests/hr-termination-receipt-pdf-20261119-scope.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/payrollReceiptPdf.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-receipt-pdf.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-workday-novelties-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-termination-receipt-pdf-20261119.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-termination-day-review-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-termination-receipt-pdf-20261119-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-termination-receipt-pdf-20261119-scope.json"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Employee settlement PDF and historical employee data",
+      "status": "passed",
+      "evidence": [
+        "hr-termination-receipt-pdf-20261119-preqa.json",
+        "../certifications/hr-termination-receipt-pdf-20261119.md"
+      ]
+    },
+    {
+      "name": "Paid benefits itemization without duplicate payment",
+      "status": "passed",
+      "evidence": [
+        "hr-termination-receipt-pdf-20261119-preqa.json",
+        "../certifications/hr-termination-receipt-pdf-20261119.md"
+      ]
+    },
+    {
+      "name": "Payroll salary review preview save and reload",
+      "status": "passed",
+      "evidence": [
+        "hr-termination-receipt-pdf-20261119-preqa.json",
+        "../certifications/hr-termination-receipt-pdf-20261119.md"
+      ]
+    },
+    {
+      "name": "RBAC and tenant isolation",
+      "status": "passed",
+      "evidence": [
+        "hr-termination-receipt-pdf-20261119-preqa.json",
+        "../certifications/hr-termination-receipt-pdf-20261119.md"
+      ]
+    }
+  ]
+}

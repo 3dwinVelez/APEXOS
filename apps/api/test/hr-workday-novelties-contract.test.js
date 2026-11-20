@@ -407,7 +407,7 @@ test("payroll liquidation creates employee documents, adjustments and pdf vouche
   assert.match(source, /ordinary_night_minutes/);
   assert.match(source, /RECARGO_NOCTURNO/);
   assert.match(source, /simplePayrollPdf/);
-  assert.match(source, /Firma empleado/);
+  assert.match(fs.readFileSync(path.join(__dirname, '../src/modules/hr/payrollReceiptPdf.js'), 'utf8'), /Firma empleado/);
   assert.match(routes, /\/talento-humano\/nomina\/preview/);
   assert.match(routes, /\/talento-humano\/nomina\/validar/);
   assert.match(routes, /\/talento-humano\/nomina\/liquidaciones\/:id\/pdf/);
