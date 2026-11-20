@@ -40,7 +40,7 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
   await check('preview links three complete days without stored workdays and has no payroll/workday writes',async()=>{
     assert.equal(await db.processedWorkday.count({where:{tenant_id:own.tenant.id}}),0);
     const r=await preview();assert.equal(r.status,200,JSON.stringify(r.body));expected=r.body.documents.find(row=>row.employee_id===own.employee.id);
-    assert.equal(expected.days_worked,3);assert.equal(expected.ordinary_hours,24);assert.equal(expected.source_summary.time_punch_workdays,3);assert.ok(expected.lines.some(line=>line.code==='SALARIO_BASICO'&&line.amount>0));
+    assert.equal(expected.days_worked,3);assert.equal(expected.ordinary_hours,24);assert.equal(expected.source_summary.workdays,3);assert.ok(expected.lines.some(line=>line.code==='SALARIO_BASICO'&&line.amount>0));
     assert.equal(await db.processedWorkday.count({where:{tenant_id:own.tenant.id}}),0);assert.equal(await db.payroll.count({where:{tenant_id:own.tenant.id}}),0);
     assert.deepEqual((await preview()).body.documents,r.body.documents);
   });
@@ -109,7 +109,7 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
   await check('approved day correction replaces the raw day without duplicate pay',async()=>{
     const r=await call('/talento-humano/nomina/ajustes',token,'POST',{employee_id:own.employee.id,period_key:input.period_key,adjustment_type:'jornada_ordinaria',concept_code:'JORNADA_ORDINARIA',work_date:'2026-11-05',minutes:120,description:'QA approved correction'});
     assert.equal(r.status,200,JSON.stringify(r.body));
-    const row=(await preview()).body.documents[0];assert.equal(row.days_worked,3);assert.equal(row.ordinary_hours,18);assert.equal(row.source_summary.time_punch_workdays,2);
+    const row=(await preview()).body.documents[0];assert.equal(row.days_worked,3);assert.equal(row.ordinary_hours,18);assert.equal(row.source_summary.workdays,3);
   });
   result.status='passed';
 } catch(error) {result.status='failed';result.error=error.message;console.error(error.stack);process.exitCode=1;} finally {result.finished_at=new Date().toISOString();if(output)fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n');if(app)await app.close();await db.$disconnect();process.exit(process.exitCode||0);}})();
