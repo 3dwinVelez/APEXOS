@@ -1,0 +1,109 @@
+{
+  "change_id": "hr-web-four-selfies-sync-20261120",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "7e02008a555b1d7021b272d785ece7af8de7f83d",
+  "commit": "bd94354d6a99432c329950913ee7c8fe07136bde",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-web-four-selfies-sync-20261120-preqa.json",
+        "../certifications/hr-cross-device-sync-20261120.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-web-four-selfies-sync-20261120-preqa.json",
+        "../certifications/hr-cross-device-sync-20261120.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-web-four-selfies-sync-20261120-preqa.json",
+        "../certifications/hr-cross-device-sync-20261120.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-web-four-selfies-sync-20261120-preqa.json",
+        "../certifications/hr-cross-device-sync-20261120.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-web-four-selfies-sync-20261120-preqa.json",
+        "../certifications/hr-cross-device-sync-20261120.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-cross-device-sync-local.js",
+    "evidence": [
+      "hr-web-four-selfies-sync-20261120-preqa.json",
+      "../certifications/hr-cross-device-sync-20261120.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-cross-device-sync-local.js",
+    "evidence": [
+      "hr-web-four-selfies-sync-20261120-preqa.json",
+      "../certifications/hr-cross-device-sync-20261120.md"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario: dejemola asi que pida selfie entonces y pide fotos de almuerzo y retorno cuando termines despliega a qa",
+    "approved_at": "2026-11-20T18:17:26.932Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "functional_commit": "bd94354d6a99432c329950913ee7c8fe07136bde",
+    "certification": {
+      "environment": "LOCAL",
+      "status": "passed",
+      "started_at": "2026-11-20T18:14:59.638Z",
+      "checks": [
+        "self attendance is authenticated and tenant scoped",
+        "browser sees other-device entry by polling, lunch by focus and stale-click preflight without duplicate writes",
+        "final server sequence persists once and other tenants see none of it",
+        "web requires a separate selfie on all four steps; server rejects missing or invalid photos without writes"
+      ],
+      "finished_at": "2026-11-20T18:16:42.071Z"
+    },
+    "unit_regression": {
+      "passed": 123,
+      "failed": 0
+    },
+    "typecheck": "passed: exact candidate marking page, helper and camera dependencies",
+    "lint": "passed: zero errors or warnings",
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1795198478075",
+      "source_database_modified": false,
+      "fixture_schema_hunks": [
+        "20261016123000_sedes_replace_origins: sections 1-2 only",
+        "20260919110000_time_route_kind_descanso"
+      ],
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-20T18:16:42.184Z"
+    },
+    "native_identity": "Existing signed-device protocol unchanged; original mobile identity regression suite passed. No actual APK binary certification.",
+    "source": "Operational TimePunch API. No database migrations; no production changes.",
+    "photo_cases": "All four web steps: missing/invalid photo rejected with zero writes, valid separate selfie persisted and closed state survives reload."
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-web-four-selfies-sync-20261120",
+  "base_commits": {
+    "develop": "7e02008a555b1d7021b272d785ece7af8de7f83d"
+  },
+  "target_head": "7e02008a555b1d7021b272d785ece7af8de7f83d",
+  "certified_commit": "bd94354d6a99432c329950913ee7c8fe07136bde",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "bd94354d6a99432c329950913ee7c8fe07136bde",
+    "implementation_commit": "7215235ec590e5cac81992c324402b6947351b40"
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-web-punch-selfie.test.js",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/lib/hrAttendanceState.ts",
+    "apps/web/test/hr-attendance-state.test.mjs",
+    "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+    "docs/qa/certifications/hr-cross-device-sync-20261120.md",
+    "scripts/certifications/hr-cross-device-sync-local.js",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js"
+  ],
+  "change_intent": {
+    "summary": "Synchronize operational attendance across clients and require a separate selfie for all four web punches, including lunch and return.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-web-punch-selfie.test.js",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/lib/hrAttendanceState.ts",
+    "apps/web/test/hr-attendance-state.test.mjs",
+    "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+    "docs/qa/certifications/hr-cross-device-sync-20261120.md",
+    "scripts/certifications/hr-cross-device-sync-local.js",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "docs/qa/manifests/hr-web-four-selfies-sync-20261120-preqa.json",
+    "docs/qa/manifests/hr-web-four-selfies-sync-20261120-scope.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/webPunchSelfie.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-web-punch-selfie.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/hrAttendanceState.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-attendance-state.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-cross-device-sync-20261120.md"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-cross-device-sync-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-web-four-selfies-sync-20261120-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-web-four-selfies-sync-20261120-scope.json"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Cross-client attendance refresh and stale-click duplicate prevention",
+      "status": "passed",
+      "evidence": [
+        "hr-web-four-selfies-sync-20261120-preqa.json",
+        "../certifications/hr-cross-device-sync-20261120.md"
+      ]
+    },
+    {
+      "name": "Separate web selfie persisted for all four steps and missing/invalid rejection",
+      "status": "passed",
+      "evidence": [
+        "hr-web-four-selfies-sync-20261120-preqa.json",
+        "../certifications/hr-cross-device-sync-20261120.md"
+      ]
+    },
+    {
+      "name": "Offline queue recovery with photo and closed-state reload",
+      "status": "passed",
+      "evidence": [
+        "hr-web-four-selfies-sync-20261120-preqa.json",
+        "../certifications/hr-cross-device-sync-20261120.md"
+      ]
+    },
+    {
+      "name": "Authentication and tenant isolation",
+      "status": "passed",
+      "evidence": [
+        "hr-web-four-selfies-sync-20261120-preqa.json",
+        "../certifications/hr-cross-device-sync-20261120.md"
+      ]
+    }
+  ]
+}
