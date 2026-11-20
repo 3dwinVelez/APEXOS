@@ -1,0 +1,9 @@
+# suite web completa sobre el arbol del candidato (develop e3d82190 + corte c9c1b2fa), invocada desde apps/web
+# fecha: 2026-11-20T04:34:55Z
+
+not ok 242 - la portada expone como acceso cada pantalla del modulo, incluida nomina
+not ok 703 - react y react-dom/server salen de la misma instalacion de node_modules
+# tests 836
+# pass 834
+# fail 2
+# skipped 0

@@ -1,0 +1,101 @@
+{
+  "change_id": "technical-alert-silence-seq-20261119",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "promotion_branch": "codex/qa-alertsilence-seq-develop-20261120",
+  "commit": "c9c1b2fa",
+  "target_head": "e3d82190",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/technical-alert-silence-seguencia-20261119.md",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/certification.json",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/09-validacion-empleados.png"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/technical-alert-silence-seguencia-20261119.md",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/certification.json",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/06-sesion-vencida.png",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/07-login-aviso-sesion.png"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/technical-alert-silence-seguencia-20261119.md",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/suite-web.txt",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/suite-api-apuntada.txt",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/equivalencia-candidato.txt"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/technical-alert-silence-seguencia-20261119.md",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/certification.json",
+        "../evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/technical-alert-silence-seguencia-20261119.md",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/suite-web.txt",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/suite-api-apuntada.txt",
+        "../../../apps/api/test/telemetry-client-logs-public.test.js"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-local.js",
+    "evidence": [
+      "../evidence/technical-alert-silence-20261119/candidato-develop/certification.json",
+      "../evidence/technical-alert-silence-20261119/medicion-marcador/candidato-develop.json",
+      "../certifications/technical-alert-silence-seguencia-20261119.md"
+    ],
+    "controls": 78,
+    "passed": 78,
+    "failed": 0,
+    "build_id": "k4ilir5kgOYCDKebn_aA7",
+    "substrate": "next start (produccion, build --webpack del worktree del candidato) con la API apagada"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-local.js",
+    "evidence": [
+      "../certifications/technical-alert-silence-seguencia-20261119.md",
+      "../evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/certification.json",
+      "../evidence/technical-alert-silence-20261119/candidato-develop/suite-web.txt"
+    ],
+    "basis": "El mismo certificador barre la tormenta de 500, el 429, la red cortada y la sesion vencida sobre cinco pantallas en los dos temas, con control positivo de ventanilla nativa (ARNES:), control de contraste del marcador y la validacion de Empleados ejercitada en navegador; y se corrio identica sobre el build de desarrollo (78/78), asi que el verde no depende de la rama servida. Las suites de contratos web (17/17) y API apuntada (29/29) se corrieron sobre el arbol del candidato."
+  },
+  "validation_summary": {
+    "certified_application_commit": "c9c1b2fa",
+    "candidate_tip": "punta de codex/qa-alertsilence-seq-develop-20261120 (c9c1b2fa + 7b466bcb + 8355ca5b + estos manifiestos)",
+    "baseline_preserved": "e3d82190",
+    "production_build": "passed",
+    "build_id": "k4ilir5kgOYCDKebn_aA7",
+    "browser_certification": "78/78",
+    "web_suite": "834/836 (dos rojos atribuidos por blob identico a origin/develop)",
+    "api_suites": "29/29 apuntadas; suite API completa no cierra sin base de datos local arriba (deuda de medicion declarada)",
+    "evidence_policy": "La evidencia del navegador viaja revisada en docs/qa/evidence/technical-alert-silence-20261119; los logs de next start quedan fuera del repositorio y las identidades de la corrida son sinteticas."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-19T23:59:00-05:00",
+    "instruction": "procede con mi autorizacion los pendientes",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo completo desarrollo -> develop -> main con sus compuertas. No otorga force push, reescritura de historia, borrado de ramas, cambios de infraestructura o secretos, ni migraciones remotas; la variable APEXOS_TELEMETRY_TENANT_ID en Railway queda pendiente de una autorizacion propia."
+  }
+}
