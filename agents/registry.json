@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.21.0",
-      "updated_at": "2026-11-19",
-      "sha256": "3cc96448ee1c5a8a6a4a3474aa6fa8a9837c651b8eb365285617adbf354d7f8f",
+      "version": "2.22.0",
+      "updated_at": "2026-11-20",
+      "sha256": "42b6487e9b6df8500188d926071eaf0e4b4c1d9df5caedc969cb282af79529c6",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -88,7 +88,8 @@
         "evidencia-storage-antes-de-transaccion",
         "rango-timepunch-solo-por-lector-proyectado",
         "ingesta-publica-con-buzon-honesto",
-        "exencion-de-evidencia-con-contrato"
+        "exencion-de-evidencia-con-contrato",
+        "congestion-prisma-503-con-retry-after"
       ]
     },
     {
@@ -183,9 +184,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.38.0",
+      "version": "2.39.0",
       "updated_at": "2026-11-20",
-      "sha256": "69de68d7299dda0d759a4b72c0e70caaaebb0a1932771333144e5bd8859cef88",
+      "sha256": "52ed47adac03559b693d107c4872de63eded3673676365af4ffee757b7e32452",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -227,7 +228,8 @@
         "evidencia-desprendida-antes-de-reenviar",
         "pregunta-del-usuario-en-el-sitio-del-dato",
         "contrato-multilineo-sobre-crlf",
-        "lint-de-ci-como-compuerta-local"
+        "lint-de-ci-como-compuerta-local",
+        "route-api-mismo-contrato-de-pantalla"
       ]
     },
     {
@@ -306,9 +308,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.90.0",
+      "version": "2.91.0",
       "updated_at": "2026-11-20",
-      "sha256": "3dddd20bc3c1ab579f666dd6e5cf560e58164d8e4640fba7aeac13dd9faf90f2",
+      "sha256": "d3b79df4f0beb72c2a06ac1a0fd3d098dea8921801143b7fa81f4ceecec0b9b1",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -388,15 +390,16 @@
         "produccion-verificada-por-artefacto",
         "barrido-de-familia-con-autoverificacion",
         "sustrato-declara-el-incidente",
-        "rojo-heredado-se-clasifica-y-se-repara"
+        "rojo-heredado-se-clasifica-y-se-repara",
+        "rojo-atribuido-por-insumos"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.33.0",
-      "updated_at": "2026-11-19",
-      "sha256": "aeb53ca303f18ce7977df1c2b6f0434081921893cbf468dbaea4ad8336043055",
+      "version": "2.34.0",
+      "updated_at": "2026-11-20",
+      "sha256": "fdd7351237f1ff876bc1f69119eb4b8d463a8bf6da3ae757af67bfcb81e98a8f",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -432,7 +435,8 @@
         "almacen-privado-rutas-saneadas",
         "sonda-de-produccion-sin-contenido",
         "boca-anonima-sin-tenant-en-el-cuerpo",
-        "exencion-angosta-con-negativos"
+        "exencion-angosta-con-negativos",
+        "detalle-proveedor-no-va-en-el-cuerpo"
       ]
     },
     {

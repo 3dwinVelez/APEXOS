@@ -4,7 +4,7 @@
 - **Fecha**: `2026-11-19`
 - **Rama activa**: `desarrollo`
 - **Prompt crudo**: "procede con todos los cambios necesarios bajo mi autorizacion"
-- **Estado**: **acotación**. Este documento no implementa nada: deja medido qué hay que tocar, con qué evidencia y qué autorizaciones separadas pide cada pieza. La implementación abre con autorización explícita del dueño, causa por causa.
+- **Estado**: **acotación + ejecución parcial (2026-11-20)**. El documento abrió como acotación —dejó medido qué hay que tocar, con qué evidencia y qué autorizaciones separadas pide cada pieza— y el 2026-11-20 el dueño autorizó ejecutar causa por causa («procede con mi autorizacion los pendientes»). **Cerradas en `desarrollo`: A y D**, con sus contratos, su regresión de navegador (79/79) y su evidencia versionada. **En pie: B, E, F y C** —cada una con la autorización que le falta en §10, ninguna tocada a medias en este corte—.
 
 ## 1. Objetivo
 
@@ -16,13 +16,16 @@ Verificable al cierre de la fase: la distribución de fallos leída en `platform
 
 Inventario de la fase completa. Ninguna de estas rutas se toca en el commit que publica este brief.
 
-### Causa A — Prisma de congestión respondido como 500 genérico
+### Causa A — Prisma de congestión respondido como 500 genérico — **CERRADA el 2026-11-20**
 
 | Estado | Archivo | Qué cambia |
 |---|---|---|
 | `M` | `apps/api/src/core/api-error.js` | Mapear `P2024` (pool agotado), `P2028` (transacción muerta) y `P2034` (conflicto de escritura) a `503` con código propio y `Retry-After`, en vez de caer al 500 genérico del fondo. Hoy el mapper solo conoce `P2002` y `P2025`. |
-| `M` | `apps/api/src/modules/hr/service.js` | Retirar el set local `transientCodes` (línea ~3217) y las reescrituras puntuales de `P2028` cuando el mapper central cubra el caso; el try-lock con deadline (~1843-1868) se queda, es la parte buena. |
+| `M` | `apps/api/server.js` | **Añadido al inventario durante la ejecución:** el `setErrorHandler` respondía el `payload` y descartaba el presupuesto. Sin traducir `outcome.retryAfter` a la cabecera `retry-after`, el `503` decía «vuelve luego» pero no decía cuándo, y el reintento del cliente seguía a ciegas. |
+| ~~`M`~~ | `apps/api/src/modules/hr/service.js` | **No se toca, con motivo declarado.** El set local `transientCodes` (línea 3252) no era una reescritura puntual de `P2028` sino la política de reintento de la marcación: cinco intentos con backoff de 120 ms × intento y, solo al agotarlos, el `503` declarado `MARCACION_CONCURRENCIA_TEMPORAL`. Retirarlo no delega nada al mapper: convierte cada pico de congestión en un rebote al operario en el primer intento. Es la misma clase de pieza que el brief perdona en el try-lock con deadline (~1843-1868), y por eso se queda. El mapper central sí cubre hoy los caminos que no reintentan. |
 | `A` | `apps/api/test/api-error-congestion.test.js` | Contrato: cada código Prisma de congestión devuelve 503 + código + `retry_after`, y un error sin declarar sigue bajando a 500 sin filtrar detalle. |
+
+Ejecutado y medido el 2026-11-20: `node --test apps/api/test/api-error-congestion.test.js apps/api/test/api-error-mapping.test.js` → **11/11** (6 controles nuevos de congestión + los 5 del contrato previo, que sigue verde: la causa A no pudo deformar lo que ya se respondía bien). Falsiabilidad probada sobre el mapper anterior: con el código viejo el mismo test falla `500 ERROR_INTERNO`. El contrato de `server.js` se verifica sobre el archivo fuente (leer una cabecera exige levantar la app, y `build()` deja handles vivos).
 
 ### Causa B — `statement_timeout` de 5 s contra lecturas pesadas
 
@@ -57,6 +60,8 @@ Rescatada a Storage y leída por referencia en `2f8907af` (producto) — la escr
 | `M` | `apps/web/app/api/v1/services/orders/[id]/route.ts` | igual, líneas 107 y 130 |
 | `A` | `apps/web/test/technical-detail-not-leaked.test.mjs` | Ningún handler `app/api/**` devuelve en el cuerpo texto que empiece por `Supabase ` ni un `detail` crudo del proveedor. |
 
+Ejecutado y medido el 2026-11-20: los **7 sitios** de los **6 handlers** quedaron reparados. El detalle vive ahora en `console.error` del servidor y el cuerpo recibe «El servicio de datos no respondió como se esperaba. Intente de nuevo o avise a soporte.» El control es un barrido de familia, no un parche sitio por sitio: `node --test apps/web/test/technical-detail-not-leaked.test.mjs` → **5/5**, y recorre los 9 `route.ts` de `app/api/**` —los 6 reparados y los 3 que nunca filtraron—, así que un handler nuevo que filtre cae bajo el mismo control. Contraste probado dos veces: el arnés ve el `throw` y la respuesta en un fixture fabricado (2 de 2) y, devolviendo a mano una filtración real a `admin/roles/route.ts`, se puso rojo (3 fallos) antes de restaurar el archivo. `npm run lint` → 0 errores / 24 warnings (el baseline de la rama) y `npm --workspace apps/web run typecheck` → limpio.
+
 ### Causa E — límite de solicitudes por tenant
 
 | Estado | Archivo | Qué cambia |
@@ -73,10 +78,22 @@ Rescatada a Storage y leída por referencia en `2f8907af` (producto) — la escr
 
 Esta causa es la más delicada de la fase: toca la disponibilidad de los módulos que hoy dependen del respaldo. Entra después de A y D, nunca antes.
 
+### Estado de la fase (2026-11-20)
+
+Cerradas en `desarrollo`, dentro de la autorización de rama: **A** y **D**. En pie: **B** y **E** (piden medición en ambiente con datos realistas), **F** (decisión del dueño por impacto en disponibilidad: entra después de A y D, que ya lo están), **C** (deshabilitada sin autorización explícita e independiente: borra datos en la nube).
+
+La cuenta de la suite web que deja esta fase: baseline de la rama **861 tests / 856 pasan / 5 rojos** → después de A y D **867 / 863 / 4**. Los 4 que quedan son contratos de otros frentes, cada uno medido contra el código y ajeno a este diff (los archivos que leen están idénticos a `HEAD`):
+
+- `transport-master-access` y `transport-vehicle-master-catalogs`: **el contrato está viejo, no la capacidad.** La ficha de vehículo sí condiciona la lectura de flota a `canReadHr` (`app/dashboard/transporte/page.tsx:347`) y sí pide la estructura contable (`:332`), pero el test exige la forma textual `access.canReadHr ? api<Employee[]>` (hoy es un bloque `if`) y `api<OrgTree>("…vehicle-accounting-structure")` con paréntesis cerrado (hoy lleva `{ cache: "no-store" }`, añadido por el frente de latencia). Dos cadenas que el producto superó.
+- `command-palette-module-functions`: `/dashboard/contabilidad/pyg/ampliado` tiene página pero ninguna entrada `fn-` en `lib/moduleFunctions.ts`, así que no se llega desde el centro de comandos. Falta de registro, no de arnés.
+- `accounting-pyg-interactive`: `components/accounting/AccountingPygBudget.tsx` no contiene `/api/v1/accounting/organization-tree`. Aquí hace falta abrir el frente de Contabilidad para saber si el editor de presupuesto dejó de necesitar la cascada o si el acceso a la estructura se cayó de verdad; no se resuelve desde este corte.
+
+Repararlos es tocar Transporte, Contabilidad y el registro del portafolio: un merge de rama completa disfrazado, que la gobernanza prohibe en un corte de `api-core` + `web-api-handlers`. Quedan declarados con su frente responsable.
+
 ### Lo que ya está cerrado (no reabrir)
 
 - **Telemetría sin sesión**: `apps/api/src/modules/admin/public-routes.js` (`POST /api/v1/public/telemetry/client-logs`, 202 honesto, sin tenant en el cuerpo) y `apps/web/lib/api.ts` (`reportClientFailure`) en `desarrollo` desde esta intervención. La variable del buzón **ya está puesta y medida** (§10): QA `e8fac747-…` (Empresa Demo APEX-OS, `docs/qa/certifications/technical-alert-silence-seguencia-20261119.md:54`) y Producción `52db0658-…` (APEXOS Platform, `docs/qa/evidence/technical-alert-silence-20261119/prod-20261120/lectura.txt:21`). Nunca el tenant de un cliente real.
-- **Ventanillas de validación de Talento Humano → Empleados**: los ocho `window.alert` son mensajes en línea del campo. ~~Quedan declarados, sin cambiar: un `window.confirm` (restablecer huella, `page.tsx:852`) y un `window.prompt` (fecha de cierre de afiliación, `page.tsx:549`)~~ **Convertidos el 2026-11-20** (detalle en la pregunta contestada de §9): la pantalla quedó en **cero ventanillas nativas**, medido por contrato con control de contraste y sobre el binario del propio corte (`docs/qa/evidence/technical-alert-silence-20261119/cero-ventanillas-empleados/`, 79/79).
+- **Ventanillas de validación de Talento Humano → Empleados**: los ocho `window.alert` son mensajes en línea del campo. ~~Quedan declarados, sin cambiar: un `window.confirm` (restablecer huella, `page.tsx:852`) y un `window.prompt` (fecha de cierre de afiliación, `page.tsx:549`)~~ **Convertidos el 2026-11-20** (detalle en la pregunta contestada de §9): la pantalla quedó en **cero ventanillas nativas**, medido por contrato con control de contraste y sobre el binario del propio corte (`docs/qa/evidence/technical-alert-silence-20261119/cero-ventanillas-empleados/`, 79/79). **Cabo suelto cerrado también el 2026-11-20:** `apps/web/test/hr-employee-biometric-reset.test.mjs` seguía exigiendo `window.confirm(` y venía poniendo roja la suite desde la conversión —un contrato que pedía la ventanilla que el producto ya no abre—. Ahora mide lo que sí ocurre: dos clics en el panel (`setArmed(true)` → «Confirmar restablecimiento», `Cancelar` desarma), la ruta `DELETE` del API y que el panel se remonte por empleado con `key={String(selected.id)}` (`page.tsx:675`); sin ese `key` el disparador quedaría armado sobre la ficha equivocada y el segundo clic borraría el registro del empleado incorrecto. 4/4 verde, con las dos comprobaciones nuevas vistas en rojo antes de restaurar (quitar el `key` y reintroducir el `confirm`).
 - **El lint de la rama**, condición heredada y no causa de esta fase: `desarrollo` venía con tres pushes rojos en `Lint & TypeCheck` por un único `react/jsx-key` en el botón que la escalera de `reportes/page.tsx:1139` genera con `missingPunches.map()` (nacido en `450bd4d6`, el 2026-11-19). Reparado y medido en `16fb4d1d`: `eslint` de `apps/web` pasó de `1 error`/exit 1 a `0 errores`/exit 0 y el run `44689953380` salió **success**. Lo que explica que sobreviviera tres cortes no es el error sino que **ninguna compuerta local invoca `eslint`** (`check:local` solo mira `.env` y Docker, `qa:full-validation` no lo incluye y no hay `pre-push`) y el pipeline no formaba parte del cierre.
 
 ### Módulos (`change_intent.modules`)
@@ -108,18 +125,19 @@ Esta causa es la más delicada de la fase: toca la disponibilidad de los módulo
 
 ## 5. Criterios de aceptación
 
-1. `node --test apps/api/test/api-error-congestion.test.js` → `P2024`, `P2028` y `P2034` responden `503` con código propio y `retry_after`; un error sin declarar sigue siendo `500` sin detalle técnico en el cuerpo.
-2. `npm run certify:technical-alerts-silence:local` → sigue verde (ninguna causa nueva puede reintroducir una ventana) y `native_dialogs` queda vacío en la evidencia.
-3. `node --test apps/web/test/technical-detail-not-leaked.test.mjs` → ningún handler `app/api/**` devuelve `Supabase ` en el cuerpo; el control positivo del arnés demuestra que puede ponerse rojo.
-4. Lectura de `platform_logs` (autenticada, ambiente de prueba, nunca Producción) antes/después: la cuota de `ERROR_INTERNO` en rutas de HR baja y aparece en su lugar el código de congestión. Sin acceso a datos de clientes reales.
-5. `npm run test:api` y `npm run test:web` en verde con la misma cuenta de pasadas que el baseline de la rama.
-6. Causa C: `node scripts/hr-purge-rescued-base64.js --dry-run` (o su modo verificación) reporta 0 residuos en el ambiente local certificado, con evidencia versionada.
+1. `node --test apps/api/test/api-error-congestion.test.js` → `P2024`, `P2028` y `P2034` responden `503` con código propio y `retry_after`; un error sin declarar sigue siendo `500` sin detalle técnico en el cuerpo. **Cumplido el 2026-11-20: 11/11** con el contrato previo de mapeo, y falsabilidad vista (con el mapper anterior, el test nuevo falla `500 ERROR_INTERNO`).
+2. `npm run certify:technical-alerts-silence:local` → sigue verde (ninguna causa nueva puede reintroducir una ventana) y `native_dialogs` queda vacío en la evidencia. **Cumplido el 2026-11-20: 79/79** con `native_dialogs: []`, sobre el binario del corte (`BUILD_ID _I5ZfzKrKtY0K35ArePQD`), en `docs/qa/evidence/fase-3-causas-ad-20261120/`.
+3. `node --test apps/web/test/technical-detail-not-leaked.test.mjs` → ningún handler `app/api/**` devuelve `Supabase ` en el cuerpo; el control positivo del arnés demuestra que puede ponerse rojo. **Cumplido el 2026-11-20: 5/5** (fixture 2/2 y filtración real devuelta a mano para ver 3 fallos).
+4. Lectura de `platform_logs` (autenticada, ambiente de prueba, nunca Producción) antes/después: la cuota de `ERROR_INTERNO` en rutas de HR baja y aparece en su lugar el código de congestión. Sin acceso a datos de clientes reales. **No medible desde el puesto:** el `después` exige que el build con el mapper nuevo esté desplegado en QA, así que la causa A cierra como `local_passed_qa_pending`.
+5. `npm run test:api` y `npm run test:web` en verde con la misma cuenta de pasadas que el baseline de la rama. **Medido, con la salvedad de los nombres:** no existen `test:api` ni `test:web` en la raíz —las suites corren por workspace con `node --test test/*.test.mjs`—. Web: baseline de la rama **861/856/5** → **867/863/4**; los 4 restantes son contratos de Transporte, Contabilidad y del registro del portafolio (ver «Estado de la fase»), todos con insumos idénticos a `HEAD`. API: la suite completa sigue con la deuda declarada de `apex-control/pulse.js` sin base local; este corte corre apuntado (11/11 de mapeo y congestión, más `telemetry-client-logs-public` **7/7** y `apex-control-modules` **8/8** —este último estaba imposibilitado por un `fastify` ausente en `node_modules`, no por el diff—). Lint **0 errores / 24 warnings** y `typecheck` limpio.
+6. Causa C: `node scripts/hr-purge-rescued-base64.js --dry-run` (o su modo verificación) reporta 0 residuos en el ambiente local certificado, con evidencia versionada. **No intentado:** la causa C está deshabilitada sin autorización explícita e independiente.
 
 ## 6. Evidencia y certificación exigida
 
 - Pruebas: `apps/api/test/api-error-congestion.test.js`, `apps/api/test/rate-limit-tenant-budget.test.js`, `apps/web/test/technical-detail-not-leaked.test.mjs`, suites `test:api` / `test:web`.
 - Certificación: `npm run certify:technical-alerts-silence:local` (regresión de la promesa ya publicada) más un certificador nuevo por causa, con evidencia en `docs/qa/evidence/fase-3-causas-20261119/<causa>/`.
 - `certification_status` esperado: `local_passed_qa_pending` por causa; ninguna causa se promociona con certificación parcial.
+- **Lo que efectivamente se usó como evidencia en A y D (2026-11-20):** no hizo falta un certificador nuevo por causa —lo que cada causa necesitaba demostrar es un contrato de código, y vive en `apps/api/test/api-error-congestion.test.js` y `apps/web/test/technical-detail-not-leaked.test.mjs`, ambos con su control de contraste—. La certificación de navegador existente se re-ejecutó como regresión obligatoria sobre el binario del corte y su evidencia quedó en `docs/qa/evidence/fase-3-causas-ad-20261120/` (`certification.json`: 79 checks, 0 fallos, `native_dialogs: []`, `build_id _I5ZfzKrKtY0K35ArePQD`). Estado real de ambas: **`local_passed_qa_pending`** —en QA falta el `platform_logs` antes/después del criterio 4, que no puede medirse hasta desplegar—.
 
 ## 7. Capacidades protegidas
 
@@ -144,8 +162,8 @@ Esta causa es la más delicada de la fase: toca la disponibilidad de los módulo
 
 ## 10. Autorizaciones requeridas
 
-- [ ] **Causa A** (mapper + test, solo `desarrollo`) — código, dentro de la autorización de rama.
-- [ ] **Causa D** (7 handlers `app/api/**` + test) — código, dentro de la autorización de rama.
+- [x] **Causa A** (mapper + test, solo `desarrollo`) — código, dentro de la autorización de rama. **Ejecutada el 2026-11-20** con una ruta añadida al inventario (`apps/api/server.js`, para que el `Retry-After` salga de cabecera) y una que no se tocó y por qué (`transientCodes` en `hr/service.js`: política de reintento, no parche de mapeo).
+- [x] **Causa D** (7 handlers `app/api/**` + test) — código, dentro de la autorización de rama. **Ejecutada el 2026-11-20** con barrido de familia sobre los 9 `route.ts` de `app/api/**`.
 - [ ] **Causa B** (consulta paginada + presupuesto de reintento) — código; cualquier cambio de `statement_timeout` en la nube pide autorización independiente.
 - [ ] **Causa E** (rate-limit por tenant) — código; la verificación con carga pide ambiente de prueba.
 - [ ] **Causa F** (fallback de Supabase observable) — código, decide el dueño por impacto en disponibilidad.
@@ -157,6 +175,7 @@ Esta causa es la más delicada de la fase: toca la disponibilidad de los módulo
 ## 11. Documentación, agentes y publicación (obligatoria)
 
 - **Preflight de agentes**: `npm run agents:preflight -- --paths "apps/web/app/dashboard/talento-humano/empleados/page.tsx,apps/web/lib/api.ts,apps/api/src/modules/admin/public-routes.js,apps/api/server.js,apps/api/test/telemetry-client-logs-public.test.js,scripts/certifications/technical-alert-silence-browser-local.js,docs/briefs"` → `Veredicto: OK_CON_ADVERTENCIAS`; agentes requeridos `equipo-apexos`, `apexos-backend`, `apexos-seguridad`, `apexos-frontend`, `apexos-qa`.
+- **Preflight del corte A+D (2026-11-20)**: `npm run agents:preflight -- --paths "apps/api/src/core/api-error.js,apps/api/server.js,apps/api/test/api-error-congestion.test.js,apps/web/app/api/admin/roles/route.ts,apps/web/app/api/admin/users/route.ts,apps/web/app/api/platform/companies/route.ts,apps/web/app/api/platform/company-modules/route.ts,apps/web/app/api/platform/company-sessions/route.ts,apps/web/app/api/v1/services/orders/[id]/route.ts,apps/web/test/technical-detail-not-leaked.test.mjs,apps/web/test/hr-employee-biometric-reset.test.mjs,docs/briefs"` → `Veredicto: OK_CON_ADVERTENCIAS` (12 rutas; `apps/api/server.js` y `docs/briefs` sin agente dueño explícito → `equipo-apexos`); los mismos cinco agentes, con `apexos-backend` y `apexos-seguridad` dueños del mapper y `apexos-frontend`/`apexos-qa` de los handlers y los contratos web. `origin/desarrollo` == `desarrollo` (`89ca1f5b`) al abrir el corte: sin `INTEGRAR_REMOTO`.
 - **Agentes consultados**: los cinco anteriores, con sus `SKILL.md` leídos antes de editar.
 - **Documentación a actualizar**: este brief, `docs/qa/certifications/technical-alert-silence-20261118.md` (§7 deudas) y `docs/qa/certifications/technical-alert-silence-main-20261119.md` cuando una causa cierre.
 - **Agentes a actualizar**: `apexos-frontend`, `apexos-backend`, `apexos-seguridad` y `apexos-qa` con los controles de esta intervención (validación en línea, ingesta pública sin sesión, certificación de ausencia de ventanillas nativas).

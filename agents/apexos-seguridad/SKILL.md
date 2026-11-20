@@ -2,8 +2,8 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.33.0
-updated_at: 2026-11-19
+version: 2.34.0
+updated_at: 2026-11-20
 contract: 2
 ---
 
@@ -167,6 +167,8 @@ Antes de actuar, leer en este orden:
 47. **Una exención de validación de identidad se escribe angosta y se certifica con sus negativos, no con su positivo.** `declaredEvidenceDetachment` (`apps/api/src/modules/hr/mobile-identity.js:511`) deja pasar una `entrada`/`salida` sin foto solo cuando el cuerpo declara los tres elementos del contrato de evidencia (estado `degraded`, código dentro de `EVIDENCE_FAILURE_CODES`, motivo ≥ 8 caracteres) y aun así la fila queda `not_verified`: la exención compra el registro de la hora, nunca la verificación de la persona. Tres fronteras son parte del control y se prueban: los bytes rechazados no se almacenan, `verified` no se alcanza declarando degradación, y el canal firmado de la app móvil no ve afectada su exigencia de selfie. En `apps/api/test/hr-mobile-identity.test.js` los cuatro negativos (sin código, código fuera del contrato, sin motivo, `evidence_status: "available"`) siguen respondiendo `SELFIE_REQUERIDA`.
     Por qué: el 2026-11-19, para no perder jornadas por un problema de foto, la tentación era aflojar la validación de identidad de la web; aflojarla sin contrato habría permitido marcar sin evidencia a cualquiera que lo declarara, y un registro laboral degradado se leería igual que uno verificado en el cierre de nómina.
 
+48. **El detalle crudo del proveedor de datos no viaja en el cuerpo: es mapa del esquema para un atacante y falso diagnóstico para el operario, y se barre por familia.** Seis handlers `app/api/**` de `apps/web` lanzaban `` new Error(`Supabase ${response.status}: ${detail}`) `` que terminaba en el JSON de la respuesta: el cliente leía «Supabase 404: Could not find the table public.master_catalogs…». Dos daños con la misma línea —información expuesta (tabla, esquema y detalle interno del proveedor, categoría A05:2021 de OWASP) y un operario que interpreta un problema de permisos o de negocio como caída propia—. La forma reparada, en los **7 sitios** de los 6 handlers: el detalle se queda en `console.error` del servidor **con prefijo de ruta** (`[api/admin/roles] Supabase 404: …`, porque sin él los logs de seis handlers son indistinguibles) y el cuerpo recibe un mensaje operativo neutro; el estado HTTP **se conserva** (`httpError(mensaje, response.status)`), que también es un control de seguridad: colapsar un `403` en un `500` entierra un rechazo de autorización dentro del ruido de caída. El control no es sitio por sitio: `apps/web/test/technical-detail-not-leaked.test.mjs` recorre los **9** `route.ts` de `app/api/**` —los 6 reparados y los 3 que nunca filtraron—, exige que toda línea con `${detail}` sea un `console.error`/`console.warn`, y se auto-verifica contra un fixture que sí filtra (ve el `throw` y la respuesta: 2 de 2). Además se devolvió a mano una filtración real a `admin/roles/route.ts` para ver el barrido ponerse rojo (3 fallos) antes de restaurar. Detalle de arnés que costó una pasada: `apps/web/**` es CRLF, así que el barrido normaliza `\r\n → \n` antes de matchear o afirma sobre aire. Por qué: el camino corto siempre es «muestro el error del proveedor así soporte diagnostica rápido»; el diagnóstico rápido ya existe y se llama `platform_logs` con `request_id`, y el cuerpo de una respuesta es una superficie pública aunque la pantalla sea de un administrador autenticado.
+
 ## Checklist de intervención
 
 Antes:
@@ -241,3 +243,6 @@ Después:
 - Encender `AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED` para «cerrar» una fase autorizada solo en observación, sin la corrida medida que demuestre que no expulsa sesiones sanas.
 - Volver a `trustProxy: true` porque el ambiente no declaró el proxy: eso devuelve al cliente la elección de su IP y del cubo del rate limit.
 - Conservar un `403` que distingue «usuario desactivado» de «clave incorrecta»: es un oráculo de enumeración de cuentas.
+- Hacer viajar el `detail` del proveedor de datos en el cuerpo de un handler `app/api/**` «para que soporte diagnostique rápido»: publica tablas y esquema y hace que el operario crea que se le cayó su sistema.
+- Colapsar en 500 un 403 o un 404 del proveedor para uniformar el mensaje: oculta un rechazo de autorización dentro del ruido de caída.
+- Parchear handler por handler sin un barrido que recorra `app/api/**`: el handler nuevo filtra el día que nadie lo revisa.
