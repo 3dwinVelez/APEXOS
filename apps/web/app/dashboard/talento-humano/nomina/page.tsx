@@ -4,6 +4,7 @@ import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from "rea
 import { createPortal } from "react-dom";
 import { Calculator, Download, FileText, Play, Plus, RotateCcw, Trash2, Upload, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { payrollPeriodError } from "@/lib/payroll-period";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
 
 type Employee = { id: number; code: string; name?: string; display_name?: string; full_name?: string; metadata?: { name?: string } };
@@ -184,13 +185,7 @@ export default function PayrollLiquidationPage() {
   const [adjustment, setAdjustment] = useState({ employee_id: "", adjustment_type: "manual", concept_code: "AJUSTE_MANUAL", description: "", work_date: "", start_time: "", end_time: "", date_start: "", date_end: "", days: "", paid_by: "", sln_cause: "", pila_ibc_amount: "", ibc_reference_amount: "", ibc_reference_period: "", ibc_reference_captured_at: "", continuity_key: "", reference_source: "", reported_pila_id: "", recognized_value: "", document_support: "", lr_arl_policy: "", advance_obligation: "", advance_period: "", advance_support: "", advance_retention_health: "", advance_retention_pension: "", minutes: "", amount: "" });
 
   const currentPeriodKey = useMemo(() => periodKey(periodType, startDate, endDate), [periodType, startDate, endDate]);
-  const periodRangeError = useMemo(() => {
-    if (!startDate || !endDate) return "";
-    if (endDate < startDate) return "La fecha final no puede ser menor que la inicial.";
-    const spanDays = Math.floor((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1;
-    if (spanDays > 31) return "El periodo no puede abarcar mas de un mes.";
-    return "";
-  }, [startDate, endDate]);
+  const periodRangeError = useMemo(() => payrollPeriodError(periodType, startDate, endDate), [periodType, startDate, endDate]);
   const rows = preview.length ? preview : documents;
   const visibleRows = useMemo(() => rows.filter(hasWorkedTime), [rows]);
   const externalPreview = useMemo(() => {
@@ -293,6 +288,7 @@ export default function PayrollLiquidationPage() {
   }, [loadBase]);
 
   async function previewLiquidation() {
+    if (periodRangeError) { setMessage(periodRangeError); return; }
     setBusy(true);
     setMessage("");
     try {
@@ -332,6 +328,7 @@ export default function PayrollLiquidationPage() {
   }
 
   async function validateClosure() {
+    if (periodRangeError) { setMessage(periodRangeError); return; }
     setBusy(true);
     setMessage("");
     try {
@@ -348,6 +345,7 @@ export default function PayrollLiquidationPage() {
   }
 
   async function closePeriod(recalculate = false) {
+    if (periodRangeError) { setMessage(periodRangeError); return; }
     if (!recalculate && currentClosure?.status === "cerrado") {
       setMessage("El periodo ya esta cerrado.");
       return;
@@ -385,6 +383,7 @@ export default function PayrollLiquidationPage() {
   }
 
   async function runLiquidation(recalculate = false) {
+    if (periodRangeError) { setMessage(periodRangeError); return; }
     setBusy(true);
     setMessage("");
     try {

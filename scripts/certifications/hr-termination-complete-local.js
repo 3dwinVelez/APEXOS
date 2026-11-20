@@ -53,11 +53,31 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
   async function call(route, tokenValue, method='GET', body) {const r=await fetch(origin+'/api/v1'+route,{method,headers:{...(body?{'content-type':'application/json'}:{}),...(tokenValue?{authorization:'Bearer '+tokenValue}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(120000)});return {status:r.status,body:await r.json()};}
   async function login(user) {const r=await call('/auth/login',null,'POST',{email:user.email,password});assert.equal(r.status,200);return r.body.token;}
   const token=await login(own.user),foreignToken=await login(foreign.user),deniedToken=await login(denied);
+  await check('quincenal month-wide and mismatched keys are rejected before payroll or closure writes', async()=>{
+    const before=await db.$queryRaw`SELECT id FROM th_nomina_documentos WHERE tenant_id=${own.tenant.id}`;
+    for(const suffix of ['preview','validar','liquidaciones','cierres/validar','cierres/cerrar','cierres/recalcular']) {
+      const r=await call('/talento-humano/nomina/'+suffix,token,'POST',{...period,fecha_fin:'2026-11-30',period_key:'quincena:2026-11-01:2026-11-30',recalculate:true,force:true});
+      assert.equal(r.status,400,JSON.stringify(r));
+      assert.match(JSON.stringify(r.body),/quincenal/);
+    }
+    const forged=await call('/talento-humano/nomina/preview',token,'POST',{...period,period_key:'mes:2026-11-01:2026-11-30'});
+    assert.equal(forged.status,400);
+    assert.deepEqual(await db.$queryRaw`SELECT id FROM th_nomina_documentos WHERE tenant_id=${own.tenant.id}`,before);
+    assert.equal((await db.$queryRaw`SELECT id FROM th_nomina_cierres_periodo WHERE tenant_id=${own.tenant.id}`).length,0);
+  });
   const input={employee_id:own.employee.id,termination_date:'2026-11-10',termination_reason:'retiro_voluntario',contract_type:'indefinite',
     libranza_authorizations:loans.slice(0,2).map(id=>({id,support:'Autorizacion final QA'}))};
   let expected, saved;
   async function trial(extra={}) {const r=await call(base+'/preview',token,'POST',{...input,...extra});assert.equal(r.status,200,JSON.stringify(r.body));return r.body.document;}
-  async function payroll(extra={}) {const r=await call('/talento-humano/nomina/preview',token,'POST',{...period,...extra});assert.equal(r.status,200,JSON.stringify(r.body));return r.body.documents;}
+  async function resolveFixtureDays(extra={}) {
+    const document=await trial(extra);
+    for(const day of document.source_summary.revision_dias.filter(day=>day.status==='pendiente')){
+      const response=await call(base+'/revision-dias',token,'POST',{...input,...extra,work_date:day.date,classification:'ausencia_no_remunerada',note:'QA: ausencia confirmada en datos sinteticos de regresion',request_id:randomUUID()});
+      assert.equal(response.status,200,JSON.stringify(response.body));
+    }
+  }
+  async function payroll(extra={}) {const payload={...period,...extra};payload.period_key=`${payload.period_type}:${payload.fecha_inicio}:${payload.fecha_fin}`;const r=await call('/talento-humano/nomina/preview',token,'POST',payload);assert.equal(r.status,200,JSON.stringify(r.body));return r.body.documents;}
+  await resolveFixtureDays();
   await check('real API derives master contract, imports malla concepts and leaves preview read only',async()=>{
     expected=await trial();
     assert.equal(expected.contract_type,'fixed');
@@ -105,7 +125,7 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
       await page.waitForSelector('ul[aria-label="Empleados encontrados"] button');
       await page.click('ul[aria-label="Empleados encontrados"] button');
       async function setField(label,value) {await page.evaluate((label,value)=>{
-        const el=[...document.querySelectorAll('label')].find(x=>x.textContent.startsWith(label))?.querySelector('input');
+        const el=[...document.querySelectorAll('label')].find(x=>x.textContent.startsWith(label)&&x.querySelector('input[type="date"]'))?.querySelector('input[type="date"]');
         if(!el)throw Error('Missing '+label);
         Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,value);
         el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));
@@ -153,7 +173,13 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
       await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
       await page.goto(new URL('/dashboard/talento-humano/nomina',page.url()).href,{waitUntil:'domcontentloaded'});
       await page.waitForSelector('input[type="date"]');
+      await page.waitForNetworkIdle({idleTime:1000, concurrency:2});
       await setField('Fecha inicio','2026-11-01');
+      await setField('Fecha fin','2026-11-30');
+      await page.screenshot({path:path.join(folder,'payroll-range-before-validation.png')});
+      await page.waitForFunction(()=>document.body.innerText.includes('La nomina quincenal debe ir'));
+      assert.equal(await page.evaluate(()=>[...document.querySelectorAll('button')].find(el=>el.textContent.trim()==='Consultar periodo')?.disabled),true);
+      await page.screenshot({path:path.join(folder,'payroll-invalid-fortnight.png')});
       await setField('Fecha fin','2026-11-15');
       await button('Consultar periodo');
       const trialResponse=page.waitForResponse(r=>r.url().endsWith('/talento-humano/nomina/preview')&&r.request().method()==='POST');
@@ -212,6 +238,7 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
     assert.ok((await payroll()).some(x=>x.employee_id===own.employee.id));
   });
   await check('pending calculation splits second fortnight without paying the first twice',async()=>{
+    await resolveFixtureDays({termination_date:'2026-11-20'});
     const second=await trial({termination_date:'2026-11-20'});
     assert.deepEqual(second.source_summary.periodos_pendientes.map(x=>[x.start,x.end]),[['2026-11-01','2026-11-15'],['2026-11-16','2026-11-20']]);
     assert.equal(second.lines.filter(x=>x.code==='BONIFICACION_SALARIAL').length,1);

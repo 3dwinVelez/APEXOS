@@ -4,8 +4,9 @@ const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
 const certificate = process.argv.find(arg => arg.startsWith('--certificate='))?.slice(14) || 'hr-employee-user-link-local.js';
-if (!['hr-employee-banks-local.js', 'hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js', 'hr-payroll-markings-local.js', 'hr-marking-existing-employee-local.js', 'hr-termination-document-search-local.js', 'hr-termination-complete-local.js'].includes(certificate)) throw Error('Unsupported certification script');
+if (!['hr-termination-day-review-local.js', 'hr-employee-banks-local.js', 'hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js', 'hr-payroll-markings-local.js', 'hr-marking-existing-employee-local.js', 'hr-termination-document-search-local.js', 'hr-termination-complete-local.js'].includes(certificate)) throw Error('Unsupported certification script');
 const outputDirectories = {
+  'hr-termination-day-review-local.js': 'hr-day-review',
   'hr-employee-banks-local.js': 'hr-employee-banks',
   'hr-termination-complete-local.js': 'hr-termination-complete',
   'hr-termination-document-search-local.js': 'hr-termination-document-search',
