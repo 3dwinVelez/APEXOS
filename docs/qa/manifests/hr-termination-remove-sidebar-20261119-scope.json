@@ -1,0 +1,88 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-termination-remove-sidebar-20261119",
+  "base_commits": {
+    "develop": "b5c191cdf280ab2f2844699874247a07a4b8f5d8"
+  },
+  "target_head": "b5c191cdf280ab2f2844699874247a07a4b8f5d8",
+  "certified_commit": "9ce27310f007bb9997973e987b89b99b6482dec4",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "9ce27310f007bb9997973e987b89b99b6482dec4",
+    "implementation_commit": "86c3e7dd"
+  },
+  "certified_functional_paths": [
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "scripts/certifications/hr-termination-day-review-local.js"
+  ],
+  "change_intent": {
+    "summary": "Remove the employee settlement benefit balance sidebar and its unused request; expand documents to full width.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "scripts/certifications/hr-termination-day-review-local.js",
+    "docs/qa/manifests/hr-termination-remove-sidebar-20261119-preqa.json",
+    "docs/qa/manifests/hr-termination-remove-sidebar-20261119-scope.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-termination-day-review-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-termination-remove-sidebar-20261119-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-termination-remove-sidebar-20261119-scope.json"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Full width documents and absent sidebar",
+      "status": "passed",
+      "evidence": [
+        "hr-termination-remove-sidebar-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "Employee settlement preview approval save and reload",
+      "status": "passed",
+      "evidence": [
+        "hr-termination-remove-sidebar-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "Salary decision persistence and payroll reuse",
+      "status": "passed",
+      "evidence": [
+        "hr-termination-remove-sidebar-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "RBAC and tenant isolation",
+      "status": "passed",
+      "evidence": [
+        "hr-termination-remove-sidebar-20261119-preqa.json"
+      ]
+    }
+  ]
+}
