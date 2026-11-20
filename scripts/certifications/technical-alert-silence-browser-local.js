@@ -21,7 +21,9 @@
 //  F. sesion vencida (401): el aviso honesto esta en el login, no en una ventana.
 //  G. control positivo: con apexos_diagnostics=1 el detalle tecnico si se muestra, con presupuesto maximo.
 //  H. tema oscuro: la misma ausencia de ventanas.
-//  I. contrato de codigo: el canal de alertas de usuario sigue retirado.
+//  J. validacion de formulario en Empleados: el motivo vive en el campo y ninguna ventanilla nativa
+//     del navegador (alert/confirm) se levanto en toda la corrida. El registrador tiene control propio.
+//  I. contrato de codigo: el canal de alertas de usuario sigue retirado y la pantalla no usa alert().
 //
 // Sale con codigo distinto de cero ante cualquier comprobacion fallida o parcial.
 
@@ -33,11 +35,15 @@ const { spawn, execFileSync } = require("node:child_process");
 const ROOT = path.resolve(__dirname, "..", "..");
 const WEB = path.join(ROOT, "apps", "web");
 const PORT = Number(process.env.CERT_BROWSER_PORT || 3323);
-const ARTIFACT = "technical-alert-silence-20261118";
+// La evidencia es aditiva: una corrida nueva no puede sobrescribir la que ya citan los manifiestos de
+// una promoción cerrada. Por defecto el artefacto histórico; CERT_ARTIFACT abre una carpeta nueva.
+const ARTIFACT = process.env.CERT_ARTIFACT || "technical-alert-silence-20261118";
 const OUT = path.join(ROOT, "docs", "qa", "evidence", ARTIFACT);
 const keepOpen = process.argv.slice(2).includes("--keep-open");
 const BASE = `http://127.0.0.1:${PORT}`;
 const NAV_TIMEOUT = 90_000;
+const EMPLEADOS_ROUTE = "/dashboard/talento-humano/empleados";
+const EMPLEADOS_SOURCE = path.join(WEB, "app", "dashboard", "talento-humano", "empleados", "page.tsx");
 
 // El contexto que el guard de rutas exige para montar la pantalla. Sin active_modules el guard pinta
 // "Acceso no autorizado" y la certificacion mediria el guard, no la capa de alertas.
@@ -66,7 +72,12 @@ const SCENARIOS = {
 // Los marcadores son el texto real que la sonda dejo pintado con la tormenta puesta. Un marcador
 // inventado haria que "pantalla_sigue_viva" midiera el cascaron del shell y no la pantalla.
 const SCREENS = [
-  { name: "rutas", route: "/dashboard/talento-humano/rutas", mounted: ["Asignar horarios", "Consulta de horarios"] },
+  // Las cabeceras de rutas no son las mismas en las tres ramas: `desarrollo`/`main` dicen
+  // "Asignar horarios" / "Consulta de horarios" y `develop` dice "Horarios y mallas" /
+  // "Programación de jornadas" (page.tsx:1100 y :1119, medido el 2026-11-19 en cada arbol). El
+  // marcador tiene que discriminar "la pantalla se monto" de "cayo al guard o al cascaron del
+  // shell", no que version del arbol esta servida: se aceptan las cuatro leyendas.
+  { name: "rutas", route: "/dashboard/talento-humano/rutas", mounted: ["Asignar horarios", "Consulta de horarios", "Horarios y mallas", "Programación de jornadas"] },
   { name: "mapa", route: "/dashboard/talento-humano/mapa", mounted: ["Mapa en vivo de rutas y marcaciones", "CONTROL OPERATIVO GPS"] },
   { name: "servicios", route: "/dashboard/servicios", mounted: ["CENTRO OPERATIVO DE SERVICIOS", "Órdenes listas para gestionar"] },
   { name: "monitoreo", route: "/dashboard/transporte/monitoreo", mounted: ["Monitoreo en vivo", "Cargando monitoreo TMS"] },
@@ -195,7 +206,8 @@ async function main() {
       }
       // El endpoint de telemetria responde siempre 200: si el registro de fallos fallara, la
       // certificacion mediria el arnes y no la promesa ("el fallo se registra, no se muestra").
-      if (pathname.startsWith("/api/v1/admin/platform-logs")) {
+      // Cubre las dos bocas: la autenticada (admin) y la publica para visitantes sin sesion.
+      if (pathname.startsWith("/api/v1/admin/platform-logs") || pathname.startsWith("/api/v1/public/telemetry")) {
         seen.telemetry.push(pathname);
         return void respond(request, { status: 200, body: "{}" });
       }
@@ -219,6 +231,16 @@ async function main() {
     const pageErrors = [];
     page.on("pageerror", (error) => pageErrors.push(String((error && error.message) || error)));
 
+    // Ventanilla nativa del navegador (alert/confirm/prompt). Sin oyente, Chrome headless la descarta
+    // en silencio y "cero ventanas" lo daria igual un arnes roto: por eso el control positivo de abajo.
+    // El prefijo ARNES: marca la ventanilla provocada a proposito por el propio arnes.
+    const dialogs = [];
+    page.on("dialog", async (dialog) => {
+      dialogs.push({ type: dialog.type(), message: String(dialog.message() || "").slice(0, 300), at: new Date().toISOString() });
+      await dialog.dismiss().catch(() => undefined);
+    });
+    const realDialogs = () => dialogs.filter((entry) => !/^ARNES:/.test(entry.message));
+
     async function prepare({ theme = "light", withDiagnostics = false } = {}) {
       await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT });
       await page.evaluate((flags) => {
@@ -239,6 +261,10 @@ async function main() {
     async function readSurface() {
       return page.evaluate(() => {
         const overlayCards = [...document.querySelectorAll(".platform-alert")];
+        const inlineAlerts = [...document.querySelectorAll('[role="alert"]')]
+          .filter((node) => !node.closest(".platform-alert"))
+          .map((node) => (node.textContent || "").trim().slice(0, 240))
+          .filter(Boolean);
         const visibleTechnical = [...document.querySelectorAll("body *")].some((node) => {
           const own = Array.from(node.childNodes).filter((child) => child.nodeType === 3).map((child) => child.textContent).join(" ");
           return /Fallo t[eé]cnico detectado|Ruta: \/api\/v1|ERROR_INTERNO|"error":/.test(own);
@@ -247,10 +273,27 @@ async function main() {
           url: location.pathname,
           overlayCards: overlayCards.length,
           overlayText: overlayCards.map((node) => (node.textContent || "").trim().slice(0, 200)),
+          inlineAlerts,
+          invalidFields: document.querySelectorAll('[aria-invalid="true"]').length,
           bodyText: (document.body.innerText || "").slice(0, 6000),
+          mainText: ((document.querySelector("main") || document.querySelector("[role=main]"))?.innerText || "").slice(0, 6000),
           visibleTechnical
         };
       });
+    }
+
+    // Pulsar por texto, no por selector fragil: el arnes tiene que seguir encontrando el boton aunque
+    // cambie la clase. Devuelve false si el boton no estaba, y el chequeo que lo llama lo reporta.
+    async function clickByText(needle) {
+      return page.evaluate((text) => {
+        const hit = [...document.querySelectorAll("button")].find((node) => {
+          const label = (node.innerText || node.textContent || "").trim();
+          return label.includes(text) && !node.disabled && node.getClientRects().length > 0;
+        });
+        if (!hit) return false;
+        hit.click();
+        return true;
+      }, needle);
     }
 
     async function visit(definition, settleMs = 7000) {
@@ -260,17 +303,45 @@ async function main() {
       // segundos, asi que una instantanea inmediata no probaria la ausencia.
       await new Promise((resolve) => setTimeout(resolve, settleMs));
       const surface = await readSurface();
+      // Diagnostico del marcador (solo con CERT_MARCADOR_DIAG=1): donde aparece cada leyenda, en el
+      // area de contenido o en el cascaron. Sirve para probar que el marcador discrimina pantalla y
+      // no menu lateral.
+      if (process.env.CERT_MARCADOR_DIAG) {
+        const leyendas = [...new Set(SCREENS.flatMap((entry) => entry.mounted))];
+        const diag = { url: surface.url, pantalla: definition.name, main_presente: surface.mainText.length > 0, leyendas: {} };
+        for (const leyenda of leyendas) {
+          diag.leyendas[leyenda] = {
+            en_main: surface.mainText.includes(leyenda),
+            en_body: surface.bodyText.includes(leyenda)
+          };
+        }
+        const diagFile = path.join(OUT, "marker-diag.json");
+        const acumulado = fs.existsSync(diagFile) ? JSON.parse(fs.readFileSync(diagFile, "utf8")) : [];
+        acumulado.push(diag);
+        fs.writeFileSync(diagFile, JSON.stringify(acumulado, null, 2));
+      }
       // Autocontrol del arnes: si la pantalla no llego a pedir datos, no se estaba certificando un
       // fallo sino un guard de acceso o una portada vacia. Sin tormenta real, la ausencia de ventanas
       // no prueba nada.
       const dataRequests = seen.failed.length - before.failed + seen.aborted.length - before.aborted;
       const telemetryPosts = seen.telemetry.length - before.telemetry;
+      // El marcador se busca en el area de contenido, no en todo el documento: el menu lateral y la
+      // paleta de comandos tambien conocen los nombres de las funciones, y una leyenda capturada alli
+      // afirmaria "pantalla montada" sobre el puro cascaron del shell. Si el arbol no marca <main>,
+      // se retrocede al texto completo y la Retroceso queda declarada en mountedEn.
+      const aguja = surface.mainText.length ? surface.mainText : surface.bodyText;
       return {
         ...surface,
         dataRequests,
         telemetryPosts,
         denied: surface.bodyText.includes("Acceso no autorizado"),
-        mounted: definition.mounted.some((marker) => surface.bodyText.includes(marker))
+        mounted: definition.mounted.some((marker) => aguja.includes(marker)),
+        mountedEn: surface.mainText.length ? "main" : "body",
+        // El lobby queda exento: es un directorio de modulos y funciones, asi que nombrar otra pantalla
+        // en su contenido es su trabajo, no una fuga del cascaron.
+        leyendasAjenas: definition.static === true ? [] : SCREENS.filter((otro) => otro.name !== definition.name)
+          .flatMap((otro) => otro.mounted.map((marker) => ({ pantalla: otro.name, marker })))
+          .filter(({ marker }) => aguja.includes(marker))
       };
     }
 
@@ -290,14 +361,23 @@ async function main() {
       for (const definition of SCREENS) {
         const surface = await visit(definition);
         const verdict = surfaceVerdict(surface);
-        results[definition.name] = { ...verdict, mounted: surface.mounted, dataRequests: surface.dataRequests, telemetryPosts: surface.telemetryPosts, overlayText: surface.overlayText };
+        results[definition.name] = { ...verdict, mounted: surface.mounted, montado_en: surface.mountedEn, leyendas_ajenas: surface.leyendasAjenas, dataRequests: surface.dataRequests, telemetryPosts: surface.telemetryPosts, overlayText: surface.overlayText };
         check(`${definition.name}_${theme}_arnes_con_tormenta_real`, surface.dataRequests > 0 || definition.static === true, { dataRequests: surface.dataRequests, url: surface.url });
         check(`${definition.name}_${theme}_sin_guard_de_acceso`, !surface.denied, { url: surface.url });
         check(`${definition.name}_${theme}_sin_tarjeta_flotante`, surface.overlayCards === 0, { overlayCards: surface.overlayCards, overlayText: surface.overlayText });
         check(`${definition.name}_${theme}_sin_detalle_tecnico`, !verdict.technical && !verdict.marker, { marker: verdict.marker });
-        check(`${definition.name}_${theme}_pantalla_sigue_viva`, surface.mounted, { url: surface.url, snippet: surface.bodyText.slice(0, 200) });
+        check(`${definition.name}_${theme}_pantalla_sigue_viva`, surface.mounted, { url: surface.url, montado_en: surface.mountedEn, snippet: surface.bodyText.slice(0, 200) });
         await page.screenshot({ path: path.join(OUT, `${theme}-${definition.name}-500.png`) }).catch(() => undefined);
       }
+      // Control de contraste del marcador: las leyendas se toleran entre ramas ("Asignar horarios" en
+      // desarrollo/main, "Horarios y mallas" en develop), asi que lo que hay que vigilar es que la
+      // leyenda sea propia de la pantalla y no un eco del menu lateral o de la paleta de comandos.
+      // Si en una pantalla aparece la leyenda de otra, el marcador ya no afirma que esa pantalla se
+      // monto y la corrida se pone roja en lugar de dar un verde hueco.
+      const cruzadas = Object.entries(results).filter(([, value]) => (value.leyendas_ajenas || []).length > 0);
+      check(`${theme}_marcador_discrimina_pantalla_no_cascaron`, cruzadas.length === 0, {
+        violaciones: cruzadas.map(([name, value]) => ({ pantalla: name, leyendas: value.leyendas_ajenas }))
+      });
       RESUL.scenarios[`tormenta_500_${theme}`] = { screens: results, telemetry_posts: seen.telemetry.length };
     }
 
@@ -365,6 +445,55 @@ async function main() {
     check("el_detalle_tecnico_vive_en_el_canal_de_soporte", peak.text.join(" ").includes("Ruta: /api/v1"), { peak_text: peak.text });
     await page.screenshot({ path: path.join(OUT, "08-modo-diagnostico.png") }).catch(() => undefined);
 
+    // J. validacion de formulario. Antes, vaciar el alta de un empleado y pulsar "Crear empleado"
+    //    encadenaba hasta cuatro ventanillas nativas del navegador: la misma interrupcion que se retiro
+    //    para el fallo tecnico, pero en el camino feliz. El motivo tiene que estar en el propio campo.
+    //    Se corre con la tormenta de 500 puesta: quien valida con la API caida tampoco ve ventanas.
+    const controlAntes = dialogs.length;
+    await page.evaluate(() => window.alert("ARNES: control de ventanillas nativas"));
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    check("el_arnes_detecta_una_ventanilla_nativa",
+      dialogs.length === controlAntes + 1 && /^ARNES:/.test(dialogs[dialogs.length - 1].message),
+      { registradas: dialogs.length });
+
+    scenario = "tormenta_500";
+    await prepare({ theme: "light" });
+    await page.goto(`${BASE}${EMPLEADOS_ROUTE}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT });
+    await new Promise((resolve) => setTimeout(resolve, 7000));
+    const ventanasRealesAntesDelFormulario = realDialogs().length;
+    const trazasAntesDelFormulario = dialogs.length;
+    const opened = await clickByText("Nuevo empleado");
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const submitted = await clickByText("Crear empleado");
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const formSurface = await readSurface();
+    const formReasons = formSurface.inlineAlerts.join(" | ");
+    RESUL.scenarios.validacion_empleados = {
+      opened,
+      submitted,
+      inline_alerts: formSurface.inlineAlerts,
+      invalid_fields: formSurface.invalidFields,
+      overlay_cards: formSurface.overlayCards,
+      dialogs: dialogs.slice(trazasAntesDelFormulario)
+    };
+    check("validacion_empleados_flujo_completo", opened && submitted && /Numero documento/.test(formSurface.bodyText), {
+      opened, submitted, snippet: formSurface.bodyText.slice(0, 300)
+    });
+    check("validacion_empleados_motivo_en_el_campo",
+      /documento es obligatorio/i.test(formReasons) && /nombres y apellidos/i.test(formReasons),
+      { inline: formSurface.inlineAlerts });
+    check("validacion_empleados_campo_marcado_como_invalido", formSurface.invalidFields >= 2, { invalidFields: formSurface.invalidFields });
+    check("validacion_empleados_sin_ventanilla_nativa", realDialogs().length === ventanasRealesAntesDelFormulario, {
+      dialogs: dialogs.slice(trazasAntesDelFormulario)
+    });
+    check("validacion_empleados_sin_tarjeta_flotante", formSurface.overlayCards === 0 && !formSurface.visibleTechnical, {
+      overlayCards: formSurface.overlayCards
+    });
+    await page.screenshot({ path: path.join(OUT, "09-validacion-empleados.png") }).catch(() => undefined);
+
+    // K. toda la carrera, del primer click al ultimo, sin una sola ventanilla del navegador.
+    check("cero_ventanillas_nativas_en_toda_la_corrida", realDialogs().length === 0, { dialogs: realDialogs().slice(0, 5) });
+
     // I. contrato de codigo: el canal de ventana de usuario no puede volver por descuido.
     const apiSource = fs.readFileSync(path.join(WEB, "lib", "api.ts"), "utf8");
     const alertsModule = fs.readFileSync(path.join(WEB, "lib", "platformAlerts.ts"), "utf8");
@@ -372,12 +501,15 @@ async function main() {
     check("api_no_dispara_la_alerta_de_usuario", !/emitAppAlert|notifyPlatform\(/.test(apiSource));
     check("el_canal_apex_alert_esta_retirado", !/apex:alert/.test(alertsModule) && !/"apex:alert"/.test(alertShell));
     check("la_ventana_queda_detras_del_modo_diagnostico", /technicalDiagnosticsEnabled\(\)/.test(alertShell));
+    check("la_pantalla_de_empleados_no_usa_ventanillas_de_alerta",
+      !/(\bwindow\.|\bglobalThis\.)?alert\s*\(/.test(fs.readFileSync(EMPLEADOS_SOURCE, "utf8")));
 
     RESUL.runtime = {
       page_errors: pageErrors.slice(0, 12),
       console_errors: consoleErrors.slice(0, 20),
       failed_requests: [...new Set(seen.failed)].slice(0, 40),
       aborted_requests: [...new Set(seen.aborted)].slice(0, 40),
+      native_dialogs: realDialogs().slice(0, 10),
       telemetry_posts: seen.telemetry.length
     };
     writeEvidence();
