@@ -96,9 +96,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.72.0",
+      "version": "2.73.0",
       "updated_at": "2026-11-20",
-      "sha256": "91aa2b2287d9494e21f49d637f81e8cdc3005650cbcc9ef0a2858df79305370d",
+      "sha256": "8203a3fe9d427bb8d63b210d6911141556cd91b3569b42c231652854b4a10018",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -157,7 +157,8 @@
         "excepcion-contada-en-filas",
         "manifiesto-una-sola-fuente-de-filas",
         "pendiente-con-inventario-barrido",
-        "pendiente-irrecuperable-con-cifra-y-brief-aparte"
+        "pendiente-irrecuperable-con-cifra-y-brief-aparte",
+        "censo-en-brief-con-poblacion-medida"
       ]
     },
     {
@@ -314,9 +315,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.94.1",
+      "version": "2.94.2",
       "updated_at": "2026-11-20",
-      "sha256": "5a3723e88f27305c2fb6f160bd938d4f7dc860de5f4c47be00e08bf7ea417f4e",
+      "sha256": "a85c9a6888709c9af855d35f72b5ad926f249f20ae4b042c0ff20fe86839f6eb",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [

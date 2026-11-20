@@ -61,74 +61,157 @@
     "artefacto_completo": "sonda-triage-produccion-despues-20261120.json"
   },
   "control_de_no_regresion": {
-    "total_rechazos_igual": true,
-    "jornadas_sin_cierre_iguales": true,
-    "operarios_reales_sin_cambio": [
+    "criterio": "Corregir un conteo se certifica con lo que NO cambio: el censo completo de cuentas con empleado asociado, no una muestra.",
+    "cuentas_con_empleado_asociado": 18,
+    "inalterados": 17,
+    "unicos_que_cambian": [
+      {
+        "user_id": 245,
+        "empleado_id": 551,
+        "antes": 30,
+        "despues": 0,
+        "porque": "es la cuenta efimera del rescate: escribio por la ruta administrativa"
+      }
+    ],
+    "aritmetica_de_conservacion": {
+      "suma_intentos_antes": 184,
+      "suma_intentos_despues": 154,
+      "diferencia": 30,
+      "correcciones_reatribuidas": 30,
+      "cierra": true
+    },
+    "total_rechazos_antes": 567,
+    "total_rechazos_despues": 567,
+    "jornadas_sin_cierre_antes": 25,
+    "jornadas_sin_cierre_despues": 25,
+    "censo_completo": [
+      {
+        "user_id": 222,
+        "empleado_id": 467,
+        "intentos_antes": 12,
+        "intentos_despues": 12,
+        "igual": true
+      },
+      {
+        "user_id": 223,
+        "empleado_id": 471,
+        "intentos_antes": 3,
+        "intentos_despues": 3,
+        "igual": true
+      },
       {
         "user_id": 225,
         "empleado_id": 479,
-        "intentos_de_marcacion_antes": 25,
-        "intentos_de_marcacion_despues": 25,
-        "igual": true,
-        "rechazos_de_operario": 180,
-        "correcciones_administrativas_rechazadas": 0
+        "intentos_antes": 25,
+        "intentos_despues": 25,
+        "igual": true
+      },
+      {
+        "user_id": 226,
+        "empleado_id": 483,
+        "intentos_antes": 6,
+        "intentos_despues": 6,
+        "igual": true
+      },
+      {
+        "user_id": 227,
+        "empleado_id": 487,
+        "intentos_antes": 0,
+        "intentos_despues": 0,
+        "igual": true
+      },
+      {
+        "user_id": 229,
+        "empleado_id": 495,
+        "intentos_antes": 0,
+        "intentos_despues": 0,
+        "igual": true
       },
       {
         "user_id": 231,
         "empleado_id": 503,
-        "intentos_de_marcacion_antes": 22,
-        "intentos_de_marcacion_despues": 22,
-        "igual": true,
-        "rechazos_de_operario": 33,
-        "correcciones_administrativas_rechazadas": 0
+        "intentos_antes": 22,
+        "intentos_despues": 22,
+        "igual": true
+      },
+      {
+        "user_id": 232,
+        "empleado_id": 507,
+        "intentos_antes": 3,
+        "intentos_despues": 3,
+        "igual": true
+      },
+      {
+        "user_id": 233,
+        "empleado_id": 511,
+        "intentos_antes": 5,
+        "intentos_despues": 5,
+        "igual": true
+      },
+      {
+        "user_id": 234,
+        "empleado_id": 515,
+        "intentos_antes": 6,
+        "intentos_despues": 6,
+        "igual": true
+      },
+      {
+        "user_id": 235,
+        "empleado_id": 519,
+        "intentos_antes": 2,
+        "intentos_despues": 2,
+        "igual": true
       },
       {
         "user_id": 236,
         "empleado_id": 523,
-        "intentos_de_marcacion_antes": 23,
-        "intentos_de_marcacion_despues": 23,
-        "igual": true,
-        "rechazos_de_operario": 35,
-        "correcciones_administrativas_rechazadas": 0
+        "intentos_antes": 23,
+        "intentos_despues": 23,
+        "igual": true
       },
       {
-        "user_id": 240,
-        "empleado_id": 539,
-        "intentos_de_marcacion_antes": 10,
-        "intentos_de_marcacion_despues": 10,
-        "igual": true,
-        "rechazos_de_operario": 31,
-        "correcciones_administrativas_rechazadas": 0
-      },
-      {
-        "user_id": 222,
-        "empleado_id": 467,
-        "intentos_de_marcacion_antes": 12,
-        "intentos_de_marcacion_despues": 12,
-        "igual": true,
-        "rechazos_de_operario": 21,
-        "correcciones_administrativas_rechazadas": 0
-      },
-      {
-        "user_id": 242,
-        "empleado_id": 547,
-        "intentos_de_marcacion_antes": 20,
-        "intentos_de_marcacion_despues": 20,
-        "igual": true,
-        "rechazos_de_operario": 41,
-        "correcciones_administrativas_rechazadas": 0
+        "user_id": 237,
+        "empleado_id": 527,
+        "intentos_antes": 5,
+        "intentos_despues": 5,
+        "igual": true
       },
       {
         "user_id": 238,
         "empleado_id": 531,
-        "intentos_de_marcacion_antes": 6,
-        "intentos_de_marcacion_despues": 6,
-        "igual": true,
-        "rechazos_de_operario": 16,
-        "correcciones_administrativas_rechazadas": 0
+        "intentos_antes": 6,
+        "intentos_despues": 6,
+        "igual": true
+      },
+      {
+        "user_id": 239,
+        "empleado_id": 535,
+        "intentos_antes": 6,
+        "intentos_despues": 6,
+        "igual": true
+      },
+      {
+        "user_id": 240,
+        "empleado_id": 539,
+        "intentos_antes": 10,
+        "intentos_despues": 10,
+        "igual": true
+      },
+      {
+        "user_id": 242,
+        "empleado_id": 547,
+        "intentos_antes": 20,
+        "intentos_despues": 20,
+        "igual": true
+      },
+      {
+        "user_id": 245,
+        "empleado_id": 551,
+        "intentos_antes": 30,
+        "intentos_despues": 0,
+        "igual": false
       }
-    ],
-    "criterio": "Ningun trabajador real perdio un intento: los unicos intentos que bajan son los del administrador que escribio las correcciones, y esa informacion no se borra sino que cambia de campo (correcciones_administrativas_rechazadas)."
+    ]
   },
   "rojo_provocado": {
     "instruccion": "Se copia el instrumento fuera del repositorio y se fija el patron: RUTA_DE_CORRECCION pasa a valer lo mismo que RUTA_DE_MARCACION.",
@@ -151,5 +234,6 @@
   "reproduccion": [
     "node scripts/certifications/hr-marking-blocked-workers.js --selftest",
     "node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/production.env --date=2026-11-20 --output=<ruta-temporal>.json --sin-nombres"
-  ]
+  ],
+  "aclaracion_de_edicion": "La primera version de este artefacto contrastaba siete operarios (una muestra). El control se amplio al censo completo de las 18 cuentas con empleado asociado despues de la primera publicacion (commit 260c6412): el resultado es el mismo y mas fuerte -17 inalterados y la suma conserva exactos los 30 intentos reatribuidos-. Las dos mediciones contrastadas siguen siendo las mismas corridas, con los mismos leido_en y ventana_utc; no se volvio a Produccion para agrandar el control."
 }
