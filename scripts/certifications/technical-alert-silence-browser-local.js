@@ -440,8 +440,8 @@ async function main() {
       /documento es obligatorio/i.test(formReasons) && /nombres y apellidos/i.test(formReasons),
       { inline: formSurface.inlineAlerts });
     check("validacion_empleados_campo_marcado_como_invalido", formSurface.invalidFields >= 2, { invalidFields: formSurface.invalidFields });
-    check("validacion_empleados_sin_ventanilla_nativa", realDialogs().length === ventanasAntesDelFormulario, {
-      dialogs: dialogs.slice(ventanasAntesDelFormulario)
+    check("validacion_empleados_sin_ventanilla_nativa", realDialogs().length === ventanasRealesAntesDelFormulario, {
+      dialogs: dialogs.slice(trazasAntesDelFormulario)
     });
     check("validacion_empleados_sin_tarjeta_flotante", formSurface.overlayCards === 0 && !formSurface.visibleTechnical, {
       overlayCards: formSurface.overlayCards

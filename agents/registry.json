@@ -297,9 +297,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.83.0",
+      "version": "2.84.0",
       "updated_at": "2026-11-19",
-      "sha256": "20b736cba8dea56fac3d33c2238b17bf3a497e4d6a87f882695f96781eb46a01",
+      "sha256": "06177431e15d01aace815e099134a24098866480ac579143c1d4774017c8ba61",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -367,7 +367,8 @@
         "arnes-con-la-forma-del-incidente",
         "identidad-disfrazada-en-evidencia",
         "arnes-declara-su-error",
-        "tema-forzado-y-nodo-medido"
+        "tema-forzado-y-nodo-medido",
+        "marcador-discrimina-estado-no-rama"
       ]
     },
     {

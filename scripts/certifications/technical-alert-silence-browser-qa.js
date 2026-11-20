@@ -41,7 +41,12 @@ const SETTLE_MS = Number(args["settle-ms"] || 8_000);
 // local: no dispara peticiones propias y por eso no se le puede exigir tormenta medida, igual que
 // en el certificador local. La ausencia de ventanas SI se le exige.
 const SCREENS = [
-  { name: "rutas", route: "/dashboard/talento-humano/rutas", mounted: ["Asignar horarios", "Consulta de horarios"] },
+  // Las cabeceras de rutas no son las mismas en las tres ramas: `desarrollo`/`main` dicen
+  // "Asignar horarios" / "Consulta de horarios" y `develop` dice "Horarios y mallas" /
+  // "Programación de jornadas" (blobs 2e95b48c vs dff6265f, medido el 2026-11-19). El marcador
+  // tiene que discriminar "la pantalla se monto" de "cayo al guard o al cascaron del shell", no
+  // que version del arbol esta servida: se aceptan las cuatro leyendas.
+  { name: "rutas", route: "/dashboard/talento-humano/rutas", mounted: ["Asignar horarios", "Consulta de horarios", "Horarios y mallas", "Programación de jornadas"] },
   { name: "mapa", route: "/dashboard/talento-humano/mapa", mounted: ["Mapa en vivo de rutas y marcaciones", "CONTROL OPERATIVO GPS"] },
   { name: "servicios", route: "/dashboard/servicios", mounted: ["CENTRO OPERATIVO DE SERVICIOS", "Órdenes listas para gestionar"] },
   { name: "monitoreo", route: "/dashboard/transporte/monitoreo", mounted: ["Monitoreo en vivo", "Cargando monitoreo TMS"] },
@@ -258,7 +263,17 @@ async function main() {
   page.setDefaultTimeout(NAV_TIMEOUT);
   await page.setViewport({ width: 1440, height: 900 });
 
-  const seen = { telemetry: [], telemetry_status: {}, api: [], failed: [], aborted: [] };
+  // Ventanilla nativa del navegador (alert/confirm/prompt). Sin oyente, Chrome headless la descarta
+  // en silencio y "cero ventanas" lo daria igual un arnes roto: por eso la corrida exige primero el
+  // control positivo, que se provoca una ventanilla propia con prefijo ARNES: y se pone roja si no la ve.
+  const dialogs = [];
+  page.on("dialog", async (dialog) => {
+    dialogs.push({ type: dialog.type(), message: String(dialog.message() || "").slice(0, 300), at: new Date().toISOString() });
+    await dialog.dismiss().catch(() => undefined);
+  });
+  const realDialogs = () => dialogs.filter((entry) => !/^ARNES:/.test(entry.message));
+
+  const seen = { telemetry: [], telemetry_status: {}, api: [], failed: [], aborted: [], writes: [] };
   let storm = null;
   const CORS_HEADERS = {
     "Access-Control-Allow-Origin": FRONTEND,
@@ -286,6 +301,9 @@ async function main() {
         headers: { "Access-Control-Allow-Headers": request.headers()["access-control-request-headers"] || CORS_HEADERS["Access-Control-Allow-Headers"] }
       });
     }
+    // Cualquier metodo distinto de GET es un intento de escritura. La validacion en linea promete no
+    // tocar la red cuando el formulario esta mal, y aqui se mide que de verdad no salio ningun POST.
+    if (request.method() !== "GET") seen.writes.push(`${request.method()} ${pathname}`);
     // La telemetria de fallos SIEMPRE pasa a la API real: registrar el fallo es la otra mitad de la
     // promesa y aqui se mide el codigo que de verdad devuelve QA, no uno fabricado.
     if (pathname.startsWith("/api/v1/admin/platform-logs")) {
@@ -320,14 +338,34 @@ async function main() {
       const overlayCards = [...document.querySelectorAll(".platform-alert")];
       const bodyText = (document.body.innerText || "").slice(0, 8000);
       const technicalFound = markers.filter((marker) => bodyText.includes(marker));
+      const inlineAlerts = [...document.querySelectorAll('[role="alert"]')]
+        .filter((node) => !node.closest(".platform-alert"))
+        .map((node) => (node.textContent || "").trim().slice(0, 220))
+        .filter(Boolean);
       return {
         url: location.pathname,
         overlayCards: overlayCards.length,
         overlayText: overlayCards.map((node) => (node.textContent || "").trim().slice(0, 220)),
+        inlineAlerts,
+        invalidFields: document.querySelectorAll('[aria-invalid="true"]').length,
         technicalFound,
         bodyText
       };
     }, TECHNICAL_MARKERS);
+  }
+
+  // Pulsar por el texto del boton, no por posicion: el alta de empleados cambia de layout entre
+  // temas y entre las versiones de QA, y un click ciego daria un verde que no toco nada.
+  async function clickByText(needle) {
+    return page.evaluate((text) => {
+      const hit = [...document.querySelectorAll("button")].find((node) => {
+        const label = (node.innerText || node.textContent || "").trim();
+        return label.includes(text) && !node.disabled && node.getClientRects().length > 0;
+      });
+      if (!hit) return false;
+      hit.click();
+      return true;
+    }, needle);
   }
 
   async function login(usuario) {
@@ -429,6 +467,53 @@ async function main() {
           });
       }
 
+      // 4) El alta de empleados: el motivo tiene que leerse en el campo, no en una ventanilla del
+      //    navegador, y un formulario mal ni siquiera debe tocar la red. Se mide solo con el rol que
+      //    ve el maestro (Administrador de empresa de NYVORA); con la tormenta apagada, para que el
+      //    rojo que salga sea del build desplegado y no de una inyeccion del arnes.
+      if (identidad.clave === "nyvora_admin") {
+        const controlAntes = dialogs.length;
+        await page.evaluate(() => window.alert("ARNES: control de ventanillas nativas en QA"));
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        check("el_arnes_detecta_una_ventanilla_nativa",
+          dialogs.length === controlAntes + 1 && /^ARNES:/.test(dialogs[dialogs.length - 1].message),
+          { registradas: dialogs.length });
+
+        await page.goto(`${FRONTEND}/dashboard/talento-humano/empleados`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT });
+        await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+        const ventanaAntes = realDialogs().length;
+        const trazasAntes = dialogs.length;
+        const escriturasAntes = seen.writes.length;
+        const abierto = await clickByText("Nuevo empleado");
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const enviado = await clickByText("Crear empleado");
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const formulario = await readSurface();
+        RESUL.scenarios.validacion_empleados = {
+          abierto, enviado, inlineAlerts: formulario.inlineAlerts,
+          invalidFields: formulario.invalidFields, escrituras: seen.writes.slice(escriturasAntes)
+        };
+        check("nyvora_admin_validacion_pantalla_montada", abierto && enviado && /Primer nombre/i.test(formulario.bodyText), {
+          abierto, enviado, snippet: formulario.bodyText.slice(0, 160)
+        });
+        check("nyvora_admin_validacion_motivo_en_el_campo",
+          /documento es obligatorio/i.test(formulario.inlineAlerts.join(" ")) || /nombres y apellidos/i.test(formulario.inlineAlerts.join(" ")),
+          { inline: formulario.inlineAlerts.slice(0, 4) });
+        check("nyvora_admin_validacion_campo_marcado_como_invalido", formulario.invalidFields >= 1, {
+          invalidFields: formulario.invalidFields
+        });
+        check("nyvora_admin_validacion_sin_ventanilla_nativa", realDialogs().length === ventanaAntes, {
+          dialogs: dialogs.slice(trazasAntes)
+        });
+        check("nyvora_admin_validacion_sin_escritura_a_la_api", seen.writes.length === escriturasAntes, {
+          escrituras: seen.writes.slice(escriturasAntes).slice(0, 4)
+        });
+        check("nyvora_admin_validacion_sin_tarjeta_flotante", formulario.overlayCards === 0 && formulario.technicalFound.length === 0, {
+          overlayCards: formulario.overlayCards, technicalFound: formulario.technicalFound
+        });
+        await page.screenshot({ path: path.join(OUT, "qa-validacion-empleados.png") }).catch(() => undefined);
+      }
+
       await page.evaluate(() => window.localStorage.clear());
       await page.goto(`${FRONTEND}/login`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT }).catch(() => undefined);
       await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -447,6 +532,42 @@ async function main() {
     RESUL.telemetria_sin_token = { intentos_navegador: seen.telemetry.length, status_sonda: telemetria.status };
     check("el_navegador_intento_registrar_los_fallos", seen.telemetry.length >= 1, { intentos: seen.telemetry.length });
     check("los_fallos_quedan_registrados_en_qa", registradas >= 1, { registradas, codigos: seen.telemetry_status });
+
+    // La boca publica: el visitante sin sesion ya no puede quedarse sin registro. Se manda un payload
+    // hostil —`tenant_id` y `user_email` de OTRA empresa en el cuerpo— y se exige que el servicio los
+    // ignore: si algo se escribe, es en el buzon del despliegue y en ninguna otra parte. La sonda se
+    // borra despues de leerla; no se deja basura tecnica en el expediente de nadie.
+    const buzon = String(process.env.APEXOS_TELEMETRY_TENANT_ID || "").trim();
+    const sonda = `sonda publica ${RUN_ID}`;
+    const publica = await apiJson("/api/v1/public/telemetry/client-logs", {
+      method: "POST",
+      body: {
+        message: sonda, route: "/login", method: "POST", status_code: 500, code: "ERROR_INTERNO",
+        request_id: `qa-silence-public-${RUN_ID}`, metadata: { href: "/login", provider: "certificador-qa" },
+        tenant_id: outside.tenant.id, user_email: "arnes@no-debe-escribir.example"
+      }
+    });
+    RESUL.telemetria_publica = { status: publica.status, payload: publica.payload, buzon_configurado: Boolean(buzon) };
+    check("la_boca_publica_existe_en_qa", publica.status === 202, { status: publica.status, cuerpo: publica.text.slice(0, 160) });
+    check("la_boca_publica_responde_honesto", publica.status === 202 && typeof (publica.payload || {}).recorded === "boolean", {
+      payload: publica.payload
+    });
+    if ((publica.payload || {}).recorded) {
+      const filas = buzon ? await prisma.runWithTenant(buzon, () => prisma.auditLog.findMany({
+        where: { module: "platform_logs" }, orderBy: { timestamp: "desc" }, take: 40
+      })).catch(() => []) : [];
+      const mia = filas.find((fila) => String((fila.new_value || {}).message || "") === sonda);
+      check("el_reporte_anonimo_queda_en_el_buzon", Boolean(mia), { encontrada: Boolean(mia), buzon: buzon.slice(0, 8) });
+      check("el_reporte_anonimo_no_usa_el_tenant_del_cuerpo", !mia || String(mia.tenant_id) !== String(outside.tenant.id), {
+        tenant_fila: mia ? String(mia.tenant_id).slice(0, 8) : "(sin fila)", tenant_del_cuerpo: String(outside.tenant.id).slice(0, 8)
+      });
+      if (mia) await prisma.runWithTenant(buzon, () => prisma.auditLog.delete({ where: { id: mia.id } })).catch(() => undefined);
+      RESUL.telemetria_publica.limpieza = mia ? "la fila de la sonda se elimino del buzon" : "no habia fila que eliminar";
+    } else {
+      check("el_buzon_publico_pide_configuracion_sin_fingir_exito", (publica.payload || {}).reason === "BUZON_TELEMETRIA_NO_CONFIGURADO", {
+        payload: publica.payload
+      });
+    }
     await page.screenshot({ path: path.join(OUT, "qa-sesion-final.png") }).catch(() => undefined);
   } finally {
     await browser.close().catch(() => undefined);

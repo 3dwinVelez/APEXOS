@@ -2,7 +2,7 @@
 
 - **Rama certificada:** `desarrollo`
 - **Ambiente:** puesto local, `next start` de producción sobre `apps/web/.next` con la API deliberadamente apagada
-- **Artefacto de evidencia:** `docs/qa/evidence/technical-alert-silence-20261119/formularios/`
+- **Artefacto de evidencia:** `docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/` (corrida citable, 76/76). La corrida homóloga sobre el build anterior quedó en `docs/qa/evidence/technical-alert-silence-20261119/formularios/` y se conserva como antecedente.
 - **Suite:** `npm run certify:technical-alerts-silence:local` (misma que certificó el enmudecimiento publicado en `main`)
 
 ## 1. Qué se prometió
@@ -22,6 +22,11 @@ Dos cosas que la intervención del 2026-11-18 dejó declaradas como deudas propi
 | Veredicto | 68/68 | **76/76** |
 | Reporte de fallo con `token` ausente | se descartaba en silencio (`if (!token) return;`) | viaja a `POST /api/v1/public/telemetry/client-logs` |
 | Dónde cae el reporte anónimo | no había dónde | buzón del despliegue (`APEXOS_TELEMETRY_TENANT_ID`) o `202 recorded:false` |
+| **QA desplegado, misma tanda de controles** (173) | **167/173: 6 rojos, todos de producto** | se remide tras la promoción (#19) |
+
+La columna del antes en QA (`docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/`) se tomó contra lo que el ambiente sirve hoy (API `9953527a78bd`, cero chunks con `apex:alert`), así que mide **los huecos de esta secuela** y no los de la fase previa. Los seis rojos son `nyvora_admin_validacion_motivo_en_el_campo`, `..._campo_marcado_como_invalido` y `..._sin_ventanilla_nativa` —la evidencia registra el `alert` «Completa nombres y apellidos para generar el nombre completo.» con `invalidFields: 0`— y `la_boca_publica_existe_en_qa`, `la_boca_publica_responde_honesto`, `el_buzon_publico_pide_configuracion_sin_fingir_exito`, porque QA responde `404 Route POST:/api/v1/public/telemetry/client-logs not found`.
+
+Antes de esa corrida citable hubo una primera pasada con **12 rojos** (`.../qa-antes-marcador-viejo/`): seis de ellos eran del instrumento, no del producto. `*_rutas_pantalla_viva` exigía las leyendas «Asignar horarios»/«Consulta de horarios» de `desarrollo`/`main` (blob `dff6265f`) sobre un `develop` desplegado que pinta «Horarios y mallas»/«Programación de jornadas» (blob `2e95b48c`), con la pantalla efectivamente montada. El marcador acepta hoy las cuatro leyendas y conserva el poder discriminatorio —ni el guard de acceso ni el cascarón del shell contienen ninguna—; la diferencia entre las dos pasadas (12 → 6, solo los de producto) es la prueba de que el cambio de marcador no tapó nada.
 
 ## 3. Cómo se midió la ausencia de ventanillas (y por qué el verde no era gratuito)
 
@@ -63,14 +68,20 @@ Suite web completa: `node --test apps/web/test/*.test.mjs` → **836 de 840**. L
 
 ## 5. Lo que esta certificación no cubre
 
-- **QA y Producción.** El código vive en `desarrollo`; no se promocionó ni se desplegó. Las ventanillas de esos ambientes se remiden contra el build desplegado cuando el dueño autorice la promoción.
+- **QA y Producción, columna del después.** El «antes» en QA ya está medido contra el build desplegado (§2: 167/173 con seis rojos de producto). Lo que falta es el «después»: requiere promocionar este corte a `develop`, desplegar QA y repetir la misma tanda de controles, y Producción se verifica por artefacto servido (cero chunks con `apex:alert` y el endpoint público presente en el haz), nunca con la carrera de navegador sobre datos de clientes.
 - **La ruta nueva en ambiente servido.** Sin `APEXOS_TELEMETRY_TENANT_ID` en Railway, la ingesta pública responde `recorded:false` y el reporte anónimo no se guarda: la prueba de contrato está verde, la habilitación está pendiente de una autorización de infraestructura.
 - **Un `window.confirm` y un `window.prompt`** que siguen en la misma pantalla (`page.tsx:852` restablecer huella, `page.tsx:549` fecha de cierre de afiliación). Son preguntas deliberadas del usuario, no avisos de fallo, y su conversión en modales de la casa quedó como pregunta de alcance en `docs/briefs/2026-11-19-fase-3-causas-del-fallo-tecnico.md` §9.
 - **Las causas del 500.** Siguen vivas y acotadas en ese mismo brief; el enmudecimiento y esta secuela no curan ninguna.
 
 ## 6. Sustrato de la corrida
 
-El `next build` del momento de la certificación (`BUILD_ID jrcmrQ90lrqXCVofNF1ki`) incluye los ocho retiros de `window.alert` y el reruteo del reporte. Después de esa corrida quedaron dos ediciones menores en el mismo archivo, declaradas aquí para que la evidencia no se lea como si cubiera algo que no cubre: retirar un `error?: string` que `SelectField` aceptaba pero ningún llamador pasaba (salida del DOM idéntica, porque el parámetro nunca tenía valor) y limpiar el mensaje de soporte ET 114-1 al desmarcar la casilla. Las dos quedaron cubiertas por contrato versionado (`corregir el dato limpia el motivo en linea`, en `apps/web/test/technical-alert-silence.test.mjs`), que es lo que falta cuando el navegador aún no las ejercita. Reintentar la corrida contra un build que ya las incluya sigue pendiente: al cerrar esta intervención, `apps/web/lib/hrOfflineMarking.ts` referencia `PHOTO_LOST_ESCALATION_NOTICE` sin definir —trabajo en curso de otro frente sobre el mismo árbol— y `next build` está rojo por esa causa, no por esta.
+El `next build` de la corrida citable (`BUILD_ID yZoMVK729ogHQT7tUJ8sK`, `next start`, evidencia en `docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/`) **sí** incluye las dos ediciones que quedaron después de la primera corrida (`BUILD_ID jrcmrQ90lrqXCVofNF1ki`): retirar un `error?: string` que `SelectField` aceptaba pero ningún llamador pasaba, y limpiar el mensaje de soporte ET 114-1 al desmarcar la casilla. Esa segunda corrida volvió a dar **76/76**, así que los ocho retiros de ventanilla, el motivo dentro del campo y el reporte anónimo quedan ejercitados por el navegador y no solo por contrato.
+
+Dos cosas se declaran para que la evidencia se lea bien:
+
+- La primera re-intención abortó con `BLOQUEO: ventanasAntesDelFormulario is not defined` (`scripts/certifications/technical-alert-silence-browser-local.js:443-444`): el renombrado de los marcadores parejos quedó sin ajustar en el conteo de la validación de empleados. El abortó fue honesto —el arnés se puso rojo en lugar de fingir el verde—, pero `node --check` no ve una referencia inexistente, así que el arnés se corrigió y la corrida se repitió entera.
+- `next build` sobre el árbol completo sigue expuesto a que un frente paralelo rompa el sustrato (ese fue el caso de `PHOTO_LOST_ESCALATION_NOTICE` sin definir en `apps/web/lib/hrOfflineMarking.ts` durante la mañana de la certificación). Esta corrida se tomó con el build ya verde.
+
 
 ## 7. Rollback
 
