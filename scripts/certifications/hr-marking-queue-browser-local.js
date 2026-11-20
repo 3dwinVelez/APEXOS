@@ -260,6 +260,20 @@ function currentCommit() {
   }
 }
 
+// `certified_commit` es un SHA de HEAD y HEAD sigue intacto cuando el arnes esta editado sin
+// commitear: el 2026-11-19 la evidencia decia `8e16a436` mientras el medidor de contraste que la
+// produjo vivia solo en el arbol de trabajo. El SHA por si solo no distingue los dos casos, asi que
+// la evidencia declara si el arbol estaba limpio al momento de la corrida.
+function workingTreeState() {
+  try {
+    const paths = child.execFileSync("git", ["status", "--porcelain"], { encoding: "utf8", cwd: ROOT })
+      .split(/\r?\n/).filter(Boolean);
+    return { dirty: paths.length > 0, rutas_modificadas: paths.length };
+  } catch {
+    return { dirty: null, rutas_modificadas: null };
+  }
+}
+
 // `next start` sirve lo que hay en `.next` sin comparar fuentes: con un artefacto viejo este arnes
 // certificaria codigo que ya no esta en el repo (trampa medida el 2026-11-19). Si cualquier fuente
 // del frontend es mas nueva que el ultimo manifiesto del build, se construye aqui y con el entorno
@@ -441,23 +455,48 @@ async function measureContrast(page, matchText) {
       };
       return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
     };
-    const candidate = [...document.querySelectorAll("p, div, li")].find((node) => (node.textContent || "").includes(needle) && node.children.length < 6);
+    // Se mide el nodo MAS INTERNO y MAS AJUSTADO al texto, no el primero que lo contiene: en
+    // document order un <div> contenedor aparece antes que su <p>, y medir el contenedor da la
+    // tinta y el fondo del panel (242,245,247 sobre 15,23,32) en lugar de los del aviso. Medido
+    // asi, el ratio del aviso quedaba verde sin haber mirado nunca el aviso.
+    const conTexto = [...document.querySelectorAll("p, div, li, span, strong")].filter((node) => (node.textContent || "").includes(needle));
+    const hojas = conTexto.filter((node) => !conTexto.some((otro) => otro !== node && node.contains(otro)));
+    const candidate = hojas.sort((a, b) => (a.textContent || "").length - (b.textContent || "").length)[0] || null;
     if (!candidate) return { found: false, needle: String(needle).slice(0, 60) };
+    const etiqueta = candidate.tagName.toLowerCase() + "." + String(candidate.className || "").split(/\s+/).filter(Boolean).slice(0, 4).join(".");
     const style = getComputedStyle(candidate);
     const fg = parse(style.color);
-    let background = null;
+    // El fondo NO es el primer ancestro opaco: en modo oscuro el repo repinta las utilidades de
+    // Tailwind con capas semitransparentes (`html.dark .bg-amber-50` = rgb(120 53 15 / 0.28) en
+    // globals.css:1446), y saltarselas mide la tinta sobre el panel que hay DETRAS del aviso. El
+    // navegador compone de atras hacia adelante, asi que se recorre la cadena guardando las capas
+    // translucidas y se compositan sobre la base opaca mas cercana.
+    const capas = [];
+    let base = null;
     let node = candidate;
-    while (node && !background) {
+    while (node && !base) {
       const own = parse(getComputedStyle(node).backgroundColor);
-      if (own && own.a > 0.95) background = own;
+      if (own) {
+        if (own.a >= 0.999) base = own;
+        else if (own.a > 0) capas.push(own);
+      }
       node = node.parentElement;
     }
-    if (!fg || !background) return { found: true, fg: style.color, bg: null, ratio: 0 };
+    if (!fg || !base) return { found: true, nodo: etiqueta, fg: style.color, bg: null, ratio: 0 };
+    const mezcla = (capa, fondo) => ({
+      r: Math.round(capa.a * capa.r + (1 - capa.a) * fondo.r),
+      g: Math.round(capa.a * capa.g + (1 - capa.a) * fondo.g),
+      b: Math.round(capa.a * capa.b + (1 - capa.a) * fondo.b)
+    });
+    const background = capas.reverse().reduce((fondo, capa) => mezcla(capa, fondo), base);
     const [light, dark] = [luminance(fg), luminance(background)].sort((left, right) => right - left);
     return {
       found: true,
+      nodo: etiqueta,
       fg: style.color,
       bg: `rgb(${background.r}, ${background.g}, ${background.b})`,
+      base_opaca: `rgb(${base.r}, ${base.g}, ${base.b})`,
+      capas_translucidas: capas.length,
       ratio: Number(((light + 0.05) / (dark + 0.05)).toFixed(2)),
       font_size_px: Number.parseFloat(style.fontSize) || 0,
       font_weight: style.fontWeight
@@ -512,6 +551,7 @@ async function main() {
 
   try {
     result.certified_commit = currentCommit();
+    result.arbol_de_trabajo = workingTreeState();
 
     // El API hijo hereda DATABASE_URL: si el host esta caido, `/health` responde 500 y el arnes
     // cuelga en `waitForHttp` sin decir la causa. El puesto tiene dos puertos PostgreSQL activos
@@ -1075,6 +1115,12 @@ async function main() {
       desprendida_en_vuelo: Boolean(rowDescosida)
     });
 
+    // El claro no se asume: la secuencia de la cola dejo el documento en el tema que traia el
+    // ambiente, y llamar «claro» a esa lectura sin forzarlo mide la misma paleta dos veces. Se
+    // fuerza y se comprueba aplicado, igual que en la pareja 03/04 de trazabilidad.
+    const temaClaroCola = await setTheme(page, "light");
+    await page.reload({ waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT });
+    await page.waitForFunction((needle) => (document.body.innerText || "").includes(needle), { timeout: 30_000 }, SENTENCES.closedCount);
     await screenshot_(page, "01-cola-operario-tema-claro.png");
     const claroCierre = await measureContrast(page, SENTENCES.closedCount);
 
@@ -1085,11 +1131,21 @@ async function main() {
     const textoOscuro = await bodyText(page);
     await screenshot_(page, "02-cola-operario-tema-oscuro.png");
     const oscuroCierre = await measureContrast(page, SENTENCES.closedCount);
-    result.observations.tema = { aplicado: temaOscuro.applied, via: temaOscuro.via, claro: claroCierre, oscuro: oscuroCierre };
+    result.observations.tema = {
+      aplicado_claro: temaClaroCola.applied, aplicado_oscuro: temaOscuro.applied, via: temaOscuro.via,
+      claro: claroCierre, oscuro: oscuroCierre
+    };
 
     check("tema_oscuro_aplicado_en_el_documento", temaOscuro.applied.dark === true && temaOscuro.applied.stored === "dark", temaOscuro.applied);
+    // Mismo contrato que la pareja 03/04: los dos fondos tienen que ser distintos, porque el repo
+    // repinta `bg-slate-50`/`text-slate-900` en `html.dark` (globals.css:1068 y :1087). Si la
+    // lectura sale identica, el tema no se forzo y el check no puede aprobar legibilidad en claro.
     check("aviso_de_cierre_legible_en_claro_y_oscuro", claroCierre.found && oscuroCierre.found
-      && claroCierre.ratio >= 4.5 && oscuroCierre.ratio >= 4.5, { claro: claroCierre, oscuro: oscuroCierre });
+      && claroCierre.ratio >= 4.5 && oscuroCierre.ratio >= 4.5
+      && claroCierre.bg !== oscuroCierre.bg
+      && temaClaroCola.applied.dark === false && temaOscuro.applied.dark === true, {
+      claro: claroCierre, oscuro: oscuroCierre, temas: { claro: temaClaroCola.applied, oscuro: temaOscuro.applied }
+    });
     check("el_aviso_sigue_visible_en_tema_oscuro", textoOscuro.includes(SENTENCES.closedCount), { caracteres: textoOscuro.length });
 
     // =========================================================================
@@ -1146,14 +1202,30 @@ async function main() {
     const lineaDegradada = (trazabilidadDegradada.split("\n").find((line) => line.includes(SENTENCES.degradedOnReport)) || "").trim();
     check("criterio3_la_evidencia_degradada_aparece_nombrada_al_supervisor", trazabilidadDegradada.includes(SENTENCES.degradedOnReport)
       && trazabilidadDegradada.includes(SENTENCES.survivesOnReport), { linea: lineaDegradada.slice(0, 220) });
-    await screenshot_(page, "03-trazabilidad-evidencia-degradada-claro.png");
+    // El tema se fuerza ANTES de cada lectura y su captura: la secuencia de la cola dejo el documento
+    // en modo oscuro, asi que medir el estado claro sin volver a claro daba dos lecturas identicas
+    // (16,48 en ambas) y dos PNG byte a byte iguales que el check aprobaba igual. Un control que no
+    // puede distinguir los dos temas no certifica legibilidad, certifica que nadie lo miro.
+    const temaClaro = await setTheme(page, "light");
+    await abrirJornada(dayHeic);
     const degradadaClaro = await measureContrast(page, SENTENCES.degradedOnReport);
-    await setTheme(page, "dark");
+    await screenshot_(page, "03-trazabilidad-evidencia-degradada-claro.png");
+    const temaOscuroTrazabilidad = await setTheme(page, "dark");
     await abrirJornada(dayHeic);
     const degradadaOscuro = await measureContrast(page, SENTENCES.degradedOnReport);
     await screenshot_(page, "04-trazabilidad-evidencia-degradada-oscuro.png");
+    // La paleta del aviso SI cambia entre temas: el repo repinta las utilidades en
+    // `html.dark .bg-amber-50` / `.text-amber-950` (globals.css:1446 y :1502). Por eso se exige
+    // que el fondo medido sea distinto en cada lectura: es exactamente lo que habria delatado que
+    // el «claro» nunca se forzo. Ademas se publica el tema aplicado en cada captura y el nodo
+    // medido (`nodo`), para que el lector vea que el ratio es el del aviso y no el del panel.
     check("alerta_degradada_legible_en_claro_y_oscuro", degradadaClaro.found && degradadaOscuro.found
-      && degradadaClaro.ratio >= 4.5 && degradadaOscuro.ratio >= 4.5, { claro: degradadaClaro, oscuro: degradadaOscuro });
+      && degradadaClaro.ratio >= 4.5 && degradadaOscuro.ratio >= 4.5
+      && degradadaClaro.bg !== degradadaOscuro.bg
+      && temaClaro.applied.dark === false && temaOscuroTrazabilidad.applied.dark === true, {
+      claro: degradadaClaro, oscuro: degradadaOscuro,
+      temas: { claro: temaClaro.applied, oscuro: temaOscuroTrazabilidad.applied }
+    });
     await setTheme(page, "light");
 
     await abrirJornada(dayCorrection);
