@@ -1,0 +1,992 @@
+[
+  {
+    "url": "/dashboard/talento-humano/rutas",
+    "pantalla": "rutas",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Programación de jornadas": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/talento-humano/mapa",
+    "pantalla": "mapa",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": true,
+        "en_body": true
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/servicios",
+    "pantalla": "servicios",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/transporte/monitoreo",
+    "pantalla": "monitoreo",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard",
+    "pantalla": "home",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Acciones frecuentes": {
+        "en_main": true,
+        "en_body": true
+      }
+    }
+  },
+  {
+    "url": "/dashboard/talento-humano/rutas",
+    "pantalla": "rutas",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Programación de jornadas": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/talento-humano/mapa",
+    "pantalla": "mapa",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": true,
+        "en_body": true
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/servicios",
+    "pantalla": "servicios",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/transporte/monitoreo",
+    "pantalla": "monitoreo",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard",
+    "pantalla": "home",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Acciones frecuentes": {
+        "en_main": true,
+        "en_body": true
+      }
+    }
+  },
+  {
+    "url": "/dashboard/talento-humano/rutas",
+    "pantalla": "rutas",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Programación de jornadas": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/talento-humano/mapa",
+    "pantalla": "mapa",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": true,
+        "en_body": true
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/servicios",
+    "pantalla": "servicios",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/transporte/monitoreo",
+    "pantalla": "monitoreo",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/talento-humano/rutas",
+    "pantalla": "rutas",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Programación de jornadas": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/talento-humano/mapa",
+    "pantalla": "mapa",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": true,
+        "en_body": true
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/servicios",
+    "pantalla": "servicios",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  },
+  {
+    "url": "/dashboard/transporte/monitoreo",
+    "pantalla": "monitoreo",
+    "main_presente": true,
+    "leyendas": {
+      "Asignar horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Consulta de horarios": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Horarios y mallas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Programación de jornadas": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Mapa en vivo de rutas y marcaciones": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CONTROL OPERATIVO GPS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "CENTRO OPERATIVO DE SERVICIOS": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Órdenes listas para gestionar": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Monitoreo en vivo": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Cargando monitoreo TMS": {
+        "en_main": true,
+        "en_body": true
+      },
+      "Mis módulos": {
+        "en_main": false,
+        "en_body": false
+      },
+      "Acciones frecuentes": {
+        "en_main": false,
+        "en_body": false
+      }
+    }
+  }
+]

@@ -1,0 +1,7 @@
+# suites API apuntadas sobre el arbol del candidato (contractuales, sin base de datos)
+# comando: node --test test/telemetry-client-logs-public.test.js test/admin-role-capabilities.test.js test/admin-role-escalation.test.js test/admin-user-status-regression.test.js test/rbac-administrative-role.test.js
+# fecha: 2026-11-20T04:35:19Z
+
+# tests 29
+# pass 29
+# fail 0

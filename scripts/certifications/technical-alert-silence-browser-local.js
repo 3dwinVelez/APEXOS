@@ -72,7 +72,12 @@ const SCENARIOS = {
 // Los marcadores son el texto real que la sonda dejo pintado con la tormenta puesta. Un marcador
 // inventado haria que "pantalla_sigue_viva" midiera el cascaron del shell y no la pantalla.
 const SCREENS = [
-  { name: "rutas", route: "/dashboard/talento-humano/rutas", mounted: ["Asignar horarios", "Consulta de horarios"] },
+  // Las cabeceras de rutas no son las mismas en las tres ramas: `desarrollo`/`main` dicen
+  // "Asignar horarios" / "Consulta de horarios" y `develop` dice "Horarios y mallas" /
+  // "Programación de jornadas" (page.tsx:1100 y :1119, medido el 2026-11-19 en cada arbol). El
+  // marcador tiene que discriminar "la pantalla se monto" de "cayo al guard o al cascaron del
+  // shell", no que version del arbol esta servida: se aceptan las cuatro leyendas.
+  { name: "rutas", route: "/dashboard/talento-humano/rutas", mounted: ["Asignar horarios", "Consulta de horarios", "Horarios y mallas", "Programación de jornadas"] },
   { name: "mapa", route: "/dashboard/talento-humano/mapa", mounted: ["Mapa en vivo de rutas y marcaciones", "CONTROL OPERATIVO GPS"] },
   { name: "servicios", route: "/dashboard/servicios", mounted: ["CENTRO OPERATIVO DE SERVICIOS", "Órdenes listas para gestionar"] },
   { name: "monitoreo", route: "/dashboard/transporte/monitoreo", mounted: ["Monitoreo en vivo", "Cargando monitoreo TMS"] },
@@ -271,6 +276,7 @@ async function main() {
           inlineAlerts,
           invalidFields: document.querySelectorAll('[aria-invalid="true"]').length,
           bodyText: (document.body.innerText || "").slice(0, 6000),
+          mainText: ((document.querySelector("main") || document.querySelector("[role=main]"))?.innerText || "").slice(0, 6000),
           visibleTechnical
         };
       });
@@ -297,17 +303,45 @@ async function main() {
       // segundos, asi que una instantanea inmediata no probaria la ausencia.
       await new Promise((resolve) => setTimeout(resolve, settleMs));
       const surface = await readSurface();
+      // Diagnostico del marcador (solo con CERT_MARCADOR_DIAG=1): donde aparece cada leyenda, en el
+      // area de contenido o en el cascaron. Sirve para probar que el marcador discrimina pantalla y
+      // no menu lateral.
+      if (process.env.CERT_MARCADOR_DIAG) {
+        const leyendas = [...new Set(SCREENS.flatMap((entry) => entry.mounted))];
+        const diag = { url: surface.url, pantalla: definition.name, main_presente: surface.mainText.length > 0, leyendas: {} };
+        for (const leyenda of leyendas) {
+          diag.leyendas[leyenda] = {
+            en_main: surface.mainText.includes(leyenda),
+            en_body: surface.bodyText.includes(leyenda)
+          };
+        }
+        const diagFile = path.join(OUT, "marker-diag.json");
+        const acumulado = fs.existsSync(diagFile) ? JSON.parse(fs.readFileSync(diagFile, "utf8")) : [];
+        acumulado.push(diag);
+        fs.writeFileSync(diagFile, JSON.stringify(acumulado, null, 2));
+      }
       // Autocontrol del arnes: si la pantalla no llego a pedir datos, no se estaba certificando un
       // fallo sino un guard de acceso o una portada vacia. Sin tormenta real, la ausencia de ventanas
       // no prueba nada.
       const dataRequests = seen.failed.length - before.failed + seen.aborted.length - before.aborted;
       const telemetryPosts = seen.telemetry.length - before.telemetry;
+      // El marcador se busca en el area de contenido, no en todo el documento: el menu lateral y la
+      // paleta de comandos tambien conocen los nombres de las funciones, y una leyenda capturada alli
+      // afirmaria "pantalla montada" sobre el puro cascaron del shell. Si el arbol no marca <main>,
+      // se retrocede al texto completo y la Retroceso queda declarada en mountedEn.
+      const aguja = surface.mainText.length ? surface.mainText : surface.bodyText;
       return {
         ...surface,
         dataRequests,
         telemetryPosts,
         denied: surface.bodyText.includes("Acceso no autorizado"),
-        mounted: definition.mounted.some((marker) => surface.bodyText.includes(marker))
+        mounted: definition.mounted.some((marker) => aguja.includes(marker)),
+        mountedEn: surface.mainText.length ? "main" : "body",
+        // El lobby queda exento: es un directorio de modulos y funciones, asi que nombrar otra pantalla
+        // en su contenido es su trabajo, no una fuga del cascaron.
+        leyendasAjenas: definition.static === true ? [] : SCREENS.filter((otro) => otro.name !== definition.name)
+          .flatMap((otro) => otro.mounted.map((marker) => ({ pantalla: otro.name, marker })))
+          .filter(({ marker }) => aguja.includes(marker))
       };
     }
 
@@ -327,14 +361,23 @@ async function main() {
       for (const definition of SCREENS) {
         const surface = await visit(definition);
         const verdict = surfaceVerdict(surface);
-        results[definition.name] = { ...verdict, mounted: surface.mounted, dataRequests: surface.dataRequests, telemetryPosts: surface.telemetryPosts, overlayText: surface.overlayText };
+        results[definition.name] = { ...verdict, mounted: surface.mounted, montado_en: surface.mountedEn, leyendas_ajenas: surface.leyendasAjenas, dataRequests: surface.dataRequests, telemetryPosts: surface.telemetryPosts, overlayText: surface.overlayText };
         check(`${definition.name}_${theme}_arnes_con_tormenta_real`, surface.dataRequests > 0 || definition.static === true, { dataRequests: surface.dataRequests, url: surface.url });
         check(`${definition.name}_${theme}_sin_guard_de_acceso`, !surface.denied, { url: surface.url });
         check(`${definition.name}_${theme}_sin_tarjeta_flotante`, surface.overlayCards === 0, { overlayCards: surface.overlayCards, overlayText: surface.overlayText });
         check(`${definition.name}_${theme}_sin_detalle_tecnico`, !verdict.technical && !verdict.marker, { marker: verdict.marker });
-        check(`${definition.name}_${theme}_pantalla_sigue_viva`, surface.mounted, { url: surface.url, snippet: surface.bodyText.slice(0, 200) });
+        check(`${definition.name}_${theme}_pantalla_sigue_viva`, surface.mounted, { url: surface.url, montado_en: surface.mountedEn, snippet: surface.bodyText.slice(0, 200) });
         await page.screenshot({ path: path.join(OUT, `${theme}-${definition.name}-500.png`) }).catch(() => undefined);
       }
+      // Control de contraste del marcador: las leyendas se toleran entre ramas ("Asignar horarios" en
+      // desarrollo/main, "Horarios y mallas" en develop), asi que lo que hay que vigilar es que la
+      // leyenda sea propia de la pantalla y no un eco del menu lateral o de la paleta de comandos.
+      // Si en una pantalla aparece la leyenda de otra, el marcador ya no afirma que esa pantalla se
+      // monto y la corrida se pone roja en lugar de dar un verde hueco.
+      const cruzadas = Object.entries(results).filter(([, value]) => (value.leyendas_ajenas || []).length > 0);
+      check(`${theme}_marcador_discrimina_pantalla_no_cascaron`, cruzadas.length === 0, {
+        violaciones: cruzadas.map(([name, value]) => ({ pantalla: name, leyendas: value.leyendas_ajenas }))
+      });
       RESUL.scenarios[`tormenta_500_${theme}`] = { screens: results, telemetry_posts: seen.telemetry.length };
     }
 
