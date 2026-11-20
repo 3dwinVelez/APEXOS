@@ -182,9 +182,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.37.0",
+      "version": "2.38.0",
       "updated_at": "2026-11-20",
-      "sha256": "2ebb131ff6860ac93f4fdada63356e3897ef9608749f42d23e46c9eba6966baf",
+      "sha256": "69de68d7299dda0d759a4b72c0e70caaaebb0a1932771333144e5bd8859cef88",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -225,7 +225,8 @@
         "validacion-en-linea-no-ventanilla-nativa",
         "evidencia-desprendida-antes-de-reenviar",
         "pregunta-del-usuario-en-el-sitio-del-dato",
-        "contrato-multilineo-sobre-crlf"
+        "contrato-multilineo-sobre-crlf",
+        "lint-de-ci-como-compuerta-local"
       ]
     },
     {
@@ -304,9 +305,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.89.0",
+      "version": "2.90.0",
       "updated_at": "2026-11-20",
-      "sha256": "412630909c997a48c7759b4c08470fcd4700701a5a78dcca5f89a0561b4a80c5",
+      "sha256": "3dddd20bc3c1ab579f666dd6e5cf560e58164d8e4640fba7aeac13dd9faf90f2",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -385,7 +386,8 @@
         "compuerta-contra-el-arbol-que-aterriza",
         "produccion-verificada-por-artefacto",
         "barrido-de-familia-con-autoverificacion",
-        "sustrato-declara-el-incidente"
+        "sustrato-declara-el-incidente",
+        "rojo-heredado-se-clasifica-y-se-repara"
       ]
     },
     {

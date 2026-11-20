@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.89.0
+version: 2.90.0
 updated_at: 2026-11-20
 contract: 2
 ---
@@ -298,6 +298,8 @@ Antes de actuar, leer en este orden:
 
 101. **El control de ausencia barre la familia completa que nombra la promesa, el barrido se auto-verifica, y el sustrato de una corrida declara el incidente que lo tocó.** El arnés del enmudecimiento barría `alert(` en la pantalla de Empleados y reportaba «cero ventanillas nativas»: cierto y vacío a la vez, porque las dos que quedaban eran un `prompt` (la fecha de cierre de afiliación) y un `confirm` (restablecer la huella). Cuatro reglas. (a) **La unidad de medida es la familia, no la función que se retiró primero**: `alert|confirm|prompt`, con y sin prefijo `window.`/`globalThis.`. (b) **El barrido se prueba contra un fixture que sí contiene lo que niega** —`el_barrido_del_arnes_detecta_las_ventanillas_que_dice_detectar`—; un regex que no puede fallar no afirma nada, y en esta familia ya costó dos controles podridos (§3.1 del certificado). (c) **Añadir un chequeo cambia la cuenta y se dice**: la tanda pasó de 78 a 79 sin cambiar comportamiento, así que las corridas viejas siguen citables con su propio número. (d) **El `lectura.txt` del artefacto describe el sustrato aunque el sustrato sea incómodo**: la corrida verde del 2026-11-20 (`bede369c`, `BUILD_ID L2qD4tF_hhOtd5lXKIqgF`, **79/79**, 0 diálogos, 78 reportes de telemetría) se construyó en el árbol principal y no en una worktree puntual porque la worktree había barrido 1.173 archivos del propio árbol; se declara el incidente, la recuperación medida (`--deleted` = 0 y 0 paquetes sin `package.json` sobre 814 inspeccionados) y la prueba de que lo servido es el commit (`git status --porcelain --untracked-files=no` = 0 más el chunk `.next/static/chunks/2hwtl1y4-wxrq.js` con `Fecha final de vigencia` y 0 `window.prompt`/`window.confirm`). Por qué: un certificado verde sobre un sustrato que nadie describe es indistinguible de un certificado verde sobre un árbol equivocado.
 
+102. **El pipeline de la rama forma parte del cierre: se abre el run, se lee el log y se nombra el rojo —de mecanismo o de contenido— antes de seguir acumulando commits.** Regla 100 enseña a distinguir un rojo del arnés de uno del negocio; el 2026-11-20 hizo falta la misma lectura aplicada al CI de `desarrollo`, y esta vez el rojo era de contenido: tres pushes consecutivos fallaban en `Lint & TypeCheck` por un solo `react/jsx-key` (el botón de la escalera de `reportes/page.tsx`, nacido en `450bd4d6`) mientras los checks propios de cada intervención salían verdes y el job de `Build Web` pasaba. La causa de que sobreviviera tres cortes no fue el error, fue la costumbre: el cierre declaraba suites y certificaciones locales sin consultar `gh run list --branch desarrollo`. El contrato nuevo: (a) al cerrar una intervención que empuja a la rama, se consulta el run del commit empujado y se reporta su estado; (b) un rojo se lee con `gh run view --job <id> --log-failed` y se clasifica —24 `warning` no apagan el job, 1 `error` sí—; (c) un rojo heredado de un commit ajeno no se absorbe ni se calla: se repara en un corte propio con su evidencia o se declara como deuda con el archivo y la línea. Por qué: mientras la rama esté roja, el verde del siguiente candidato no demuestra nada, porque ya no hay con qué atribuirle el mérito al cambio que se certifica.
+
 ## Checklist de intervención
 
 Antes:
@@ -348,6 +350,7 @@ Después:
 
 ## Antipatrones
 
+- Cerrar una intervención sin mirar el run de CI del commit empujado, o absorber un rojo ajeno sin clasificarlo.
 - Presentar unit tests o build como certificación end-to-end.
 - Ocultar una certificación fallida como "intermitente" sin repetir la corrida.
 - Certificar con datos de producción o datos personales.

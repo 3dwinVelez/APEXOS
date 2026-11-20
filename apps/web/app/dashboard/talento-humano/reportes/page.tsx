@@ -1136,7 +1136,7 @@ export default function HrReportsPage() {
                     <p className="mt-1 text-xs text-content-muted">La escalera de marcaciones no rellena un hueco del dia: esta correccion la hace el supervisor, queda a tu usuario y abre la novedad de ajuste manual.</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {missingPunches.map((type) => (
-                        <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm font-semibold text-content-strong hover:bg-white disabled:cursor-not-allowed disabled:opacity-60" disabled={!selected.employeeNumericId || savingCorrection} onClick={() => openCorrection(type)} title={selected.employeeNumericId ? "" : "El reporte no resolvio la ficha del empleado"} type="button">
+                        <button key={type} className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm font-semibold text-content-strong hover:bg-white disabled:cursor-not-allowed disabled:opacity-60" disabled={!selected.employeeNumericId || savingCorrection} onClick={() => openCorrection(type)} title={selected.employeeNumericId ? "" : "El reporte no resolvio la ficha del empleado"} type="button">
                           <PenLine size={15} /> {PUNCH_LADDER_LABELS[type]}
                         </button>
                       ))}

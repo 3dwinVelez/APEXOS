@@ -131,3 +131,10 @@ test("la pantalla monta la correccion sobre el permiso hr:write y el endpoint ad
   assert.match(page, /missingPunches\.map/, "la pantalla ofrece cada hueco de la escalera");
   assert.match(page, /correccion_administrativa/, "la fila corregida se lee como correccion en la trazabilidad");
 });
+
+test("cada boton que nace de la escalera lleva su key", () => {
+  const page = read("../app/dashboard/talento-humano/reportes/page.tsx");
+  const escalera = page.match(/\{missingPunches\.map\(\(type\) => \(\s*([\s\S]*?)<\/button>\s*\)\)\}/);
+  assert.ok(escalera, "la escalera debe seguir iterando los huecos: si cambió de forma, este control ya no mide nada");
+  assert.match(escalera[1], /<button key=\{type\}/, "un iterador sin key apaga el lint de la rama");
+});
