@@ -78,7 +78,7 @@
   },
   "validation_summary": {
     "certified_application_commit": "c9c1b2fa",
-    "candidate_tip": "8355ca5b",
+    "candidate_tip": "punta de codex/qa-alertsilence-seq-develop-20261120 (c9c1b2fa + 7b466bcb + 8355ca5b + estos manifiestos)",
     "baseline_preserved": "e3d82190",
     "production_build": "passed",
     "build_id": "k4ilir5kgOYCDKebn_aA7",
