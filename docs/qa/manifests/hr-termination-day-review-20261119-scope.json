@@ -31,9 +31,6 @@
     "scripts/certifications/hr-employee-user-association-isolated-local.js",
     "scripts/certifications/hr-termination-complete-local.js",
     "scripts/certifications/hr-termination-day-review-local.js",
-    "docs/qa/evidence/hr-termination-day-review-20261119/functional.json",
-    "docs/qa/evidence/hr-termination-day-review-20261119/regression.json",
-    "docs/qa/evidence/hr-termination-day-review-20261119/support.json",
     "docs/qa/manifests/hr-termination-day-review-20261119-preqa.json",
     "docs/qa/manifests/hr-termination-day-review-20261119-scope.json"
   ],
@@ -109,18 +106,6 @@
     },
     {
       "status": "A",
-      "file": "docs/qa/evidence/hr-termination-day-review-20261119/functional.json"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/evidence/hr-termination-day-review-20261119/regression.json"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/evidence/hr-termination-day-review-20261119/support.json"
-    },
-    {
-      "status": "A",
       "file": "docs/qa/manifests/hr-termination-day-review-20261119-preqa.json"
     },
     {
@@ -133,37 +118,59 @@
       "name": "termination salary and contract dates",
       "status": "passed",
       "evidence": [
-        "../evidence/hr-termination-day-review-20261119/functional.json",
-        "../evidence/hr-termination-day-review-20261119/regression.json",
-        "../evidence/hr-termination-day-review-20261119/support.json"
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
       ]
     },
     {
       "name": "payroll and benefit integration",
       "status": "passed",
       "evidence": [
-        "../evidence/hr-termination-day-review-20261119/functional.json",
-        "../evidence/hr-termination-day-review-20261119/regression.json",
-        "../evidence/hr-termination-day-review-20261119/support.json"
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
       ]
     },
     {
       "name": "loans recalculation deletion and rehire",
       "status": "passed",
       "evidence": [
-        "../evidence/hr-termination-day-review-20261119/functional.json",
-        "../evidence/hr-termination-day-review-20261119/regression.json",
-        "../evidence/hr-termination-day-review-20261119/support.json"
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
       ]
     },
     {
       "name": "RBAC and tenant isolation",
       "status": "passed",
       "evidence": [
-        "../evidence/hr-termination-day-review-20261119/functional.json",
-        "../evidence/hr-termination-day-review-20261119/regression.json",
-        "../evidence/hr-termination-day-review-20261119/support.json"
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
       ]
     }
+  ],
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "05cb5def956bc8023c875388311a8efa76fab4d7",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "9f560ee1ab4307529c3fd18145740dbd6232e67f",
+    "implementation_commit": "97cea039"
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/dayReview.js",
+    "apps/api/src/modules/hr/payrollPeriod.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/terminationDayReviews.js",
+    "apps/api/src/modules/hr/terminationManualAdjustments.js",
+    "apps/api/test/hr-day-review.test.js",
+    "apps/api/test/hr-payroll-period.test.js",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/components/hr/TerminationDayReviews.tsx",
+    "apps/web/lib/payroll-period.ts",
+    "docs/qa/certifications/hr-payroll-period-range-20261119.md",
+    "docs/qa/certifications/hr-termination-day-review-20261119.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-termination-complete-local.js",
+    "scripts/certifications/hr-termination-day-review-local.js"
   ]
 }
