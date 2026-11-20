@@ -96,9 +96,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.71.0",
+      "version": "2.72.0",
       "updated_at": "2026-11-20",
-      "sha256": "29b087bf818e416144354de33b243dcfa9ed4c287dc31bcc9cd69ad94d1eb3ed",
+      "sha256": "91aa2b2287d9494e21f49d637f81e8cdc3005650cbcc9ef0a2858df79305370d",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -156,7 +156,8 @@
         "cierre-de-corte-con-run-del-pipeline",
         "excepcion-contada-en-filas",
         "manifiesto-una-sola-fuente-de-filas",
-        "pendiente-con-inventario-barrido"
+        "pendiente-con-inventario-barrido",
+        "pendiente-irrecuperable-con-cifra-y-brief-aparte"
       ]
     },
     {
