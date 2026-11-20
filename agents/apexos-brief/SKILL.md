@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.67.0
+version: 2.68.0
 updated_at: 2026-11-20
 contract: 2
 ---
@@ -206,6 +206,8 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
 
 80. **Una pregunta de alcance contestada se reescribe en el brief con la decisión, lo ejecutado, lo medido y lo que quedó fuera —sin borrar la pregunta ni reescribir la historia.** El brief de la Fase 3 dejó en §9 una pregunta que alteraba el alcance: si el `window.confirm` de restablecer huella y el `window.prompt` de cierre de afiliación se convertían en modales de la casa o se quedaban como estaban. Cuando el dueño la contesta («procede con mi autorización los pendientes», 2026-11-20) y el corte se ejecuta, el brief no se limpia ni se reescribe al tiempo presente: la pregunta queda **tachada y contestada en el mismo renglón**, con cuatro cosas separadas. (a) **Qué se decidió y dónde vive ahora**: ninguna de las dos se volvió modal —el cierre pide la fecha en un `input type="date"` dentro de la fila y la huella se confirma en dos clics en el panel—, porque la promesa de la familia era dejar de tapar la pantalla, no cambiar el skin del tapón. (b) **Qué se midió** (cero ventanillas en la pantalla, contrato 15/15, `tsc` 0 errores), con la ruta del arnés que lo acredita. (c) **Qué quedó explícitamente fuera y por qué**: los otros 24 `window.confirm` de catorce archivos en cinco áreas no se tocaron, cada uno es un corte con su propia medición, y mezclarlos sería el merge de rama completa que la gobernanza prohibe. (d) **Las cifras se comprueban al escribirlas**: el primer borrador dijo «diez módulos» y el conteo real era 14 archivos / 5 áreas; un brief con una cuenta inflada se cita como evidencia en el manifiesto de la siguiente promoción. Por qué: el brief es el único lugar donde un lector futuro puede reconstruir por qué se hizo lo que se hizo; si la decisión borra la duda original, el lector no puede distinguir una decisión tomada de una que nunca se consideró.
 
+81. **El brief declara el estado actual del mundo, no el del día que se abrió: se relee contra la rama en cada corte y lo que ya se autorizó, se ejecutó o se reparó se corrige en el renglón con la evidencia.** El 2026-11-20, al cerrar un corte ajeno, `docs/briefs/2026-11-19-fase-3-causas-del-fallo-tecnico.md` seguía pidiendo autorización para una variable de ambiente que ya estaba puesta y medida en QA y Producción, declaraba «sin cambiar» dos ventanillas que ya se habían convertido y no decía nada de que la rama llevaba tres pushes rojos por un `react/jsx-key` heredado. Los tres eran falsos el mismo día. Un brief desfasado cuesta más que un brief ausente: el siguiente lector deja de ejecutar lo que ya está hecho, vuelve a pedir un permiso concedido, o cree intacta una compuerta que estaba apagada. Tres disciplinas: (a) lo que se cumplió se **tanda y se cita con su medición** (ambiente, valor no sensible, ruta de evidencia o línea del documento versionado que lo acredita), no se borra; (b) lo que se reparó entra en «Lo que ya está cerrado» nombrando **la causa y el commit**, para que el rojo heredado no se confunda con el corte que lo descubre; (c) el número que se cita se verifica contra el repo antes de escribirlo —`git log -1 <sha>` y el documento de certificación—, porque en esta intervención circuló una nota con SHA y conteos de certificación que no existían en ninguna parte. Por qué: el brief es la única pieza que el equipo lee para saber qué sigue; si su «sigue» ya pasó, la intervención se rehace o se omite.
+
 ## Checklist de intervención
 
 Antes:
@@ -253,6 +255,7 @@ Después:
 
 ## Antipatrones
 
+- Dejar en el brief una autorización ya concedida o un pendiente ya ejecutado: el siguiente lector rehace el trabajo o pide un permiso que está dado.
 - Redactar sin ejecutar preflight o sin comparar contra `origin/desarrollo`.
 - Ignorar `INTEGRAR_REMOTO` o resolverlo sobrescribiendo la copia local.
 - Usar comodines de directorio como inventario del alcance.
