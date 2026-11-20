@@ -1,0 +1,27 @@
+El DESPUES del corte, medido en Produccion el 2026-11-20 sobre el despliegue de a5a49561.
+Ambiente: apexos-api-prod /health commit a5a4956131d8; la web tardo mas que la API en moverse, y esta
+corrida es posterior a que el propio build servido pasara de 34674cac29b3 a a5a4956131d8.
+
+- sonda-despues.json: scripts/certifications/fase-3-ad-provider-detail-probe.js
+  --target=production --expected-commit a5a49561 --fixed-in a5a49561 arroja 10/10. La propiedad
+  promotada pasa: sonda_sin_detalle_del_proveedor_platform_companies con { status: 500, leaked: [] }.
+  El error sigue existiendo -el HTTP 500 es el mismo-; lo que ya no viaja es el detalle del proveedor.
+- despues-cuerpo-vivo-companies.txt: el cuerpo literal que ahora sirve el mismo endpoint con la misma
+  peticion que en el ANTES producio {"message":"Supabase 403: Forbidden"}:
+  {"message":"El servicio de datos no respondió como se esperaba. Intente de nuevo o avise a soporte."}
+  Antes y despues son la misma sonda, el mismo ambiente y el mismo payload, asi que el par es
+  comparable linea por linea y no depende de haber cambiado la pregunta entre las dos corridas.
+
+Frontera de esta evidencia, declarada para que no se lea de mas:
+- De las cuatro sondas, solo platform_companies piso el camino de fallo del proveedor (500). Las otras
+  tres rebotan antes por su propia validacion (405, 400, 404) y por eso su verde prueba ausencia de
+  jerga en el cuerpo, no el camino de Supabase. Los seis handlers del corte quedan cubiertos por
+  prueba estatica en apps/web/test/technical-detail-not-leaked.test.mjs, no por esta sonda.
+- causa_A_desplegada_en_el_ambiente dice que el commit que lleva el arreglo de congestion esta servido;
+  no dice que P2028/P2024/P2034 se haya reproducido en el campo. Provocar esa congestion exige
+  concurrencia real sobre los datos de una empresa con clientes, y eso no se monta contra Produccion.
+- Las sondas llevan sesion falsa y caen en la validacion del proveedor: no escriben empresas, usuarios
+  ni ordenes de nadie.
+- La corrida la produjo la version del script que vive en desarrollo (script_sha256
+  db32d76b05ded80fb8460a1522c89875ebdfa6e566c6a07cf74a376be37fd1d2), no el blob que versiona main;
+  la diferencia con el ANTES esta explicada en antes-lectura.txt.

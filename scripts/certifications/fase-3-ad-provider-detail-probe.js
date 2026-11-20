@@ -12,6 +12,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 
 const ROOT = path.resolve(__dirname, "../..");
 
@@ -117,6 +118,7 @@ async function probe(label, { method, url, headers, body, expect_provider_touch 
 
 function writeEvidence() {
   fs.mkdirSync(OUT, { recursive: true });
+  RESULT.script_sha256 = crypto.createHash("sha256").update(fs.readFileSync(__filename)).digest("hex");
   RESULT.verdict = {
     passed: RESULT.checks.filter((item) => item.ok).length,
     failed: RESULT.checks.filter((item) => !item.ok).length,
@@ -207,10 +209,14 @@ async function main() {
   });
 
   // Causa A: el mapeo de congestion vive en el API. En campo no se puede forzar P2028 sin montar
-  // una concurrencia que sì afecte al ambiente, asi que aqui se registra el commit desplegado y se
-  // declara la limite: la forma del 503 la prueba la suite unitaria, no esta sonda.
+  // una concurrencia que sì afecte al ambiente, asi que aqui se ancla al commit que lleva el
+  // arreglo (--fixed-in, por defecto el commit evaluado) y se declara el limite: la forma del 503
+  // la prueba la suite unitaria, no esta sonda. Anclarlo al commit evaluado daria verde también
+  // cuando el ambiente corre la version sin corregir, que es exactamente el caso del «antes».
+  const FIXED_IN = String(args["fixed-in"] || EXPECTED_COMMIT).replace(/^v/, "");
   RESULT.causa_A = {
-    desplegada_por_commit: EXPECTED_COMMIT ? RESULT.deployed_commit.startsWith(EXPECTED_COMMIT.replace(/^v/, "")) : null,
+    commit_con_el_arreglo: FIXED_IN,
+    desplegada_por_commit: FIXED_IN ? RESULT.deployed_commit.startsWith(FIXED_IN) : null,
     reproducida_en_campo: false,
     motivo: "Forzar P2028/P2024 en el banco compartido de QA o Produccion exige concurrencia real sobre los datos de una empresa; eso no se monta contra un ambiente con clientes."
   };

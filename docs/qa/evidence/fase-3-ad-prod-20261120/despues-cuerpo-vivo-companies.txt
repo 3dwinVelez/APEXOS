@@ -1,0 +1,1 @@
+{"message":"El servicio de datos no respondió como se esperaba. Intente de nuevo o avise a soporte."} con HTTP 500
