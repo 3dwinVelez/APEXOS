@@ -96,9 +96,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.73.0",
+      "version": "2.74.0",
       "updated_at": "2026-11-20",
-      "sha256": "8203a3fe9d427bb8d63b210d6911141556cd91b3569b42c231652854b4a10018",
+      "sha256": "eb4c1cbacdfc1ab3769c954f2aee98303d1dbe9663b2e2a64b9fbb70c2a4c75a",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -315,9 +315,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.94.2",
+      "version": "2.95.0",
       "updated_at": "2026-11-20",
-      "sha256": "a85c9a6888709c9af855d35f72b5ad926f249f20ae4b042c0ff20fe86839f6eb",
+      "sha256": "e5d897bc402b36e113ddc19ae59736fafb3963b527fa9136fd517bbee8a85cd5",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [

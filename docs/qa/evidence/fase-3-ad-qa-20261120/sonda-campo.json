@@ -1,0 +1,146 @@
+{
+  "target": "qa",
+  "environment": "QA",
+  "env_file": "config/qa.env",
+  "base_web": "https://apexos-web-qa-production.up.railway.app",
+  "base_api": "https://apexos-api-qa-production.up.railway.app",
+  "expected_commit": "81cd253a",
+  "deployed_commit": "81cd253a2dea",
+  "started_at": "2026-11-20T21:48:00.490Z",
+  "probes": [
+    {
+      "label": "platform_companies",
+      "method": "POST",
+      "pathname": "/api/platform/companies",
+      "status": 500,
+      "cuerpo": "{\"message\":\"El servicio de datos no respondió como se esperaba. Intente de nuevo o avise a soporte.\"}",
+      "error": "",
+      "tokens_en_cuerpo": [],
+      "toca_proveedor": true
+    },
+    {
+      "label": "platform_company_modules",
+      "method": "POST",
+      "pathname": "/api/platform/company-modules",
+      "status": 405,
+      "cuerpo": "",
+      "error": "",
+      "tokens_en_cuerpo": [],
+      "toca_proveedor": false
+    },
+    {
+      "label": "admin_users",
+      "method": "POST",
+      "pathname": "/api/admin/users",
+      "status": 400,
+      "cuerpo": "{\"message\":\"Rol principal requerido.\"}",
+      "error": "",
+      "tokens_en_cuerpo": [],
+      "toca_proveedor": false
+    },
+    {
+      "label": "services_orders_id",
+      "method": "PUT",
+      "pathname": "/api/v1/services/orders/00000000-0000-4000-8000-000000000000",
+      "status": 404,
+      "cuerpo": "{\"message\":\"No se encontro la orden de servicio.\"}",
+      "error": "",
+      "tokens_en_cuerpo": [],
+      "toca_proveedor": false
+    }
+  ],
+  "checks": [
+    {
+      "name": "el_detector_de_fuga_detecta_la_firma_vieja",
+      "ok": true,
+      "detail": {
+        "detectados": [
+          "Supabase <status>:",
+          "Could not find the table"
+        ]
+      }
+    },
+    {
+      "name": "el_detector_no_marca_el_mensaje_neutral",
+      "ok": true
+    },
+    {
+      "name": "api_responde_health",
+      "ok": true,
+      "detail": {
+        "commit": "81cd253a2dea"
+      }
+    },
+    {
+      "name": "build_desplegado_es_el_evaluado",
+      "ok": true,
+      "detail": {
+        "deployed": "81cd253a2dea",
+        "expected": "81cd253a"
+      }
+    },
+    {
+      "name": "sonda_sin_detalle_del_proveedor_platform_companies",
+      "ok": true,
+      "detail": {
+        "status": 500,
+        "leaked": [],
+        "error": ""
+      }
+    },
+    {
+      "name": "sonda_sin_detalle_del_proveedor_platform_company_modules",
+      "ok": true,
+      "detail": {
+        "status": 405,
+        "leaked": [],
+        "error": ""
+      }
+    },
+    {
+      "name": "sonda_sin_detalle_del_proveedor_admin_users",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "leaked": [],
+        "error": ""
+      }
+    },
+    {
+      "name": "sonda_sin_detalle_del_proveedor_services_orders_id",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "leaked": [],
+        "error": ""
+      }
+    },
+    {
+      "name": "al_menos_una_sonda_toco_el_camino_de_fallo_del_proveedor",
+      "ok": true,
+      "detail": {
+        "son_5xx": "platform_companies:500 platform_company_modules:405 admin_users:400 services_orders_id:404"
+      }
+    },
+    {
+      "name": "causa_A_desplegada_en_el_ambiente",
+      "ok": true,
+      "detail": {
+        "desplegada_por_commit": true,
+        "reproducida_en_campo": false,
+        "motivo": "Forzar P2028/P2024 en el banco compartido de QA o Produccion exige concurrencia real sobre los datos de una empresa; eso no se monta contra un ambiente con clientes."
+      }
+    }
+  ],
+  "causa_A": {
+    "desplegada_por_commit": true,
+    "reproducida_en_campo": false,
+    "motivo": "Forzar P2028/P2024 en el banco compartido de QA o Produccion exige concurrencia real sobre los datos de una empresa; eso no se monta contra un ambiente con clientes."
+  },
+  "verdict": {
+    "passed": 10,
+    "failed": 0,
+    "total": 10
+  },
+  "finished_at": "2026-11-20T21:48:03.270Z"
+}

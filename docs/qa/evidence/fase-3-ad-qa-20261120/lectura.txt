@@ -1,0 +1,79 @@
+Lectura de la evidencia QA del corte de Fase 3 (causas A y D)
+=============================================================
+
+Fecha: 2026-11-20
+Ambiente: QA (Railway) — API `apexos-api-qa-production`, web `apexos-web-qa-production`
+Commit evaluado: `81cd253a2dea` (fusión squash del PR #105 sobre `develop`)
+Corte certificado: `api-error.js` + `server.js` (causa A) y cinco handlers `app/api/**` (causa D)
+
+Archivos de esta carpeta
+------------------------
+
+- `certification.json` — corrida del certificador de navegador
+  `scripts/certifications/technical-alert-silence-browser-qa.js --expected-commit 81cd253a`,
+  **175 de 175 controles en verde**. Mide la propiedad que le importa al dueño: con la API cayendo
+  (500, 429 y red cortada) no aparece ninguna ventanilla nativa en NYVORA ni en la empresa de
+  contraste, el canal de diagnóstico sí viaja y el bundle desplegado ya no dispara `apex:alert`.
+- `sonda-campo.json` — corrida de la sonda nueva
+  `scripts/certifications/fase-3-ad-provider-detail-probe.js --target=qa --expected-commit 81cd253a`,
+  **10 de 10 en verde**. Mide la otra mitad: ningún cuerpo 5xx servido por el despliegue trae el
+  detalle del proveedor (`Supabase <status>:`, `rest/v1`, `P2028`, `Could not find the table`…).
+- `qa-validacion-empleados.png`, `qa-sesion-final.png` — pantallazos de la corrida verde.
+- `qa-antes-buzon-local-sin-variable.json` + `qa-antes-empleados.png` + `qa-antes-sesion-final.png`
+  — la corrida **174/175** anterior, conservada como contraste. Ver "El rojo que no era del producto".
+
+Qué prueba esta evidencia y qué no prueba
+----------------------------------------
+
+Prueba que en el ambiente QA desplegado:
+
+1. El operario no recibe ventana técnica cuando la API falla, en las cuatro pantallas y con los
+   tres tipos de tormenta (500, 429, red cortada), para dos tenants distintos.
+2. El fallo sí queda registrado: 74/75 intentos del navegador aceptados y la boca pública sin
+   sesión responde `202 {"recorded":true}` y escribe en el buzón del despliegue
+   (`e8fac747…`), ignorando el `tenant_id` hostil que la sonda metió en el cuerpo.
+3. El handler `/api/platform/companies`, forzado a la ruta de rechazo del proveedor con una sesión
+   falsa, devuelve `500` con `{"message":"El servicio de datos no respondió como se esperaba.
+   Intente de nuevo o avise a soporte."}` y cero ocurrencias de `Supabase`. Antes del corte ese
+   mismo cuerpo traía `Supabase 401: invalid credentials`.
+
+No prueba:
+
+- **La causa A en campo.** El mapeo `P2024/P2028/P2034 -> 503 + retry-after` está desplegado por
+  commit (`build_desplegado_es_el_evaluado`), pero reproducir congestión real exige concurrencia
+  contra el banco compartido de un ambiente con clientes. Eso no se monta aquí. La forma del 503 la
+  sostienen `apps/api/test/api-error-congestion.test.js` y `api-error-mapping.test.js`, corridas
+  sobre el árbol del candidato en `docs/qa/evidence/fase-3-ad-develop-20261120/`.
+- **Las otras tres sondas de cuerpo.** `platform/company-modules` respondió 405, `admin/users` 400
+  y `services/orders/[id]` 404: rebots de forma y de método, nunca llegaron al viaje al proveedor.
+  Su verde significa "no hubo fuga", no "la ruta de fuga fue ejercida". El control
+  `al_menos_una_sonda_toco_el_camino_de_fallo_del_proveedor` existe precisamente para que la
+  lectura no se inflé: una sola de las cuatro sondas pisó el camino de 500 y esa es la evidencia
+  dura. Los otros cuatro handlers quedan cubiertos por el contrato en árbol
+  `apps/web/test/technical-detail-not-leaked.test.mjs`.
+
+El rojo que no era del producto
+-------------------------------
+
+La primera corrida QA marcó 174/175 con `el_reporte_anonimo_queda_en_el_buzon` en rojo
+(`{"encontrada":false,"buzon":""}`). El servidor había respondido `202 {"recorded":true}` — la
+escritura sí ocurrió —, pero el certificador busca la fila con `APEXOS_TELEMETRY_TENANT_ID` **local**
+y `config/qa.env` no la tenía. El tenant del buzón se descubrió leyendo la base QA: existe una fila
+`AuditLog` con `module=platform_logs`, `action=frontend.error` y `tenant_id=e8fac747-e410-41dd-8784-2c0ca71660e8`
+con el mensaje exacto de la sonda. Agregada la variable al env local (archivo gitignoreado), la
+corrida repite en 175/175 y el control pasa a `{"encontrada":true,"buzon":"e8fac747"}`.
+
+Detalle operativo: el certificador de navegador trata `--output` como **directorio** y escribe
+`<directorio>/certification.json` dentro. La primera corrida apuntó a `.../certification.json`, creó
+un directorio con ese nombre y la segunda corrida falló con `EISDIR` al escribir. Los artefactos de
+ambas se reubicaron aquí; no se perdió ninguna corrida.
+
+Limpieza del ambiente
+---------------------
+
+- La sonda pública borra su propia fila (`el_reporte_anonimo_queda_en_el_buzon` encontró la fila y
+  `AuditLog` quedó en cero filas con `new_value->>'message' like 'sonda publica 2026112%'`).
+- La fila huérfana de la corrida 174/175 (`id=5949`, la que el arnés no pudo borrar porque aún no
+  conocía el buzón) se eliminó por SQL con las tres condiciones de identidad. Residuo verificado: 0.
+- Los usuarios efímeros de NYVORA y de la empresa de contraste que crea el certificador de navegador
+  quedan activos en QA, como en corridas anteriores. Están declarados en la deuda de la intervención.
