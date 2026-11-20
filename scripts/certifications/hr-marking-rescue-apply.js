@@ -22,14 +22,27 @@ const AMBIENTE_PRODUCION = "config/production.env";
 const RUTA_CORRECCION = "/api/v1/hr/time-punches";
 const PIERNAS = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
 
+// Las banderas de valor aceptan tambien la forma `--bandera valor`. Si no, `--login-email correo@x`
+// se leia como booleano `true` y la sesion fallaba con un mensaje que culpaba al operador.
+const BANDERAS_DE_VALOR = new Set(["manifest", "env-file", "base-url", "token-env", "login-email", "login-password-env", "output", "solo-empleado"]);
+
 function parseArgs(argv = process.argv.slice(2)) {
   const args = {};
-  for (const raw of argv) {
+  for (let i = 0; i < argv.length; i += 1) {
+    const raw = argv[i];
     if (!raw.startsWith("--")) continue;
     const body = raw.slice(2);
     const eq = body.indexOf("=");
-    if (eq === -1) args[body] = true;
-    else args[body.slice(0, eq)] = body.slice(eq + 1);
+    if (eq === -1) {
+      if (BANDERAS_DE_VALOR.has(body)) {
+        const valor = argv[i + 1];
+        if (valor === undefined || String(valor).startsWith("--")) throw new Error(`--${body} necesita un valor (use --${body}=<valor>).`);
+        args[body] = valor;
+        i += 1;
+        continue;
+      }
+      args[body] = true;
+    } else args[body.slice(0, eq)] = body.slice(eq + 1);
   }
   return args;
 }
@@ -68,6 +81,11 @@ function selftest() {
   casos.push(["el ensayo seco contra produccion no necesita la autorizacion (no escribe)", ensayo === false]);
   const rutaManifiesto = path.resolve(ROOT, "docs/qa/evidence/x.json");
   casos.push(["el manifiesto ejecutable no puede leerse de dentro del repositorio", rutaManifiesto.startsWith(`${ROOT}${path.sep}`) === true]);
+  // La forma con espacio es la que un humano teclea; si se vuelve `true`, la sesion desaparece en
+  // silencio y el rojo culpa al operador.
+  casos.push(["--login-email <valor> se lee con su valor, no como booleano", parseArgs(["--login-email", "a@b.co", "--aplicar"])["login-email"] === "a@b.co"]);
+  casos.push(["la forma --bandera=<valor> sigue parseada igual", parseArgs(["--manifest=x.json"])["manifest"] === "x.json"]);
+  casos.push(["una bandera de valor sin valor se niega en vez de volverse true", (() => { try { parseArgs(["--login-password-env", "--aplicar"]); return false; } catch { return true; } })()]);
   let fallidos = 0;
   for (const [nombre, ok] of casos) {
     if (!ok) fallidos += 1;
@@ -120,10 +138,16 @@ function loadEnvFile(envFile) {
   return values;
 }
 
-async function request(baseUrl, pathname, { token, body, method = "POST" } = {}) {
+async function request(baseUrl, pathname, { token, apikey, body, method = "POST" } = {}) {
   const res = await fetch(`${baseUrl}${pathname}`, {
     method,
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { "Content-Type": "application/json" } : {}) },
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // GoTrue exige la clave anonima tambien como `apikey`: con solo `Authorization` responde
+      // 401 «No API key found in request», que parece un problema de credenciales y no lo es.
+      ...(apikey ? { apikey } : {}),
+      ...(body ? { "Content-Type": "application/json" } : {})
+    },
     body: body ? JSON.stringify(body) : undefined
   });
   const texto = await res.text();
@@ -137,18 +161,25 @@ async function sesion({ baseUrl, env, tokenEnv, loginEmail, loginPasswordEnv }) 
   if (directo) return { token: directo, via: "token-env" };
   const email = String(loginEmail || "").trim();
   const password = process.env[String(loginPasswordEnv || "")] || "";
-  if (!email || !password) throw new Error("Falta la sesion: use --token-env=<VAR> o --login-email con --login-password-env=<VAR>.");
+  if (!email || !password) throw new Error("Falta la sesion: use --token-env=<VAR> o --login-email=<correo> con --login-password-env=<VAR>.");
+
+  // Primero el canal del producto (`/api/v1/auth/login`), que es el que la web usa y el que el mismo
+  // API valida. El grant de Supabase queda como respaldo: si se intenta primero, un usuario que vive
+  // en la tabla propia del API muere con un `invalid_credentials` que parece credencial rota.
+  const intentos = [];
+  const api = await request(baseUrl, "/api/v1/auth/login", { body: { email, password } });
+  const tokenApi = api.body && (api.body.token || api.body.access_token || (api.body.user && api.body.user.token));
+  if (api.status === 200 && tokenApi) return { token: tokenApi, via: "api-login" };
+  intentos.push(`api-login ${api.status} ${JSON.stringify(api.body || api.crudo).slice(0, 120)}`);
+
   const supabaseUrl = String(env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL || "").replace(/\/$/, "");
   const anonKey = String(env.NEXT_PUBLIC_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || "");
   if (supabaseUrl && anonKey) {
-    const res = await request(supabaseUrl, "/auth/v1/token?grant_type=password", { token: anonKey, body: { email, password } });
+    const res = await request(supabaseUrl, "/auth/v1/token?grant_type=password", { token: anonKey, apikey: anonKey, body: { email, password } });
     if (res.status === 200 && res.body && res.body.access_token) return { token: res.body.access_token, via: "supabase-password-grant" };
-    throw new Error(`Supabase Auth rechazo la sesion (${res.status}): ${JSON.stringify(res.body || res.crudo).slice(0, 160)}`);
+    intentos.push(`supabase ${res.status} ${JSON.stringify(res.body || res.crudo).slice(0, 120)}`);
   }
-  const res = await request(baseUrl, "/api/v1/auth/login", { body: { email, password } });
-  const token = res.body && (res.body.token || res.body.access_token || (res.body.user && res.body.user.token));
-  if (res.status !== 200 || !token) throw new Error(`/api/v1/auth/login no devolvio sesion (${res.status}): ${JSON.stringify(res.body || res.crudo).slice(0, 160)}`);
-  return { token, via: "api-login" };
+  throw new Error(`Ningun canal devolvio sesion: ${intentos.join(" | ")}`);
 }
 
 async function main() {

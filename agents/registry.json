@@ -94,9 +94,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.65.0",
+      "version": "2.66.0",
       "updated_at": "2026-11-19",
-      "sha256": "7e71b7f5b369afc88bcdbdcbe870d1f96bd7c6b9e29254b5631b18dc4108e2e2",
+      "sha256": "8f3df0579322190c629e52133f8a566946c7e63b167969dcbc23f845593541ab",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -147,8 +147,8 @@
         "brief-cierra-con-ambiente-verificado",
         "brief-de-acote-separa-rama-de-nube",
         "cifra-de-brief-con-hora-e-ids",
-        "autorizacion-de-mecanismo-con-premisas-verificadas"
-      ]
+        "autorizacion-de-mecanismo-con-premisas-verificadas",
+      "sonda-se-nombra-segun-lo-que-demuestra"      ]
     },
     {
       "name": "apexos-db-nube",
@@ -298,9 +298,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.86.0",
+      "version": "2.86.1",
       "updated_at": "2026-11-19",
-      "sha256": "ac1d62a4b8d2497a892ef887de87f78dcfa5d1df83b1cdb2ac963db859ed6ad1",
+      "sha256": "50ec068ff1c0d6c0917beefb7e1e7f901772ead5113d625e4ceffc4b771b5bfc",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -422,9 +422,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.51.0",
+      "version": "2.52.0",
       "updated_at": "2026-11-19",
-      "sha256": "3b432074824bbe0bb0aa4ae785c38b3614bf76bbb58acd3a92844e7d06fd0e59",
+      "sha256": "de5df9d040aab64e802ba1542fcb27d1b79dea03024129a74fa94f4e5fb9b047",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -467,8 +467,8 @@
         "cierre-con-ambiente-servido",
         "autorizacion-abierta-no-alcanza-la-nube",
         "rojo-repetido-es-causa-raiz",
-        "premisas-de-dato-y-canal-antes-del-desbloqueo"
-      ]
+        "premisas-de-dato-y-canal-antes-del-desbloqueo",
+      "recurso-de-prueba-se-construye-y-defectos-se-separan"      ]
     }
   ],
   "documents": [
