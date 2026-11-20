@@ -298,9 +298,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.85.0",
+      "version": "2.86.0",
       "updated_at": "2026-11-19",
-      "sha256": "c21a2e1186a5f3a50bc160c462d6bb734998cb9e25bab2717e556bd9a6638792",
+      "sha256": "ac1d62a4b8d2497a892ef887de87f78dcfa5d1df83b1cdb2ac963db859ed6ad1",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -370,7 +370,9 @@
         "arnes-declara-su-error",
         "tema-forzado-y-nodo-medido",
         "marcador-discrimina-estado-no-rama",
-        "instrumento-irreversible-se-certifica-por-su-bloqueo"
+        "instrumento-irreversible-se-certifica-por-su-bloqueo",
+        "marcador-en-area-de-contenido",
+        "certificacion-sobre-el-arbol-del-candidato"
       ]
     },
     {
