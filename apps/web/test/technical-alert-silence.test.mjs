@@ -99,3 +99,25 @@ test("los temporizadores de a pie no vuelven a multiplicar la tormenta", () => {
   assert.match(monitoreo, /document\.visibilityState === "visible"/, "el monitoreo de flota deja de consultar en pestana oculta");
   assert.match(monitoreo, /El mapa conserva la ultima lectura/, "con datos viejos la pantalla lo dice, no lo calla");
 });
+
+test("la validacion de empleados se pinta en el campo, no en una ventana", () => {
+  const empleados = read("app/dashboard/talento-humano/empleados/page.tsx");
+  assert.doesNotMatch(empleados, /(\bwindow\.|\bglobalThis\.)?alert\s*\(/, "ningun mensaje de validacion puede volver a ser ventanilla nativa");
+  assert.match(empleados, /setFormErrors\(errors\);/, "el guardado agrupa los motivos y los entrega al formulario");
+  assert.match(empleados, /role="alert">\{error\}<\/span>/, "el motivo se lee debajo del campo que lo incumple");
+  assert.match(empleados, /aria-invalid=\{error \? true : undefined\}/, "el campo marcado como invalido lo dice tambien para el lector de pantalla");
+});
+
+test("corregir el dato limpia el motivo en linea", () => {
+  const empleados = read("app/dashboard/talento-humano/empleados/page.tsx");
+  assert.match(empleados, /onChange=\{\(value\) => \{ clearFormError\("exoneration_support"\);/, "escribir el soporte ET 114-1 retira su propio mensaje");
+  assert.match(empleados, /if \(!event\.target\.checked\) clearFormError\("exoneration_support"\);/, "desmarcar la casilla no puede dejar el motivo colgado");
+});
+
+test("un visitante sin sesion tambien deja su fallo en el buzon", () => {
+  const reporte = apiSource.slice(apiSource.indexOf("function reportClientFailure"));
+  assert.doesNotMatch(reporte.slice(0, 900), /if \(!token\) return;/, "la ausencia de token no puede silenciar el reporte");
+  assert.match(apiSource, /post\(CLIENT_LOG_PUBLIC_ENDPOINT, anonymousPayload, false\)\.catch/, "el reporte anonimo usa la ruta publica y nunca rompe la pantalla");
+  assert.match(apiSource, /response\.status === 401 \|\| response\.status === 403 \? post\(CLIENT_LOG_PUBLIC_ENDPOINT/, "si el canal autenticado rechaza, el reporte cae al buzon publico");
+  assert.match(apiSource, /function isPlatformLogsPath/, "el buzon propio no se reporta a si mismo");
+});
