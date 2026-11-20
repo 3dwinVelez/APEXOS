@@ -1,0 +1,309 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "fase-3-ad-develop-20261120",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-fase3-ad-develop-20261120",
+  "certified_commit": "1d23ca09a13a3a161cdfeece2ea190c63b80afdb",
+  "base_commit": "35578bb7dc9dfd7732db451aeb8b1dc514536ec9",
+  "base_commits": {
+    "develop": "35578bb7dc9dfd7732db451aeb8b1dc514536ec9"
+  },
+  "target_head": "35578bb7dc9dfd7732db451aeb8b1dc514536ec9",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "1d23ca09a13a3a161cdfeece2ea190c63b80afdb",
+    "replay_sobre_develop": "Replay puntual de los dos commits certificados en desarrollo (d9f3bbd3 causa A, a11e8333 causa D) sobre el tip de develop 35578bb7dc9d, en su propia worktree auxiliar. No es un merge de desarrollo: desarrollo..develop trae 217 commits de frentes ajenos (rescate de jornadas, portada de talento humano, comercio, torre) que no viajan.",
+    "origen_certificado_en_desarrollo": [
+      "d9f3bbd3",
+      "a11e8333"
+    ],
+    "excluido_explicitamente": [
+      "apps/web/test/hr-employee-biometric-reset.test.mjs",
+      "agents/**",
+      ".qoder/skills/**",
+      "docs/briefs/2026-11-19-fase-3-causas-del-fallo-tecnico.md"
+    ],
+    "motivo_de_la_exclusion": "El contrato de restablecer huella mide el panel de dos clics que reemplazo al window.confirm de Empleados; ese corte no esta en develop ni en main, asi que llevar el contrato solo pondria roja la suite del destino y llevar la pantalla ampliaria el alcance a otro frente. El contexto vivo del equipo (agents/, .qoder/skills/) no existe en las ramas de integracion. El brief de la fase se queda en desarrollo, que es donde vive su inventario de causas.",
+    "como_se_le_yo_que_no_es_un_merge": "El commit certificado vive en la rama auxiliar codex/qa-fase3-ad-develop-20261120 porque es un replay: trae el mismo contenido de d9f3bbd3 + a11e8333 (causas A y D) mas el certificador y su evidencia sobre el arbol del destino. candidate_source.branch dice de donde viene el trabajo (desarrollo), y origen_certificado_en_desarrollo lista los dos sha originales."
+  },
+  "change_intent": {
+    "summary": "Dos causas del fallo tecnico que saturaba la vista del dueño, llevadas a QA tal como se certificaron. Causa A: la congestion de Prisma (P2024 pool agotado, P2028 transaccion muerta, P2034 conflicto de escritura) caia al 500 generico de core/api-error.js; ahora vive en la tabla CONGESTION y responde 503 con codigo propio (BASE_OCUPADA, TRANSACCION_INTERRUMPIDA, CONFLICTO_DE_ESCRITURA) y retry_after 2s/2s/1s, y server.js traduce ese presupuesto a la cabecera retry-after para que el reintento del cliente deje de ir a ciegas contra el servidor saturado. Causa D: seis handlers de app/api/** respondian al navegador el detalle crudo del proveedor (Supabase 404: Could not find the table public.master_catalogs...), que es un mapa del esquema y un falso diagnostico; el detalle pasa a console.error del servidor con prefijo de ruta y el cuerpo recibe un mensaje operativo neutro conservando el estado HTTP, para que un 403 de autorizacion no se entierree en el ruido de caida. Ningun mensaje tecnico nuevo llega a la interfaz y el fallo sigue quedando en platform_logs. Toca apps/api (mapper y arranque) y apps/web (handlers app/api), sus contratos, un certificador nuevo y la evidencia: no toca Prisma, ni migraciones, ni la capa de alertas ya publicada.",
+    "modules": [
+      "api-core",
+      "web-api-handlers",
+      "certification-harness",
+      "documentation"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/api-error.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/api-error-congestion.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/admin/roles/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/admin/users/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/platform/companies/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/platform/company-modules/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/platform/company-sessions/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/v1/services/orders/[id]/route.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/technical-detail-not-leaked.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/delta-rojos.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/lectura.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/rojos-base-destino.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/rojos-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/suite-api-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-completa-base-destino.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-completa-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-contratos-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/06-sesion-vencida.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/07-login-aviso-sesion.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/08-modo-diagnostico.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/09-validacion-empleados.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/dark-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/dark-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/dark-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/dark-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/dark-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/lectura.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/light-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/light-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/light-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/light-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/light-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/suite-api-apuntada.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-causas-ad-20261120/suite-web.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/fase-3-ad-develop-20261120-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/fase-3-ad-develop-20261120-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/fase-3-ad-candidate-suites.js"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/",
+    "apps/api/src/core/",
+    "apps/api/test/",
+    "apps/web/app/api/admin/roles/",
+    "apps/web/app/api/admin/users/",
+    "apps/web/app/api/platform/companies/",
+    "apps/web/app/api/platform/company-modules/",
+    "apps/web/app/api/platform/company-sessions/",
+    "apps/web/app/api/v1/services/orders/[id]/",
+    "apps/web/test/",
+    "docs/qa/evidence/",
+    "docs/qa/manifests/",
+    "scripts/certifications/"
+  ],
+  "allowed_deletions": [],
+  "certified_functional_paths": [
+    "apps/api/server.js",
+    "apps/api/src/core/api-error.js",
+    "apps/api/test/api-error-congestion.test.js",
+    "apps/web/app/api/admin/roles/route.ts",
+    "apps/web/app/api/admin/users/route.ts",
+    "apps/web/app/api/platform/companies/route.ts",
+    "apps/web/app/api/platform/company-modules/route.ts",
+    "apps/web/app/api/platform/company-sessions/route.ts",
+    "apps/web/app/api/v1/services/orders/[id]/route.ts",
+    "apps/web/test/technical-detail-not-leaked.test.mjs",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/certification.json",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/delta-rojos.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/lectura.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/rojos-base-destino.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/rojos-candidato.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/suite-api-candidato.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-completa-base-destino.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-completa-candidato.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-contratos-candidato.txt",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/06-sesion-vencida.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/07-login-aviso-sesion.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/08-modo-diagnostico.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/09-validacion-empleados.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/certification.json",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/dark-home-500.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/dark-mapa-500.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/dark-monitoreo-500.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/dark-rutas-500.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/dark-servicios-500.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/lectura.txt",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/light-home-500.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/light-mapa-500.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/light-monitoreo-500.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/light-rutas-500.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/light-servicios-500.png",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/suite-api-apuntada.txt",
+    "docs/qa/evidence/fase-3-causas-ad-20261120/suite-web.txt",
+    "scripts/certifications/fase-3-ad-candidate-suites.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "la_congestion_se_responde_503_con_codigo_y_presupuesto_de_reintento",
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-develop-20261120/suite-api-candidato.txt"
+      ]
+    },
+    {
+      "name": "el_operario_no_recibe_detalle_tecnico_ni_el_503_declara_prisma",
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-causas-ad-20261120/certification.json"
+      ]
+    },
+    {
+      "name": "ningun_handler_de_app_api_lanza_el_detalle_del_proveedor_al_cliente",
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-develop-20261120/suite-web-contratos-candidato.txt"
+      ]
+    },
+    {
+      "name": "el_estado_http_de_un_rechazo_no_se_colapsa_en_500",
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-develop-20261120/suite-web-contratos-candidato.txt"
+      ]
+    },
+    {
+      "name": "la_consola_del_navegador_sigue_sin_ventanillas_tecnicas",
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-causas-ad-20261120/certification.json"
+      ]
+    },
+    {
+      "name": "la_suite_de_contratos_del_destino_no_suma_rojos",
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-develop-20261120/lectura.txt"
+      ]
+    }
+  ],
+  "authorization_flags": {
+    "auxiliary_branch_promotion": true
+  },
+  "notes": {
+    "sustrato": "Las suites del candidato se corrieron en el arbol de la rama auxiliar, que no tiene node_modules propio y no se le enlazo ninguno. 11 de los 16 rojos de la suite web son ausencia de paquetes (typescript, fake-indexeddb, exceljs, react) y 4 son aserciones preexistentes del destino. La no-regresion se demuestra con la base del destino corrida en el mismo ambiente: 722/706/16 contra 727/711/16, mismos nombres de rojo (delta-rojos.txt vacio).",
+    "control_de_falsabilidad": "Al certificador new se le mutilo la lista base (15 de 16 rojos) y respondio rojos nuevos: 1, veredicto 2/3, exit 1. Con la lista intacta: 0 nuevos, 3/3, exit 0.",
+    "pendiente": "El criterio 4 de la Fase 3 (la cuota de ERROR_INTERNO en platform_logs antes/despues y la aparicion del codigo de congestion) se mide con este build desplegado en QA."
+  }
+}
