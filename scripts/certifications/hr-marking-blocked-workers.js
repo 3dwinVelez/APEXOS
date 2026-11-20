@@ -173,6 +173,10 @@ const VENTANA_APERTURA_MIN = 120;
 // veinte horas despues de la real. Los demas codigos son el instante en que el operario oprimio.
 const CODIGOS_DE_INTENTO_INMEDIATO = new Set(["MARCACION_FUERA_DE_SECUENCIA", "SELFIE_REQUERIDA", "IDEMPOTENCY_KEY_CONFLICT"]);
 const RUTA_DE_MARCACION = "/api/v1/hr/self/time-punches";
+// La otra punta del mismo almacen: por aqui no oprime un operario, corrige un administrador.
+// Mezclarlas hace que el propio rescatista aparezca como trabajador bloqueado los dias en que
+// escribio, y el supervisor persigue un empleado fantasma.
+const RUTA_DE_CORRECCION = "/api/v1/hr/time-punches";
 
 function minutosDeHora(hora) {
   const match = /^(\d{2}):(\d{2})/.exec(String(hora || "").slice(0, 5));
@@ -197,6 +201,17 @@ function esIntentoInmediato(row) {
   if (!row || row.route !== RUTA_DE_MARCACION) return false;
   if (row.code && CODIGOS_DE_INTENTO_INMEDIATO.has(row.code)) return true;
   return !row.code && /backend no disponible|solicitud frontend fallida|contenido del archivo/i.test(String(row.message || ""));
+}
+
+// El oprimido del operario es el que llega por la ruta propia del dispositivo. El de la ruta
+// administrativa es una correccion que fallo: prueba otra cosa y no puede inflar los intentos
+// de quien se reporta bloqueado.
+function esIntentoDeMarcacionPropia(row) {
+  return !!row && row.route === RUTA_DE_MARCACION;
+}
+
+function rechazosDeOperario(rows) {
+  return rows.filter((row) => row.route !== RUTA_DE_CORRECCION).length;
 }
 
 // `HH:MM` del horario + dia calendario de Colombia -> ISO UTC. Una jornada que cruza medianoche
@@ -350,24 +365,30 @@ async function main() {
       { argv: ["--env-file", "config/qa.env", "--date", "2026-11-17"], expect: { "env-file": "config/qa.env", date: "2026-11-17" } }
     ];
     let failed = 0;
+    // La lista de booleanos que alimentaba el codigo de salida se mantenia a mano y ya habia
+    // quedado atras: dos checks imprimian FALLO sin bloquear. Aqui lo que se imprime es lo que
+    // cuenta, asi que un check nuevo no puede nacer decorativo.
+    const informa = (linea) => {
+      if (/^FALLO/.test(linea)) failed += 1;
+      console.log(linea);
+    };
     for (const testCase of cases) {
       const parsed = parseArgs(testCase.argv);
       for (const [key, value] of Object.entries(testCase.expect)) {
         const ok = parsed[key] === value;
-        if (!ok) failed += 1;
-        console.log(`${ok ? "ok  " : "FALLO"} --${key}=${JSON.stringify(parsed[key])} esperado ${JSON.stringify(value)} (argv: ${testCase.argv.join(" ")})`);
+        informa(`${ok ? "ok  " : "FALLO"} --${key}=${JSON.stringify(parsed[key])} esperado ${JSON.stringify(value)} (argv: ${testCase.argv.join(" ")})`);
       }
     }
     const drifted = parseFailures(["--env-file"]);
-    console.log(`${drifted.length === 1 ? "ok  " : "FALLO"} la compuerta detecta un --env-file sin valor (rojo provocado): ${JSON.stringify(drifted)}`);
+    informa(`${drifted.length === 1 ? "ok  " : "FALLO"} la compuerta detecta un --env-file sin valor (rojo provocado): ${JSON.stringify(drifted)}`);
     const quiet = parseFailures(["--env-file=config/qa.env", "--date", "2026-11-17"]);
-    console.log(`${quiet.length === 0 ? "ok  " : "FALLO"} ambas formas de argumento resuelven sin arrastrar el predeterminado: ${JSON.stringify(quiet)}`);
+    informa(`${quiet.length === 0 ? "ok  " : "FALLO"} ambas formas de argumento resuelven sin arrastrar el predeterminado: ${JSON.stringify(quiet)}`);
     const window = dayWindow("2026-11-19");
     const windowOk = window.from.toISOString() === "2026-11-19T05:00:00.000Z" && window.to.toISOString() === "2026-11-20T05:00:00.000Z";
-    console.log(`${windowOk ? "ok  " : "FALLO"} ventana de jornada colombiana: ${window.from.toISOString()} .. ${window.to.toISOString()}`);
-    console.log(`${deviceKey("Mozilla/5.0 (Linux; Android 10) Chrome/157.0.0.0 Mobile Safari/537.36") === "Android / Chrome 157" ? "ok  " : "FALLO"} agrupacion de dispositivo`);
+    informa(`${windowOk ? "ok  " : "FALLO"} ventana de jornada colombiana: ${window.from.toISOString()} .. ${window.to.toISOString()}`);
+    informa(`${deviceKey("Mozilla/5.0 (Linux; Android 10) Chrome/157.0.0.0 Mobile Safari/537.36") === "Android / Chrome 157" ? "ok  " : "FALLO"} agrupacion de dispositivo`);
     const isoOk = isoDay(new Date("2026-11-18T23:30:00.000Z")) === "2026-11-18" && isoDay("2026-11-19T05:00:00.000Z") === "2026-11-19";
-    console.log(`${isoOk ? "ok  " : "FALLO"} dia calendario ISO (no el texto legible del Date): ${isoDay(new Date("2026-11-18T23:30:00.000Z"))}`);
+    informa(`${isoOk ? "ok  " : "FALLO"} dia calendario ISO (no el texto legible del Date): ${isoDay(new Date("2026-11-18T23:30:00.000Z"))}`);
     // El artefacto versionable tiene que poder probarse sin nombres y sin quedarse ciego: la prueba es
     // que sobra toda identidad directa (nombre, el `code` que en este tenant ES el nombre legal y el
     // correo cuya parte local tambien lo es) y que siguen el id, el dia y los codigos HTTP con los que
@@ -381,22 +402,34 @@ async function main() {
     const namesOut = !podado.includes("Uno Dos Tres") && !podado.includes("unodostres") && !/"nombre"/.test(podado) && !/"empleado_codigo"/.test(podado) && !/"user_email"/.test(podado) && !/"codigo":/.test(podado);
     const idsDentro = podado.includes('"user_id":231') && podado.includes('"empleado_id":503') && podado.includes("2026-11-18") && podado.includes("409") && podado.includes("VALIDACION") && podado.includes("Chrome 157");
     const intacto = podado.includes("total_rechazos");
-    console.log(`${namesOut ? "ok  " : "FALLO"} --sin-nombres poda nombre, empleado_codigo, codigo y correo en cualquier nivel`);
-    console.log(`${idsDentro && intacto ? "ok  " : "FALLO"} la medicion conserva user/emp/dia y los codigos HTTP (rojo provocado si se poda de mas)`);
+    informa(`${namesOut ? "ok  " : "FALLO"} --sin-nombres poda nombre, empleado_codigo, codigo y correo en cualquier nivel`);
+    informa(`${idsDentro && intacto ? "ok  " : "FALLO"} la medicion conserva user/emp/dia y los codigos HTTP (rojo provocado si se poda de mas)`);
     // El rescate se sostiene en tres reglas puras. Cada una se prueba con su rojo provocado:
     // si el diferenciador deja de discriminar, el manifiesto deja de ser confiable.
     const piernaOk = piernaNombrada("La siguiente marcacion permitida es fin_almuerzo.") === "fin_almuerzo"
       && piernaNombrada("La marcacion diferida supero las 24 horas permitidas.") === null;
-    console.log(`${piernaOk ? "ok  " : "FALLO"} la pierna se lee del mensaje del servidor y no de la intuicion`);
+    informa(`${piernaOk ? "ok  " : "FALLO"} la pierna se lee del mensaje del servidor y no de la intuicion`);
     const inmediatoOk = esIntentoInmediato({ route: RUTA_DE_MARCACION, code: "MARCACION_DIFERIDA_EXPIRADA", message: "x" }) === false
       && esIntentoInmediato({ route: RUTA_DE_MARCACION, code: "SELFIE_REQUERIDA", message: "x" }) === true
       && esIntentoInmediato({ route: RUTA_DE_MARCACION, code: null, message: "Backend no disponible desde frontend" }) === true
       && esIntentoInmediato({ route: "/api/v1/hr/self/gps/ping", code: null, message: "Backend no disponible desde frontend" }) === false;
-    console.log(`${inmediatoOk ? "ok  " : "FALLO"} una marca diferida nunca presta su hora (es el reintento) y solo la ruta de marcacion cuenta`);
+    informa(`${inmediatoOk ? "ok  " : "FALLO"} una marca diferida nunca presta su hora (es el reintento) y solo la ruta de marcacion cuenta`);
+    // Quien corrige no es quien quedo bloqueado. Las dos rutas tienen que seguir siendo distintas
+    // entre si y con el operario: si una se reescribe con el prefijo de la otra, la seleccion de
+    // personas vuelve a llenarse del propio rescatista (emp 551, medido el 2026-11-20).
+    const rutasSeparadasOk = RUTA_DE_CORRECCION !== RUTA_DE_MARCACION
+      && !RUTA_DE_MARCACION.startsWith(RUTA_DE_CORRECCION) && !RUTA_DE_CORRECCION.startsWith(`${RUTA_DE_MARCACION}/`);
+    informa(`${rutasSeparadasOk ? "ok  " : "FALLO"} la ruta de correccion y la del operario siguen siendo dos rutas (rojo provocado si una traga a la otra)`);
+    const rolOk = rechazosDeOperario([{ route: RUTA_DE_CORRECCION }, { route: RUTA_DE_CORRECCION }]) === 0
+      && rechazosDeOperario([{ route: RUTA_DE_CORRECCION }, { route: RUTA_DE_MARCACION }]) === 1
+      && rechazosDeOperario([{ route: "/api/v1/accounting/accounts" }]) === 1
+      && esIntentoDeMarcacionPropia({ route: RUTA_DE_MARCACION }) === true
+      && esIntentoDeMarcacionPropia({ route: RUTA_DE_CORRECCION }) === false;
+    informa(`${rolOk ? "ok  " : "FALLO"} una correccion administrativa rechazada no es intento de marcacion ni hace a un operario afectado (rojo provocado: las 30 escritas por el rescatista)`);
     const utcOk = utcDeHoraLocal("2026-11-18", "05:30") === "2026-11-18T10:30:00.000Z"
       && utcDeHoraLocal("2026-11-18", "04:00", { finDeJornada: true, horaInicio: "22:00" }) === "2026-11-19T09:00:00.000Z"
       && utcDeHoraLocal("2026-11-18", "-") === null;
-    console.log(`${utcOk ? "ok  " : "FALLO"} la hora del horario se ancla a Colombia-05:00 y cruza medianoche solo al cerrar`);
+    informa(`${utcOk ? "ok  " : "FALLO"} la hora del horario se ancla a Colombia-05:00 y cruza medianoche solo al cerrar`);
     // El manifiesto es lo que despues se escribe sobre una jornada real, asi que sus reglas se
     // prueban con fichas armadas a proposito: un diferido de la tarde no puede abrir la jornada,
     // una pierna fuera de orden se descarta y un dia sin rechazos no se toca.
@@ -450,7 +483,7 @@ async function main() {
       && cinco === "fin_almuerzo"
       && rescate.descartadas.length === 1
       && rescate.every((row) => row.payload.correccion_administrativa === true && String(row.payload.motivo_correccion).length >= 12 && row.payload.idempotency_key.length >= 8);
-    console.log(`${rescateOk ? "ok  " : "FALLO"} el rescate no presta la hora de un reintento, no inventa almuerzos ni toca dias sin rechazos (rojo provocado: ${uno || "nada"} | descartadas ${JSON.stringify(rescate.descartadas)})`);
+    informa(`${rescateOk ? "ok  " : "FALLO"} el rescate no presta la hora de un reintento, no inventa almuerzos ni toca dias sin rechazos (rojo provocado: ${uno || "nada"} | descartadas ${JSON.stringify(rescate.descartadas)})`);
     // La hora que aun no llega tampoco se firma: las mismas fichas con el reloj puesto a mitad de la
     // jornada (13:00 CO) solo pueden proponer la entrada; la salida de las 14:00 espera a que cierre.
     const aMediodia = construirRescate({
@@ -464,14 +497,12 @@ async function main() {
     });
     const futuraOk = aMediodia.length === 1 && aMediodia[0].tipo === "entrada"
       && aMediodia.descartadas.some((row) => row.tipo === "salida" && /hora futura/.test(row.motivo));
-    console.log(`${futuraOk ? "ok  " : "FALLO"} una pierna con hora futura se descarta en vez de firmarse (propuestas: ${aMediodia.map((row) => row.tipo).join(",") || "nada"} | descartadas ${JSON.stringify(aMediodia.descartadas.map((row) => row.motivo))})`);
+    informa(`${futuraOk ? "ok  " : "FALLO"} una pierna con hora futura se descarta en vez de firmarse (propuestas: ${aMediodia.map((row) => row.tipo).join(",") || "nada"} | descartadas ${JSON.stringify(aMediodia.descartadas.map((row) => row.motivo))})`);
     const ventanaOk = minutosDeHora("05:30:00") === 330 && minutosDeHora(null) === null
       && minutosDelDiaColombia("2026-11-18T10:30:00.000Z") === 5 * 60 + 30;
-    console.log(`${ventanaOk ? "ok  " : "FALLO"} minutos del dia en Colombia (la ventana de apertura compara horas locales, no UTC)`);
-    const outcome = failed === 0 && drifted.length === 1 && quiet.length === 0 && windowOk && isoOk && namesOut && idsDentro && intacto
-      && piernaOk && inmediatoOk && utcOk && rescateOk && ventanaOk ? 0 : 1;
-    console.log(outcome === 0 ? "SELFTEST PASADO" : "SELFTEST BLOQUEADO");
-    process.exit(outcome);
+    informa(`${ventanaOk ? "ok  " : "FALLO"} minutos del dia en Colombia (la ventana de apertura compara horas locales, no UTC)`);
+    console.log(failed === 0 ? "SELFTEST PASADO" : `SELFTEST BLOQUEADO (${failed} fallo(s) impresos)`);
+    process.exit(failed === 0 ? 0 : 1);
   }
 
   const envFile = path.resolve(ROOT, String(args["env-file"] || ""));
@@ -563,7 +594,9 @@ async function main() {
         codigos: [...new Set(rows.map((row) => row.code))],
         dispositivos: [...new Set(rows.map((row) => row.device))],
         ultimo_rechazo: rows[0].at,
-        intentos_de_marcacion: rows.filter((row) => /time-punches/.test(String(row.route))).length,
+        intentos_de_marcacion: rows.filter(esIntentoDeMarcacionPropia).length,
+        rechazos_de_operario: rechazosDeOperario(rows),
+        correcciones_administrativas_rechazadas: rows.filter((row) => row.route === RUTA_DE_CORRECCION).length,
         marcaciones_del_dia: punchesDelDia
       });
     }
@@ -614,7 +647,10 @@ async function main() {
       .filter((row) => row.total >= 10)
       .map((row) => row.dia);
     const marcasPorTrabajadorDia = groupBy(todas, (row) => `${row.employee_id}|${isoDay(row.date)}`);
-    const empleadosAfectados = [...new Set(porUsuario.map((row) => row.empleado_id).filter((id) => id != null))];
+    const empleadosAfectados = [...new Set(porUsuario
+      .filter((row) => row.rechazos_de_operario > 0)
+      .map((row) => row.empleado_id)
+      .filter((id) => id != null))];
     const jornadasSinRegistro = [];
     for (const empleadoId of empleadosAfectados) {
       for (const dia of diasLaborables) {

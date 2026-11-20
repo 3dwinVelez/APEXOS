@@ -313,9 +313,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.93.0",
+      "version": "2.94.1",
       "updated_at": "2026-11-20",
-      "sha256": "0595c226c0cc4ad5d6f4f91b8884cf1d982e4b6646500040bfa7ad729d2b6914",
+      "sha256": "5a3723e88f27305c2fb6f160bd938d4f7dc860de5f4c47be00e08bf7ea417f4e",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -399,7 +399,9 @@
         "rojo-atribuido-por-insumos",
         "lista-vacia-es-lectura-ciega",
         "control-negro-contra-el-mismo-ambiente",
-        "interruptor-certificado-en-los-dos-sentidos"
+        "interruptor-certificado-en-los-dos-sentidos",
+        "salida-del-arnes-atada-a-lo-impreso",
+        "correccion-de-conteo-certificada-sin-cambiar-los-demas"
       ]
     },
     {
@@ -451,9 +453,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.53.0",
+      "version": "2.54.0",
       "updated_at": "2026-11-20",
-      "sha256": "bcc6a94ee6b982b89056bc0176a072074e73217c5f99f335a749823e6f8599a7",
+      "sha256": "23f1d8a760862449bb2ad28754d9f7bf9c9a87e91077b566b0fe4e8b437ee6cf",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -499,7 +501,8 @@
         "premisas-de-dato-y-canal-antes-del-desbloqueo",
         "recurso-de-prueba-se-construye-y-defectos-se-separan",
         "premisa-re-medida-antes-de-autorizar",
-        "privilegio-retirado-en-el-almacen"
+        "privilegio-retirado-en-el-almacen",
+        "lente-vuelta-a-medir-antes-de-reusar-la-medicion"
       ]
     }
   ],
