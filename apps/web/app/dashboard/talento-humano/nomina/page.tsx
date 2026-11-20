@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Calculator, Download, FileText, Play, Plus, RotateCcw, Trash2, Upload, X } from "lucide-react";
 import { api } from "@/lib/api";
@@ -180,6 +180,13 @@ export default function PayrollLiquidationPage() {
   const [selectedDocument, setSelectedDocument] = useState<PayrollDocument | null>(null);
   const [receiptDocument, setReceiptDocument] = useState<PayrollDocument | null>(null);
   const [message, setMessage] = useState("");
+  const [payrollFeedback, setPayrollFeedback] = useState<{ periodKey: string; status: "pending" | "success" | "error" | "warning"; title: string; detail: string } | null>(null);
+  const payrollFeedbackRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!payrollFeedback) return;
+    payrollFeedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (payrollFeedback.status !== "pending") payrollFeedbackRef.current?.focus({ preventScroll: true });
+  }, [payrollFeedback]);
   const [adjustmentError, setAdjustmentError] = useState("");
   const [busy, setBusy] = useState(false);
   const [adjustment, setAdjustment] = useState({ employee_id: "", adjustment_type: "manual", concept_code: "AJUSTE_MANUAL", description: "", work_date: "", start_time: "", end_time: "", date_start: "", date_end: "", days: "", paid_by: "", sln_cause: "", pila_ibc_amount: "", ibc_reference_amount: "", ibc_reference_period: "", ibc_reference_captured_at: "", continuity_key: "", reference_source: "", reported_pila_id: "", recognized_value: "", document_support: "", lr_arl_policy: "", advance_obligation: "", advance_period: "", advance_support: "", advance_retention_health: "", advance_retention_pension: "", minutes: "", amount: "" });
@@ -288,6 +295,7 @@ export default function PayrollLiquidationPage() {
   }, [loadBase]);
 
   async function previewLiquidation() {
+    setPayrollFeedback(null);
     if (periodRangeError) { setMessage(periodRangeError); return; }
     setBusy(true);
     setMessage("");
@@ -321,6 +329,7 @@ export default function PayrollLiquidationPage() {
   }
 
   async function consultPeriod() {
+    setPayrollFeedback(null);
     setPreview([]);
     setSelectedDocument(null);
     setPeriodReady(true);
@@ -383,19 +392,26 @@ export default function PayrollLiquidationPage() {
   }
 
   async function runLiquidation(recalculate = false) {
-    if (periodRangeError) { setMessage(periodRangeError); return; }
+    if (periodRangeError) { setMessage(periodRangeError); setPayrollFeedback({ periodKey: currentPeriodKey, status: "error", title: "Revisa el periodo", detail: periodRangeError }); return; }
     setBusy(true);
     setMessage("");
+    setPayrollFeedback({ periodKey: currentPeriodKey, status: "pending", title: "Procesando nómina…", detail: "Espera la confirmación del servidor." });
+    let saved = false;
     try {
-      await api("/api/v1/talento-humano/nomina/liquidaciones", {
+      const result = await api<{ documents: number }>("/api/v1/talento-humano/nomina/liquidaciones", {
         method: "POST",
         body: JSON.stringify({ fecha_inicio: startDate, fecha_fin: endDate, period_type: periodType, period_key: currentPeriodKey, recalculate })
       });
+      saved = true;
       setPreview([]);
       await loadBase();
-      setMessage(recalculate ? "Documento borrado y liquidacion regenerada." : "Liquidacion real creada por empleado.");
+      const count = Number(result.documents || 0);
+      setPayrollFeedback({ periodKey: currentPeriodKey, status: count > 0 ? "success" : "warning", title: count > 0 ? "Nómina guardada" : "Sin documentos generados", detail: `${count} documento(s) confirmado(s) por el servidor para el periodo ${startDate} a ${endDate}.` });
+      setMessage(count > 0 ? (recalculate ? "Documento borrado y liquidacion regenerada." : "Liquidacion real creada por empleado.") : "No se generaron documentos para este periodo.");
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "No se pudo liquidar");
+      const detail = err instanceof Error ? err.message : "No se pudo completar la operación.";
+      setMessage(detail);
+      setPayrollFeedback({ periodKey: currentPeriodKey, status: saved ? "warning" : "error", title: saved ? "Guardado confirmado; falta actualizar la pantalla" : "No se pudo confirmar la nómina", detail: saved ? `${detail} Consulta el periodo para cargar los documentos antes de volver a generar la nómina.` : `${detail} Consulta el periodo antes de reintentar si hubo una interrupción de conexión. La vista de prueba no confirma el guardado.` });
     } finally {
       setBusy(false);
     }
@@ -826,13 +842,19 @@ export default function PayrollLiquidationPage() {
               <div className="flex flex-wrap gap-2">
                 <button className="inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-semibold disabled:opacity-60" disabled={busy} onClick={previewLiquidation} type="button"><Calculator size={17} /> Liquidacion de prueba</button>
                 {!hasPayrollDocuments ? (
-                  <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-5 text-sm font-semibold text-white disabled:opacity-60" disabled={busy} onClick={() => runLiquidation(false)} type="button"><Play size={17} /> Liquidar nomina</button>
+                  <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-5 text-sm font-semibold text-white disabled:opacity-60" disabled={busy} onClick={() => runLiquidation(false)} type="button"><Play size={17} /> {payrollFeedback?.status === "pending" && busy ? "Procesando nómina…" : "Liquidar nomina"}</button>
                 ) : null}
                 {canRecalculatePayroll ? (
                   <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-5 text-sm font-semibold text-white disabled:opacity-60" disabled={busy} onClick={() => runLiquidation(true)} type="button"><RotateCcw size={17} /> Recalcular nomina</button>
                 ) : null}
               </div>
             </div>
+            {payrollFeedback?.periodKey === currentPeriodKey ? (
+              <div ref={payrollFeedbackRef} tabIndex={-1} role={payrollFeedback.status === "error" ? "alert" : "status"} aria-live={payrollFeedback.status === "error" ? "assertive" : "polite"} aria-atomic="true" aria-busy={payrollFeedback.status === "pending"} data-payroll-feedback={payrollFeedback.status} className={`mt-3 rounded-md border p-3 text-sm outline-none focus:ring-2 focus:ring-apex ${payrollFeedback.status === "error" ? "border-rose-300 bg-rose-50 text-rose-900" : payrollFeedback.status === "warning" ? "border-amber-300 bg-amber-50 text-amber-950" : "border-emerald-300 bg-white text-emerald-950"}`}>
+                <p className="font-semibold">{payrollFeedback.title}</p>
+                <p className="mt-1">{payrollFeedback.detail}</p>
+              </div>
+            ) : null}
           </div>
           <div className="rounded-md border border-line p-3">
             <p className="text-sm font-semibold">Estado del periodo</p>
