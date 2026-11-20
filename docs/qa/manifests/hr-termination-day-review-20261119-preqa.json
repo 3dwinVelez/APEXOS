@@ -1,0 +1,146 @@
+{
+  "change_id": "hr-termination-day-review-20261119",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "05cb5def956bc8023c875388311a8efa76fab4d7",
+  "commit": "9f560ee1ab4307529c3fd18145740dbd6232e67f",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-termination-day-review-local.js",
+    "evidence": [
+      "../certifications/hr-termination-day-review-20261119.md",
+      "hr-termination-day-review-20261119-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-termination-complete-local.js",
+    "evidence": [
+      "../certifications/hr-termination-day-review-20261119.md",
+      "hr-termination-day-review-20261119-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario: despliega a qa",
+    "approved_at": "2026-11-20T01:13:12.146Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "lineage": {
+    "implementation_commit": "97cea039",
+    "integration_commit": "9f560ee1ab4307529c3fd18145740dbd6232e67f",
+    "baseline": "05cb5def956bc8023c875388311a8efa76fab4d7",
+    "reconstruction": "Only reviewed HR hunks applied on current develop; existing QA payroll and evidence behavior preserved; no deletions or migrations."
+  },
+  "execution": {
+    "functional": {
+      "functional_commit": "9f560ee1ab4307529c3fd18145740dbd6232e67f",
+      "environment": "LOCAL",
+      "status": "passed",
+      "started_at": "2026-11-20T01:06:40.863Z",
+      "checks": [
+        "contract date precedes first punch: preview flags one day and final write is blocked without mutations",
+        "permissions, tenant, observation, eligibility and generic adjustment bypass are enforced",
+        "paid approval adds one daily salary once, retries deduplicate and unpaid correction keeps full audit",
+        "later punch supersedes review without double salary; ordinary payroll consumes same decisions",
+        "browser previews provisional salary, justifies induction, reloads, saves and reopens audited retirement"
+      ],
+      "finished_at": "2026-11-20T01:08:01.056Z",
+      "isolation": {
+        "source_database_modified": false,
+        "unexpected_5xx": []
+      }
+    },
+    "regression": {
+      "functional_commit": "9f560ee1ab4307529c3fd18145740dbd6232e67f",
+      "status": "passed",
+      "environment": "LOCAL",
+      "started_at": "2026-11-20T01:08:38.244Z",
+      "checks": [
+        "quincenal month-wide and mismatched keys are rejected before payroll or closure writes",
+        "real API derives master contract, imports malla concepts and leaves preview read only",
+        "RBAC, cross tenant reads and unauthorized writes cannot create termination",
+        "integrated manual API binds employee and cutoff, preserves classification and deduplicates retries",
+        "browser finds employee, derives contract, previews full modal, saves and reopens all concepts",
+        "saved termination excludes employee from fortnight preview and real payroll creation despite active employee",
+        "rehire restores only the new contract period while settled historical periods stay excluded",
+        "loans post once, recalculation preserves totals and deletion restores balances and payroll eligibility",
+        "pending calculation splits second fortnight without paying the first twice",
+        "existing payroll after cutoff blocks an overlapping backdated final liquidation",
+        "all four standard benefit payment functions preserve payments when provisions regenerate",
+        "manual concepts retain salary classification and alter only eligible final benefit bases",
+        "final settlement consumes provisions, posts four linked vouchers and prevents duplicate payments or reopening history"
+      ],
+      "finished_at": "2026-11-20T01:10:23.609Z",
+      "isolation": {
+        "source_database_modified": false,
+        "unexpected_5xx": []
+      }
+    },
+    "support": {
+      "environment": "LOCAL",
+      "functional_commit": "9f560ee1ab4307529c3fd18145740dbd6232e67f",
+      "checked_at": "2026-11-20T01:13:12.143Z",
+      "unit_regression": {
+        "passed": 53,
+        "failed": 0
+      },
+      "typecheck": {
+        "status": "passed",
+        "scope": "termination page, day review component and dependencies"
+      },
+      "lint": {
+        "errors": 0,
+        "existing_payroll_warnings": 3
+      },
+      "build": {
+        "status": "passed",
+        "command": "npm --workspace apps/web run build -- --webpack",
+        "note": "Webpack used because dependency junctions in the isolated Windows snapshot are outside the Turbopack filesystem root."
+      }
+    }
+  }
+}

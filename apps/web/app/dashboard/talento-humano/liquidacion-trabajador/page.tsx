@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../../../../lib/api";
 import { API_BASE_URL } from "../../../../lib/apiBaseUrl";
 import TerminationManualAdjustments from "../../../../components/hr/TerminationManualAdjustments";
+import TerminationDayReviews, { SalaryReviewTotals, type SalaryReviewSummary, type ReviewDay } from "../../../../components/hr/TerminationDayReviews";
 
 type Employee = { id: number; code?: string; name?: string; contract_type?: string; metadata?: { name?: string; document?: string; document_type?: string } };
 type Line = { code: string; name: string; quantity: number; rate: number; amount: number; source?: string; salary_constitutive?: boolean; metadata?: { date_start?: string; date_end?: string; base?: number }; accrued_amount?: number; paid_amount?: number; balance_amount?: number };
@@ -34,7 +35,7 @@ const contractLabels: Record<string, string> = { indefinite: "Indefinido", fixed
 const reasonLabels: Record<string, string> = { retiro_voluntario: "Retiro voluntario", terminacion_con_justa_causa: "Con justa causa", sin_justa_causa: "Sin justa causa", mutuo_acuerdo: "Mutuo acuerdo", vencimiento_contrato: "Vencimiento del contrato" };
 
 function money(value?: number) {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(value || 0));
+  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 2 }).format(Number(value || 0));
 }
 
 function employeeLabel(employee: Employee) {
@@ -58,6 +59,9 @@ export default function EmployeeTerminationLiquidationPage() {
   const [selected, setSelected] = useState<TerminationDocument | null>(null);
   const [busy, setBusy] = useState(false);
   const [manualBusy, setManualBusy] = useState(false);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [pendingDays, setPendingDays] = useState<number | null>(null);
+  const [reviewRefresh, setReviewRefresh] = useState(0);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({ employee_id: "", termination_date: today, termination_reason: "retiro_voluntario", contract_type: "indefinite", pending_start: "", recalculate: false, mark_inactive: false });
 
@@ -194,7 +198,7 @@ export default function EmployeeTerminationLiquidationPage() {
     window.open(URL.createObjectURL(blob), "_blank", "noopener,noreferrer");
   }
 
-  const canRun = contractReady && !contractLoading && !manualBusy && Boolean(form.employee_id && form.termination_date && form.termination_reason);
+  const canRun = contractReady && !contractLoading && !manualBusy && !reviewBusy && Boolean(form.employee_id && form.termination_date && form.termination_reason);
   const rows = preview ? [preview, ...documents] : documents;
 
   return (
@@ -210,7 +214,7 @@ export default function EmployeeTerminationLiquidationPage() {
       {message ? <p className="rounded-md border border-line bg-white p-3 text-sm text-neutral-700">{message}</p> : null}
 
       <section className="rounded-md border border-line bg-white p-4">
-        <fieldset disabled={busy || manualBusy}>
+        <fieldset disabled={busy || manualBusy || reviewBusy}>
         <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
           <div className="relative text-sm">
             <label htmlFor="termination-employee-document">Empleado</label>
@@ -218,7 +222,7 @@ export default function EmployeeTerminationLiquidationPage() {
               <Search aria-hidden="true" className="absolute left-3 top-3 text-neutral-500" size={16} />
               <input id="termination-employee-document" type="search" autoComplete="off" maxLength={80}
                 className="h-10 w-full rounded-md border border-line pl-9 pr-3"
-                placeholder="Número de documento" value={employeeQuery} disabled={busy || manualBusy}
+                placeholder="Número de documento" value={employeeQuery} disabled={busy || manualBusy || reviewBusy}
                 onChange={(event) => {
                   setEmployeeQuery(event.target.value);
                   setSelectedEmployee(null);
@@ -266,7 +270,7 @@ export default function EmployeeTerminationLiquidationPage() {
             </select>
             <span className="text-xs text-neutral-500">{contractLoading ? "Consultando contrato…" : "Derivado del maestro de contratos."}</span>
           </label>
-          <label className="text-sm">Pendientes desde (opcional)<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={form.pending_start} max={form.termination_date} onChange={event => setForm(current => ({ ...current, pending_start: event.target.value }))} /><span className="text-xs text-neutral-500">Por defecto: desde la última nómina o el ingreso.</span></label>
+          <label className="text-sm">Inicio del salario pendiente<input className="mt-1 h-10 w-full rounded-md border border-line bg-paper px-3" type="text" readOnly value={String(preview?.source_summary?.pendientes_desde || "Se determina al consultar los días")} /><span className="text-xs text-neutral-500">Se calcula desde el contrato y los periodos de nómina registrados.</span></label>
         </div>
         <p className="mt-3 text-sm text-neutral-600">Registra las bonificaciones y conceptos manuales en la sección de abajo. Los conceptos personalizados conservan la clasificación del maestro. Las prestaciones ya pagadas se descuentan y los pagos del retiro quedan incluidos en este mismo neto.</p>
         {loans.length ? <fieldset className="mt-4 space-y-3 rounded-md border border-line p-3">
@@ -286,12 +290,13 @@ export default function EmployeeTerminationLiquidationPage() {
           <label className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm"><input checked={form.recalculate} type="checkbox" onChange={(event) => setForm((current) => ({ ...current, recalculate: event.target.checked }))} /> Recalcular si existe</label>
           <label className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm"><input checked={form.mark_inactive} type="checkbox" onChange={(event) => setForm((current) => ({ ...current, mark_inactive: event.target.checked }))} /> Inactivar empleado</label>
           <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-60" disabled={busy || !canRun} onClick={previewLiquidation} type="button"><Calculator size={16} /> Liquidacion de prueba</button>
-          <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-60" disabled={busy || !canRun} onClick={runLiquidation} type="button"><Play size={16} /> Crear documento</button>
+          <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-60" disabled={busy || !canRun || pendingDays !== 0} onClick={runLiquidation} type="button"><Play size={16} /> Crear documento</button>
         </div>
         </fieldset>
       </section>
 
-      <TerminationManualAdjustments employeeId={Number(form.employee_id) || null} terminationDate={form.termination_date} pendingStart={form.pending_start} disabled={busy} onBusy={setManualBusy} onChanged={() => { setPreview(null); setSelected(null); }} />
+      <TerminationDayReviews employeeId={Number(form.employee_id) || null} terminationDate={form.termination_date} pendingStart={form.pending_start} refresh={reviewRefresh} disabled={busy || manualBusy} onBusy={setReviewBusy} onPendingChange={setPendingDays} onChanged={() => { setPreview(null); setSelected(null); }} />
+      <TerminationManualAdjustments employeeId={Number(form.employee_id) || null} terminationDate={form.termination_date} pendingStart={form.pending_start} disabled={busy || reviewBusy} onBusy={setManualBusy} onChanged={() => { setPreview(null); setSelected(null); setPendingDays(null); setReviewRefresh(value => value + 1); }} />
 
       <section className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
         <div className="rounded-md border border-line bg-white">
@@ -339,6 +344,9 @@ export default function EmployeeTerminationLiquidationPage() {
             <button type="button" autoFocus onClick={() => { detailDialog.current?.close(); setSelected(null); }} aria-label="Cerrar detalle de liquidación" className="rounded-md border border-line p-2"><X size={18} /></button>
           </div>
           <div className="grid gap-3 p-4 text-sm md:grid-cols-3"><Info label="Devengos" value={money(selected.gross)} /><Info label="Deducciones" value={money(selected.deductions)} /><Info label="Neto a pagar" value={money(selected.net)} /></div>
+          {Number(selected.source_summary?.dias_sin_justificar || 0) > 0 ? <p role="alert" className="m-4 rounded-md bg-amber-50 p-3 text-sm text-amber-900">Vista provisional: hay {Number(selected.source_summary?.dias_sin_justificar)} día(s) pendientes de justificar. No se puede guardar este retiro.</p> : null}
+          {selected.source_summary?.resumen_salario_pendiente ? <div className="p-4"><SalaryReviewTotals summary={selected.source_summary.resumen_salario_pendiente as SalaryReviewSummary} /></div> : null}
+          {Array.isArray(selected.source_summary?.revision_dias) ? <details className="mx-4 mb-4 rounded-md border border-line p-3 text-sm"><summary className="cursor-pointer font-semibold">Soporte de los días del salario pendiente</summary><ul className="mt-2 space-y-2">{(selected.source_summary.revision_dias as ReviewDay[]).map(day => <li key={day.date} className="border-t border-line pt-2">{day.date} · {day.status === "pendiente" ? "Pendiente de aclarar" : day.paid ? "Remunerado" : "No remunerado"} · {day.classification.replaceAll("_", " ")}{day.note ? <p>{day.note} · Responsable: {day.actor_name || day.actor_id || "Registrado en el soporte"}</p> : null}</li>)}</ul></details> : null}
           <div className="grid gap-3 p-4 text-sm md:grid-cols-4">
             <Info label="Ingreso" value={String(selected.source_summary?.fecha_ingreso || "--")} />
             <Info label="Pendientes desde" value={String(selected.source_summary?.pendientes_desde || "--")} />

@@ -30,6 +30,7 @@ module.exports = function ({ db, conceptsFor, create, remove, error }) {
       const afterPayroll = latest ? keyOf(new Date(new Date(latest).getTime() + 86400000)) : hire;
       const start = input.pending_start ? date(input.pending_start) : afterPayroll;
       if (start < hire || start < afterPayroll) throw error('El ajuste debe pertenecer al tramo pendiente, sin nominas ya liquidadas.', 409, 'AJUSTE_RETIRO_PERIODO_PAGADO');
+      if (start !== afterPayroll) throw error('El inicio pendiente se calcula desde el contrato y las nominas registradas.', 422, 'INICIO_PENDIENTE_REQUIERE_SOPORTE');
       const existing = await db.$queryRaw`SELECT id FROM th_liquidaciones_trabajador WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} AND termination_date = ${cut}::date LIMIT 1`;
       return { employee_id: employeeId, pending_start: start, termination_date: cut, requires_recalculation: existing.length > 0 };
     });
@@ -75,6 +76,6 @@ module.exports = function ({ db, conceptsFor, create, remove, error }) {
     if (!workDate || workDate < info.pending_start || workDate > info.termination_date) throw error('Este ajuste no pertenece al tramo pendiente del retiro.', 409, 'AJUSTE_FUERA_RETIRO');
     return remove(tenantId, id);
   }
-  return { list, add, cancel };
+  return { list, add, cancel, context };
 };
 module.exports.fortnight = fortnight;

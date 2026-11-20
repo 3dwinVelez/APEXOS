@@ -1,0 +1,176 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-termination-day-review-20261119",
+  "base_commits": {
+    "develop": "05cb5def956bc8023c875388311a8efa76fab4d7"
+  },
+  "certified_commit": "9f560ee1ab4307529c3fd18145740dbd6232e67f",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "change_intent": {
+    "summary": "Review missing contract days before final employee settlement, share audited salary decisions with payroll, and reject invalid fortnight ranges.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/dayReview.js",
+    "apps/api/src/modules/hr/payrollPeriod.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/terminationDayReviews.js",
+    "apps/api/src/modules/hr/terminationManualAdjustments.js",
+    "apps/api/test/hr-day-review.test.js",
+    "apps/api/test/hr-payroll-period.test.js",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/components/hr/TerminationDayReviews.tsx",
+    "apps/web/lib/payroll-period.ts",
+    "docs/qa/certifications/hr-payroll-period-range-20261119.md",
+    "docs/qa/certifications/hr-termination-day-review-20261119.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-termination-complete-local.js",
+    "scripts/certifications/hr-termination-day-review-local.js",
+    "docs/qa/manifests/hr-termination-day-review-20261119-preqa.json",
+    "docs/qa/manifests/hr-termination-day-review-20261119-scope.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/dayReview.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/payrollPeriod.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/terminationDayReviews.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/terminationManualAdjustments.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-day-review.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-period.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/TerminationDayReviews.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/payroll-period.ts"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-payroll-period-range-20261119.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-termination-day-review-20261119.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-termination-complete-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-termination-day-review-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-termination-day-review-20261119-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-termination-day-review-20261119-scope.json"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "termination salary and contract dates",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "payroll and benefit integration",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "loans recalculation deletion and rehire",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "RBAC and tenant isolation",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-day-review-20261119.md",
+        "hr-termination-day-review-20261119-preqa.json"
+      ]
+    }
+  ],
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "05cb5def956bc8023c875388311a8efa76fab4d7",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "9f560ee1ab4307529c3fd18145740dbd6232e67f",
+    "implementation_commit": "97cea039"
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/dayReview.js",
+    "apps/api/src/modules/hr/payrollPeriod.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/terminationDayReviews.js",
+    "apps/api/src/modules/hr/terminationManualAdjustments.js",
+    "apps/api/test/hr-day-review.test.js",
+    "apps/api/test/hr-payroll-period.test.js",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/components/hr/TerminationDayReviews.tsx",
+    "apps/web/lib/payroll-period.ts",
+    "docs/qa/certifications/hr-payroll-period-range-20261119.md",
+    "docs/qa/certifications/hr-termination-day-review-20261119.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-termination-complete-local.js",
+    "scripts/certifications/hr-termination-day-review-local.js"
+  ]
+}
