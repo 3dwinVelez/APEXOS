@@ -442,6 +442,9 @@ async function build() {
     // La tabla de traduccion vive en core/api-error.js, que es lo que cubren las pruebas
     // (levantar la app completa deja el proceso del test colgado de un handle).
     const outcome = mapApiError(error, request, requestId);
+    // El 503 de congestion trae presupuesto de reintento en la cabecera: el cliente
+    // reintenta con ese ritmo en vez de reintentar a ciegas contra el servidor saturado.
+    if (outcome.retryAfter) reply.header("retry-after", String(outcome.retryAfter));
     if (outcome.log) fastify.log.error(outcome.log, "Unhandled API error");
     return reply.code(outcome.statusCode).send(outcome.payload);
   });
