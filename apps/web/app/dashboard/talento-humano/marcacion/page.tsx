@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { getGpsFix, type GpsFix } from "@/lib/gps";
 import { scheduleGpsRequired } from "@/lib/hrScheduleMonitor";
 import { publishHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
+import { attendancePunches } from "@/lib/hrAttendanceState";
 import { isMarkingOnlyAccess } from "@/lib/accessProfile";
 import {
   buildHrOfflineSnapshot,
@@ -36,7 +37,7 @@ import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
 import { AlertTriangle, ArrowLeft, CalendarX, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, WifiOff, X } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
@@ -94,7 +95,6 @@ const latenessReasons = [
 
 // Marcaciones que exigen selfie. El almuerzo no la pide: es un corte interno
 // de la jornada, no una validacion de quien entro o quien salio.
-const selfieRequiredPunches = new Set(["entrada", "salida"]);
 
 const punchOrder = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
 const punchLabels: Record<string, { title: string; desc: string; color: string }> = {
@@ -418,6 +418,7 @@ export default function MobilePunchPage() {
   const [extraDetail, setExtraDetail] = useState("");
   const [extraEvidence, setExtraEvidence] = useState<CapturedFile | null>(null);
   const [identitySelfie, setIdentitySelfie] = useState<CapturedFile | null>(null);
+  const [selfieType, setSelfieType] = useState("");
   const [dayMileage, setDayMileage] = useState("");
   const [startMileage, setStartMileage] = useState("");
   const [gps, setGps] = useState<GpsFix | null>(null);
@@ -454,6 +455,58 @@ export default function MobilePunchPage() {
   // "Fallo tecnico detectado" por unos 404 que son informacion, ni tenga que adivinar porque
   // los botones no hacen nada.
   const [blocked, setBlocked] = useState<null | "no_ficha" | "no_horario">(null);
+  const [remoteSyncError, setRemoteSyncError] = useState("");
+  const [lastRemoteSync, setLastRemoteSync] = useState("");
+  const readVersion = useRef(0);
+  const remoteVersion = useRef("");
+  const live = useRef(true);
+  const preparingPunch = useRef<string | null>(null);
+  const remoteRefresh = useRef<Promise<{ attendance: Attendance[]; routes: TimeRoute[] }> | null>(null);
+  useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
+
+  const refreshOperationalState = useCallback(() => {
+    if (remoteRefresh.current) return remoteRefresh.current;
+    const version = ++readVersion.current;
+    const options = { cache: "no-store" as const, silentFailureAlert: true };
+    const request = Promise.all([
+      api<Attendance[]>("/api/v1/hr/self/attendance", options),
+      api<TimeRoute[]>("/api/v1/hr/self/routes", options)
+    ]).then(([freshAttendance, freshRoutes]) => {
+      const today = todayBogota();
+      const dayRoutes = freshRoutes.filter(item => !item.date || String(item.date).slice(0, 10) === today);
+      if (live.current && version === readVersion.current) {
+        setAttendance(freshAttendance);
+        const signature = JSON.stringify([freshAttendance.map(row => [row.user_name, row.route_id, row.punches.map(punch => [punch.id, punch.type, punch.time])]), dayRoutes.map(item => [item.id, item.date])]);
+        // Activities may include photographs: read them on state transitions,
+        // never as part of the recurring attendance poll.
+        if (signature !== remoteVersion.current) {
+          remoteVersion.current = signature;
+          void api<WorkSession>("/api/v1/hr/self/work-session", options).then(value => {
+            if (live.current && version === readVersion.current) setSession(value);
+          }).catch(() => undefined);
+        }
+        setRoutes(current => JSON.stringify(current) === JSON.stringify(dayRoutes) ? current : dayRoutes);
+        setScheduleSource("live");
+        setScheduleNotice("");
+        setBlocked(dayRoutes.length ? null : "no_horario");
+        setRemoteSyncError("");
+        setLastRemoteSync(new Date().toLocaleTimeString("es-CO"));
+        const previous = readHrSnapshot();
+        const snapshot = buildHrOfflineSnapshot({ previous, self: requestOutcome(false, null), routes: requestOutcome(true, dayRoutes), activityTypes: requestOutcome(false, []), takenAt: new Date().toISOString(), takenDay: today });
+        if (snapshot) writeHrSnapshot(snapshot);
+        const pendingKeys = new Set(readPendingSync().filter(item => !isBlockedItem(item) && item.path.endsWith("/time-punches")).map(item => String((item.payload as { idempotency_key?: string })?.idempotency_key || "")));
+        setOptimisticPunches(current => current.filter(punch => punch.idempotency_key && (pendingKeys.has(punch.idempotency_key) || preparingPunch.current === punch.idempotency_key)));
+      }
+      return { attendance: freshAttendance, routes: dayRoutes };
+    }).catch(error => {
+      if (live.current && version === readVersion.current) setRemoteSyncError("No fue posible actualizar las marcaciones del servidor. Se conserva el último estado conocido; los registros pendientes aún requieren confirmación.");
+      throw error;
+    });
+    remoteRefresh.current = request;
+    const clear = () => { if (remoteRefresh.current === request) remoteRefresh.current = null; };
+    void request.then(clear, clear);
+    return request;
+  }, []);
 
   function notify(text: string, tone: MessageTone = "success") {
     setMessage(text);
@@ -461,6 +514,7 @@ export default function MobilePunchPage() {
   }
 
   const load = useCallback(async () => {
+    const version = ++readVersion.current;
     // La ficha abre o cierra la pantalla: si el usuario no tiene un empleado vinculado, el API
     // responde 404 en las cinco lecturas y cada 404 levantaba su tarjeta de "Fallo tecnico
     // detectado". Se lee primero, con la alerta global silenciada y el estado HTTP a la vista,
@@ -487,7 +541,7 @@ export default function MobilePunchPage() {
     }
     const [routesResult, attendanceResult, typesResult, sessionResult] = await Promise.all([
       settle<TimeRoute[]>(api<TimeRoute[]>("/api/v1/hr/self/routes"), []),
-      settle<Attendance[]>(api<Attendance[]>("/api/v1/hr/self/attendance"), []),
+      settle<Attendance[]>(api<Attendance[]>("/api/v1/hr/self/attendance", { cache: "no-store" }), []),
       settle<ActivityType[]>(api<ActivityType[]>("/api/v1/hr/self/activity-types"), []),
       settle<WorkSession | null>(api<WorkSession>("/api/v1/hr/self/work-session"), null)
     ]);
@@ -501,7 +555,11 @@ export default function MobilePunchPage() {
       takenAt: new Date().toISOString(),
       takenDay: today
     });
-    if (snapshot) writeHrSnapshot(snapshot);
+    if (snapshot) {
+      const latest = readHrSnapshot();
+      if (version !== readVersion.current && latest?.taken_day === today) writeHrSnapshot({ ...latest, self: meResult.ok ? meResult.value : latest.self, activity_types: typesResult.ok ? typesResult.value : latest.activity_types });
+      else writeHrSnapshot(snapshot);
+    }
     const resolved = resolveDegradedSchedule<TimeRoute>({
       routesOk: routesResult.ok,
       liveRoutes: dayRoutes,
@@ -512,17 +570,20 @@ export default function MobilePunchPage() {
       ? typesResult.value
       : ((snapshot?.activity_types || []) as ActivityType[]);
     setEmployee(meResult.ok ? meResult.value : ((snapshot?.self || null) as Employee | null));
-    setRoutes(resolved.routes);
-    setScheduleSource(resolved.source);
-    setScheduleNotice(resolved.source === "live" ? "" : degradedScheduleNotice(resolved, today));
-    setAttendance(attendanceResult.value);
+    if (live.current && version === readVersion.current) {
+      setRoutes(resolved.routes);
+      setScheduleSource(resolved.source);
+      setScheduleNotice(resolved.source === "live" ? "" : degradedScheduleNotice(resolved, today));
+      if (attendanceResult.ok) { setAttendance(attendanceResult.value); setLastRemoteSync(new Date().toLocaleTimeString("es-CO")); setRemoteSyncError(""); }
+      else setRemoteSyncError("No fue posible consultar las marcaciones. Se conserva el último estado conocido.");
+      if (sessionResult.ok) setSession(sessionResult.value);
+    }
     const pendingPunchKeys = new Set(readPendingSync()
-      .filter((item) => item.path.endsWith("/time-punches"))
+      .filter((item) => !isBlockedItem(item) && item.path.endsWith("/time-punches"))
       .map((item) => String((item.payload as { idempotency_key?: string })?.idempotency_key || ""))
       .filter(Boolean));
-    setOptimisticPunches((current) => current.filter((punch) => punch.idempotency_key && pendingPunchKeys.has(punch.idempotency_key)));
+    setOptimisticPunches((current) => current.filter((punch) => punch.idempotency_key && (pendingPunchKeys.has(punch.idempotency_key) || preparingPunch.current === punch.idempotency_key)));
     setActivityTypes(typesData);
-    setSession(sessionResult.value);
     if (typesData[0]) setActivityTypeId((current) => current || String(typesData[0].id));
     // Con ficha y conexion, un dia sin horarios es un estado que la pantalla debe decir en voz
     // alta, no un listado vacio con botones que no llevan a ningun lado. En modo respaldo
@@ -539,6 +600,23 @@ export default function MobilePunchPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (document.hidden || navigator.onLine === false) return;
+      void refreshOperationalState().catch(() => undefined);
+    };
+    const timer = window.setInterval(refresh, 12000);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("online", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [refreshOperationalState]);
 
   useEffect(() => {
     const initialQueue = readPendingSync();
@@ -599,14 +677,9 @@ export default function MobilePunchPage() {
     || assignedRoutes[0]
     || null;
   const gpsRequired = scheduleGpsRequired(route);
-  const attendanceForRoute = attendance.find((item) => {
-    const identityMatch = aliases.includes(normalizeKey(item.user_name)) || item.user_name === userName || item.user_name === employeeName(employee);
-    const routeMatch = route ? String(item.route_id || "") === String(route.id) : true;
-    return identityMatch && routeMatch;
-  });
   const fallbackNextType = "entrada";
   const optimisticPunchesForRoute = optimisticPunches.filter((punch) => String(punch.route_id || "") === String(route?.id || ""));
-  const mergedPunches = [...(attendanceForRoute?.punches || []), ...optimisticPunchesForRoute]
+  const mergedPunches = attendancePunches(attendance, employee?.id, [...aliases, userName, employeeName(employee)], route?.id, optimisticPunchesForRoute)
     .reduce<AttendancePunch[]>((acc, punch) => {
       if (!punch.type || acc.some((item) => item.type === punch.type)) return acc;
       acc.push(punch);
@@ -619,8 +692,8 @@ export default function MobilePunchPage() {
     });
   const currentAttendance = {
     user_name: userName,
-    route_id: route?.id || attendanceForRoute?.route_id || null,
-    next_type: mergedPunches.length ? nextPunchForTypes(mergedPunches.map((punch) => punch.type)) : (attendanceForRoute?.next_type || fallbackNextType),
+    route_id: route?.id || null,
+    next_type: mergedPunches.length ? nextPunchForTypes(mergedPunches.map((punch) => punch.type)) : fallbackNextType,
     punches: mergedPunches
   };
   const sessionActivities = [
@@ -629,7 +702,7 @@ export default function MobilePunchPage() {
   ];
   const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
   const nextType = currentAttendance.next_type;
-  const sessionActive = Boolean(session?.active || (doneTypes.has("entrada") && !doneTypes.has("salida")));
+  const sessionActive = !doneTypes.has("salida") && Boolean(session?.active || doneTypes.has("entrada"));
   const sessionClosed = doneTypes.has("salida");
   const vehiclePlate = route?.vehicle_plate || "";
   // La tolerancia tiene que ser la misma que aplica el servidor al calcular los
@@ -663,7 +736,6 @@ export default function MobilePunchPage() {
     return Math.max(0, minutesNow - expected - toleranceMinutes);
   })();
   const needsJustification = isArrivingLate || isClosingLate;
-  const needsSelfie = Boolean(nextType && selfieRequiredPunches.has(nextType));
   const pendingQueued = pendingSync.filter((item) => !isBlockedItem(item));
   const pendingBlocked = pendingSync.filter(isBlockedItem);
   const pendingWeightKb = Math.max(1, Math.round(offlineQueueWeight(pendingQueued) / 1024));
@@ -767,6 +839,18 @@ export default function MobilePunchPage() {
     notify("");
     try {
       const isOnline = typeof navigator === "undefined" ? true : navigator.onLine !== false;
+      if (isOnline) {
+        let latest: Awaited<ReturnType<typeof refreshOperationalState>> | null = null;
+        try { latest = await refreshOperationalState(); } catch { /* Keep the existing offline queue policy; never claim server confirmation. */ }
+        if (latest) {
+          if (!latest.routes.some(item => String(item.id) === String(route.id))) { notify("El horario cambió en el servidor. Revisa el horario actualizado antes de marcar.", "error"); return; }
+          const pendingKeys = new Set(readPendingSync().filter(item => !isBlockedItem(item)).map(item => String((item.payload as { idempotency_key?: string })?.idempotency_key || "")));
+          const localPunches = optimisticPunchesForRoute.filter(punch => punch.idempotency_key && pendingKeys.has(punch.idempotency_key));
+          const types = attendancePunches(latest.attendance, employee.id, [...aliases, userName, employeeName(employee)], route.id, localPunches).map(punch => punch.type);
+          const expected = nextPunchForTypes(types);
+          if (expected !== type) { notify(expected ? `La jornada se actualizó desde otro dispositivo. La siguiente marcación es ${punchLabels[expected]?.title || expected}.` : "La jornada ya fue cerrada desde otro dispositivo.", "pending"); return; }
+        }
+      }
       let fix: GpsFix | null = null;
       let cause: GpsFailureCause | null = null;
       if (gpsRequired) {
@@ -785,7 +869,7 @@ export default function MobilePunchPage() {
         notify(decision.userMessage, "error");
         return;
       }
-      if (selfieRequiredPunches.has(type) && !identitySelfie) {
+      if (!identitySelfie || selfieType !== type) {
         notify("Toma la selfie de validacion antes de marcar.", "error");
         return;
       }
@@ -813,12 +897,12 @@ export default function MobilePunchPage() {
         notify(`Kilometraje del dia: ${normalizedMileage} km. Confirmando cierre...`, "pending");
       }
       const idempotencyKey = globalThis.crypto?.randomUUID?.() || `hr-punch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      preparingPunch.current = idempotencyKey;
       const optimisticTime = markedAt.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
       setOptimisticPunches((current) => [
         ...current.filter((punch) => !(String(punch.route_id || "") === String(route?.id || "") && punch.type === type)),
         { id: markedAt.getTime(), type, time: optimisticTime, vehicle_plate: vehiclePlate, route_id: route?.id || null, idempotency_key: idempotencyKey }
       ].slice(-20));
-      setMarkingType(null);
       const queuedAt = new Date().toISOString();
       const payload: Record<string, unknown> = {
         employee_id: employee.id,
@@ -842,11 +926,7 @@ export default function MobilePunchPage() {
           ...routeSyncMetadata(route)
         }
       };
-      // Sin previewUrl: es un blob: del navegador, no sobrevive a la cola ni
-      // significa nada en el servidor.
-      if (identitySelfie?.base64) {
-        payload.identity_photo = { base64: identitySelfie.base64, name: identitySelfie.name, type: identitySelfie.type, size: identitySelfie.size };
-      }
+      payload.identity_photo = { base64: identitySelfie.base64, name: identitySelfie.name, type: identitySelfie.type, size: identitySelfie.size };
       if (type === "entrada") {
         const arrivalDetail = extraDetail.trim();
         if (extraReason) payload.extra_reason = extraReason;
@@ -866,9 +946,17 @@ export default function MobilePunchPage() {
       setExtraEvidence(null);
       setIdentitySelfie(null);
       if (type === "entrada") setStartMileage("");
+      setSelfieType("");
       if (type === "salida") setDayMileage("");
       const queued = await enqueuePendingSync("/api/v1/hr/self/time-punches", payload, punchLabels[type].title);
-      setPendingSync(readPendingSync());
+      const savedQueue = readPendingSync();
+      setPendingSync(savedQueue);
+      if (!savedQueue.some(item => String((item.payload as { idempotency_key?: string })?.idempotency_key || "") === idempotencyKey)) {
+        setOptimisticPunches(current => current.filter(punch => punch.idempotency_key !== idempotencyKey));
+        notify(queued.notice || "No fue posible guardar la marcación pendiente en este dispositivo.", "error");
+        return;
+      }
+      setMarkingType(null);
       if (queued.notice) notify(queued.notice, "error");
       else if (decision.gpsUnavailable) notify(`${punchLabels[type].title} ${decision.userMessage}`, "pending");
       else notify(`${punchLabels[type].title} pendiente de confirmar. Sincronizando...`, "pending");
@@ -886,6 +974,7 @@ export default function MobilePunchPage() {
     } catch (error) {
       notify(error instanceof Error ? `La marcacion quedo pendiente de confirmar: ${error.message}` : "La marcacion quedo pendiente de confirmar.", "error");
     } finally {
+      preparingPunch.current = null;
       setMarkingType(null);
     }
   }
@@ -1071,6 +1160,7 @@ export default function MobilePunchPage() {
       </header>
 
       {message ? <div className={`rounded-md border p-4 text-sm font-medium ${messageToneStyles[messageTone].className}`} role={messageToneStyles[messageTone].role}>{message}</div> : null}
+      <p className="text-xs text-neutral-600" role="status" data-attendance-sync={remoteSyncError ? "pending" : lastRemoteSync ? "updated" : "loading"}>{remoteSyncError || (lastRemoteSync ? `Marcaciones actualizadas: ${lastRemoteSync}` : "Consultando marcaciones del servidor…")}</p>
       {!online ? (
         <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-950" role="status">
           <WifiOff className="mr-2 inline" size={16} /> Sin senal. Puedes seguir marcando: cada marcacion se guarda en este dispositivo con su fecha y hora reales y se sincronizara automaticamente al recuperar conexion.
@@ -1173,18 +1263,7 @@ export default function MobilePunchPage() {
             <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
               <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Marcando en horario ${route.id} - ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin horario seleccionado para este usuario/equipo"}
             </div>
-            {needsSelfie ? (
-              <div className="mt-3">
-                <PhotoCapture
-                  facing="user"
-                  label={nextType === "entrada" ? "Selfie de validacion de entrada" : "Selfie de validacion de cierre"}
-                  onChange={setIdentitySelfie}
-                  required
-                  value={identitySelfie}
-                />
-                <p className="mt-2 text-xs text-neutral-500">Debe verse tu rostro. El almuerzo y el retorno no piden foto.</p>
-              </div>
-            ) : null}
+            {nextType ? <div className="mt-3"><PhotoCapture key={nextType} facing="user" label={`Selfie de ${punchLabels[nextType]?.title.toLowerCase() || "validación"}`} required value={selfieType === nextType ? identitySelfie : null} onChange={photo => { setIdentitySelfie(photo); setSelfieType(nextType); }} /><p className="mt-2 text-xs text-neutral-500">Las cuatro marcaciones requieren una foto del rostro: entrada, almuerzo, retorno y salida.</p></div> : null}
             {needsJustification ? (
               <div className="mt-3 space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3">
                 <div>

@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 
 // Reglas de captura de la marcacion web: llegada tarde sustentada, selfie en
-// entrada y cierre, y kilometraje al abrir la jornada con vehiculo.
+// entrada, almuerzo, retorno y cierre, y kilometraje al abrir la jornada con vehiculo.
 const root = path.resolve(import.meta.dirname, "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
 const marking = read("app/dashboard/talento-humano/marcacion/page.tsx");
@@ -35,17 +35,12 @@ test("la tolerancia del horario es la que decide si hay que justificar", () => {
   assert.match(marking, /tolerance_minutes\?: number \| null/);
 });
 
-test("entrada y cierre exigen selfie; el almuerzo no lleva foto", () => {
-  assert.match(marking, /const selfieRequiredPunches = new Set\(\["entrada", "salida"\]\)/);
+test("las cuatro marcaciones web requieren una selfie propia de ese paso", () => {
+  assert.match(marking, /Las cuatro marcaciones requieren una foto del rostro: entrada, almuerzo, retorno y salida/);
   assert.match(marking, /facing="user"/);
-  assert.match(marking, /Selfie de validacion de entrada/);
-  assert.match(marking, /Selfie de validacion de cierre/);
-  assert.match(marking, /El almuerzo y el retorno no piden foto/);
-
   const body = markBody();
-  assert.match(body, /selfieRequiredPunches\.has\(type\) && !identitySelfie/);
+  assert.match(body, /!identitySelfie \|\| selfieType !== type/);
   assert.match(body, /payload\.identity_photo = \{ base64: identitySelfie\.base64/);
-  // El blob: del navegador no sirve en el servidor ni sobrevive a la cola.
   assert.doesNotMatch(body, /payload\.identity_photo = identitySelfie;/);
 });
 
