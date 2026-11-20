@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.22.0",
+      "version": "2.23.0",
       "updated_at": "2026-11-20",
-      "sha256": "42b6487e9b6df8500188d926071eaf0e4b4c1d9df5caedc969cb282af79529c6",
+      "sha256": "e3e91703f26d08c2d69add589474b534812b132457d2783f079104e0776c6cba",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -89,7 +89,8 @@
         "rango-timepunch-solo-por-lector-proyectado",
         "ingesta-publica-con-buzon-honesto",
         "exencion-de-evidencia-con-contrato",
-        "congestion-prisma-503-con-retry-after"
+        "congestion-prisma-503-con-retry-after",
+        "cuenta-inactiva-sigue-siendo-administrable"
       ]
     },
     {
@@ -311,9 +312,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.92.0",
+      "version": "2.93.0",
       "updated_at": "2026-11-20",
-      "sha256": "5890bdd1edcebb7f6324e298c6d6c965c05ce5f673b11f23dce991c7327e25a5",
+      "sha256": "0595c226c0cc4ad5d6f4f91b8884cf1d982e4b6646500040bfa7ad729d2b6914",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -396,15 +397,16 @@
         "rojo-heredado-se-clasifica-y-se-repara",
         "rojo-atribuido-por-insumos",
         "lista-vacia-es-lectura-ciega",
-        "control-negro-contra-el-mismo-ambiente"
+        "control-negro-contra-el-mismo-ambiente",
+        "interruptor-certificado-en-los-dos-sentidos"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.34.0",
+      "version": "2.35.0",
       "updated_at": "2026-11-20",
-      "sha256": "fdd7351237f1ff876bc1f69119eb4b8d463a8bf6da3ae757af67bfcb81e98a8f",
+      "sha256": "bb6402be28ed8c9cf5b0ea77dd74196b335ae0cf9766c9c8ce619d0a61cac5d7",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -441,7 +443,8 @@
         "sonda-de-produccion-sin-contenido",
         "boca-anonima-sin-tenant-en-el-cuerpo",
         "exencion-angosta-con-negativos",
-        "detalle-proveedor-no-va-en-el-cuerpo"
+        "detalle-proveedor-no-va-en-el-cuerpo",
+        "ampliar-lectura-conserva-tenant-y-login"
       ]
     },
     {

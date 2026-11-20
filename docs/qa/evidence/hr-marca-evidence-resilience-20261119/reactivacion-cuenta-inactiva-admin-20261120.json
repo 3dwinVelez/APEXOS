@@ -1,0 +1,77 @@
+{
+  "schema": "APEXOS_LOCAL_CERTIFICATION_V1",
+  "title": "La cuenta inactiva vuelve a ser administrable: desactivar y reactivar operan sobre el mismo id",
+  "intervention": "hr-marca-evidence-resilience-20261119",
+  "fecha": "2026-11-20",
+  "ambiente": "local",
+  "rama": "desarrollo",
+  "commit_base": "3858c4f2e91b1d4275d77fa5439bfd005bdc9a78",
+  "instrumento": "apps/api/test/admin-user-status-regression.test.js (node --test)",
+  "nodo": "v22.23.1",
+  "defecto": {
+    "descripcion": "El alcance global de soft-delete (apps/api/src/core/prisma.js) inyecta active:true a toda lectura de User. Las lecturas de cuenta en apps/api/src/modules/admin/service.js no pedían la excepción __includeInactive, así que desactivar un usuario desde la pantalla de Administración dejaba la cuenta ilegible: el mismo botón que revierte el estado, el bloqueo de acceso y la edición respondían 404 sobre una fila que sí existe.",
+    "simbolos": [
+      "setUserActive (entrada y lectura de cierre)",
+      "updateUserAccess (entrada y lectura de cierre)",
+      "updateUser (entrada y lectura de cierre)",
+      "addUserDocument (entrada y lectura de cierre)",
+      "removeUserDocument (entrada y lectura de cierre)"
+    ]
+  },
+  "antes": {
+    "sha256_servicio": "1ccf3322d680c02de2083a326af193a5ed8d96345c16ecb04332f8b5aeec60ed",
+    "salida": 1,
+    "pruebas": 7,
+    "pasan": 3,
+    "fallan": 4,
+    "pruebas_fallidas": [
+      "reactivar un usuario inactivo opera sobre el mismo id que se desactivó",
+      "el bloqueo de acceso de una cuenta inactiva no se pierde en un 404 al leerla",
+      "inactivar desde el acceso responde con la fila escrita, no con un 404 posterior",
+      "toda lectura de cuenta en administracion ve la inactiva y conserva su tenant"
+    ],
+    "firmas_de_falla": [
+      "Inactive record filtered",
+      "lectura ciega ante cuentas inactivas: const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });"
+    ]
+  },
+  "despues": {
+    "sha256_servicio": "fba38a5ee2ca3fe57ccfcf7178f66534437270ba7eefb6a18bb99a77748ddff9",
+    "salida": 0,
+    "pruebas": 7,
+    "pasan": 7,
+    "fallan": 0,
+    "pruebas_fallidas": [],
+    "firmas_de_falla": []
+  },
+  "control_positivo": "Las tres pruebas previas del mismo archivo siguen verdes en las dos corridas: nunca cubrieron el camino de regreso, por eso el defecto llegó a Producción con la suite en verde.",
+  "restaurado_intacto": true,
+  "salida_esperada": 0,
+  "resultado": "APROBADA",
+  "regresion_local": {
+    "admin_y_cercanos": {
+      "comando": "node --test test/admin-role-capabilities.test.js test/admin-role-escalation.test.js test/admin-user-status-regression.test.js test/hr-employee-user-link.test.js test/telemetry-client-logs-public.test.js",
+      "pruebas": 38,
+      "pasan": 38,
+      "fallan": 0
+    },
+    "autenticacion_tenant_y_sesiones": {
+      "comando": "node --test test/auth-session-hardening.test.js test/core-tenant-context-propagation.test.js test/core-tenant-models.test.js test/prisma-deferred-tenant-context.test.js test/security-authorization-revocation.test.js",
+      "pruebas": 26,
+      "pasan": 26,
+      "fallan": 0
+    },
+    "rojo_ambiental_declarado": {
+      "archivo": "apps/api/test/authorization-status-codes.test.js",
+      "firma": "Error: REDIS_URL is required when Redis is enabled (src/fabric/redisConfig.js:9 via src/core/tenantCache.js)",
+      "atribucion": "El mismo rojo se reproduce con el servicio de HEAD (git show HEAD:apps/api/src/modules/admin/service.js): es el puesto sin Redis, no el cambio. Ya está declarado como deuda de ambiente en cortes anteriores.",
+      "en_este_corte": "no pasa por ambiente, no por el arreglo"
+    },
+    "suite_completa_api": "No ejecutable en este puesto sin base local (varios archivos cargan server.js y piden Postgres en localhost:54320); la corrida se detuvo en 145 archivos con Can't reach database server. Queda declarada, no reemplazada por un verde."
+  },
+  "reproduccion": [
+    "node --test apps/api/test/admin-user-status-regression.test.js   # 7/7 con el arreglo",
+    "cp apps/api/src/modules/admin/service.js $TEMP/service.fixed.js && git show HEAD:apps/api/src/modules/admin/service.js > apps/api/src/modules/admin/service.js && node --test apps/api/test/admin-user-status-regression.test.js   # 3/7 con la firma Inactive record filtered",
+    "cp $TEMP/service.fixed.js apps/api/src/modules/admin/service.js   # restaurar y verificar sha256"
+  ]
+}
