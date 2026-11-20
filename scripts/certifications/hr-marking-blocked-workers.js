@@ -48,7 +48,7 @@ function parseArgs(argv = process.argv.slice(2)) {
 function parseFailures(argv) {
   const failures = [];
   const parsed = parseArgs(argv);
-  for (const key of ["env-file", "date", "days", "output"]) {
+  for (const key of ["env-file", "date", "days", "output", "manifest"]) {
     if (parsed[key] === true) failures.push(`--${key} quedo sin valor`);
   }
   return failures;
@@ -158,6 +158,182 @@ function groupBy(rows, keyOf) {
   return buckets;
 }
 
+// ---- Rescate Fase 0 ---------------------------------------------------------------------------
+// La escalera de asistencia es lineal, asi que el orden de las piernas es fijo.
+const ORDEN_MARCAS = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
+// El horario solo define las dos puntas de la jornada; las piernas de almuerzo no se inventan:
+// entran al manifiesto unicamente si el servidor las nombro en un rechazo ("la siguiente marcacion
+// permitida es fin_almuerzo"), que es la prueba de que la malla de ESA persona si tiene esa pierna.
+// Tolerancia del oprimido real respecto a la hora de entrada del horario. Medido: los operarios
+// llegan y marcan antes o despues de su hora de ingreso; media jornada de desvio sigue siendo la
+// apertura de ESA jornada, pero una tarde no.
+const VENTANA_APERTURA_MIN = 120;
+// Un `MARCACION_DIFERIDA_EXPIRADA` se registra cuando el dispositivo reenvia una marca vieja: su
+// sello del log es la hora del REINTENTO, no la de la marcacion, y usarla registraria una entrada
+// veinte horas despues de la real. Los demas codigos son el instante en que el operario oprimio.
+const CODIGOS_DE_INTENTO_INMEDIATO = new Set(["MARCACION_FUERA_DE_SECUENCIA", "SELFIE_REQUERIDA", "IDEMPOTENCY_KEY_CONFLICT"]);
+const RUTA_DE_MARCACION = "/api/v1/hr/self/time-punches";
+
+function minutosDeHora(hora) {
+  const match = /^(\d{2}):(\d{2})/.exec(String(hora || "").slice(0, 5));
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+}
+
+function minutosDelDiaColombia(isoUtc) {
+  const d = new Date(new Date(isoUtc).getTime() - COLOMBIA_OFFSET_HOURS * 3600 * 1000);
+  return d.getUTCHours() * 60 + d.getUTCMinutes();
+}
+
+function piernaNombrada(message = "") {
+  // El servidor cierra la frase con punto: capturar `\S+` devolveria "fin_almuerzo." y la pierna
+  // no casaria con la escalera. Se capturan letras y guion bajo, nada mas.
+  const match = /siguiente marcaci.n permitida es ([\p{L}_]+)/iu.exec(String(message || ""));
+  return match ? match[1] : null;
+}
+
+// El rechazo de transporte ("Backend no disponible desde frontend") no trae codigo, pero es el
+// operario oprimiendo: cuenta como intento inmediato siempre que la ruta sea la de marcacion.
+function esIntentoInmediato(row) {
+  if (!row || row.route !== RUTA_DE_MARCACION) return false;
+  if (row.code && CODIGOS_DE_INTENTO_INMEDIATO.has(row.code)) return true;
+  return !row.code && /backend no disponible|solicitud frontend fallida|contenido del archivo/i.test(String(row.message || ""));
+}
+
+// `HH:MM` del horario + dia calendario de Colombia -> ISO UTC. Una jornada que cruza medianoche
+// (h_fin menor que h_inicio) cierra al dia siguiente.
+function utcDeHoraLocal(dia, hora, { finDeJornada = false, horaInicio = null } = {}) {
+  const limpio = String(hora || "").slice(0, 5);
+  if (!/^\d{2}:\d{2}$/.test(limpio)) return null;
+  const cruzaMedianoche = finDeJornada && horaInicio && limpio < String(horaInicio).slice(0, 5);
+  const base = new Date(`${dia}T${limpio}:00.000-05:00`);
+  if (!Number.isFinite(base.getTime())) return null;
+  return new Date(base.getTime() + (cruzaMedianoche ? 24 * 3600 * 1000 : 0)).toISOString();
+}
+
+function horaColombia(isoUtc) {
+  return new Date(new Date(isoUtc).getTime() - COLOMBIA_OFFSET_HOURS * 3600 * 1000).toISOString().replace("T", " ").slice(0, 16);
+}
+
+function construirRescate({ jornadasSinRegistro, jornadasSinCierre, marcasPorTrabajadorDia, intentosPorUsuarioDia, rutasPorEmpleadoDia, identidades }) {
+  const ficha = new Map(identidades.map((row) => [row.id, row]));
+  const dias = new Map();
+  const registrar = (empleadoId, dia) => {
+    const clave = `${empleadoId}|${dia}`;
+    if (!dias.has(clave)) dias.set(clave, { empleado_id: Number(empleadoId), dia });
+    return dias.get(clave);
+  };
+  for (const fila of jornadasSinRegistro) registrar(fila.empleado_id, fila.dia).sin_registro = true;
+  for (const fila of jornadasSinCierre) registrar(fila.empleado_id, fila.dia).sin_cierre = true;
+
+  const filas = [];
+  for (const jornada of dias.values()) {
+    const empleado = ficha.get(jornada.empleado_id) || null;
+    if (!empleado) continue;
+    const existentes = new Set((marcasPorTrabajadorDia.get(`${jornada.empleado_id}|${jornada.dia}`) || []).map((row) => row.type));
+    const intentos = intentosPorUsuarioDia.get(`${empleado.user_id}|${jornada.dia}`) || [];
+    const ruta = rutasPorEmpleadoDia.get(`${jornada.empleado_id}|${jornada.dia}`) || null;
+    const disponibles = ORDEN_MARCAS.filter((tipo) => !existentes.has(tipo));
+    // Primero se asignan las piernas que el servidor nombro: es el unico rastro de QUE iba a marcar
+    // el operario, y fija el piso de que la pierna existe en su malla.
+    const porPierna = new Map();
+    for (const intento of intentos) {
+      const pierna = piernaNombrada(intento.message);
+      if (!pierna) continue;
+      if (disponibles.includes(pierna) && !porPierna.has(pierna)) porPierna.set(pierna, [intento]);
+    }
+    // Las dos puntas del horario se anclan al primer y ultimo oprimido real del dia; si no hay
+    // oprimidos, al horario asignado. Un dia sin ninguna de las dos fuentes no entra al manifiesto.
+    // Un dia sin ningun rechazo de marcacion no es un rescate: es un supuesto. Queda fuera y se
+    // declara, porque el dueño autorizo rescatar peticiones fallidas, no completar el tablero.
+    if (!intentos.length) continue;
+    const asignados = new Set([...porPierna.values()].flat().map((intento) => intento.at));
+    const ordenados = [...intentos].sort((a, b) => new Date(a.at) - new Date(b.at));
+    // Las puntas se anclan con reglas distintas y la razon es medida: los reintentos rechazados se
+    // agrupan en la manana (la espiral de `MARCACION_FUERA_DE_SECUENCIA`), asi que el ULTIMO oprimido
+    // del dia no es la hora de salida de nadie -producia cierres dos minutos despues de la entrada y
+    // salidas a las 06:03-. La salida sale del horario; la entrada del log solo si cae dentro de una
+    // ventana razonable del horario.
+    const horaInicio = ruta ? minutosDeHora(ruta.start_time) : null;
+    const desdeHorario = (tipo) => {
+      const hora = tipo === "entrada" ? ruta.start_time : ruta.end_time;
+      const cuando = utcDeHoraLocal(jornada.dia, hora, { finDeJornada: tipo === "salida", horaInicio: ruta.start_time });
+      if (!cuando) return null;
+      return {
+        cuando,
+        fuente: "horario_asignado",
+        evidencia: `ruta ${ruta.id} h_${tipo === "entrada" ? "inicio" : "fin"} ${hora} ${ruta.status}/${ruta.kind}; ${intentos.length} rechazos ese dia, ninguno util como hora`
+      };
+    };
+    const propuestaPara = (tipo) => {
+      const inmediata = ordenados.filter((intento) => esIntentoInmediato(intento) && !asignados.has(intento.at));
+      if (tipo === "entrada") {
+        const cerca = inmediata.find((intento) => horaInicio == null
+          || Math.abs(minutosDelDiaColombia(intento.at) - horaInicio) <= VENTANA_APERTURA_MIN);
+        if (cerca) {
+          return { cuando: cerca.at, fuente: "intento_real_en_log", evidencia: `primer oprimido del dia a las ${horaColombia(cerca.at)} CO (${inmediata.length} intentos inmediatos)` };
+        }
+        return ruta ? desdeHorario("entrada") : null;
+      }
+      if (tipo === "salida") {
+        return ruta && minutosDeHora(ruta.end_time) != null ? desdeHorario("salida") : null;
+      }
+      const nombrada = porPierna.get(tipo);
+      if (!nombrada || !nombrada.length) return null;
+      const mejor = [...nombrada].sort((a, b) => new Date(a.at) - new Date(b.at))[0];
+      return { cuando: mejor.at, fuente: "intento_real_en_log", evidencia: `el servidor le pidio ${tipo} a las ${horaColombia(mejor.at)} CO` };
+    };
+    for (const tipo of disponibles) {
+      const propuesta = propuestaPara(tipo);
+      if (!propuesta || !Number.isFinite(new Date(propuesta.cuando).getTime())) continue;
+      filas.push({
+        empleado_id: Number(jornada.empleado_id),
+        tenant_id: empleado.tenant_id,
+        user_id: empleado.user_id ?? null,
+        nombre: empleado.user ? empleado.user.name : null,
+        user_name: empleado.user ? empleado.user.name : (empleado.code || String(empleado.user_id)),
+        dia: jornada.dia,
+        jornada: jornada.sin_registro ? "sin_registro" : "sin_cierre",
+        tipo,
+        punched_at: propuesta.cuando,
+        hora_colombia: horaColombia(propuesta.cuando),
+        fuente: propuesta.fuente,
+        evidencia: propuesta.evidencia,
+        rechazos_del_dia: intentos.length,
+        route_id: ruta ? Number(ruta.id) : null,
+        payload: {
+          employee_id: Number(jornada.empleado_id),
+          user_name: empleado.user ? empleado.user.name : (empleado.code || String(empleado.user_id)),
+          type: tipo,
+          punched_at: propuesta.cuando,
+          route_id: ruta ? Number(ruta.id) : undefined,
+          correccion_administrativa: true,
+          motivo_correccion: `Rescate Fase 0 2026-11-19 (${propuesta.fuente}): ${propuesta.evidencia}`,
+          idempotency_key: `rescate-fase0-${jornada.empleado_id}-${jornada.dia}-${tipo}`.slice(0, 120)
+        }
+      });
+    }
+  }
+  // Ultimo filtro antes de escribir: la escalera es ordenada, asi que una pierna que caiga antes de
+  // la anterior del mismo dia es un artefacto de la evidencia y no una marcacion que registrar.
+  const descartadas = [];
+  for (const [, rows] of groupBy(filas, (row) => `${row.empleado_id}|${row.dia}`)) {
+    rows.sort((a, b) => ORDEN_MARCAS.indexOf(a.tipo) - ORDEN_MARCAS.indexOf(b.tipo));
+    let anterior = null;
+    for (const row of rows) {
+      const ms = new Date(row.punched_at).getTime();
+      if (anterior != null && ms < anterior) {
+        descartadas.push({ empleado_id: row.empleado_id, dia: row.dia, tipo: row.tipo, hora_colombia: row.hora_colombia, motivo: "antes de la pierna anterior de la escalera" });
+        filas.splice(filas.indexOf(row), 1);
+        continue;
+      }
+      anterior = ms;
+    }
+  }
+  const orden = filas.sort((a, b) => (a.dia < b.dia ? -1 : a.dia > b.dia ? 1 : a.empleado_id - b.empleado_id));
+  orden.descartadas = descartadas;
+  return orden;
+}
+
 async function main() {
   const args = parseArgs();
 
@@ -200,7 +376,79 @@ async function main() {
     const intacto = podado.includes("total_rechazos");
     console.log(`${namesOut ? "ok  " : "FALLO"} --sin-nombres poda nombre, empleado_codigo, codigo y correo en cualquier nivel`);
     console.log(`${idsDentro && intacto ? "ok  " : "FALLO"} la medicion conserva user/emp/dia y los codigos HTTP (rojo provocado si se poda de mas)`);
-    const outcome = failed === 0 && drifted.length === 1 && quiet.length === 0 && windowOk && isoOk && namesOut && idsDentro && intacto ? 0 : 1;
+    // El rescate se sostiene en tres reglas puras. Cada una se prueba con su rojo provocado:
+    // si el diferenciador deja de discriminar, el manifiesto deja de ser confiable.
+    const piernaOk = piernaNombrada("La siguiente marcacion permitida es fin_almuerzo.") === "fin_almuerzo"
+      && piernaNombrada("La marcacion diferida supero las 24 horas permitidas.") === null;
+    console.log(`${piernaOk ? "ok  " : "FALLO"} la pierna se lee del mensaje del servidor y no de la intuicion`);
+    const inmediatoOk = esIntentoInmediato({ route: RUTA_DE_MARCACION, code: "MARCACION_DIFERIDA_EXPIRADA", message: "x" }) === false
+      && esIntentoInmediato({ route: RUTA_DE_MARCACION, code: "SELFIE_REQUERIDA", message: "x" }) === true
+      && esIntentoInmediato({ route: RUTA_DE_MARCACION, code: null, message: "Backend no disponible desde frontend" }) === true
+      && esIntentoInmediato({ route: "/api/v1/hr/self/gps/ping", code: null, message: "Backend no disponible desde frontend" }) === false;
+    console.log(`${inmediatoOk ? "ok  " : "FALLO"} una marca diferida nunca presta su hora (es el reintento) y solo la ruta de marcacion cuenta`);
+    const utcOk = utcDeHoraLocal("2026-11-18", "05:30") === "2026-11-18T10:30:00.000Z"
+      && utcDeHoraLocal("2026-11-18", "04:00", { finDeJornada: true, horaInicio: "22:00" }) === "2026-11-19T09:00:00.000Z"
+      && utcDeHoraLocal("2026-11-18", "-") === null;
+    console.log(`${utcOk ? "ok  " : "FALLO"} la hora del horario se ancla a Colombia-05:00 y cruza medianoche solo al cerrar`);
+    // El manifiesto es lo que despues se escribe sobre una jornada real, asi que sus reglas se
+    // prueban con fichas armadas a proposito: un diferido de la tarde no puede abrir la jornada,
+    // una pierna fuera de orden se descarta y un dia sin rechazos no se toca.
+    const identidades = [
+      { id: 1, tenant_id: "t1", user_id: 11, code: "Uno", user: { name: "Uno" } },
+      { id: 2, tenant_id: "t1", user_id: 12, code: "Dos", user: { name: "Dos" } },
+      { id: 3, tenant_id: "t1", user_id: 13, code: "Tres", user: { name: "Tres" } },
+      { id: 4, tenant_id: "t1", user_id: 14, code: "Cuatro", user: { name: "Cuatro" } },
+      { id: 5, tenant_id: "t1", user_id: 15, code: "Cinco", user: { name: "Cinco" } }
+    ];
+    const rutas = new Map([
+      ["1|2026-11-18", { id: 900, tenant_id: "t1", date: new Date("2026-11-18T05:00:00.000Z"), start_time: "06:00", end_time: "14:00", status: "active", kind: "trabajo" }],
+      ["3|2026-11-18", { id: 902, tenant_id: "t1", date: new Date("2026-11-18T05:00:00.000Z"), start_time: "06:00", end_time: "14:00", status: "active", kind: "trabajo" }],
+      ["4|2026-11-18", { id: 903, tenant_id: "t1", date: new Date("2026-11-18T05:00:00.000Z"), start_time: "06:00", end_time: "14:00", status: "active", kind: "trabajo" }],
+      ["5|2026-11-18", { id: 904, tenant_id: "t1", date: new Date("2026-11-18T05:00:00.000Z"), start_time: "06:00", end_time: "14:00", status: "active", kind: "trabajo" }]
+    ]);
+    const intento = (user_id, at, extra = {}) => ({ user_id, at, route: RUTA_DE_MARCACION, code: null, message: "", ...extra });
+    const intentos = groupBy([
+      // emp 1: la unica huella es un diferido de las 19:12 CO (reintento) -> las dos puntas salen del horario.
+      intento(11, "2026-11-19T00:12:00.000Z", { code: "MARCACION_DIFERIDA_EXPIRADA" }),
+      // emp 3: oprimido real a las 05:55 CO (dentro de la ventana) + almuerzo pedido por el servidor.
+      intento(13, "2026-11-18T10:55:00.000Z", { code: "SELFIE_REQUERIDA" }),
+      intento(13, "2026-11-18T17:10:00.000Z", { message: "La siguiente marcacion permitida es fin_almuerzo." }),
+      // emp 4: el almuerzo pedido (05:00 CO) cae ANTES de la entrada del horario -> se descarta.
+      intento(14, "2026-11-18T10:00:00.000Z", { message: "La siguiente marcacion permitida es inicio_almuerzo." }),
+      // emp 5: ya tiene entrada y salida; solo le falta el fin de almuerzo.
+      intento(15, "2026-11-18T16:40:00.000Z", { message: "La siguiente marcacion permitida es fin_almuerzo." })
+    ], (row) => `${row.user_id}|${new Date(new Date(row.at).getTime() - COLOMBIA_OFFSET_HOURS * 3600 * 1000).toISOString().slice(0, 10)}`);
+    const marcas = groupBy([
+      { employee_id: 5, date: new Date("2026-11-18T11:00:00.000Z"), type: "entrada", punched_at: new Date("2026-11-18T11:00:00.000Z") },
+      { employee_id: 5, date: new Date("2026-11-18T19:00:00.000Z"), type: "salida", punched_at: new Date("2026-11-18T19:00:00.000Z") }
+    ], (row) => `${row.employee_id}|${isoDay(row.date)}`);
+    const rescate = construirRescate({
+      jornadasSinRegistro: [1, 2, 3].map((empleado_id) => ({ empleado_id, dia: "2026-11-18", sin_registro: true })),
+      jornadasSinCierre: [{ empleado_id: 4, dia: "2026-11-18", sin_cierre: true }, { empleado_id: 5, dia: "2026-11-18", sin_cierre: true }],
+      marcasPorTrabajadorDia: marcas,
+      intentosPorUsuarioDia: intentos,
+      rutasPorEmpleadoDia: rutas,
+      identidades
+    });
+    const de = (empleadoId) => rescate.filter((row) => row.empleado_id === empleadoId);
+    const uno = de(1).map((row) => `${row.tipo}@${row.hora_colombia.slice(11)}/${row.fuente}`).sort().join(",");
+    const cuatro = de(4).map((row) => row.tipo).sort().join(",");
+    const cinco = de(5).map((row) => row.tipo).join(",");
+    const rescateOk = uno === "entrada@06:00/horario_asignado,salida@14:00/horario_asignado"
+      && de(2).length === 0
+      && de(3).some((row) => row.tipo === "entrada" && row.hora_colombia.endsWith("05:55") && row.fuente === "intento_real_en_log")
+      && de(3).some((row) => row.tipo === "fin_almuerzo" && row.fuente === "intento_real_en_log")
+      && de(3).some((row) => row.tipo === "salida" && row.fuente === "horario_asignado")
+      && cuatro === "entrada,salida"
+      && cinco === "fin_almuerzo"
+      && rescate.descartadas.length === 1
+      && rescate.every((row) => row.payload.correccion_administrativa === true && String(row.payload.motivo_correccion).length >= 12 && row.payload.idempotency_key.length >= 8);
+    console.log(`${rescateOk ? "ok  " : "FALLO"} el rescate no presta la hora de un reintento, no inventa almuerzos ni toca dias sin rechazos (rojo provocado: ${uno || "nada"} | descartadas ${JSON.stringify(rescate.descartadas)})`);
+    const ventanaOk = minutosDeHora("05:30:00") === 330 && minutosDeHora(null) === null
+      && minutosDelDiaColombia("2026-11-18T10:30:00.000Z") === 5 * 60 + 30;
+    console.log(`${ventanaOk ? "ok  " : "FALLO"} minutos del dia en Colombia (la ventana de apertura compara horas locales, no UTC)`);
+    const outcome = failed === 0 && drifted.length === 1 && quiet.length === 0 && windowOk && isoOk && namesOut && idsDentro && intacto
+      && piernaOk && inmediatoOk && utcOk && rescateOk && ventanaOk ? 0 : 1;
     console.log(outcome === 0 ? "SELFTEST PASADO" : "SELFTEST BLOQUEADO");
     process.exit(outcome);
   }
@@ -540,7 +788,10 @@ async function main() {
     // al trabajador para ese dia (TimeRoute.start_time / end_time, que es lo que la app
     // compara cuando valida la marcacion) y lo imprime junto con lo que ya existe. La
     // salida es el insumo del registro manual, con la fuente de la hora a la vista.
-    if (args.horario) {
+    // --rescate reusa el mismo mapa de horarios y ademas ancla cada pierna faltante al
+    // instante real del intento rechazado, que SI existe en el log: el sello de la fila es
+    // el momento en que el operario oprimio. La hora del horario es el respaldo, no la regla.
+    if (args.horario || args.rescate) {
       const rutasVentana = await prisma.timeRoute.findMany({
         where: { date: { gte: window.from, lt: window.to } },
         select: { id: true, tenant_id: true, date: true, employees: true, start_time: true, end_time: true, status: true, kind: true },
@@ -562,18 +813,69 @@ async function main() {
           rutasPorEmpleadoDia.set(`${empleado.id}|${isoDay(ruta.date)}`, ruta);
         }
       }
-      console.log(`\nHORARIO ASIGNADO de cada jornada sin registro (la hora sale del horario, no del log):`);
-      const sinHorario = [];
-      for (const fila of jornadasSinRegistro) {
-        const ruta = rutasPorEmpleadoDia.get(`${fila.empleado_id}|${fila.dia}`);
-        if (!ruta) {
-          sinHorario.push(fila);
-          console.log(`  ${fila.dia}  emp ${String(fila.empleado_id).padStart(5)}  ${String(fila.nombre || fila.user_email || "-").padEnd(34)}  SIN HORARIO ASIGNADO`);
-          continue;
+      if (args.horario) {
+        console.log(`\nHORARIO ASIGNADO de cada jornada sin registro (la hora sale del horario, no del log):`);
+        const sinHorario = [];
+        for (const fila of jornadasSinRegistro) {
+          const ruta = rutasPorEmpleadoDia.get(`${fila.empleado_id}|${fila.dia}`);
+          if (!ruta) {
+            sinHorario.push(fila);
+            console.log(`  ${fila.dia}  emp ${String(fila.empleado_id).padStart(5)}  ${String(fila.nombre || fila.user_email || "-").padEnd(34)}  SIN HORARIO ASIGNADO`);
+            continue;
+          }
+          console.log(`  ${fila.dia}  emp ${String(fila.empleado_id).padStart(5)}  ${String(fila.nombre || fila.user_email || "-").padEnd(34)}  ruta ${ruta.id}  h_inicio ${ruta.start_time || "-"}  h_fin ${ruta.end_time || "-"}  ${ruta.status}/${ruta.kind}`);
         }
-        console.log(`  ${fila.dia}  emp ${String(fila.empleado_id).padStart(5)}  ${String(fila.nombre || fila.user_email || "-").padEnd(34)}  ruta ${ruta.id}  h_inicio ${ruta.start_time || "-"}  h_fin ${ruta.end_time || "-"}  ${ruta.status}/${ruta.kind}`);
+        console.log(`  total jornadas sin registro: ${jornadasSinRegistro.length}, sin horario resuelto: ${sinHorario.length}`);
       }
-      console.log(`  total jornadas sin registro: ${jornadasSinRegistro.length}, sin horario resuelto: ${sinHorario.length}`);
+
+      if (args.rescate) {
+        const diaColombiaDe = (isoUtc) => new Date(new Date(isoUtc).getTime() - COLOMBIA_OFFSET_HOURS * 3600 * 1000).toISOString().slice(0, 10);
+        const intentosPorUsuarioDia = groupBy(
+          rejected.filter((row) => row.route === RUTA_DE_MARCACION && row.user_id != null),
+          (row) => `${row.user_id}|${diaColombiaDe(row.at)}`
+        );
+        const filas = construirRescate({
+          jornadasSinRegistro,
+          jornadasSinCierre,
+          marcasPorTrabajadorDia,
+          intentosPorUsuarioDia,
+          rutasPorEmpleadoDia,
+          identidades
+        });
+        const porFuente = [...groupBy(filas, (row) => row.fuente)].map(([fuente, rows]) => ({ fuente, filas: rows.length }));
+        const descartadas = filas.descartadas || [];
+        console.log(`\nMANIFIESTO DE RESCATE (hora real del intento; el horario solo presta la salida y la entrada lejana): ${filas.length} piernas por corregir`);
+        for (const fila of filas) {
+          console.log(`  ${fila.dia}  emp ${String(fila.empleado_id).padStart(5)}  ${String(fila.nombre || "-").padEnd(32)} ${String(fila.tipo).padEnd(15)} ${fila.hora_colombia} CO  ${String(fila.fuente).padEnd(18)} ruta ${fila.route_id ?? "-"}  ${fila.evidencia}`);
+        }
+        for (const desc of descartadas) {
+          console.log(`  DESCARTADA ${desc.dia}  emp ${String(desc.empleado_id).padStart(5)}  ${desc.tipo} a las ${desc.hora_colombia} CO  ${desc.motivo}`);
+        }
+        console.log(`  jornadas tocadas: ${new Set(filas.map((row) => `${row.empleado_id}|${row.dia}`)).size}  ${porFuente.map((row) => `${row.fuente}=${row.filas}`).join("  ")}  descartadas=${descartadas.length}`);
+        const claveJornada = new Map([...jornadasSinRegistro, ...jornadasSinCierre].map((fila) => [`${fila.empleado_id}|${fila.dia}`, fila]));
+        const sinFuente = [...claveJornada.keys()].filter((clave) => !filas.some((row) => `${row.empleado_id}|${row.dia}` === clave));
+        console.log(`  jornadas sin ninguna fuente rescatable (no se tocan): ${sinFuente.length}${sinFuente.length ? ` -> ${sinFuente.join(", ")}` : ""}`);
+        reporte.rescate = {
+          criterio: "entra al manifiesto solo el dia con al menos un rechazo de marcacion; entrada = primer oprimido dentro de +/-120 min del horario (si no, el horario); salida = SIEMPRE el horario asignado (un reintento rechazado no prueba la hora de cierre); almuerzos solo si el servidor nombro la pierna y cae despues de la anterior; MARCACION_DIFERIDA_EXPIRADA nunca presta su hora",
+          filas_propuestas: filas.length,
+          por_fuente: porFuente,
+          descartadas,
+          jornadas_sin_fuente: sinFuente,
+          // El artefacto versionado lleva el detalle de cada pierna propuesta: sin el, quien revisa
+          // la evidencia meses despues no puede contrastar la hora escrita con su fuente.
+          detalle: filas,
+          escrituras: 0
+        };
+        if (args.manifest) {
+          const destino = path.resolve(String(args.manifest));
+          // El manifiesto ejecutable lleva nombres (el payload los necesita): jamas puede
+          // escribirse dentro del repositorio, que es lo que se versiona y se promociona.
+          if (destino.startsWith(`${ROOT}${path.sep}`)) throw new Error(`--manifest debe quedar fuera del repositorio: ${destino}`);
+          fs.mkdirSync(path.dirname(destino), { recursive: true });
+          fs.writeFileSync(destino, `${JSON.stringify({ generado_en: new Date().toISOString(), ambiente: hostOf(String(process.env.DATABASE_URL || "")), ...reporte.rescate, filas }, null, 2)}\n`);
+          console.log(`\nMANIFIESTO EJECUTABLE  ${destino}  (fuera del repositorio: lleva nombres)`);
+        }
+      }
     }
 
     if (args.output) {

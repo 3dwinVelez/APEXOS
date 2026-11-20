@@ -94,9 +94,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.64.0",
+      "version": "2.65.0",
       "updated_at": "2026-11-19",
-      "sha256": "3cf1931a9cdd56b4d63291e0219c6a4bcefd5904d491187c2939bb5c35409612",
+      "sha256": "7e71b7f5b369afc88bcdbdcbe870d1f96bd7c6b9e29254b5631b18dc4108e2e2",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -146,7 +146,8 @@
         "exclusion-vence-y-autorizacion-se-cita",
         "brief-cierra-con-ambiente-verificado",
         "brief-de-acote-separa-rama-de-nube",
-        "cifra-de-brief-con-hora-e-ids"
+        "cifra-de-brief-con-hora-e-ids",
+        "autorizacion-de-mecanismo-con-premisas-verificadas"
       ]
     },
     {
@@ -297,9 +298,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.84.0",
+      "version": "2.85.0",
       "updated_at": "2026-11-19",
-      "sha256": "06177431e15d01aace815e099134a24098866480ac579143c1d4774017c8ba61",
+      "sha256": "c21a2e1186a5f3a50bc160c462d6bb734998cb9e25bab2717e556bd9a6638792",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -368,7 +369,8 @@
         "identidad-disfrazada-en-evidencia",
         "arnes-declara-su-error",
         "tema-forzado-y-nodo-medido",
-        "marcador-discrimina-estado-no-rama"
+        "marcador-discrimina-estado-no-rama",
+        "instrumento-irreversible-se-certifica-por-su-bloqueo"
       ]
     },
     {
@@ -418,9 +420,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.50.0",
+      "version": "2.51.0",
       "updated_at": "2026-11-19",
-      "sha256": "3ca378553ef099b81bff81515e3053847dda47cf8940ea3e51ee2aac008e2554",
+      "sha256": "3b432074824bbe0bb0aa4ae785c38b3614bf76bbb58acd3a92844e7d06fd0e59",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -462,7 +464,8 @@
         "inventario-de-manifiesto-contra-el-tip",
         "cierre-con-ambiente-servido",
         "autorizacion-abierta-no-alcanza-la-nube",
-        "rojo-repetido-es-causa-raiz"
+        "rojo-repetido-es-causa-raiz",
+        "premisas-de-dato-y-canal-antes-del-desbloqueo"
       ]
     }
   ],
