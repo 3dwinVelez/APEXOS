@@ -10,7 +10,13 @@ Implementacion local en desarrollo. No se modifico ni desplego produccion.
 - Conserva el ultimo estado conocido si falla la lectura y muestra la falta de confirmacion. La cola offline conserva su politica, fecha, hora e idempotencia. No elimina una marca optimista mientras se esta persistiendo ni presenta como guardada una marca que no entro en la cola.
 - Mantiene estables los objetos de horario sin cambios para no reiniciar los intervalos GPS. Las sesiones/actividades se consultan en cambios de estado; las fotografias no se descargan en cada sondeo de marcaciones. La lectura periodica no reinicia formularios preoperacionales.
 
-## Evidencia
+## Selfies web en las cuatro marcaciones
+
+La web requiere una foto frontal nueva para entrada, salida a almuerzo, retorno y cierre. Una foto tomada para un paso anterior no valida el siguiente si otro dispositivo avanzo la jornada. El servidor rechaza fotos ausentes, MIME no permitido, contenido que no es imagen y archivos mayores de 2 MB. La foto persiste como evidencia de TimePunch y conserva el transporte offline por IndexedDB. Las reglas de firma y fotos de la app nativa se conservan.
+
+La certificacion versionada incluye un cuarto recorrido completo en Chrome: los cuatro rechazos sin foto y con contenido invalido no escriben, cada boton exige selfie y cada captura valida persiste en la API real; la jornada queda cerrada tras recargar. La evidencia definitiva de este candidato se registra en el manifiesto pre-QA.
+
+## Evidencia anterior de sincronizacion
 
 - 65 pruebas aprobadas: 35 de estado de asistencia y modo offline/diferido, mas 30 de acceso de marcacion, aislamiento de rutas y monitor. TypeScript de pagina/dependencias y ESLint aprobados, sin errores ni advertencias.
 - Certificacion versionada: scripts/certifications/hr-cross-device-sync-local.js mediante wrapper aislado. Tres recorridos completos aprobados del 2026-11-20T17:38:41.492Z al 2026-11-20T17:39:54.662Z, base sintetica apexos_cert_hr_assoc_1795196304302. Base origen sin modificar; cero 5xx inesperados.
