@@ -231,9 +231,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.23.0",
+      "version": "2.24.0",
       "updated_at": "2026-11-19",
-      "sha256": "64ec8422648351f749208f3b23f194a96d7ac1cdf8f2038b540948d5c37907ef",
+      "sha256": "c8c6ddd8fdcb89416fbf2d98643816d12f39f0ade850e80ad23648a795544d2e",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -262,7 +262,9 @@
         "checkpoint-anti-barrido",
         "commit-citado-sale-de-un-comando",
         "un-commit-funcional-por-candidato",
-        "merge-publicado-tras-dos-verificaciones"
+        "merge-publicado-tras-dos-verificaciones",
+        "worktree-sin-node-modules-copiado",
+        "barrido-con-causa-identificada"
       ]
     },
     {
@@ -302,9 +304,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.88.0",
+      "version": "2.89.0",
       "updated_at": "2026-11-20",
-      "sha256": "6a8fd6bc92b7c66cfb74cf478c2af8f3885d2df2f5862dd79ac4033bfd2c698b",
+      "sha256": "412630909c997a48c7759b4c08470fcd4700701a5a78dcca5f89a0561b4a80c5",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -381,7 +383,9 @@
         "ingesta-probada-por-la-fila-escrita",
         "equivalencia-por-blob-y-hunkeo",
         "compuerta-contra-el-arbol-que-aterriza",
-        "produccion-verificada-por-artefacto"
+        "produccion-verificada-por-artefacto",
+        "barrido-de-familia-con-autoverificacion",
+        "sustrato-declara-el-incidente"
       ]
     },
     {

@@ -23,7 +23,8 @@
 //  H. tema oscuro: la misma ausencia de ventanas.
 //  J. validacion de formulario en Empleados: el motivo vive en el campo y ninguna ventanilla nativa
 //     del navegador (alert/confirm) se levanto en toda la corrida. El registrador tiene control propio.
-//  I. contrato de codigo: el canal de alertas de usuario sigue retirado y la pantalla no usa alert().
+//  I. contrato de codigo: el canal de alertas de usuario sigue retirado y la pantalla de Empleados
+//     no usa ninguna ventanilla nativa (alert, confirm ni prompt).
 //
 // Sale con codigo distinto de cero ante cualquier comprobacion fallida o parcial.
 
@@ -501,8 +502,16 @@ async function main() {
     check("api_no_dispara_la_alerta_de_usuario", !/emitAppAlert|notifyPlatform\(/.test(apiSource));
     check("el_canal_apex_alert_esta_retirado", !/apex:alert/.test(alertsModule) && !/"apex:alert"/.test(alertShell));
     check("la_ventana_queda_detras_del_modo_diagnostico", /technicalDiagnosticsEnabled\(\)/.test(alertShell));
+    // El barrido de la pantalla es de las tres ventanillas, no solo de alerta: el cierre de vigencia
+    // pedía la fecha con `prompt` y restablecer la huella preguntaba con `confirm`. Y el barrido se
+    // auto-verifica contra un fixture que sí las contiene: sin ese contraste el regex puede salir
+    // verde para siempre sin afirmar nada (lo que ya costó dos controles podridos en esta familia).
+    const sweepDialogs = (source) => [...source.matchAll(/(?:\bwindow\.|\bglobalThis\.)(alert|confirm|prompt)\s*\(/g)].map((entry) => entry[1]);
+    check("el_barrido_del_arnes_detecta_las_ventanillas_que_dice_detectar",
+      sweepDialogs('window.confirm("x"); globalThis.prompt("y");').join(",") === "confirm,prompt");
+    const empleadosVentanillas = sweepDialogs(fs.readFileSync(EMPLEADOS_SOURCE, "utf8"));
     check("la_pantalla_de_empleados_no_usa_ventanillas_de_alerta",
-      !/(\bwindow\.|\bglobalThis\.)?alert\s*\(/.test(fs.readFileSync(EMPLEADOS_SOURCE, "utf8")));
+      empleadosVentanillas.length === 0, { encontradas: empleadosVentanillas });
 
     RESUL.runtime = {
       page_errors: pageErrors.slice(0, 12),

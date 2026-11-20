@@ -1,8 +1,8 @@
 # Certificación — Secuela del enmudecimiento: validación en línea y reporte sin sesión (2026-11-19)
 
-- **Rama certificada:** `desarrollo` (corte `9838f6af`) y, después, el **candidato a `develop`** replayado punta a punta sobre `e3d82190` (commit `c9c1b2fa` del candidato), el **candidato a `main`** replayado sobre `f207140d` (`6b749418`, aterrizado en `main` como el merge puntual `34674cac`)
+- **Rama certificada:** `desarrollo` (corte `9838f6af`) y, después, el **candidato a `develop`** replayado punta a punta sobre `e3d82190` (commit `c9c1b2fa` del candidato), el **candidato a `main`** replayado sobre `f207140d` (`6b749418`, aterrizado en `main` como el merge puntual `34674cac`) y el **corte de cero ventanillas** `bede369c` en `desarrollo` (§2.5)
 - **Ambiente:** puesto local, `next start` de producción sobre `apps/web/.next` con la API deliberadamente apagada; más la verificación por sonda sobre los ambientes servidos (QA y Producción)
-- **Artefacto de evidencia citable para la promoción:** `docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/` (corrida sobre el árbol del candidato, **78/78**, `BUILD_ID k4ilir5kgOYCDKebn_aA7`). La corrida homóloga sobre el build de `desarrollo` quedó en `docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/` (76/76) y se conserva como antecedente; la repetición del arnés nuevo contra ese mismo build de `desarrollo` está en `.../mismo-arnes-build-desarrollo/` (78/78). El **después en el ambiente servido** está en `.../qa-despues-secuela/` (**174/174** sobre `7e02008a555b`, §2.1), la prueba del buzón anónimo encendido en `.../qa-buzon-sonda.txt` (§2.2) y la **pata main** —replay, equivalencia por blob, suites y certificación en navegador sobre su propio build— en `.../main-20261120/` (§2.3), y **Producción después del despliegue** en `.../prod-20261120/` (§2.4).
+- **Artefacto de evidencia citable para la promoción:** `docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/` (corrida sobre el árbol del candidato, **78/78**, `BUILD_ID k4ilir5kgOYCDKebn_aA7`). La corrida homóloga sobre el build de `desarrollo` quedó en `docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/` (76/76) y se conserva como antecedente; la repetición del arnés nuevo contra ese mismo build de `desarrollo` está en `.../mismo-arnes-build-desarrollo/` (78/78). El **después en el ambiente servido** está en `.../qa-despues-secuela/` (**174/174** sobre `7e02008a555b`, §2.1), la prueba del buzón anónimo encendido en `.../qa-buzon-sonda.txt` (§2.2) y la **pata main** —replay, equivalencia por blob, suites y certificación en navegador sobre su propio build— en `.../main-20261120/` (§2.3), y **Producción después del despliegue** en `.../prod-20261120/` (§2.4); el **corte de cero ventanillas** sobre su propio build está en `.../cero-ventanillas-empleados/` (**79/79**, §2.5).
 - **Suite:** `npm run certify:technical-alerts-silence:local` (misma que certificó el enmudecimiento publicado en `main`)
 
 ## 1. Qué se prometió
@@ -28,6 +28,7 @@ Dos cosas que la intervención del 2026-11-18 dejó declaradas como deudas propi
 | **QA desplegado, misma tanda de controles** | **167/173: 6 rojos, todos de producto** | **174/174 en verde** sobre el ambiente que ya corre `7e02008a555b` |
 | **Certificación local sobre el build de la pata main** | no medible: el arnés solo había corrido sobre `desarrollo` y sobre el candidato de `develop` | **78/78** (`.../main-20261120/`, `BUILD_ID GWiQsW-qSguoj2peqeCoA`) |
 | **Producción servida, columna del después** | no medido sobre el ambiente | **`health.commit 34674cac29b3`**, `apex:alert` en **0 de 10** chunks, buzón anónimo `202 recorded:true` con la fila de sondeo escrita en el tenant de la plataforma y borrada (`.../prod-20261120/`) |
+| **Certificación local sobre el corte de cero ventanillas (`bede369c`)** | el barrido del arnés solo miraba `alert` | **79/79** (`.../cero-ventanillas-empleados/`, `BUILD_ID L2qD4tF_hhOtd5lXKIqgF`), con el control de contraste que exige ver `confirm` y `prompt` donde existen |
 
 La columna del antes en QA (`docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/`) se tomó contra lo que el ambiente sirve hoy (API `9953527a78bd`, cero chunks con `apex:alert`), así que mide **los huecos de esta secuela** y no los de la fase previa. Los seis rojos son `nyvora_admin_validacion_motivo_en_el_campo`, `..._campo_marcado_como_invalido` y `..._sin_ventanilla_nativa` —la evidencia registra el `alert` «Completa nombres y apellidos para generar el nombre completo.» con `invalidFields: 0`— y `la_boca_publica_existe_en_qa`, `la_boca_publica_responde_honesto`, `el_buzon_publico_pide_configuracion_sin_fingir_exito`, porque QA responde `404 Route POST:/api/v1/public/telemetry/client-logs not found`.
 
@@ -102,6 +103,42 @@ Tres lecturas que vale la pena separar. Que `apex:alert` no aparezca en ningún 
 
 El límite de esta columna se declara para que no se confunda con una certificación de navegador: **no se corrió la tanda de 174 controles contra Producción**, porque eso exige iniciar sesión y manipular el expediente de clientes reales. Esa tanda se corrió contra el ambiente QA (`7e02008a555b`, 174/174 con la empresa modelo NYVORA) y contra el binario de la pata `main` en puesto local (78/78).
 
+### 2.5 El corte de cero ventanillas, medido sobre su propio binario
+
+El corte que retiró las dos ventanillas que quedaban en Empleados (el `prompt` de fecha del cierre de
+afiliación y el `confirm` de restablecer huella) se certificó sobre su propio árbol, no de rebote sobre
+otro: `bede369c` en `desarrollo`, `npm run build` y `next start`, veredicto **79/79** con 0 ventanillas
+nativas en toda la corrida y 78 reportes de telemetría salientes. Que el binario servido era el del corte
+se comprueba por artefacto y no por fe: el chunk `.next/static/chunks/2hwtl1y4-wxrq.js` contiene la cadena
+`Fecha final de vigencia` y tiene **0** coincidencias de `window.prompt` / `window.confirm`.
+
+El arnés también cambió, y ese es el motivo del 79. La comprobación de código sobre la pantalla barría solo
+`alert(` —justo la función que este corte no tocaba: aquí las que se fueron fueron `prompt` y `confirm`—, así
+que podía seguir verde aunque volviera un cuadro de pregunta. Ahora barre las tres ventanillas
+(`alert|confirm|prompt`, con y sin prefijo `window.`/`globalThis.`) y **se auto-verifica** contra un fixture
+que sí las contiene (`el_barrido_del_arnes_detecta_las_ventanillas_que_dice_detectar`), que es la misma
+disciplina que ya costó dos controles podridos en esta familia (§3.1). El chequeo nuevo añade una
+comprobación, no cambia comportamiento: por eso la cuenta pasa de 78 a 79 y el resto de la tanda queda
+comparable con las corridas anteriores.
+
+Sustrato y límite, declarados en `docs/qa/evidence/technical-alert-silence-20261119/cero-ventanillas-empleados/lectura.txt`:
+
+- El build corrió en el árbol principal y no en una worktree puntual porque **la worktree causó un incidente
+  durante esta corrida**: al copiar `node_modules` para aislar el corte, los enlaces `@apex-os/{web,api,types}`
+  —que llevan ruta absoluta al árbol principal— fueron seguidos por `git worktree remove --force` y barreron
+  **1.173 archivos rastreados** más tres paquetes vaciados. Todo volvió: `git checkout HEAD -- apps packages`
+  devolvió los 1.173 byte a byte (estaban limpios), los paquetes se restauraron con `npm pack` + `tar -xzf` en
+  sus versiones exactas del lockfile y la verificación final quedó en 0 paquetes sin `package.json` sobre 814
+  inspeccionados. Antes de construir se volvió a comprobar que el árbol era el del commit (`--deleted` = 0,
+  `--untracked-files=no` = 0). Este evento es además la causa que faltaba del barrido del 2026-11-18
+  (1.161 archivos, registrado como «causa nunca identificada»); la lección quedó versionada en la regla 40 de
+  `apexos-git-guardian`.
+- Lo que esta corrida **no** ejercitó: el cierre de vigencia y el restablecimiento de huella como flujos
+  completos. El arnés local corre con la API caída por diseño y no fabrica una afiliación activa ni un
+  empleado con huella registrada, así que no hay fila sobre la cual escribir la fecha. Lo medido es la
+  ausencia de ventanillas y el contrato de código; la columna en navegador de esos dos controles se toma con
+  la promoción en QA, donde el dato real existe.
+
 ## 3. Cómo se midió la ausencia de ventanillas (y por qué el verde no era gratuito)
 
 Chrome headless descarta un `window.alert` sin oyente y la página sigue corriendo: un arnés sin `page.on("dialog")` reporta «cero ventanas» igual que uno roto. Por eso la corrida exige primero `el_arnes_detecta_una_ventanilla_nativa`, que dispara un `alert` con prefijo `ARNES:` y se pone roja si el registrador no lo atrapa. Las ventanillas del arnés quedan en la evidencia y se excluyen del conteo del producto.
@@ -157,6 +194,7 @@ Suite web completa: `node --test apps/web/test/*.test.mjs` → **836 de 840**. L
 
 - **La tanda completa de controles de navegador sobre Producción, no —y por diseño.** Correrla exigiría iniciar sesión y manipular expedientes de clientes reales. Lo que sí se tomó sobre el ambiente servido es la verificación que el despliegue puede cambiar y el arnés local no ve: qué chunks publicaba Railway y en qué tenant escribía la boca anónima (§2.4: `health.commit 34674cac29b3`, `apex:alert` en 0 de 10 chunks, `202 recorded:true` con la fila de sondeo borrada al salir). La tanda de 174 controles se corrió contra QA y la de 78 contra el binario de la pata `main`.
 - **Un `window.confirm` y un `window.prompt`** que siguen en la misma pantalla (`page.tsx:852` restablecer huella, `page.tsx:549` fecha de cierre de afiliación). Son preguntas deliberadas del usuario, no avisos de fallo, y su conversión en modales de la casa quedó como pregunta de alcance en `docs/briefs/2026-11-19-fase-3-causas-del-fallo-tecnico.md` §9.
+  *(Cerrado el 2026-11-20 con `bede369c`: ninguno se convirtió en modal de la casa —la promesa era dejar de tapar la pantalla—; la fecha se escribe en un control de fecha dentro de la propia fila y la huella se confirma en dos clics. Lo que sigue sin cubrir esta certificación es el flujo en navegador de esos dos controles, porque el arnés local corre con la API caída y no fabrica afiliaciones ni huellas: ver §2.5 y el veredicto **79/79** en `.../cero-ventanillas-empleados/`.)*
 - **Las causas del 500.** Siguen vivas y acotadas en ese mismo brief; el enmudecimiento y esta secuela no curan ninguna.
 
 ## 6. Sustrato de la corrida
