@@ -472,7 +472,7 @@ export default function MobilePunchPage() {
       }
       return { attendance: freshAttendance, routes: dayRoutes };
     }).catch(error => {
-      if (live.current && version === readVersion.current) setRemoteSyncError("No fue posible actualizar las marcaciones del servidor. Se conserva el Ãºltimo estado conocido; los registros pendientes aÃºn requieren confirmaciÃ³n.");
+      if (live.current && version === readVersion.current) setRemoteSyncError("No fue posible actualizar las marcaciones del servidor. Se conserva el último estado conocido; los registros pendientes aún requieren confirmación.");
       throw error;
     });
     remoteRefresh.current = request;
@@ -525,7 +525,7 @@ export default function MobilePunchPage() {
       setScheduleSource(resolved.source);
       setScheduleNotice(resolved.source === "live" ? "" : degradedScheduleNotice(resolved, today));
       if (attendanceResult.ok) { setAttendance(attendanceResult.value); setLastRemoteSync(new Date().toLocaleTimeString("es-CO")); setRemoteSyncError(""); }
-      else setRemoteSyncError("No fue posible consultar las marcaciones. Se conserva el Ãºltimo estado conocido.");
+      else setRemoteSyncError("No fue posible consultar las marcaciones. Se conserva el último estado conocido.");
       if (sessionResult.ok) setSession(sessionResult.value);
     }
     const pendingPunchKeys = new Set(readPendingSync()
@@ -713,7 +713,7 @@ export default function MobilePunchPage() {
 
   async function refreshGps(): Promise<{ fix: GpsFix | null; cause: GpsFailureCause | null }> {
     if (!gpsRequired) return { fix: null, cause: null };
-    // Use cached GPS if less than 25s old â€” avoids blocking the UI
+    // Use cached GPS if less than 25s old — avoids blocking the UI
     if (gps && Date.now() - gpsUpdatedAt < 25000) return { fix: gps, cause: null };
     setGpsStatus("loading");
     try {
@@ -764,12 +764,12 @@ export default function MobilePunchPage() {
         let latest: Awaited<ReturnType<typeof refreshOperationalState>> | null = null;
         try { latest = await refreshOperationalState(); } catch { /* Keep the existing offline queue policy; never claim server confirmation. */ }
         if (latest) {
-          if (!latest.routes.some(item => String(item.id) === String(route.id))) { notify("El horario cambiÃ³ en el servidor. Revisa el horario actualizado antes de marcar.", "error"); return; }
+          if (!latest.routes.some(item => String(item.id) === String(route.id))) { notify("El horario cambió en el servidor. Revisa el horario actualizado antes de marcar.", "error"); return; }
           const pendingKeys = new Set(readPendingSync().filter(item => !isBlockedItem(item)).map(item => String((item.payload as { idempotency_key?: string })?.idempotency_key || "")));
           const localPunches = optimisticPunchesForRoute.filter(punch => punch.idempotency_key && pendingKeys.has(punch.idempotency_key));
           const types = attendancePunches(latest.attendance, employee.id, [...aliases, userName, employeeName(employee)], route.id, localPunches).map(punch => punch.type);
           const expected = nextPunchForTypes(types);
-          if (expected !== type) { notify(expected ? `La jornada se actualizÃ³ desde otro dispositivo. La siguiente marcaciÃ³n es ${punchLabels[expected]?.title || expected}.` : "La jornada ya fue cerrada desde otro dispositivo.", "pending"); return; }
+          if (expected !== type) { notify(expected ? `La jornada se actualizó desde otro dispositivo. La siguiente marcación es ${punchLabels[expected]?.title || expected}.` : "La jornada ya fue cerrada desde otro dispositivo.", "pending"); return; }
         }
       }
       let fix: GpsFix | null = null;
@@ -855,7 +855,7 @@ export default function MobilePunchPage() {
       setPendingSync(savedQueue);
       if (!savedQueue.some(item => String((item.payload as { idempotency_key?: string })?.idempotency_key || "") === idempotencyKey)) {
         setOptimisticPunches(current => current.filter(punch => punch.idempotency_key !== idempotencyKey));
-        notify(queued.notice || "No fue posible guardar la marcaciÃ³n pendiente en este dispositivo.", "error");
+        notify(queued.notice || "No fue posible guardar la marcación pendiente en este dispositivo.", "error");
         return;
       }
       setMarkingType(null);
@@ -1062,7 +1062,7 @@ export default function MobilePunchPage() {
       </header>
 
       {message ? <div className={`rounded-md border p-4 text-sm font-medium ${messageToneStyles[messageTone].className}`} role={messageToneStyles[messageTone].role}>{message}</div> : null}
-      <p className="text-xs text-neutral-600" role="status" data-attendance-sync={remoteSyncError ? "pending" : lastRemoteSync ? "updated" : "loading"}>{remoteSyncError || (lastRemoteSync ? `Marcaciones actualizadas: ${lastRemoteSync}` : "Consultando marcaciones del servidorâ€¦")}</p>
+      <p className="text-xs text-neutral-600" role="status" data-attendance-sync={remoteSyncError ? "pending" : lastRemoteSync ? "updated" : "loading"}>{remoteSyncError || (lastRemoteSync ? `Marcaciones actualizadas: ${lastRemoteSync}` : "Consultando marcaciones del servidor…")}</p>
       {!online ? (
         <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-950" role="status">
           <WifiOff className="mr-2 inline" size={16} /> Sin senal. Puedes seguir marcando: cada marcacion se guarda en este dispositivo con su fecha y hora reales y se sincronizara automaticamente al recuperar conexion.
@@ -1084,7 +1084,7 @@ export default function MobilePunchPage() {
           <ul className="mt-2 space-y-2">
             {pendingBlocked.map((item) => (
               <li className="rounded-md border border-rose-200 bg-white p-2" key={item.id}>
-                <p className="text-sm font-semibold">{item.label} Â· {new Date(item.created_at).toLocaleString("es-CO")}</p>
+                <p className="text-sm font-semibold">{item.label} · {new Date(item.created_at).toLocaleString("es-CO")}</p>
                 <p className="mt-1 text-xs font-medium text-rose-800">{item.blocked_reason || "Rechazado por el servidor."}</p>
                 <button className="mt-2 h-10 rounded-md border border-rose-300 px-3 text-xs font-semibold text-rose-900 hover:bg-rose-100" onClick={() => setPendingSync(discardPendingSync(item.id))} type="button">
                   Descartar registro
@@ -1111,7 +1111,7 @@ export default function MobilePunchPage() {
               <div>
                 <p className="text-xs font-semibold uppercase text-neutral-500">Horario asignado</p>
                 <h2 className="mt-1 text-lg font-semibold">{route ? `Horario ${route.id}` : "Sin horario asignado"}</h2>
-                <p className="mt-1 text-sm text-neutral-600">{route ? `${route.start_time || "--"} - ${route.end_time || "--"}${route.vehicle_plate ? ` Â· ${route.vehicle_plate}` : ""} Â· ${gpsRequired ? "GPS activo" : "solo marcaciones"}` : "Consulta con administracion para asignar una jornada antes de marcar."}</p>
+                <p className="mt-1 text-sm text-neutral-600">{route ? `${route.start_time || "--"} - ${route.end_time || "--"}${route.vehicle_plate ? ` · ${route.vehicle_plate}` : ""} · ${gpsRequired ? "GPS activo" : "solo marcaciones"}` : "Consulta con administracion para asignar una jornada antes de marcar."}</p>
               </div>
               <span className={`rounded-md px-2 py-1 text-xs font-semibold ${route ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{scheduleSource === "snapshot" ? "Guardado en el equipo" : `${assignedRoutes.length} asignado(s)`}</span>
             </div>
@@ -1147,7 +1147,7 @@ export default function MobilePunchPage() {
             <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
               <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Marcando en horario ${route.id} - ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin horario seleccionado para este usuario/equipo"}
             </div>
-            {nextType ? <div className="mt-3"><PhotoCapture key={nextType} facing="user" label={`Selfie de ${punchLabels[nextType]?.title.toLowerCase() || "validaciÃ³n"}`} required value={selfieType === nextType ? identitySelfie : null} onChange={photo => { setIdentitySelfie(photo); setSelfieType(nextType); }} /><p className="mt-2 text-xs text-neutral-500">Las cuatro marcaciones requieren una foto del rostro: entrada, almuerzo, retorno y salida.</p></div> : null}
+            {nextType ? <div className="mt-3"><PhotoCapture key={nextType} facing="user" label={`Selfie de ${punchLabels[nextType]?.title.toLowerCase() || "validación"}`} required value={selfieType === nextType ? identitySelfie : null} onChange={photo => { setIdentitySelfie(photo); setSelfieType(nextType); }} /><p className="mt-2 text-xs text-neutral-500">Las cuatro marcaciones requieren una foto del rostro: entrada, almuerzo, retorno y salida.</p></div> : null}
             {nextType === "salida" && isClosingLate ? (
               <div className="mt-3 space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3">
                 <div>
@@ -1190,7 +1190,7 @@ export default function MobilePunchPage() {
               <div className="mt-3 overflow-hidden rounded-md border border-line bg-white">
                 <iframe className="h-40 w-full border-0 sm:h-44" src={osmEmbedUrl(gps)} title="Mi ubicacion GPS" loading="lazy" />
                 <div className="grid gap-2 p-3 text-xs text-neutral-600 sm:flex sm:items-center sm:justify-between">
-                  <span className="min-w-0 break-words"><Navigation className="mr-1 inline text-apex" size={13} />{gps.latitude.toFixed(6)}, {gps.longitude.toFixed(6)} Â· {Math.round(gps.accuracy_meters || 0)}m</span>
+                  <span className="min-w-0 break-words"><Navigation className="mr-1 inline text-apex" size={13} />{gps.latitude.toFixed(6)}, {gps.longitude.toFixed(6)} · {Math.round(gps.accuracy_meters || 0)}m</span>
                   <a className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-apex px-3 text-xs font-semibold text-white sm:w-auto" href={mapsUrl(gps)} target="_blank" rel="noreferrer">
                     Mapa <ExternalLink size={13} />
                   </a>
