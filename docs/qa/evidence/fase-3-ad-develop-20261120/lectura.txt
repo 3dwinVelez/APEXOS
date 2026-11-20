@@ -1,0 +1,36 @@
+# Evidencia del candidato `a9ebab85` sobre `develop` (`35578bb7`)
+
+Corte: Fase 3, causas A (congestión de Prisma -> 503 con `retry-after`) y D (el detalle crudo de Supabase deja de viajar al cliente).
+Replay puntual de `d9f3bbd3` + `a11e8333` (ambos certificados en `desarrollo`) sobre el tip de `develop`, en la rama auxiliar `codex/qa-fase3-ad-develop-20261120`. No es un merge de rama: `desarrollo` trae 217 commits de otros frentes que no viajan.
+
+## Sustrato: qué es esta máquina y qué no
+
+Los comandos de abajo se corrieron en el **árbol del candidato** (`C:/Users/mq1/Documents/Proyectos/apexos-cand-fase3-ad-develop`), un worktree de git que **no tiene `node_modules` propio** y no se le copió ni se le enlazó ninguno: copiarlos en un worktree es la operación que ya vació 1.173 archivos del árbol principal en esta estación (los enlaces `@apex-os/*` son absolutos).
+
+Consecuencia medida y declarada: de los 16 rojos de la suite web de contratos, **11 fallan por resolución de paquetes ausentes** (`Cannot find package 'typescript'` x5+2, `'fake-indexeddb'` x3, `'exceljs'` x1, `'react'` x1) y 4 más son aserciones **preexistentes en el destino**, que este corte no toca ni diagnosticó:
+
+- `la portada expone como acceso cada pantalla del modulo, incluida nomina`
+- `SSR con lectura: mismo primer render de carga y ninguna llamada a la API`
+- `SSR con escritura: primer render de carga, sin tarjetas ni editor inventado`
+- `react y react-dom/server salen de la misma instalacion de node_modules`
+
+Lo que sostiene la afirmación de no-regresión no es la explicación de cada rojo, es la **comparación con la base del destino en el mismo ambiente**: la misma suite, sobre `35578bb7` sin el candidato, da los mismos 16 nombres, en el mismo orden (`rojos-base-destino.txt` vs `rojos-candidato.txt`, `delta-rojos.txt` vacío).
+
+| corrida | tests | pasan | fallan |
+|---|---|---|---|
+| base del destino `35578bb7` | 722 | 706 | 16 |
+| candidato `a9ebab85` | 727 | 711 | 16 |
+
+Delta: **+5 tests, +5 pasan, 0 rojos nuevos**. Los cinco son exactamente los contratos del barrido nuevo (`technical-detail-not-leaked.test.mjs`).
+
+## Comandos y qué prueba cada uno
+
+- `cd apps/api && node --test test/api-error-congestion.test.js test/api-error-mapping.test.js` -> **11/11** (`suite-api-candidato.txt`). La tabla `CONGESTION` traduce `P2024`/`P2028`/`P2034` a 503 con su código y su presupuesto, el 503 ya declarado por un servicio conserva su mensaje y no recibe `retryAfter`, y lo no declarado sigue bajando a 500 con el detalle solo en el log. No necesita `node_modules`: el mapper es JS puro.
+- `cd apps/web && node --test test/technical-detail-not-leaked.test.mjs test/hr-employee-biometric-reset.test.mjs` -> **8/8** (`suite-web-contratos-candidato.txt`). El barrido recorre los **9** `route.ts` de `app/api/**` del árbol del destino: los 6 corregidos y los 3 que nunca filtraron, así que un handler nuevo cae bajo el mismo control. Los 3 del contrato de huella pasan **sin tocar su archivo**: en `develop` la pantalla de Empleados sigue abriendo su `window.confirm` deliberado, ese corte no viaja aquí y su contrato sigue midiendo lo que ese árbol hace.
+- Suite web completa, base y candidato: `suite-web-completa-base-destino.txt` y `suite-web-completa-candidato.txt`.
+
+## Que NO prueba esta evidencia
+
+- No prueba el comportamiento en el navegador sobre el binario del destino. La certificación en navegador de este corte (**79/79**, `native_dialogs: []`, `docs/qa/evidence/fase-3-causas-ad-20261120/certification.json`) se corrió sobre el build de `desarrollo`, cuyos seis `route.ts` y cuyo `api-error.js` son **byte a byte los del candidato** (verificado con `git rev-parse` por ruta: los 8 archivos de código del corte coinciden con el estado previo de `develop`/`main`, salvo `server.js`, cuyo hunk son las mismas tres líneas de la cabecera `retry-after`). Construir en el worktree auxiliar queda fuera por el sustrato declarado arriba.
+- No prueba la causa B ni la E (piden medición en un ambiente con datos realistas), ni el criterio 4 de la Fase 3 (la cuota de `ERROR_INTERNO` en `platform_logs` antes/después), que sube con el despliegue en QA.
+- No promueve el retiro de ventanillas de Empleados ni ningún otro frente de `desarrollo`.

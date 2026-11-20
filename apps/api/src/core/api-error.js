@@ -9,6 +9,17 @@
 // nunca se le muestra al cliente.
 const DEPENDENCY_STATUSES = [502, 503, 504];
 
+// Congestion del motor de base: la peticion no esta mal, el servidor no dio abasto en este
+// instante. Mientras el mapper solo conocia P2002 y P2025, estos tres codigos caian al 500
+// generico y el operario leia "Error interno" y el cliente leia "el API se cayo" (marcacion
+// y mallas, 2026-10-26 y 2026-11-19). Se responden 503 con Retry-After: es reintento
+// legitimo y tiene un presupuesto, no una ventana de fallo tecnico.
+const CONGESTION = {
+  P2024: { code: "BASE_OCUPADA", message: "El sistema está ocupado en este momento. Intente de nuevo en unos segundos.", retry_after: 2 },
+  P2028: { code: "TRANSACCION_INTERRUMPIDA", message: "El servidor no pudo cerrar la operación por alta demanda. Intente de nuevo en unos segundos.", retry_after: 2 },
+  P2034: { code: "CONFLICTO_DE_ESCRITURA", message: "Otro usuario guardó al mismo tiempo. Intente de nuevo.", retry_after: 1 }
+};
+
 function mapApiError(error, request, requestId) {
   const code = error.code;
   if (code === "P2002") {
@@ -16,6 +27,14 @@ function mapApiError(error, request, requestId) {
   }
   if (code === "P2025") {
     return { statusCode: 404, payload: { error: "No encontrado", code: "NO_ENCONTRADO", request_id: requestId } };
+  }
+  const congestion = CONGESTION[code];
+  if (congestion) {
+    return {
+      statusCode: 503,
+      retryAfter: congestion.retry_after,
+      payload: { error: congestion.message, code: congestion.code, request_id: requestId, retry_after: congestion.retry_after }
+    };
   }
   if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
     // details lleva diagnostico estructurado generado por el servidor (p. ej. los

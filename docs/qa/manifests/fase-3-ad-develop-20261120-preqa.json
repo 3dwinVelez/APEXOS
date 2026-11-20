@@ -1,0 +1,94 @@
+{
+  "change_id": "fase-3-ad-develop-20261120",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "promotion_branch": "codex/qa-fase3-ad-develop-20261120",
+  "commit": "1d23ca09a13a3a161cdfeece2ea190c63b80afdb",
+  "target_head": "35578bb7dc9dfd7732db451aeb8b1dc514536ec9",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-develop-20261120/suite-api-candidato.txt",
+        "../evidence/fase-3-ad-develop-20261120/suite-web-contratos-candidato.txt",
+        "../evidence/fase-3-causas-ad-20261120/certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-develop-20261120/suite-api-candidato.txt",
+        "../evidence/fase-3-causas-ad-20261120/suite-api-apuntada.txt",
+        "../evidence/fase-3-causas-ad-20261120/lectura.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-develop-20261120/certification.json",
+        "../evidence/fase-3-ad-develop-20261120/lectura.txt"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-develop-20261120/suite-web-completa-candidato.txt",
+        "../evidence/fase-3-ad-develop-20261120/suite-web-completa-base-destino.txt",
+        "../evidence/fase-3-ad-develop-20261120/delta-rojos.txt"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-causas-ad-20261120/certification.json",
+        "../evidence/fase-3-causas-ad-20261120/suite-web.txt",
+        "../evidence/fase-3-ad-develop-20261120/rojos-candidato.txt"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/fase-3-ad-candidate-suites.js",
+    "evidence": [
+      "../evidence/fase-3-ad-develop-20261120/certification.json",
+      "../evidence/fase-3-ad-develop-20261120/suite-api-candidato.txt",
+      "../evidence/fase-3-ad-develop-20261120/suite-web-contratos-candidato.txt"
+    ],
+    "controls": 3,
+    "passed": 3,
+    "failed": 0,
+    "substrate": "node --test sobre el arbol del candidato a9ebab85 (rama auxiliar sobre develop 35578bb7), sin node_modules en el worktree",
+    "basis": "El certificador barre las dos suites apuntadas del corte sobre el propio arbol del destino aumentado con el replay: el mapper de congestion del API (11/11) y el barrido de los nueve route.ts de app/api con el contrato de huella del destino (8/8). La certificacion en navegador del corte (79/79, native_dialogs vacio, build_id _I5ZfzKrKtY0K35ArePQD) se corrio sobre el binario de desarrollo en ../evidence/fase-3-causas-ad-20261120/certification.json; se cita ahi y no como si hubiera corrido sobre el worktree, y sus seis route.ts y su api-error.js son byte a byte los del candidato."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/fase-3-ad-candidate-suites.js",
+    "evidence": [
+      "../evidence/fase-3-ad-develop-20261120/suite-web-completa-candidato.txt",
+      "../evidence/fase-3-ad-develop-20261120/suite-web-completa-base-destino.txt",
+      "../evidence/fase-3-ad-develop-20261120/rojos-base-destino.txt",
+      "../evidence/fase-3-ad-develop-20261120/rojos-candidato.txt",
+      "../evidence/fase-3-ad-develop-20261120/delta-rojos.txt"
+    ],
+    "basis": "Misma suite de contratos de apps/web (115 archivos) corrida dos veces en el mismo ambiente: sobre el tip del destino sin el corte (722 tests / 706 pasan / 16 rojos) y sobre el candidato (727 / 711 / 16). El conjunto de rojos es identico nombre por nombre (delta-rojos.txt vacio, rojos-base-destino.txt == rojos-candidato.txt), y el certificador fue visto fallar con una base mutilada (rojos nuevos: 1, exit 1)."
+  },
+  "validation_summary": {
+    "suites": "api 11/11 · contratos web 8/8 · suite web 727 con los mismos 16 rojos del destino",
+    "scope": "40 rutas en expected_changes · 0 borrados · sin Prisma, sin migraciones, sin capa de alertas",
+    "pendiente": "criterio 4 de la Fase 3 (cuota de ERROR_INTERNO en platform_logs) y la pata QA funcional, que requieren el despliegue"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-20T00:00:00-05:00",
+    "instruction": "ya te eh autorizado varias veces para que lo llevemos a develop y luego al main es indispensable realizar esta correccion",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorization_basis": "El propietario autoriza expresamente el flujo desarrollo -> develop -> main de este corte. No otorga force push, reescritura de historia compartida, borrado de ramas ajenas, cambios de infraestructura o secretos, ni migraciones remotas.",
+    "limits": "No incluye el retiro de ventanillas de Empleados ni ningun otro frente de desarrollo; apps/control-tower no promociona."
+  }
+}
