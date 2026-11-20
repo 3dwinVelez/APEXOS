@@ -1,0 +1,37 @@
+# Sonda del buzon de telemetria anonima en QA (2026-11-20, 05:05 UTC) — prueba end-to-end de la boca publica con el buzon ya configurado
+# Comando: node .tmp/probe-alert-silence-deployed.cjs https://apexos-web-qa-production.up.railway.app https://apexos-api-qa-production.up.railway.app e8fac747-e410-41dd-8784-2c0ca71660e8
+# Corrida capturada (tambien la anterior, 20261120050546, dio el mismo veredicto):
+{
+  "sondeo": "20261120050622",
+  "frontend": "https://apexos-web-qa-production.up.railway.app",
+  "api": "https://apexos-api-qa-production.up.railway.app",
+  "buzon_esperado": "e8fac747-e410-41dd-8784-2c0ca71660e8",
+  "artefacto": {
+    "login_status": 200,
+    "chunks_leidos": 10,
+    "bytes_leidos": 629512,
+    "apex_alert_chunks": [],
+    "apex_diagnostic_chunks": [
+      "/_next/static/chunks/0203i95lepgi4.js"
+    ],
+    "endpoint_publico_chunks": [],
+    "mensaje_de_validacion_chunks": []
+  },
+  "health": {
+    "status": 200,
+    "commit": "7e02008a555b",
+    "ok": "OK"
+  },
+  "sonda_publica": {
+    "status": 202,
+    "payload": {
+      "recorded": true
+    }
+  },
+  "registro": {
+    "encontrada": true,
+    "tenant_registrado": "e8fac747-e410-41dd-8784-2c0ca71660e8",
+    "borrada": 1,
+    "lleve_llaves_hostiles": false
+  }
+}
