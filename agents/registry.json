@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-19",
+  "generated_at": "2026-11-20",
   "canonical_root": ".qoder/skills",
   "mirror_root": "agents",
   "semver_policy": {
@@ -148,7 +148,8 @@
         "brief-de-acote-separa-rama-de-nube",
         "cifra-de-brief-con-hora-e-ids",
         "autorizacion-de-mecanismo-con-premisas-verificadas",
-      "sonda-se-nombra-segun-lo-que-demuestra"      ]
+        "sonda-se-nombra-segun-lo-que-demuestra"
+      ]
     },
     {
       "name": "apexos-db-nube",
@@ -298,9 +299,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.86.1",
-      "updated_at": "2026-11-19",
-      "sha256": "50ec068ff1c0d6c0917beefb7e1e7f901772ead5113d625e4ceffc4b771b5bfc",
+      "version": "2.87.0",
+      "updated_at": "2026-11-20",
+      "sha256": "0932ac639089ba198115f00375ae6af49756ac737a42f5a85889956004f73b24",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -372,7 +373,9 @@
         "marcador-discrimina-estado-no-rama",
         "instrumento-irreversible-se-certifica-por-su-bloqueo",
         "marcador-en-area-de-contenido",
-        "certificacion-sobre-el-arbol-del-candidato"
+        "certificacion-sobre-el-arbol-del-candidato",
+        "despues-anclado-al-commit-desplegado",
+        "ingesta-probada-por-la-fila-escrita"
       ]
     },
     {
@@ -468,7 +471,8 @@
         "autorizacion-abierta-no-alcanza-la-nube",
         "rojo-repetido-es-causa-raiz",
         "premisas-de-dato-y-canal-antes-del-desbloqueo",
-      "recurso-de-prueba-se-construye-y-defectos-se-separan"      ]
+        "recurso-de-prueba-se-construye-y-defectos-se-separan"
+      ]
     }
   ],
   "documents": [

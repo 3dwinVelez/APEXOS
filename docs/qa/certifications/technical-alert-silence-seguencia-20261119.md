@@ -2,7 +2,7 @@
 
 - **Rama certificada:** `desarrollo` (corte `9838f6af`) y, después, el **candidato a `develop`** replayado punta a punta sobre `e3d82190` (commit `c9c1b2fa` del candidato)
 - **Ambiente:** puesto local, `next start` de producción sobre `apps/web/.next` con la API deliberadamente apagada
-- **Artefacto de evidencia citable para la promoción:** `docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/` (corrida sobre el árbol del candidato, **78/78**, `BUILD_ID k4ilir5kgOYCDKebn_aA7`). La corrida homóloga sobre el build de `desarrollo` quedó en `docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/` (76/76) y se conserva como antecedente; la repetición del arnés nuevo contra ese mismo build de `desarrollo` está en `.../mismo-arnes-build-desarrollo/` (78/78).
+- **Artefacto de evidencia citable para la promoción:** `docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/` (corrida sobre el árbol del candidato, **78/78**, `BUILD_ID k4ilir5kgOYCDKebn_aA7`). La corrida homóloga sobre el build de `desarrollo` quedó en `docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/` (76/76) y se conserva como antecedente; la repetición del arnés nuevo contra ese mismo build de `desarrollo` está en `.../mismo-arnes-build-desarrollo/` (78/78). El **después en el ambiente servido** está en `.../qa-despues-secuela/` (**174/174** sobre `7e02008a555b`, §2.1) y la prueba del buzón anónimo encendido en `.../qa-buzon-sonda.txt` (§2.2).
 - **Suite:** `npm run certify:technical-alerts-silence:local` (misma que certificó el enmudecimiento publicado en `main`)
 
 ## 1. Qué se prometió
@@ -23,13 +23,43 @@ Dos cosas que la intervención del 2026-11-18 dejó declaradas como deudas propi
 | **Veredicto sobre el árbol del candidato (develop + corte)** | no medible: el arnés local solo conocía las leyendas de `desarrollo` | **78/78** (`.../candidato-develop/`) |
 | Reporte de fallo con `token` ausente | se descartaba en silencio (`if (!token) return;`) | viaja a `POST /api/v1/public/telemetry/client-logs` |
 | Dónde cae el reporte anónimo | no había dónde | buzón del despliegue (`APEXOS_TELEMETRY_TENANT_ID`) o `202 recorded:false` |
-| Suite web completa sobre el árbol del candidato | — | **834 de 836**; los dos rojos son ajenos y están atribuidos en §6 |
+| **Suite web completa sobre el árbol del candidato** | — | **834 de 836**; los dos rojos son ajenos y están atribuidos en §6 |
 | Suites API apuntadas sobre el árbol del candidato | — | **29/29** (6 de la boca pública + 23 de RBAC administrativo del módulo `admin`) |
-| **QA desplegado, misma tanda de controles** (173) | **167/173: 6 rojos, todos de producto** | se remide tras la promoción (#19) |
+| **QA desplegado, misma tanda de controles** | **167/173: 6 rojos, todos de producto** | **174/174 en verde** sobre el ambiente que ya corre `7e02008a555b` |
 
 La columna del antes en QA (`docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/`) se tomó contra lo que el ambiente sirve hoy (API `9953527a78bd`, cero chunks con `apex:alert`), así que mide **los huecos de esta secuela** y no los de la fase previa. Los seis rojos son `nyvora_admin_validacion_motivo_en_el_campo`, `..._campo_marcado_como_invalido` y `..._sin_ventanilla_nativa` —la evidencia registra el `alert` «Completa nombres y apellidos para generar el nombre completo.» con `invalidFields: 0`— y `la_boca_publica_existe_en_qa`, `la_boca_publica_responde_honesto`, `el_buzon_publico_pide_configuracion_sin_fingir_exito`, porque QA responde `404 Route POST:/api/v1/public/telemetry/client-logs not found`.
 
 Antes de esa corrida citable hubo una primera pasada con **12 rojos** (`.../qa-antes-marcador-viejo/`): seis de ellos eran del instrumento, no del producto. `*_rutas_pantalla_viva` exigía las leyendas «Asignar horarios»/«Consulta de horarios» de `desarrollo`/`main` (blob `dff6265f`) sobre un `develop` desplegado que pinta «Horarios y mallas»/«Programación de jornadas» (blob `2e95b48c`), con la pantalla efectivamente montada. El marcador acepta hoy las cuatro leyendas y **el poder discriminatorio quedó medido, no afirmado** (§3.1); la diferencia entre las dos pasadas (12 → 6, solo los de producto) es la prueba de que el cambio de marcador no tapó nada.
+
+### 2.1 El después en QA: 174/174 sobre el ambiente que ya corre el corte
+
+Promocionado el corte a `develop` (merge `7e02008a`, PR #102) y re-desplegados los dos servicios de QA, la misma tanda de controles se repitió contra el ambiente servido:
+
+```
+node scripts/certifications/technical-alert-silence-browser-qa.js \
+  --output docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela \
+  --expected-commit 7e02008a --env-file <config/qa.env del puesto>
+VEREDICTO QA 174/174 · CERTIFICACION QA APROBADA: el fallo tecnico no es ventana en NYVORA ni en Diana vargas
+```
+
+- **`build_desplegado_es_el_evaluado` en verde** (`/health` = `7e02008a555b`): es el control extra que hace que el total pase de 173 a 174, y existe para que nadie vuelva a medir QA creyendo medir otra cosa.
+- Los seis rojos del antes están verdes: `nyvora_admin_validacion_motivo_en_el_campo`, `..._campo_marcado_como_invalido` y `..._sin_ventanilla_nativa` (la validación se pinta en el campo y ninguna ventanilla nativa se levantó en las 12 visitas con la tormenta puesta) y `la_boca_publica_existe_en_qa`, `la_boca_publica_responde_honesto`, `el_buzon_publico_pide_configuracion_sin_fingir_exito` (`202 {"recorded":false,"reason":"BUZON_TELEMETRIA_NO_CONFIGURADO"}`).
+- Los tres usuarios efímeros de la corrida (`qa.silence.*.20261120045242@silence-qa.test`) quedaron desactivados por el propio arnés. De la boca pública **no se escribió ninguna fila** en esta corrida (el despliegue aún no tenía buzón), y el canal autenticado dejó sus 75 registros de siempre en `platform_logs` de la empresa modelo: la ausencia de ventanas no cambió nada del registro técnico.
+
+### 2.2 El buzón anónimo encendido en QA: se escribió, no usó el tenant del cuerpo y se borró
+
+Configurado `APEXOS_TELEMETRY_TENANT_ID = e8fac747-e410-41dd-8784-2c0ca71660e8` (Empresa Demo APEX-OS, el tenant de la plataforma en QA) en el servicio `apexos-api-qa` y re-desplegado, la sonda de artefacto volvió a POSTear a la ruta pública **con llaves hostiles en el cuerpo** (`tenant_id` de otra empresa, `user_email`, `authorization`) y leyó el registro por base:
+
+```
+sonda_publica: { "status": 202, "payload": { "recorded": true } }
+registro:      { "encontrada": true,
+                 "tenant_registrado": "e8fac747-e410-41dd-8784-2c0ca71660e8",
+                 "lleve_llaves_hostiles": false, "borrada": 1 }
+```
+
+Es la mitad que el contrato de `node --test` no puede medir sola: que el `recorded:true` se corresponde con una fila real en el buzón del despliegue, que esa fila **no** quedó en el tenant que el atacante puso en el cuerpo y que el `user_email` sembrado no viajó dentro del `new_value`. La fila de la sonda se elimina después de leerla (`borrada: 1`), así que la prueba no deja basura técnica en QA. Salida completa en `docs/qa/evidence/technical-alert-silence-20261119/qa-buzon-sonda.txt`.
+
+La verificación por haz sigue barrida en la misma sonda: `apex_alert_chunks: []` sobre los 10 chunks que `/login` referencia. Se declara su límite para que la evidencia se lea bien —el barrido de `apex:alert` es válido porque esa cadena vive en el canal de alertas que el login sí importa, pero `CLIENT_LOG_PUBLIC_ENDPOINT` está en un chunk del árbol de dashboard que `/login` no carga, así que la presencia de la boca pública se prueba con el `POST` anterior y no con el barrido.
 
 ## 3. Cómo se midió la ausencia de ventanillas (y por qué el verde no era gratuito)
 
@@ -84,8 +114,8 @@ Suite web completa: `node --test apps/web/test/*.test.mjs` → **836 de 840**. L
 
 ## 5. Lo que esta certificación no cubre
 
-- **QA y Producción, columna del después.** El «antes» en QA ya está medido contra el build desplegado (§2: 167/173 con seis rojos de producto). Lo que falta es el «después»: requiere promocionar este corte a `develop`, desplegar QA y repetir la misma tanda de controles, y Producción se verifica por artefacto servido (cero chunks con `apex:alert` y el endpoint público presente en el haz), nunca con la carrera de navegador sobre datos de clientes.
-- **La ruta nueva en ambiente servido.** Sin `APEXOS_TELEMETRY_TENANT_ID` en Railway, la ingesta pública responde `recorded:false` y el reporte anónimo no se guarda: la prueba de contrato está verde, la habilitación está pendiente de una autorización de infraestructura.
+- **Producción, columna del después.** El «antes» y el «después» en QA están medidos (§2: 167/173 con seis rojos de producto; §2.1: 174/174 sobre `7e02008a555b`). Lo que falta es Producción, que se verifica por artefacto servido (cero chunks con `apex:alert`) y por la sonda de la boca pública (§2.2), nunca con la carrera de navegador sobre datos de clientes.
+- **La ruta nueva en Producción.** En QA el reporte anónimo ya se guarda y se limpia medido (§2.2); en Producción la habilitación depende de la misma variable, `APEXOS_TELEMETRY_TENANT_ID`, y se prueba con la misma sonda al promocionar.
 - **Un `window.confirm` y un `window.prompt`** que siguen en la misma pantalla (`page.tsx:852` restablecer huella, `page.tsx:549` fecha de cierre de afiliación). Son preguntas deliberadas del usuario, no avisos de fallo, y su conversión en modales de la casa quedó como pregunta de alcance en `docs/briefs/2026-11-19-fase-3-causas-del-fallo-tecnico.md` §9.
 - **Las causas del 500.** Siguen vivas y acotadas en ese mismo brief; el enmudecimiento y esta secuela no curan ninguna.
 
