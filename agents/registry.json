@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.20.0",
+      "version": "2.21.0",
       "updated_at": "2026-11-19",
-      "sha256": "2fb056bafc93c6a2b02180690f4b156d5809355ce27fa1b58bf81a41129bc4f7",
+      "sha256": "3cc96448ee1c5a8a6a4a3474aa6fa8a9837c651b8eb365285617adbf354d7f8f",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -87,15 +87,16 @@
         "401-es-credencial-403-es-alcance",
         "evidencia-storage-antes-de-transaccion",
         "rango-timepunch-solo-por-lector-proyectado",
-        "ingesta-publica-con-buzon-honesto"
+        "ingesta-publica-con-buzon-honesto",
+        "exencion-de-evidencia-con-contrato"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.63.0",
+      "version": "2.64.0",
       "updated_at": "2026-11-19",
-      "sha256": "f22befb2a997672908456a7d14216b6119e6403508ed8c00935ba89ef7e56c6f",
+      "sha256": "3cf1931a9cdd56b4d63291e0219c6a4bcefd5904d491187c2939bb5c35409612",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -144,7 +145,8 @@
         "brief-post-checkpoint-narra-incidente-y-aplazamientos",
         "exclusion-vence-y-autorizacion-se-cita",
         "brief-cierra-con-ambiente-verificado",
-        "brief-de-acote-separa-rama-de-nube"
+        "brief-de-acote-separa-rama-de-nube",
+        "cifra-de-brief-con-hora-e-ids"
       ]
     },
     {
@@ -177,9 +179,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.35.0",
+      "version": "2.36.0",
       "updated_at": "2026-11-19",
-      "sha256": "226b7a7e99aad9a68459cd88284d2b57225472ce37ce74005ff06d7beb747dd3",
+      "sha256": "9bd814672eaebbbca4eea27f0accab46c06f2b30d26d5879d253992086cddbb2",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -217,7 +219,8 @@
         "evidencia-perezosa-por-referencia",
         "fallo-tecnico-no-es-ventana-estado-de-dato",
         "contador-sin-lectura-no-es-cero",
-        "validacion-en-linea-no-ventanilla-nativa"
+        "validacion-en-linea-no-ventanilla-nativa",
+        "evidencia-desprendida-antes-de-reenviar"
       ]
     },
     {
@@ -294,9 +297,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.79.0",
+      "version": "2.83.0",
       "updated_at": "2026-11-19",
-      "sha256": "8b89ef2833b4b10d677910c6da5cf2ac62781dd4d47489e7b6af6e2f325a7783",
+      "sha256": "20b736cba8dea56fac3d33c2238b17bf3a497e4d6a87f882695f96781eb46a01",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -360,15 +363,19 @@
         "puerta-de-presupuesto-se-demuestra-roja",
         "columna-antes-en-el-ambiente-desplegado",
         "pierna-main-por-identidad-de-blob",
-        "control-positivo-de-ventanillas-nativas"
+        "control-positivo-de-ventanillas-nativas",
+        "arnes-con-la-forma-del-incidente",
+        "identidad-disfrazada-en-evidencia",
+        "arnes-declara-su-error",
+        "tema-forzado-y-nodo-medido"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.32.0",
+      "version": "2.33.0",
       "updated_at": "2026-11-19",
-      "sha256": "527096f91c0361dc62f76bd09c1e1c429d0ced2ba73410022c3282bd5a3e334b",
+      "sha256": "aeb53ca303f18ce7977df1c2b6f0434081921893cbf468dbaea4ad8336043055",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -403,15 +410,16 @@
         "anillo-persistido-sin-dato-de-empresa",
         "almacen-privado-rutas-saneadas",
         "sonda-de-produccion-sin-contenido",
-        "boca-anonima-sin-tenant-en-el-cuerpo"
+        "boca-anonima-sin-tenant-en-el-cuerpo",
+        "exencion-angosta-con-negativos"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.49.0",
+      "version": "2.50.0",
       "updated_at": "2026-11-19",
-      "sha256": "6479c476ba54a07708053c6cf3633d887c121bca762937c8ba432c3bbb66de9f",
+      "sha256": "3ca378553ef099b81bff81515e3053847dda47cf8940ea3e51ee2aac008e2554",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -452,7 +460,8 @@
         "garantia-de-experiencia-traducida-a-numero",
         "inventario-de-manifiesto-contra-el-tip",
         "cierre-con-ambiente-servido",
-        "autorizacion-abierta-no-alcanza-la-nube"
+        "autorizacion-abierta-no-alcanza-la-nube",
+        "rojo-repetido-es-causa-raiz"
       ]
     }
   ],

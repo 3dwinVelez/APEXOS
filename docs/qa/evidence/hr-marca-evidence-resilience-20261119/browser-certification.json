@@ -7,8 +7,8 @@
   "database_url_host": "postgresql://***@localhost:55432/apexos",
   "api_url": "http://127.0.0.1:3226",
   "web_url": "http://127.0.0.1:3227",
-  "generated_at": "2026-11-19T22:17:48.586Z",
-  "certified_commit": "ac4bd022350baac36daef8df31da8505e80929e7",
+  "generated_at": "2026-11-20T02:35:26.492Z",
+  "certified_commit": "b89c14fe91c54122b89806ec233588e97d5c309d",
   "scope": {
     "defect": "<cadena de 263 caracteres suprimida>",
     "product_decision": "<cadena de 287 caracteres suprimida>",
@@ -30,13 +30,13 @@
       "name": "Puebla Operaciones"
     },
     "operario": {
-      "id": 1070,
-      "email": "qa.mqb.ope.20261119221748@apex.test",
-      "ficha": 723
+      "id": 1088,
+      "email": "qa.mqb.ope.20261120023526@apex.test",
+      "ficha": 741
     },
     "supervisor": {
-      "id": 1069,
-      "email": "qa.mqb.sup.20261119221748@apex.test"
+      "id": 1087,
+      "email": "qa.mqb.sup.20261120023526@apex.test"
     },
     "dias": {
       "contencion": "2026-11-16",
@@ -47,8 +47,8 @@
       "vencida": "2026-11-11"
     },
     "horarios": {
-      "vencida": 403,
-      "correccion": 404
+      "vencida": 417,
+      "correccion": 418
     },
     "evidencia_bytes": {
       "jpeg": 282,
@@ -102,8 +102,8 @@
       "name": "fixture_ficha_del_operario",
       "ok": true,
       "detail": {
-        "operario_id": 1070,
-        "ficha": 723
+        "operario_id": 1088,
+        "ficha": 741
       }
     },
     {
@@ -135,14 +135,6 @@
       }
     },
     {
-      "name": "lock_de_marcacion_sostenido_desde_otra_conexion",
-      "ok": true,
-      "detail": {
-        "ambito": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd:723:sin-horario:2026-11-16T05:00:00.000Z",
-        "sostiene_ms": 19000
-      }
-    },
-    {
       "name": "cola_semada_leida_desde_el_navegador",
       "ok": true,
       "detail": {
@@ -159,11 +151,25 @@
       }
     },
     {
+      "name": "lock_de_marcacion_sostenido_desde_otra_conexion",
+      "ok": true,
+      "detail": {
+        "ambito": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd:741:sin-horario:2026-11-16T05:00:00.000Z",
+        "sostiene_ms": 19000,
+        "peticion_en_vuelo": true,
+        "adquirido": true,
+        "asentado": false,
+        "ventanas_punch": [
+          "2026-11-16"
+        ]
+      }
+    },
+    {
       "name": "criterio8_la_contencion_devuelve_503_reintentable",
       "ok": true,
       "detail": {
         "codigo": "MARCACION_CONCURRENCIA_TEMPORAL",
-        "duracion_ms": 15168
+        "duracion_ms": 15667
       }
     },
     {
@@ -197,7 +203,7 @@
       "name": "criterio8_mientras_hay_una_peticion_en_vuelo_no_sale_otra",
       "ok": true,
       "detail": {
-        "duracion_solicitud_ms": 15168,
+        "duracion_solicitud_ms": 15667,
         "salidas_en_la_ventana_de_12s": 0,
         "tambo_anterior_ms": 12000
       }
@@ -328,19 +334,29 @@
       "detail": {
         "claro": {
           "found": true,
-          "fg": "rgb(242, 245, 247)",
-          "bg": "rgb(15, 23, 32)",
-          "ratio": 16.48,
-          "font_size_px": 16,
-          "font_weight": "400"
+          "nodo": "p.flex.items-center.gap-2",
+          "fg": "rgb(15, 23, 42)",
+          "bg": "rgb(248, 250, 252)",
+          "base_opaca": "rgb(248, 250, 252)",
+          "capas_translucidas": 0,
+          "ratio": 17.06,
+          "font_size_px": 14,
+          "font_weight": "600"
         },
         "oscuro": {
           "found": true,
+          "nodo": "p.flex.items-center.gap-2",
           "fg": "rgb(242, 245, 247)",
-          "bg": "rgb(15, 23, 32)",
-          "ratio": 16.48,
-          "font_size_px": 16,
-          "font_weight": "400"
+          "bg": "rgb(30, 44, 55)",
+          "base_opaca": "rgb(30, 44, 55)",
+          "capas_translucidas": 0,
+          "ratio": 13.04,
+          "font_size_px": 14,
+          "font_weight": "600"
+        },
+        "temas": {
+          "claro": "{3 claves}",
+          "oscuro": "{3 claves}"
         }
       }
     },
@@ -384,19 +400,29 @@
       "detail": {
         "claro": {
           "found": true,
-          "fg": "rgb(242, 245, 247)",
-          "bg": "rgb(15, 23, 32)",
-          "ratio": 16.48,
-          "font_size_px": 16,
-          "font_weight": "400"
+          "nodo": "p.inline-flex.items-center.gap-2.rounded-md",
+          "fg": "rgb(69, 26, 3)",
+          "bg": "rgb(255, 251, 235)",
+          "base_opaca": "rgb(255, 251, 235)",
+          "capas_translucidas": 0,
+          "ratio": 14.44,
+          "font_size_px": 12,
+          "font_weight": "600"
         },
         "oscuro": {
           "found": true,
-          "fg": "rgb(242, 245, 247)",
-          "bg": "rgb(15, 23, 32)",
-          "ratio": 16.48,
-          "font_size_px": 16,
-          "font_weight": "400"
+          "nodo": "p.inline-flex.items-center.gap-2.rounded-md",
+          "fg": "rgb(253, 186, 116)",
+          "bg": "rgb(50, 40, 37)",
+          "base_opaca": "rgb(23, 35, 45)",
+          "capas_translucidas": 1,
+          "ratio": 8.49,
+          "font_size_px": 12,
+          "font_weight": "600"
+        },
+        "temas": {
+          "claro": "{3 claves}",
+          "oscuro": "{3 claves}"
         }
       }
     },
@@ -438,7 +464,7 @@
           "salto",
           "motivo"
         ],
-        "autor": 1069,
+        "autor": 1087,
         "salto": "esperada:inicio_almuerzo"
       }
     },
@@ -448,10 +474,10 @@
       "detail": {
         "novedad": true,
         "source": "correccion_administrativa",
-        "corrected_by": 1069,
+        "corrected_by": 1087,
         "motivo_en_la_novedad": "La salida nunca llego al servidor; se registra la hora del horario asignado",
         "salto_en_la_novedad": "escalera:esperada:inicio_almuerzo",
-        "supervisor_esperado": 1069
+        "supervisor_esperado": 1087
       }
     },
     {
@@ -509,11 +535,11 @@
     }
   ],
   "observations": {
-    "settle_ms": 2584,
+    "settle_ms": 28478,
     "punch_requests": [
       {
-        "inicio": "2026-11-19T22:18:03.842Z",
-        "duracion_ms": 15168,
+        "inicio": "2026-11-20T02:36:27.890Z",
+        "duracion_ms": 15667,
         "estado": 503,
         "codigo": "MARCACION_CONCURRENCIA_TEMPORAL",
         "dia": "2026-11-16",
@@ -522,8 +548,8 @@
         "codigo_declarado": null
       },
       {
-        "inicio": "2026-11-19T22:18:21.702Z",
-        "duracion_ms": 138,
+        "inicio": "2026-11-20T02:37:13.531Z",
+        "duracion_ms": 345,
         "estado": null,
         "codigo": null,
         "dia": "2026-11-16",
@@ -532,8 +558,8 @@
         "codigo_declarado": null
       },
       {
-        "inicio": "2026-11-19T22:18:21.840Z",
-        "duracion_ms": 82,
+        "inicio": "2026-11-20T02:37:13.889Z",
+        "duracion_ms": 153,
         "estado": null,
         "codigo": null,
         "dia": "2026-11-15",
@@ -542,8 +568,8 @@
         "codigo_declarado": null
       },
       {
-        "inicio": "2026-11-19T22:18:21.923Z",
-        "duracion_ms": 86,
+        "inicio": "2026-11-20T02:37:14.047Z",
+        "duracion_ms": 176,
         "estado": null,
         "codigo": null,
         "dia": "2026-11-14",
@@ -552,8 +578,8 @@
         "codigo_declarado": null
       },
       {
-        "inicio": "2026-11-19T22:18:22.012Z",
-        "duracion_ms": 114,
+        "inicio": "2026-11-20T02:37:14.228Z",
+        "duracion_ms": 262,
         "estado": null,
         "codigo": null,
         "dia": "2026-11-13",
@@ -562,8 +588,8 @@
         "codigo_declarado": "EVIDENCIA_ALFABETO_INVALIDO"
       },
       {
-        "inicio": "2026-11-19T22:18:22.127Z",
-        "duracion_ms": 50,
+        "inicio": "2026-11-20T02:37:14.491Z",
+        "duracion_ms": 99,
         "estado": null,
         "codigo": null,
         "dia": "2026-11-11",
@@ -572,8 +598,8 @@
         "codigo_declarado": null
       },
       {
-        "inicio": "2026-11-19T22:18:22.178Z",
-        "duracion_ms": 48,
+        "inicio": "2026-11-20T02:37:14.612Z",
+        "duracion_ms": 165,
         "estado": 409,
         "codigo": "MARCACION_DIFERIDA_EXPIRADA",
         "dia": "2026-11-17",
@@ -582,8 +608,8 @@
         "codigo_declarado": null
       },
       {
-        "inicio": "2026-11-19T22:18:22.228Z",
-        "duracion_ms": 113,
+        "inicio": "2026-11-20T02:37:14.790Z",
+        "duracion_ms": 188,
         "estado": 400,
         "codigo": "VALIDACION",
         "dia": "2026-11-17",
@@ -593,7 +619,12 @@
       }
     ],
     "tema": {
-      "aplicado": {
+      "aplicado_claro": {
+        "dark": false,
+        "data_theme": "light",
+        "stored": "light"
+      },
+      "aplicado_oscuro": {
         "dark": true,
         "data_theme": "dark",
         "stored": "dark"
@@ -601,19 +632,25 @@
       "via": "mecanismo del producto",
       "claro": {
         "found": true,
-        "fg": "rgb(242, 245, 247)",
-        "bg": "rgb(15, 23, 32)",
-        "ratio": 16.48,
-        "font_size_px": 16,
-        "font_weight": "400"
+        "nodo": "p.flex.items-center.gap-2",
+        "fg": "rgb(15, 23, 42)",
+        "bg": "rgb(248, 250, 252)",
+        "base_opaca": "rgb(248, 250, 252)",
+        "capas_translucidas": 0,
+        "ratio": 17.06,
+        "font_size_px": 14,
+        "font_weight": "600"
       },
       "oscuro": {
         "found": true,
+        "nodo": "p.flex.items-center.gap-2",
         "fg": "rgb(242, 245, 247)",
-        "bg": "rgb(15, 23, 32)",
-        "ratio": 16.48,
-        "font_size_px": 16,
-        "font_weight": "400"
+        "bg": "rgb(30, 44, 55)",
+        "base_opaca": "rgb(30, 44, 55)",
+        "capas_translucidas": 0,
+        "ratio": 13.04,
+        "font_size_px": 14,
+        "font_weight": "600"
       }
     }
   },
@@ -657,7 +694,7 @@
       "clave": "<cadena de 240 caracteres suprimida>",
       "motivo": "websockets de colaboracion: sin servicio en la certificacion, bloqueado por CSP",
       "texto": "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directiv",
-      "veces": 17
+      "veces": 21
     }
   ],
   "page_errors": [],
@@ -689,37 +726,17 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/auth/me",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/auth/me",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/auth/me",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/self",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/self/attendance",
-      "status": 200
-    },
-    {
-      "method": "GET",
       "path": "/api/v1/hr/self/activity-types",
       "status": 200
     },
     {
       "method": "GET",
       "path": "/api/v1/hr/self/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/attendance",
       "status": 200
     },
     {
@@ -794,17 +811,17 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/hr/self/activity-types",
-      "status": 200
-    },
-    {
-      "method": "GET",
       "path": "/api/v1/hr/self/routes",
       "status": 200
     },
     {
       "method": "GET",
       "path": "/api/v1/hr/self/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/activity-types",
       "status": 200
     },
     {
@@ -839,7 +856,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/hr/self/activity-types",
+      "path": "/api/v1/hr/self/routes",
       "status": 200
     },
     {
@@ -849,7 +866,52 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/hr/self/activity-types",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/work-session",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/preop/active",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self",
+      "status": 200
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/hr/self/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/activity-types",
       "status": 200
     },
     {
@@ -889,61 +951,6 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/hr/employees",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/attendance",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/work-activities",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/routes",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/workdays",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/work-activities",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/routes",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/workdays",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/attendance",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/auth/me",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/auth/me",
-      "status": 200
-    },
-    {
-      "method": "GET",
       "path": "/api/v1/auth/me",
       "status": 200
     },
@@ -954,12 +961,17 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/hr/routes",
+      "path": "/api/v1/hr/attendance",
       "status": 200
     },
     {
       "method": "GET",
       "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
       "status": 200
     },
     {
@@ -975,11 +987,6 @@
     {
       "method": "GET",
       "path": "/api/v1/hr/work-activities",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/attendance",
       "status": 200
     },
     {
@@ -1005,26 +1012,6 @@
     {
       "method": "GET",
       "path": "/api/v1/auth/me",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/attendance",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/work-activities",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/routes",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/workdays",
       "status": 200
     },
     {
@@ -1054,7 +1041,147 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/hr/monitor-evidence/identity/2164",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/employees",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/employees",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/monitor-evidence/identity/2223",
       "status": 200
     },
     {
@@ -1064,7 +1191,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/hr/monitor-evidence/identity/2164",
+      "path": "/api/v1/hr/attendance",
       "status": 200
     },
     {
@@ -1075,11 +1202,6 @@
     {
       "method": "GET",
       "path": "/api/v1/hr/work-activities",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/hr/attendance",
       "status": 200
     },
     {
@@ -1089,6 +1211,11 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/hr/monitor-evidence/identity/2223",
+      "status": 200
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/auth/me",
       "status": 200
     },
@@ -1109,12 +1236,12 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/hr/work-activities",
+      "path": "/api/v1/hr/employees",
       "status": 200
     },
     {
       "method": "GET",
-      "path": "/api/v1/hr/employees",
+      "path": "/api/v1/hr/work-activities",
       "status": 200
     },
     {
@@ -1149,11 +1276,15 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/hr/monitor-evidence/identity/2164",
+      "path": "/api/v1/hr/monitor-evidence/identity/2223",
       "status": 200
     }
   ],
   "status": "passed",
+  "arbol_de_trabajo": {
+    "dirty": true,
+    "rutas_modificadas": 88
+  },
   "frontend_build": {
     "fresh": true,
     "obsoletos": [],
@@ -1166,7 +1297,7 @@
     "cerradas_con_accion": 1,
     "solicitudes_de_marcacion": 8,
     "solapamientos": 0,
-    "espera_de_contencion_ms": 15168
+    "espera_de_contencion_ms": 15667
   },
   "cleanup": {
     "marcaciones_eliminadas": 7,
@@ -1180,5 +1311,5 @@
     "roles_desactivados": 2,
     "errores": []
   },
-  "finished_at": "2026-11-19T22:18:50.590Z"
+  "finished_at": "2026-11-20T02:38:13.007Z"
 }
