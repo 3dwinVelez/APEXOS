@@ -1,0 +1,93 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-payroll-operation-feedback-20261119",
+  "base_commits": {
+    "develop": "9953527a78bd9a351fe6e86e4e6545c4edf92911"
+  },
+  "target_head": "9953527a78bd9a351fe6e86e4e6545c4edf92911",
+  "certified_commit": "d2cea0db63bea7541b7ec1629290d81344cdf74d",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "d2cea0db63bea7541b7ec1629290d81344cdf74d",
+    "implementation_commit": "2f0cf15b",
+    "certification_followup": "daa20141"
+  },
+  "certified_functional_paths": [
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "docs/qa/certifications/hr-payroll-operation-feedback-20261119.md",
+    "scripts/certifications/hr-payroll-markings-local.js"
+  ],
+  "change_intent": {
+    "summary": "Show payroll operation feedback beside action controls, focus errors and distinguish a saved payroll from a subsequent refresh failure.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "docs/qa/certifications/hr-payroll-operation-feedback-20261119.md",
+    "scripts/certifications/hr-payroll-markings-local.js",
+    "docs/qa/manifests/hr-payroll-operation-feedback-20261119-preqa.json",
+    "docs/qa/manifests/hr-payroll-operation-feedback-20261119-scope.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-payroll-operation-feedback-20261119.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-payroll-markings-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-payroll-operation-feedback-20261119-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-payroll-operation-feedback-20261119-scope.json"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Payroll processing and visible error feedback",
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-operation-feedback-20261119-preqa.json",
+        "../certifications/hr-payroll-operation-feedback-20261119.md"
+      ]
+    },
+    {
+      "name": "Confirmed saved payroll and recovery after interrupted reload",
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-operation-feedback-20261119-preqa.json",
+        "../certifications/hr-payroll-operation-feedback-20261119.md"
+      ]
+    },
+    {
+      "name": "Preview and hours persistence",
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-operation-feedback-20261119-preqa.json",
+        "../certifications/hr-payroll-operation-feedback-20261119.md"
+      ]
+    },
+    {
+      "name": "RBAC and tenant isolation",
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-operation-feedback-20261119-preqa.json",
+        "../certifications/hr-payroll-operation-feedback-20261119.md"
+      ]
+    }
+  ]
+}

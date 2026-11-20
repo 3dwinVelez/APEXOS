@@ -1,0 +1,107 @@
+{
+  "change_id": "hr-payroll-operation-feedback-20261119",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "9953527a78bd9a351fe6e86e4e6545c4edf92911",
+  "commit": "d2cea0db63bea7541b7ec1629290d81344cdf74d",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-operation-feedback-20261119-preqa.json",
+        "../certifications/hr-payroll-operation-feedback-20261119.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-operation-feedback-20261119-preqa.json",
+        "../certifications/hr-payroll-operation-feedback-20261119.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-operation-feedback-20261119-preqa.json",
+        "../certifications/hr-payroll-operation-feedback-20261119.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-operation-feedback-20261119-preqa.json",
+        "../certifications/hr-payroll-operation-feedback-20261119.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-operation-feedback-20261119-preqa.json",
+        "../certifications/hr-payroll-operation-feedback-20261119.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-payroll-markings-local.js",
+    "evidence": [
+      "hr-payroll-operation-feedback-20261119-preqa.json",
+      "../certifications/hr-payroll-operation-feedback-20261119.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-payroll-markings-local.js",
+    "evidence": [
+      "hr-payroll-operation-feedback-20261119-preqa.json",
+      "../certifications/hr-payroll-operation-feedback-20261119.md"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario: despliega a qa",
+    "approved_at": "2026-11-20T03:23:17.169Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "functional_commit": "d2cea0db63bea7541b7ec1629290d81344cdf74d",
+    "certification": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "started_at": "2026-11-20T03:21:28.957Z",
+      "checks": [
+        "preview links three complete days without stored workdays and has no payroll/workday writes",
+        "period boundaries, incomplete day, RBAC and tenant isolation are enforced",
+        "browser payroll trial displays linked days and hours in the requested fortnight",
+        "definitive liquidation persists the same hours and repeated trial remains unchanged",
+        "stale processed rows are replaced in calculation without modifying the stored cache",
+        "approved day correction replaces the raw day without duplicate pay"
+      ],
+      "finished_at": "2026-11-20T03:22:17.947Z"
+    },
+    "unit_regression": {
+      "passed": 14,
+      "failed": 0
+    },
+    "typecheck": "passed: candidate payroll page and dependencies",
+    "lint": "passed: zero errors, three existing warnings",
+    "isolation": {
+      "source_database_modified": false,
+      "unexpected_5xx": []
+    },
+    "browser_checks": [
+      "Real backend rejection focuses visible alert beside action without writes",
+      "Real PostgreSQL lock verifies pending state",
+      "Successful save clears preview and persists after reload",
+      "Actual POST followed by interrupted GET shows saved-but-refresh-failed warning",
+      "Connection recovery loads the same single saved payroll"
+    ],
+    "scope_note": "Only visible payroll operation feedback and certification. Server validations, employee selection, calculations and payment registration remain unchanged."
+  }
+}
