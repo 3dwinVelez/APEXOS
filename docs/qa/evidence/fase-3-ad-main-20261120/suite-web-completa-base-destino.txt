@@ -1,0 +1,6 @@
+# suite: apps/web :: test/*.test.mjs
+# exit: 1
+# tests 723
+# pass 709
+# fail 14
+# rojos: SSR con escritura: primer render de carga, sin tarjetas ni editor inventado | SSR con lectura: mismo primer render de carga y ninguna llamada a la API | react y react-dom/server salen de la misma instalacion de node_modules | test\\accounting-pyg-budget-errors.component.test.mjs | test\\gastos-menores-entry-ux.test.mjs | test\\hr-offline-marking.test.mjs | test\\hr-reports-xlsx.test.mjs | test\\offline-operation-queue.test.mjs | test\\offline-storage.test.mjs | test\\transport-print-theme.test.mjs | test\\transport-rate-cost-interactions.test.mjs | test\\transport-rate-wizard-interactions.test.mjs | test\\transport-search-select.test.mjs | test\\transport-settlement-tariff-interactions.test.mjs

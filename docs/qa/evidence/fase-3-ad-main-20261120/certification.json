@@ -1,0 +1,72 @@
+{
+  "format": "fase-3-ad-candidate-suites/v1",
+  "started_at": "2026-11-20T21:55:38.611Z",
+  "tree": "2b47861774d2a2f6b5843e23b5581a6e21b2ea79",
+  "baseline_tree": "34674cac29b3a05ffef71d034becdf84ce389d65",
+  "suites": {
+    "api": {
+      "cwd": "apps/api",
+      "files": [
+        "test/api-error-congestion.test.js",
+        "test/api-error-mapping.test.js"
+      ],
+      "exit": 0,
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "reds": [],
+      "output": "TAP version 13\n# (node:21108) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: congestion: los tres codigos de Prisma se responden 503 con su codigo y su presupuesto\nok 1 - congestion: los tres codigos de Prisma se responden 503 con su codigo y su presupuesto\n  ---\n  duration_ms: 1.2569\n  type: 'test'\n  ...\n# Subtest: congestion: el mensaje que ve el operario no contiene el detalle tecnico\nok 2 - congestion: el mensaje que ve el operario no contiene el detalle tecnico\n  ---\n  duration_ms: 0.4829\n  type: 'test'\n  ...\n# Subtest: congestion: un 503 declarado por un servicio conserva su mensaje y no recibe retry-after\nok 3 - congestion: un 503 declarado por un servicio conserva su mensaje y no recibe retry-after\n  ---\n  duration_ms: 0.2118\n  type: 'test'\n  ...\n# Subtest: congestion: lo que no es congestion sigue bajando a 500 sin filtrar detalle\nok 4 - congestion: lo que no es congestion sigue bajando a 500 sin filtrar detalle\n  ---\n  duration_ms: 0.2592\n  type: 'test'\n  ...\n# Subtest: congestion: P2002 y P2025 no se volvieron reintento\nok 5 - congestion: P2002 y P2025 no se volvieron reintento\n  ---\n  duration_ms: 0.4147\n  type: 'test'\n  ...\n# Subtest: congestion: el handler traduce outcome.retryAfter en la cabecera retry-after\nok 6 - congestion: el handler traduce outcome.retryAfter en la cabecera retry-after\n  ---\n  duration_ms: 34.1762\n  type: 'test'\n  ...\n# (node:20728) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: mapeo: el almacen caido se responde 502 con su codigo legible\nok 7 - mapeo: el almacen caido se responde 502 con su codigo legible\n  ---\n  duration_ms: 2.0059\n  type: 'test'\n  ...\n# Subtest: mapeo: el generador sin cuota y el almacen sin configurar conservan su estado\nok 8 - mapeo: el generador sin cuota y el almacen sin configurar conservan su estado\n  ---\n  duration_ms: 1.1512\n  type: 'test'\n  ...\n# Subtest: mapeo: un 502 sin codigo sigue siendo error interno\nok 9 - mapeo: un 502 sin codigo sigue siendo error interno\n  ---\n  duration_ms: 0.6075\n  type: 'test'\n  ...\n# Subtest: mapeo: una excepcion inesperada se convierte en 500 y se registra\nok 10 - mapeo: una excepcion inesperada se convierte en 500 y se registra\n  ---\n  duration_ms: 0.2728\n  type: 'test'\n  ...\n# Subtest: mapeo: los 4xx del negocio siguen saliendo con su mensaje y su detalle\nok 11 - mapeo: los 4xx del negocio siguen saliendo con su mensaje y su detalle\n  ---\n  duration_ms: 0.3488\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 222.3998\n(node:19012) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    "web_contracts": {
+      "cwd": "apps/web",
+      "files": [
+        "test/technical-detail-not-leaked.test.mjs",
+        "test/hr-employee-biometric-reset.test.mjs"
+      ],
+      "exit": 0,
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "reds": [],
+      "output": "TAP version 13\n# (node:18996) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: la ficha del empleado muestra el telefono registrado para marcar\nok 1 - la ficha del empleado muestra el telefono registrado para marcar\n  ---\n  duration_ms: 1.0182\n  type: 'test'\n  ...\n# Subtest: restablecer pide confirmacion y usa la ruta del API\nok 2 - restablecer pide confirmacion y usa la ruta del API\n  ---\n  duration_ms: 0.2703\n  type: 'test'\n  ...\n# Subtest: el panel solo aparece sobre un empleado existente\nok 3 - el panel solo aparece sobre un empleado existente\n  ---\n  duration_ms: 0.1643\n  type: 'test'\n  ...\n# (node:7100) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: el barrido detecta la filtracion que dice detectar (control de contraste)\nok 4 - el barrido detecta la filtracion que dice detectar (control de contraste)\n  ---\n  duration_ms: 1.1401\n  type: 'test'\n  ...\n# Subtest: el barrido cubre toda la superficie de app/api\nok 5 - el barrido cubre toda la superficie de app/api\n  ---\n  duration_ms: 0.1635\n  type: 'test'\n  ...\n# Subtest: ningun handler de app/api lanza el detalle del proveedor al cliente\nok 6 - ningun handler de app/api lanza el detalle del proveedor al cliente\n  ---\n  duration_ms: 205.6195\n  type: 'test'\n  ...\n# Subtest: donde se conserva el detalle del proveedor, solo vive en el log del servidor\nok 7 - donde se conserva el detalle del proveedor, solo vive en el log del servidor\n  ---\n  duration_ms: 7.1224\n  type: 'test'\n  ...\n# Subtest: la familia reparada anuncia el detalle por consola y un mensaje propio al cliente\nok 8 - la familia reparada anuncia el detalle por consola y un mensaje propio al cliente\n  ---\n  duration_ms: 6.6097\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 441.619\n(node:15784) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    "web_full": {
+      "tests": 728,
+      "passed": 714,
+      "failed": 14
+    }
+  },
+  "baseline_comparada": "..\\..\\..\\AppData\\Local\\Temp\\main-base\\rojos-candidato.txt",
+  "checks": [
+    {
+      "name": "mapeador_de_congestion_en_el_arbol_del_candidato",
+      "ok": true,
+      "payload": {
+        "tests": 11,
+        "passed": 11
+      }
+    },
+    {
+      "name": "barrido_de_detalle_del_proveedor_en_el_arbol_del_candidato",
+      "ok": true,
+      "payload": {
+        "tests": 8,
+        "passed": 8
+      }
+    },
+    {
+      "name": "suite_web_sin_rojos_nuevos_contra_la_base_del_destino",
+      "ok": true,
+      "payload": {
+        "rojos": 14,
+        "nuevos": [],
+        "desaparecidos": []
+      }
+    }
+  ],
+  "verdict": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3
+  }
+}

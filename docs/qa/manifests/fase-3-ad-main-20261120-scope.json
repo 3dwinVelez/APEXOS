@@ -1,0 +1,345 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "fase-3-ad-main-20261120",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "codex/qa-fase3-ad-main-20261120",
+  "certified_commit": "2b47861774d2a2f6b5843e23b5581a6e21b2ea79",
+  "base_commit": "34674cac29b3a05ffef71d034becdf84ce389d65",
+  "base_commits": {
+    "main": "34674cac29b3a05ffef71d034becdf84ce389d65"
+  },
+  "target_head": "34674cac29b3a05ffef71d034becdf84ce389d65",
+  "candidate_source": {
+    "branch": "codex/qa-fase3-ad-main-20261120",
+    "commit": "2b47861774d2a2f6b5843e23b5581a6e21b2ea79",
+    "candidate_tip": "punta de codex/qa-fase3-ad-main-20261120 medida al generar este manifiesto: 2b47861774d2a2f6b5843e23b5581a6e21b2ea79 (replay del corte) mas este commit de gobernanza con la evidencia de la pata main y los dos manifiestos",
+    "replay_sobre_main": "Replay puntual del corte certificado y fusionado en develop (1d23ca09, fusion 81cd253a) sobre el tip de main 34674cac21, en su propia worktree. No es un merge de develop: main..develop trae frentes ajenos (maestro de bancos, portada de talento humano, Sedes y tarifario) que no viajan.",
+    "origen_certificado_en_develop": [
+      "1d23ca09",
+      "81cd253a"
+    ],
+    "origen_certificado_en_desarrollo": [
+      "d9f3bbd3",
+      "a11e8333"
+    ]
+  },
+  "change_intent": {
+    "summary": "Fase 3 del fallo tecnico, causas A y D, llevadas a Produccion tal como QA las midio: la congestion de Prisma (P2024, P2028, P2034) deja de llegar como 500 generico y se mapea en la tabla central a 503 con codigo propio (BASE_OCUPADA, TRANSACCION_INTERRUMPIDA, CONFLICTO_DE_ESCRITURA) y su presupuesto de reintento, y server.js propaga el encabezado retry-after; y en los seis handlers app/api/** del web el detalle del proveedor (Supabase <status>: <message>) deja de viajar en el cuerpo del 5xx: se registra en console.error con prefijo de ruta y el operario recibe un mensaje operativo neutro, conservando el estado HTTP. El fallo sigue quedando en platform_logs y solo se ve con localStorage.apexos_diagnostics = 1. No toca Prisma ni migraciones ni esquema.",
+    "modules": [
+      "api-core",
+      "web-api-handlers",
+      "certification-harness",
+      "documentation"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/api-error.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/api-error-congestion.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/admin/roles/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/admin/users/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/platform/companies/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/platform/company-modules/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/platform/company-sessions/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/v1/services/orders/[id]/route.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/technical-detail-not-leaked.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/delta-rojos.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/lectura.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/rojos-base-destino.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/rojos-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/suite-api-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-completa-base-destino.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-completa-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-contratos-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-main-20261120/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-main-20261120/delta-rojos.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-main-20261120/equivalencia-blob-main-develop.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-main-20261120/lectura.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-main-20261120/rojos-base-destino.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-main-20261120/rojos-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-main-20261120/suite-api-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-main-20261120/suite-web-completa-base-destino.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-main-20261120/suite-web-completa-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-main-20261120/suite-web-contratos-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-qa-20261120/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-qa-20261120/lectura.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-qa-20261120/qa-antes-buzon-local-sin-variable.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-qa-20261120/qa-antes-empleados.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-qa-20261120/qa-antes-sesion-final.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-qa-20261120/qa-sesion-final.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-qa-20261120/qa-validacion-empleados.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/fase-3-ad-qa-20261120/sonda-campo.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/fase-3-ad-main-20261120-approval.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/fase-3-ad-main-20261120-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/fase-3-ad-candidate-suites.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/fase-3-ad-provider-detail-probe.js"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/server.js",
+    "apps/api/src/core/api-error.js",
+    "apps/api/test/api-error-congestion.test.js",
+    "apps/web/app/api/admin/roles/route.ts",
+    "apps/web/app/api/admin/users/route.ts",
+    "apps/web/app/api/platform/companies/route.ts",
+    "apps/web/app/api/platform/company-modules/route.ts",
+    "apps/web/app/api/platform/company-sessions/route.ts",
+    "apps/web/app/api/v1/services/orders/[id]/route.ts",
+    "apps/web/test/technical-detail-not-leaked.test.mjs",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/certification.json",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/delta-rojos.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/lectura.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/rojos-base-destino.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/rojos-candidato.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/suite-api-candidato.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-completa-base-destino.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-completa-candidato.txt",
+    "docs/qa/evidence/fase-3-ad-develop-20261120/suite-web-contratos-candidato.txt",
+    "docs/qa/evidence/fase-3-ad-main-20261120/certification.json",
+    "docs/qa/evidence/fase-3-ad-main-20261120/delta-rojos.txt",
+    "docs/qa/evidence/fase-3-ad-main-20261120/equivalencia-blob-main-develop.txt",
+    "docs/qa/evidence/fase-3-ad-main-20261120/lectura.txt",
+    "docs/qa/evidence/fase-3-ad-main-20261120/rojos-base-destino.txt",
+    "docs/qa/evidence/fase-3-ad-main-20261120/rojos-candidato.txt",
+    "docs/qa/evidence/fase-3-ad-main-20261120/suite-api-candidato.txt",
+    "docs/qa/evidence/fase-3-ad-main-20261120/suite-web-completa-base-destino.txt",
+    "docs/qa/evidence/fase-3-ad-main-20261120/suite-web-completa-candidato.txt",
+    "docs/qa/evidence/fase-3-ad-main-20261120/suite-web-contratos-candidato.txt",
+    "docs/qa/evidence/fase-3-ad-qa-20261120/certification.json",
+    "docs/qa/evidence/fase-3-ad-qa-20261120/lectura.txt",
+    "docs/qa/evidence/fase-3-ad-qa-20261120/qa-antes-buzon-local-sin-variable.json",
+    "docs/qa/evidence/fase-3-ad-qa-20261120/qa-antes-empleados.png",
+    "docs/qa/evidence/fase-3-ad-qa-20261120/qa-antes-sesion-final.png",
+    "docs/qa/evidence/fase-3-ad-qa-20261120/qa-sesion-final.png",
+    "docs/qa/evidence/fase-3-ad-qa-20261120/qa-validacion-empleados.png",
+    "docs/qa/evidence/fase-3-ad-qa-20261120/sonda-campo.json",
+    "docs/qa/manifests/fase-3-ad-main-20261120-approval.json",
+    "docs/qa/manifests/fase-3-ad-main-20261120-scope.json",
+    "scripts/certifications/fase-3-ad-candidate-suites.js",
+    "scripts/certifications/fase-3-ad-provider-detail-probe.js"
+  ],
+  "allowed_deletions": [],
+  "certified_functional_paths": [
+    "apps/api/server.js",
+    "apps/api/src/core/api-error.js",
+    "apps/api/test/api-error-congestion.test.js",
+    "apps/web/app/api/admin/roles/route.ts",
+    "apps/web/app/api/admin/users/route.ts",
+    "apps/web/app/api/platform/companies/route.ts",
+    "apps/web/app/api/platform/company-modules/route.ts",
+    "apps/web/app/api/platform/company-sessions/route.ts",
+    "apps/web/app/api/v1/services/orders/[id]/route.ts",
+    "apps/web/test/technical-detail-not-leaked.test.mjs",
+    "scripts/certifications/fase-3-ad-candidate-suites.js",
+    "scripts/certifications/fase-3-ad-provider-detail-probe.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "ningun cuerpo 5xx servido por el despliegue trae el detalle del proveedor: ni 'Supabase <status>:', ni rest/v1 ni auth/v1, ni codigos P20xx, ni frases del banco",
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-qa-20261120/sonda-campo.json",
+        "../evidence/fase-3-ad-qa-20261120/certification.json",
+        "../evidence/fase-3-ad-qa-20261120/lectura.txt",
+        "../../../apps/web/test/technical-detail-not-leaked.test.mjs",
+        "../../../scripts/certifications/fase-3-ad-provider-detail-probe.js"
+      ]
+    },
+    {
+      "name": "la congestion de Prisma responde 503 con codigo propio y presupuesto de reintento (retry_after 2/2/1 s) y el encabezado retry-after sale en la respuesta",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/api-error-congestion.test.js",
+        "../../../apps/api/test/api-error-mapping.test.js",
+        "../evidence/fase-3-ad-main-20261120/suite-api-candidato.txt",
+        "../evidence/fase-3-ad-main-20261120/certification.json"
+      ]
+    },
+    {
+      "name": "el operario no ve ninguna ventanilla nativa cuando la API falla: medido con tormenta de 500, 429 y red cortada en cuatro pantallas y en dos tenants",
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-qa-20261120/certification.json",
+        "../evidence/fase-3-ad-qa-20261120/qa-validacion-empleados.png",
+        "../evidence/fase-3-ad-qa-20261120/qa-sesion-final.png",
+        "../../../scripts/certifications/technical-alert-silence-browser-qa.js"
+      ]
+    },
+    {
+      "name": "el silencio no es perdida: el fallo sigue registrandose en platform_logs y la boca publica sin sesion escribe en el buzon del despliegue sin usar el tenant del cuerpo",
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-qa-20261120/certification.json",
+        "../evidence/fase-3-ad-qa-20261120/lectura.txt",
+        "../evidence/fase-3-ad-qa-20261120/qa-antes-buzon-local-sin-variable.json"
+      ]
+    },
+    {
+      "name": "el arbol de main es el mismo que QA certifico: equivalencia de blobs ruta por ruta, base declarada y delta de rojos de la suite web del propio destino",
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-main-20261120/equivalencia-blob-main-develop.txt",
+        "../evidence/fase-3-ad-main-20261120/delta-rojos.txt",
+        "../evidence/fase-3-ad-main-20261120/rojos-base-destino.txt",
+        "../evidence/fase-3-ad-main-20261120/rojos-candidato.txt",
+        "../evidence/fase-3-ad-main-20261120/lectura.txt"
+      ]
+    },
+    {
+      "name": "el corte no toca Prisma, migraciones ni esquema: las 72 migraciones aplicadas a QA y Produccion quedan intactas y no hay paso de base de datos que ejecutar ni revertir",
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-main-20261120/certification.json",
+        "../evidence/fase-3-ad-main-20261120/suite-web-completa-candidato.txt",
+        "../evidence/fase-3-ad-main-20261120/suite-web-completa-base-destino.txt"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario exacto calculado con git diff 34674cac..HEAD mas las rutas de evidencia y manifiestos pendientes de versionar; sin borrados (allowed_deletions = []).",
+    "sustrato": "Worktree auxiliar sin node_modules, a proposito: copiar o enlazar el node_modules del arbol principal ya borro 1.173 archivos del repositorio el 2026-11-20. Base y candidato se midieron en el mismo ambiente, y los 14 rojos se clasificaron uno por uno como ERR_MODULE_NOT_FOUND de typescript/fake-indexeddb/exceljs/react; ninguno lee un archivo de este diff.",
+    "equivalencia": "12 de 12 rutas de codigo, prueba y certificadores con el mismo blob que el arbol que QA certifico en develop (81cd253a). Antes del replay se verifico que esas rutas estaban iguales entre la base de develop (35578bb7) y la de main (34674cac): diff vacio, o sea el hunkeo es el mismo que se evaluo en QA.",
+    "qa_ventana": "La propiedad de interfaz se certifico contra el despliegue de QA (API 81cd253a2dea): navegador 175/175 y sonda de detalle del proveedor 10/10. La primera corrida QA quedo 174/175 por una coordenada local que faltaba (APEXOS_TELEMETRY_TENANT_ID) y se conserva como contraste, no se piso.",
+    "medicion_local": "En el propio arbol de main: suites API apuntadas 5/5 -> 11/11, contratos web del enmudecimiento 3/3 -> 8/8, suite web 723/709/14 -> 728/714/14 con delta de nombres vacio.",
+    "produccion": "El mapeo de congestion (causa A) no se reproduce en campo: forzar P2028 en el banco compartido con clientes es provocar el incidente. Su forma la sostienen los contratos unitarios corridos sobre este arbol.",
+    "pendiente": "La verificacion posterior al despliegue (health.commit servido por Produccion y la sonda --target=production) se versiona en un commit sobre main en cuanto Railway termine, como se hizo con la secuela del 2026-11-20. Tambien quedan declarados los cuatro contratos rojos heredados de otros frentes en la rama y los usuarios efimeros de QA sin desactivar."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-20T17:00:00-05:00",
+    "instruction": "ya te eh autorizado varias veces para que lo llevemos a develop y luego al main es indispensable realizar esta correccion",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "auxiliary_branch_promotion": true,
+      "reason": "La pata main es transporte del mismo contenido que QA certifico 175/175 sobre el commit desplegado 81cd253a2dea: las 12 rutas de codigo, prueba y certificadores son blob-identicas al arbol certificado y las diez rutas de producto estaban identicas entre la base de develop y la de main."
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas. No otorga force push, reescritura de historia, borrado de ramas, migraciones remotas ni cambios de infraestructura o secretos.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen y se corren manifiesto v2, qa:promotion:scope y qa:approval:evidence, y la verificacion de Produccion se versiona despues del despliegue."
+  }
+}
