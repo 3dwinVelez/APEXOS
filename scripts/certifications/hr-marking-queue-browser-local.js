@@ -732,9 +732,12 @@ async function main() {
           /* payload no inspeccionable: la ventana sigue registrada */
         }
         punchWindows.push(ventana);
-        if (url.pathname === PUNCH_SELF_PATH && ventana.dia === dayStall) señalDeVuelo?.(ventana);
-      } catch {
-        /* ignorado */
+        if (url.pathname === PUNCH_SELF_PATH && ventana.dia === dayStall) stallSignal?.(ventana);
+      } catch (error) {
+        // El catch NO puede quedarse mudo: el 2026-11-19 una referencia rota del propio listener se
+        // trago aqui la senal del criterio 8 y la corrida rojo decia "no hubo peticion en vuelo"
+        // cuando las peticiones si salieron y el API contesto 503.
+        result.page_errors.push(`ARNES listener de peticiones: ${String(error?.message || error).slice(0, 180)}`);
       }
     });
     page.on("requestfinished", (request) => {
@@ -899,7 +902,10 @@ async function main() {
     check("lock_de_marcacion_sostenido_desde_otra_conexion", enVuelo !== false
       && holderAcquired === true && holderSettled === false, {
       ambito: stallScope, sostiene_ms: CONTENTION_DEADLINE_MS + HOLD_EXTRA_MS,
-      peticion_en_vuelo: enVuelo !== false, adquirido: holderAcquired, asentado: holderSettled
+      peticion_en_vuelo: enVuelo !== false, adquirido: holderAcquired, asentado: holderSettled,
+      // Distingue el "el navegador no mando nada" del "mando pero no le reconoci el dia": sin esta
+      // lista, las dos se ven igual en la evidencia y la corrida cuesta diez minutos cada vez.
+      ventanas_punch: punchWindows.map((ventana) => ventana.dia || "sin-dia")
     });
     const contentionDeadline = Date.now() + CONTENTION_DEADLINE_MS + 60_000;
     let stallSeen = null;
