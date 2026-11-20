@@ -1,0 +1,26 @@
+{
+  "functional_commit": "9f560ee1ab4307529c3fd18145740dbd6232e67f",
+  "status": "passed",
+  "environment": "LOCAL",
+  "started_at": "2026-11-20T01:08:38.244Z",
+  "checks": [
+    "quincenal month-wide and mismatched keys are rejected before payroll or closure writes",
+    "real API derives master contract, imports malla concepts and leaves preview read only",
+    "RBAC, cross tenant reads and unauthorized writes cannot create termination",
+    "integrated manual API binds employee and cutoff, preserves classification and deduplicates retries",
+    "browser finds employee, derives contract, previews full modal, saves and reopens all concepts",
+    "saved termination excludes employee from fortnight preview and real payroll creation despite active employee",
+    "rehire restores only the new contract period while settled historical periods stay excluded",
+    "loans post once, recalculation preserves totals and deletion restores balances and payroll eligibility",
+    "pending calculation splits second fortnight without paying the first twice",
+    "existing payroll after cutoff blocks an overlapping backdated final liquidation",
+    "all four standard benefit payment functions preserve payments when provisions regenerate",
+    "manual concepts retain salary classification and alter only eligible final benefit bases",
+    "final settlement consumes provisions, posts four linked vouchers and prevents duplicate payments or reopening history"
+  ],
+  "finished_at": "2026-11-20T01:10:23.609Z",
+  "isolation": {
+    "source_database_modified": false,
+    "unexpected_5xx": []
+  }
+}
