@@ -1,0 +1,628 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "technical-alert-silence-seq-main-20261120",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "codex/qa-alertsilence-seq-main-20261120",
+  "certified_commit": "6b749418bcffb3e553019a989e5752cc07ce0837",
+  "base_commit": "f207140d21d0b384d3a723021ae95614a19d22ac",
+  "base_commits": {
+    "main": "f207140d21d0b384d3a723021ae95614a19d22ac"
+  },
+  "target_head": "f207140d21d0b384d3a723021ae95614a19d22ac",
+  "candidate_source": {
+    "branch": "codex/qa-alertsilence-seq-main-20261120",
+    "commit": "6b749418bcffb3e553019a989e5752cc07ce0837",
+    "candidate_tip": "punta de codex/qa-alertsilence-seq-main-20261120 medida al generar este manifiesto: 822df77716d06fd3641d33aed99c22ae26473495 (replay 6b749418 + docs del despues en QA + evidencia de la pata main + estos dos manifiestos)",
+    "replay_sobre_main": "Replay puntual del corte certificado en develop (c9c1b2fa, fusion 7e02008a) sobre el tip de main f207140d21, en su propia worktree. No es un merge de develop: main..develop trae frentes ajenos (maestro de bancos, portada de talento humano) que no viajan.",
+    "origen_certificado_en_develop": [
+      "c9c1b2fa",
+      "7e02008a"
+    ],
+    "origen_certificado_en_desarrollo": [
+      "4d4c7e1d",
+      "7b8647d8"
+    ]
+  },
+  "change_intent": {
+    "summary": "Secuela del enmudecimiento del fallo tecnico, llevada a produccion tal como QA la midio: las ocho ventanillas nativas de validacion de Talento Humano -> Empleados se pintan en el propio campo (role=alert y aria-invalid, retirado al corregir el dato) y el navegador de un visitante sin sesion deja su reporte en la boca publica POST /api/v1/public/telemetry/client-logs, registrada en su propio alcance para esquivar el authenticate/tenancy del scope admin, con schema que descarta tenant_id/user_email/authorization y respuesta honesta 202 recorded:false cuando el despliegue no tiene buzon. Ningun mensaje tecnico vuelve a la interfaz y el fallo sigue quedando en platform_logs. El buzon de la boca anonima se activa en Produccion con APEXOS_TELEMETRY_TENANT_ID (aparte, por ambiente). Toca apps/web (empleados y la capa de reporte), apps/api (ruta publica nueva y su registro), sus contratos, el arnes de certificacion y la evidencia: no toca Prisma ni migraciones.",
+    "modules": [
+      "talento-humano-empleados",
+      "web-telemetria-cliente",
+      "api-admin-telemetria",
+      "autenticacion-sesion",
+      "certification-harness",
+      "documentation"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/admin/public-routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/telemetry-client-logs-public.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/technical-alert-silence.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-19-fase-3-causas-del-fallo-tecnico.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/technical-alert-silence-seguencia-20261119.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/06-sesion-vencida.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/07-login-aviso-sesion.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/08-modo-diagnostico.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/09-validacion-empleados.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/equivalencia-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/suite-api-apuntada.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/suite-web.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/06-sesion-vencida.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/07-login-aviso-sesion.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/08-modo-diagnostico.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/09-validacion-empleados.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/contratos-web-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/dark-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/dark-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/dark-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/dark-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/dark-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/equivalencia-blob-main-develop.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/light-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/light-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/light-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/light-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/light-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/soporte.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/suite-api-apuntada-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/suite-web-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/medicion-marcador/candidato-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/06-sesion-vencida.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/07-login-aviso-sesion.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/08-modo-diagnostico.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/09-validacion-empleados.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/qa-sesion-final.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/qa-validacion-empleados.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/qa-sesion-final.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/qa-validacion-empleados.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/qa-buzon-sonda.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/qa-sesion-final.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/qa-validacion-empleados.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/06-sesion-vencida.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/07-login-aviso-sesion.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/08-modo-diagnostico.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/09-validacion-empleados.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-servicios-500.png"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/technical-alert-silence-browser-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/technical-alert-silence-browser-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-seq-main-20261120-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-seq-main-20261120-approval.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/server.js",
+    "apps/api/src/modules/admin/public-routes.js",
+    "apps/api/test/telemetry-client-logs-public.test.js",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/test/technical-alert-silence.test.mjs",
+    "docs/briefs/2026-11-19-fase-3-causas-del-fallo-tecnico.md",
+    "docs/qa/certifications/technical-alert-silence-seguencia-20261119.md",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/06-sesion-vencida.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/07-login-aviso-sesion.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/08-modo-diagnostico.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/09-validacion-empleados.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/dark-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/equivalencia-candidato.txt",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/light-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/suite-api-apuntada.txt",
+    "docs/qa/evidence/technical-alert-silence-20261119/candidato-develop/suite-web.txt",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/06-sesion-vencida.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/07-login-aviso-sesion.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/08-modo-diagnostico.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/09-validacion-empleados.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/contratos-web-main.txt",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/dark-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/dark-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/dark-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/dark-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/dark-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/equivalencia-blob-main-develop.txt",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/light-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/light-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/light-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/light-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/light-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/soporte.txt",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/suite-api-apuntada-main.txt",
+    "docs/qa/evidence/technical-alert-silence-20261119/main-20261120/suite-web-main.txt",
+    "docs/qa/evidence/technical-alert-silence-20261119/medicion-marcador/candidato-develop.json",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/06-sesion-vencida.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/07-login-aviso-sesion.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/08-modo-diagnostico.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/09-validacion-empleados.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/dark-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/mismo-arnes-build-desarrollo/light-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/qa-sesion-final.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-marcador-viejo/qa-validacion-empleados.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/qa-sesion-final.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/qa-antes-secuela/qa-validacion-empleados.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/qa-buzon-sonda.txt",
+    "docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/qa-sesion-final.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/qa-despues-secuela/qa-validacion-empleados.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/06-sesion-vencida.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/07-login-aviso-sesion.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/08-modo-diagnostico.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/09-validacion-empleados.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/dark-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261119/validacion-build-final/light-servicios-500.png",
+    "scripts/certifications/technical-alert-silence-browser-local.js",
+    "scripts/certifications/technical-alert-silence-browser-qa.js",
+    "docs/qa/manifests/technical-alert-silence-seq-main-20261120-scope.json",
+    "docs/qa/manifests/technical-alert-silence-seq-main-20261120-approval.json"
+  ],
+  "allowed_deletions": [],
+  "certified_functional_paths": [
+    "apps/api/server.js",
+    "apps/api/src/modules/admin/public-routes.js",
+    "apps/api/test/telemetry-client-logs-public.test.js",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/test/technical-alert-silence.test.mjs",
+    "scripts/certifications/technical-alert-silence-browser-local.js",
+    "scripts/certifications/technical-alert-silence-browser-qa.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "cero ventanillas nativas en la validacion de Empleados, medidas sobre el build de este arbol (next start del worktree de main) con la tormenta de 500 puesta y en los dos temas",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/main-20261120/certification.json",
+        "../evidence/technical-alert-silence-20261119/main-20261120/09-validacion-empleados.png",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ]
+    },
+    {
+      "name": "el motivo de validacion se lee debajo del campo que lo incumple, el campo queda marcado con aria-invalid y corregir el dato lo retira en linea",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/main-20261120/certification.json",
+        "../../../apps/web/test/technical-alert-silence.test.mjs",
+        "../evidence/technical-alert-silence-20261119/qa-despues-secuela/qa-validacion-empleados.png",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ]
+    },
+    {
+      "name": "un visitante sin sesion tambien deja su fallo: la ausencia de token ya no descarta el reporte y el rebote desde la ruta autenticada esta cubierto",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/main-20261120/certification.json",
+        "../../../apps/web/test/technical-alert-silence.test.mjs",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ]
+    },
+    {
+      "name": "la boca publica no puede escribir en el expediente de otra empresa: tenant_id, user_email y authorization del cuerpo se descartan, el buzon es el del despliegue y sin configuracion responde 202 recorded:false en lugar de fingir exito",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/telemetry-client-logs-public.test.js",
+        "../evidence/technical-alert-silence-20261119/main-20261120/suite-api-apuntada-main.txt",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ]
+    },
+    {
+      "name": "la ingesta anonima se certifica por la fila que escribe: en el ambiente con buzon la sonda hostil dejo registro, quedo en el tenant del despliegue y se borro",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/qa-buzon-sonda.txt",
+        "../evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ]
+    },
+    {
+      "name": "el fallo tecnico sigue registrado: la tormenta deja sus posts a platform_logs y el modo diagnostico opt-in es la unica via que lo muestra en pantalla",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/main-20261120/certification.json",
+        "../evidence/technical-alert-silence-20261119/main-20261120/08-modo-diagnostico.png",
+        "../evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ]
+    },
+    {
+      "name": "el despues en el ambiente servido esta anclado al commit desplegado: 174/174 sobre la QA que corre 7e02008a555b, con build_desplegado_es_el_evaluado en verde y los seis rojos del antes cerrados",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/qa-despues-secuela/certification.json",
+        "../evidence/technical-alert-silence-20261119/qa-antes-secuela/certification.json",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ]
+    },
+    {
+      "name": "el replay no arrastra frentes ajenos: 63 de 69 rutas blob-identicas a origin/develop y en empleados/page.tsx el hunkeo es exactamente el del corte certificado (44/28, mismo conjunto de lineas); las 22 lineas que faltan son del maestro de bancos, que no viaja",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/main-20261120/equivalencia-blob-main-develop.txt",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/equivalencia-candidato.txt",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ]
+    },
+    {
+      "name": "regresion transversal sobre el arbol de main: contratos del enmudecimiento 17/17, suites API apuntadas 29/29 (boca publica y RBAC administrativo del modulo admin) y suite web 831/832 con el unico rojo atribuido al sustrato de junction",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/main-20261120/contratos-web-main.txt",
+        "../evidence/technical-alert-silence-20261119/main-20261120/suite-api-apuntada-main.txt",
+        "../evidence/technical-alert-silence-20261119/main-20261120/suite-web-main.txt",
+        "../evidence/technical-alert-silence-20261119/main-20261120/soporte.txt",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ]
+    },
+    {
+      "name": "el arnes es capaz de fallar y no depende de una rama: el mismo control positivo (ARNES:) y el de contraste del marcador corren sobre este arbol, y la misma tanda verde se tomo sobre develop y sobre desarrollo",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261119/main-20261120/certification.json",
+        "../evidence/technical-alert-silence-20261119/medicion-marcador/candidato-develop.json",
+        "../evidence/technical-alert-silence-20261119/candidato-develop/certification.json",
+        "../certifications/technical-alert-silence-seguencia-20261119.md"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario obtenido de git diff --name-status f207140d21..HEAD en la worktree del candidato, mas las dos entradas de estos manifiestos. Ninguna ruta del destino queda fuera y ninguna ajena entra.",
+    "reconstruction": "main..develop contiene frentes ajenos al corte, asi que no se promociona por merge de rama: el candidato reconstruye puntualmente el corte certificado sobre el tip vigente de main, y la capa de gobernanza (agents/, .qoder/skills/, AGENTS.md) no viaja porque se publico solo en desarrollo.",
+    "equivalencia": "RESUMEN: 63 de 69 rutas blob-identicas a origin/develop; 6 distintas, todas atribuidas abajo.\r. Detalle ruta por ruta, con el hunkeo comparado entre las dos patas, en docs/qa/evidence/technical-alert-silence-20261119/main-20261120/equivalencia-blob-main-develop.txt.",
+    "sustrato": "Worktree propia con node_modules enlazados por junction desde el puesto (package-lock.json blob-identico en HEAD, origin/main y origin/develop: 6a62f9317f3b952f1f9099c81acbe24214ca3e00, asi que el arbol de dependencias es el mismo). Build de produccion con next build --webpack (Turbopack rechaza el enlace fuera de la raiz del proyecto), BUILD_ID GWiQsW-qSguoj2peqeCoA, servido con next start en 127.0.0.1:3323 y con la API deliberadamente apagada.",
+    "medicion_local": "78/78 controles en verde sobre el build de este arbol (correra el mismo arnes de 78 controles que certifico el candidato de develop y el build de desarrollo).",
+    "qa_ventana": "Corrida QA del despues: 2026-11-20T04:52:42.183Z a 2026-11-20T05:02:34.333Z, run_id 20261120045242, frontend https://apexos-web-qa-production.up.railway.app, API https://apexos-api-qa-production.up.railway.app, commit desplegado del API 7e02008a555b, empresa modelo NYVORA. El buzon anonimo se encendio despues (APEXOS_TELEMETRY_TENANT_ID = e8fac747-e410-41dd-8784-2c0ca71660e8, Empresa Demo APEX-OS) y la sonda midio 202 recorded:true, registro en el tenant del despliegue, cero llaves hostiles y la fila borrada.",
+    "produccion": "APEXOS_TELEMETRY_TENANT_ID = 52db0658-a184-4fa1-a47b-c90b184914c3 (APEXOS Platform, verificado presente en la tabla Tenant de Produccion) fijado en el servicio apexos-api-prod con --skip-deploys antes de fusionar, para que un solo despliegue lleve codigo y variable. La columna del despues en Produccion se verifica por artefacto servido (cero chunks con apex:alert) y por la sonda de la boca publica, que escribe su fila y la borra; nunca con la carrera de navegador sobre datos de clientes.",
+    "pendientes_declarados": "La suite API completa no cierra en este puesto: apex-control/pulse.js reintenta contra localhost:54320 sin base local arriba, por lo que la medicion versionada es la tanda apuntada (29/29). Quedan aparte, con su propia puerta: el window.confirm de restablecer huella y el window.prompt de fecha de cierre de afiliacion (brief de Fase 3 §9) y las causas del 500 (Fase 3)."
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-20T00:00:00-05:00",
+    "scope": "promotion_to_main",
+    "instruction": "procede con mi autorizacion los pendientes",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "La pata main es transporte del mismo contenido que QA certifico 174/174 sobre el commit desplegado 7e02008a555b: 63 de las 69 rutas son blob-identicas a origin/develop y la unica de codigo distinta lo es por lineas de otro frente que no viajan."
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas y la activacion del buzon de telemetria en la nube. No otorga force push, reescritura de historia, borrado de ramas, otras migraciones remotas ni cambios de infraestructura o secretos distintos de esa variable.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen y se corren manifiesto v2, qa:promotion:scope, qa:approval:evidence, la certificacion E2E contra el ambiente y la verificacion de Produccion por artefacto servido y sonda de ingesta."
+  }
+}
