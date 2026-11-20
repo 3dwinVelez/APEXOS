@@ -1,0 +1,79 @@
+Lectura de la evidencia de la pata main del corte A+D (congestion y detalle del proveedor)
+=========================================================================================
+
+Fecha: 2026-11-20
+Candidato: rama auxiliar `codex/qa-fase3-ad-main-20261120`, worktree `apexos-cand-fase3-ad-main`
+Base declarada: `34674cac29b3a05ffef71d034becdf84ce389d65` (tip de `origin/main`, la secuela del enmudecimiento)
+Commit funcional del replay: `2b478617`
+Contenido que se promueve: `81cd253a` (develop) <- `1d23ca09` (candidato certificado) <- `d9f3bbd3` + `a11e8333` (desarrollo)
+
+Como se midio
+-------------
+
+No es un merge de `develop`: `main..develop` esta a cientos de commits y trae frentes ajenos que no
+viajan (maestro de bancos, portada de talento humano, Sedes, tarifario). Es un replay puntual de las
+rutas del corte sobre el tip de `main`, en su propia worktree.
+
+Antes de tocar nada se midio que esas rutas estuvieran **iguales** en los dos destinos:
+
+    git diff --stat 35578bb7 34674cac -- <las diez rutas de codigo y prueba>   -> vacio
+
+O sea: la base de `main` y la base sobre la que se certifico en `develop` son identicas en este
+recorte, asi que el hunkeo aplicado es exactamente el mismo que QA evaluo. Despues del replay la
+comparacion se repitio blob por blob contra el arbol certificado (`equivalencia-blob-main-develop.txt`):
+**12 de 12 rutas con el mismo hash**, incluyendo los dos certificadores.
+
+Cuenta de las suites, base y candidato medidos en el mismo ambiente:
+
+    suite web completa, base de main : 723 pruebas / 709 pasan / 14 rojos
+    suite web completa, candidato    : 728 pruebas / 714 pasan / 14 rojos
+    delta de nombres de rojo         : vacio (delta-rojos.txt, 0 lineas)
+    suites API apuntadas             : base 5/5   -> candidato 11/11
+    contratos web del enmudecimiento : base 3/3   -> candidato 8/8
+
+El salto de +5 pruebas en la suite web es el archivo nuevo
+`apps/web/test/technical-detail-not-leaked.test.mjs`; los +6 de la API son
+`apps/api/test/api-error-congestion.test.js`.
+
+Sustrato: esta worktree NO tiene `node_modules`, a proposito. Copiar o enlazar el `node_modules`
+del arbol principal dentro de una worktree ya borro 1.173 archivos del propio repositorio el
+2026-11-20 (los enlaces `@apex-os/*` son absolutos), y `git worktree remove --force` se los llevo
+por delante. Las suites corren igual porque son `node --test` sin dependencias de framework, y por
+eso la base y el candidato se midieron en las mismas condiciones: un rojo ambiental no puede
+confundirse con un rojo del corte, y un rojo del corte aparecería en el delta.
+
+Los 14 rojos son todos del sustrato, clasificados uno por uno (`ERR_MODULE_NOT_FOUND` /
+`Cannot find module`):
+
+- `fake-indexeddb`: `hr-offline-marking`, `offline-operation-queue`, `offline-storage`
+- `exceljs`: `hr-reports-xlsx`
+- `typescript`: `gastos-menores-entry-ux`, `transport-print-theme`, `transport-rate-cost-interactions`,
+  `transport-rate-wizard-interactions`, `transport-search-select`, `transport-settlement-tariff-interactions`
+- `react`: `accounting-pyg-budget-errors.component`, y los tres casos nombrados del archivo de SSR
+  (`SSR con escritura`, `SSR con lectura`, `react y react-dom/server salen de la misma instalacion de node_modules`)
+
+Ninguno lee un archivo de este diff. En la pata de `develop` la base del destino traia ademas cuatro
+aserciones viejas de otros frentes; aqui `main` no las tiene, y por eso la cuenta base es 14 y no 16.
+
+Que NO prueba esta evidencia
+----------------------------
+
+- **No hay build ni navegador sobre este arbol.** Sin `node_modules` no se puede ejecutar
+  `next build` en la worktree, así que la certificación de navegador de esta pata no se corrio aquí.
+  Lo que se certifica en campo es el despliegue de QA sobre `81cd253a2dea`
+  (`docs/qa/evidence/fase-3-ad-qa-20261120/`: navegador 175/175 y sonda de detalle del proveedor
+  10/10), y el puente entre esa corrida y este arbol es la equivalencia de blobs, no la palabra.
+- **No prueba la causa A reproducida en campo.** Forzar `P2028` en el banco compartido de Produccion
+  es provocar el incidente. La forma del 503 con `retry-after` la sostienen
+  `api-error-congestion.test.js` y `api-error-mapping.test.js`, corridas sobre este arbol (11/11).
+- **No sustituye la verificacion posterior al despliegue.** La sonda contra Produccion
+  (`scripts/certifications/fase-3-ad-provider-detail-probe.js --target=production`) y el
+  `health.commit` servido se versionan en un commit sobre `main` despues de que Railway termine,
+  como se hizo con la secuela del 2026-11-20. Queda declarado en `notes.pendiente` de los manifiestos.
+
+Limpieza
+--------
+
+- La sonda de campo no escribe datos de clientes: sus cuatro peticiones llevan sesion falsa y
+  rebotan en la validacion de sesion del proveedor. Las filas de telemetria que la corrida QA genero
+  se borraron (residuo medido en 0 en `AuditLog` con `new_value->>'message' like 'sonda publica 2026112%'`).

@@ -1,0 +1,123 @@
+{
+  "change_id": "fase-3-ad-main-20261120",
+  "commit": "2b47861774d2a2f6b5843e23b5581a6e21b2ea79",
+  "tree_evaluated": "punta de codex/qa-fase3-ad-main-20261120: 2b47861774d2a2f6b5843e23b5581a6e21b2ea79 (replay del corte 81cd253a sobre main 34674cac) mas este commit de gobernanza con la evidencia de la pata main y los dos manifiestos",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-20T17:00:00-05:00",
+    "instruction": "ya te eh autorizado varias veces para que lo llevemos a develop y luego al main es indispensable realizar esta correccion",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "auxiliary_branch_promotion": true,
+      "reason": "La pata main es transporte del mismo contenido que QA certifico 175/175 sobre el commit desplegado 81cd253a2dea: las 12 rutas de codigo, prueba y certificadores son blob-identicas al arbol certificado y las diez rutas de producto estaban identicas entre la base de develop y la de main."
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas. No otorga force push, reescritura de historia, borrado de ramas, migraciones remotas ni cambios de infraestructura o secretos.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen y se corren manifiesto v2, qa:promotion:scope y qa:approval:evidence, y la verificacion de Produccion se versiona despues del despliegue."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-qa-20261120/certification.json",
+        "../evidence/fase-3-ad-qa-20261120/sonda-campo.json",
+        "../evidence/fase-3-ad-qa-20261120/lectura.txt"
+      ],
+      "notes": "Certificacion de navegador contra el ambiente QA desplegado (API 81cd253a2dea, control build_desplegado_es_el_evaluado): 175/175 controles con la empresa modelo NYVORA y con un segundo tenant de contraste, bajo tormenta de 500, 429 y red cortada en rutas, mapa, servicios, monitoreo y el lobby. Cero ventanillas nativas y cero tarjetas de fallo tecnico."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-qa-20261120/sonda-campo.json",
+        "../evidence/fase-3-ad-qa-20261120/qa-antes-buzon-local-sin-variable.json",
+        "../evidence/fase-3-ad-main-20261120/certification.json",
+        "../evidence/fase-3-ad-qa-20261120/certification.json"
+      ],
+      "notes": "La otra mitad del corte, medida en campo: forzado el handler /api/platform/companies a la ruta de rechazo del proveedor con sesion falsa, el despliegue responde 500 con mensaje operativo neutro y cero ocurrencias de 'Supabase'; antes del mismo cuerpo salia 'Supabase 401: invalid credentials'. La sonda lleva dos controles para no poder mentir: el detector se prueba contra la firma vieja y la corrida se bloquea si ninguna peticion piso el 500 del proveedor. El rojo intermedio 174/175 del arnes se conservo como contraste y era una coordenada local que faltaba, no un defecto del producto."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-main-20261120/suite-api-candidato.txt",
+        "../evidence/fase-3-ad-main-20261120/suite-web-contratos-candidato.txt",
+        "../evidence/fase-3-ad-main-20261120/suite-web-completa-candidato.txt",
+        "../../../scripts/certifications/fase-3-ad-candidate-suites.js",
+        "../../../scripts/certifications/fase-3-ad-provider-detail-probe.js"
+      ],
+      "notes": "Suites corridas sobre el propio arbol de main: API apuntada 11/11 (mapeo de congestion y tabla de errores), contratos web del enmudecimiento 8/8 (barrido de detalle del proveedor en los seis handlers) y suite web completa 728/714/14."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-main-20261120/equivalencia-blob-main-develop.txt",
+        "../evidence/fase-3-ad-main-20261120/delta-rojos.txt",
+        "../evidence/fase-3-ad-main-20261120/rojos-base-destino.txt",
+        "../evidence/fase-3-ad-main-20261120/rojos-candidato.txt",
+        "../evidence/fase-3-ad-main-20261120/suite-web-completa-base-destino.txt",
+        "../evidence/fase-3-ad-main-20261120/lectura.txt"
+      ],
+      "notes": "Equivalencia medida blob por blob contra el arbol que QA certifico: 12 de 12 rutas identicas (ocho de codigo, tres de prueba, un certificador). Regresion sobre el destino: la base de main marca 723/709/14 y el candidato 728/714/14, con delta de nombres de rojo vacio; los 14 se clasificaron individualmente como ERR_MODULE_NOT_FOUND de typescript, fake-indexeddb, exceljs y react, propios de una worktree sin node_modules, y ninguno lee un archivo de este diff."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/fase-3-ad-main-20261120/certification.json",
+        "../evidence/fase-3-ad-main-20261120/suite-api-candidato.txt",
+        "../evidence/fase-3-ad-qa-20261120/certification.json"
+      ],
+      "notes": "El corte no toca schema, migraciones ni clientes de datos: no hay paso de base que ejecutar ni revertir. Las 72 migraciones aplicadas a QA y Produccion quedan intactas y la unica superficie de datos afectada es el registro de platform_logs, cuya escritura en el buzón del despliegue fue medida con la fila real de la sonda y despues eliminada (residuo verificado en 0)."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-qa.js",
+    "evidence": [
+      "../evidence/fase-3-ad-qa-20261120/certification.json",
+      "../evidence/fase-3-ad-qa-20261120/sonda-campo.json",
+      "../evidence/fase-3-ad-qa-20261120/qa-validacion-empleados.png",
+      "../evidence/fase-3-ad-qa-20261120/qa-sesion-final.png",
+      "../evidence/fase-3-ad-qa-20261120/lectura.txt"
+    ],
+    "controls": 175,
+    "passed": 175,
+    "failed": 0,
+    "substrate": "ambiente QA desplegado desde la fusion 81cd253a de develop (API 81cd253a2dea, run_id 20261120215); buzon anonimo encendido en QA y su tenant leido de la fila que la propia sonda escribio",
+    "basis": "El arnes de 175 controles corre contra el despliegue y no contra el arbol: los tres tipos de tormenta se inyectan por red y por respuestas simuladas del API, y el control build_desplegado_es_el_evaluado ancla la corrida al commit servido para que ningun verde se atribuya a otro ambiente."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/fase-3-ad-candidate-suites.js",
+    "evidence": [
+      "../evidence/fase-3-ad-main-20261120/certification.json",
+      "../evidence/fase-3-ad-main-20261120/equivalencia-blob-main-develop.txt",
+      "../evidence/fase-3-ad-main-20261120/delta-rojos.txt",
+      "../evidence/fase-3-ad-main-20261120/rojos-base-destino.txt"
+    ],
+    "basis": "El certificador de suites corre las dos suites apuntadas y la suite web completa sobre el propio arbol de main, y compara los nombres de rojo contra la base del destino medida en el mismo ambiente: veredicto 3/3 con cero rojos nuevos. La equivalencia blob por blob contra el arbol que QA certifico (12/12 identicos) es el puente entre la corrida de campo y el binario que se despliega; no se ejecuto next build en esta worktree porque no tiene node_modules, y eso se declara en la lectura."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-qa.js",
+    "evidence": [
+      "../evidence/fase-3-ad-qa-20261120/certification.json",
+      "../evidence/fase-3-ad-qa-20261120/qa-validacion-empleados.png",
+      "../evidence/fase-3-ad-qa-20261120/qa-antes-buzon-local-sin-variable.json",
+      "../evidence/fase-3-ad-qa-20261120/lectura.txt"
+    ],
+    "notes": "Corrida 20261120215 sobre la empresa modelo real NYVORA en el ambiente QA, con usuarios efimeros creados por el propio arnes y un segundo tenant (Diana vargas) como contraste de aislamiento: 175/175, cero ventanillas en ambos, y el registro de fallos intacto (75 telemetrias aceptadas). La fila de la sonda publica se borro y el residuo en AuditLog se midio en 0; los usuarios efimeros quedan declarados como deuda, como en las corridas anteriores."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "34674cac29b3a05ffef71d034becdf84ce389d65",
+    "trigger": "Si en Produccion vuelve a aparecer un cuerpo de error que mencione Supabase, rest/v1 o un codigo P20xx; si una ventanilla nativa o una tarjeta de fallo tecnico vuelve a interrumpir al operario en rutas, mapa, servicios, monitoreo, empleados o el lobby; si el 503 de congestion pierde el encabezado retry-after; o si la boca publica escribe en un tenant distinto del del despliegue.",
+    "notes": "Revert controlado del commit de fusion sobre main (git revert -m 1 del merge, sin reescribir historia compartida) y redeploy de apexos-api-prod y apexos-web-prod. No hay migraciones de esquema: al revertir, api-error.js vuelve a mapear la congestion como 500 generico y los seis handlers vuelven a interpolar el detalle del proveedor en el mensaje. La variable APEXOS_TELEMETRY_TENANT_ID del despliegue es inofensiva con el codigo revertido y no se toca."
+  }
+}

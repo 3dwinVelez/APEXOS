@@ -1,0 +1,19 @@
+Equivalencia de blobs entre el candidato de main (2b478617) y el arbol que QA certifico (develop 81cd253a)
+Fecha: 2026-11-20T21:55:52Z
+
+Ruta | blob_main | blob_develop | resultado
+-----|-----------|--------------|--------
+apps/api/src/core/api-error.js | aceceee814d5 | aceceee814d5 | identico
+apps/api/server.js | 23b62e1cc270 | 23b62e1cc270 | identico
+apps/api/test/api-error-congestion.test.js | ad90f81421b2 | ad90f81421b2 | identico
+apps/api/test/api-error-mapping.test.js | 04cd54add424 | 04cd54add424 | identico
+apps/web/app/api/admin/roles/route.ts | d144d05e0a6e | d144d05e0a6e | identico
+apps/web/app/api/admin/users/route.ts | 14006bb78262 | 14006bb78262 | identico
+apps/web/app/api/platform/companies/route.ts | b7a987fa634d | b7a987fa634d | identico
+apps/web/app/api/platform/company-modules/route.ts | a332eaac815f | a332eaac815f | identico
+apps/web/app/api/platform/company-sessions/route.ts | 51e1053674f1 | 51e1053674f1 | identico
+apps/web/app/api/v1/services/orders/[id]/route.ts | d08e3176c588 | d08e3176c588 | identico
+apps/web/test/technical-detail-not-leaked.test.mjs | 8ab381f350fc | 8ab381f350fc | identico
+scripts/certifications/fase-3-ad-candidate-suites.js | a7595164b01d | a7595164b01d | identico
+
+Total rutas comparadas: 12

@@ -23,7 +23,10 @@ async function supabaseRequest(path: string, init: RequestInit & { token?: strin
   const body = response.status === 204 ? null : await response.json().catch(() => null);
   if (!response.ok) {
     const detail = body?.message || body?.error_description || body?.error || response.statusText;
-    throw httpError(`Supabase ${response.status}: ${detail}`, response.status);
+    // El detalle del proveedor se queda en el log del servidor. Si viaja en el cuerpo, el
+    // operario lee "Supabase 404: Could not find the table" y lo interpreta como caida propia.
+    console.error(`[api/admin/roles] Supabase ${response.status}: ${detail}`);
+    throw httpError("El servicio de datos no respondió como se esperaba. Intente de nuevo o avise a soporte.", response.status);
   }
   return body;
 }
