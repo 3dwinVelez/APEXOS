@@ -1,0 +1,19 @@
+[preparacion] creando apex_admin_inactive_cert_5470696f308
+[preparacion] prisma db push sobre la base efimera
+[arranque] cargando apps/api/server.js
+(node:20040) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[arranque] OK health_ancla_el_commit_evaluado :: {"commit":"9d5504256388"}
+[inventario] OK empresa_administradora_con_sesion_local :: {"tenant":"4e710714-2924-4d78-bd67-70b3a7e34039","user":1,"rol":"APEX_ADMIN"}
+[inventario] OK el_modulo_admin_esta_habilitado :: {"roles":17,"role_id":15}
+[flujo] OK crear_cuenta_objetivo :: {"user_id":2,"role_id":15}
+[flujo] OK desactivar_responde_la_fila_inactiva :: {"activo":false}
+[flujo] OK reactivar_el_mismo_id_no_es_404 :: {"user_id":2,"activo":true}
+[flujo] OK segundo_ciclo_desactivar_reactivar :: {"ciclos":2}
+[flujo] OK inactivar_de_nuevo_para_poner_la_prueba_del_adjunto :: {"activo":false}
+[flujo] OK adjuntar_documento_a_cuenta_inactiva_no_es_404 :: {"documento":"cert-5470696f308.pdf"}
+[flujo] OK reactivar_despues_del_adjunto :: {"activo":true}
+[aislamiento] OK empresa_vecina_con_sesion_propia :: {"tenant":"eb499283-ce3d-47ea-91a6-36cf29798fa0"}
+[aislamiento] OK otro_tenant_no_reactiva_ni_en_contra_de_soft_delete :: {"estado":404}
+[persistencia] OK el_estado_escrito_es_el_que_lee_la_base :: {"user_id":2,"listado":true,"columna":true}
+[persistencia] OK la_auditoria_deja_las_vueltas :: {"movimientos":8}

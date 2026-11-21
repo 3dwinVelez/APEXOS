@@ -1,0 +1,91 @@
+{
+  "certification": "admin-inactive-reactivation-field",
+  "version": 1,
+  "role": "field_measurement",
+  "ambiente": "PRODUCCION",
+  "etiqueta": "antes-produccion",
+  "instrucion": "procede explicitamente con la promocion completa autorizado de mi parte",
+  "generado_en": "2026-11-21T02:13:12.049Z",
+  "env_file": "config/production.env",
+  "api_host": "apexos-api-prod-production.up.railway.app",
+  "script_sha256": "67d01f7fdd19bf0c7f06af1f6f9b5403a4213aafb0831bfa8068df6babcc9fbe",
+  "compromiso_del_arreglo": {
+    "fix_de_referencia": "b3187c5b62d195d04dfa452b35c658db5b481071",
+    "servidor_lee": "git merge-base --is-ancestor"
+  },
+  "despliegue": {
+    "status": 200,
+    "commit_servido": "9d13cae01fee",
+    "codigo_servido_contiene_el_fix": "defecto"
+  },
+  "tenant": {
+    "id": "9a6ffc43-9aec-4b1b-8943-f098a4046b97",
+    "nombre": "NYVORA",
+    "licencia_admin": [
+      "administracion_apex"
+    ]
+  },
+  "rol_de_la_cuenta_de_medicion": {
+    "id": 3,
+    "nombre": "APEX_ADMIN",
+    "modulos": []
+  },
+  "objetivo": {
+    "modo": "alta_nueva",
+    "email": "cert.reactivacion.7193408@internal.apexos.local",
+    "user_id": 248,
+    "status": 201
+  },
+  "estados_por_peticion": [
+    {
+      "accion": "active=false",
+      "status": 200,
+      "activo_leido": false,
+      "codigo": "EMP-1795227211119"
+    },
+    {
+      "accion": "active=true",
+      "status": 404,
+      "activo_leido": null,
+      "codigo": "NO_ENCONTRADO"
+    },
+    {
+      "accion": "active=false",
+      "status": 404,
+      "activo_leido": null,
+      "codigo": "NO_ENCONTRADO"
+    }
+  ],
+  "veredicto": {
+    "propiedad": {
+      "status": 404,
+      "cuerpo": {
+        "error": "No encontrado",
+        "code": "NO_ENCONTRADO",
+        "request_id": "req-xk"
+      }
+    },
+    "peticion_devolvio": "defecto",
+    "codigo_servido_anuncia": "defecto",
+    "pierna_declarada": "defecto",
+    "cumple": true,
+    "motivos_no_cumple": [],
+    "status": "passed",
+    "nota": "Un rojo en el control de la propiedad es el resultado esperado de la pierna ANTES; el verde de la pierna se lee en veredicto.cumple, nunca en el conteo de controles."
+  },
+  "total": 9,
+  "ok": 7,
+  "fallos": [
+    "reactivar_el_mismo_id_no_es_404",
+    "estado_final_declarado_inactiva"
+  ],
+  "cuenta_de_medicion": {
+    "correo": "cert.inactiva.7193408@internal.apexos.local",
+    "modo": "efimera",
+    "clave_versionada": false
+  },
+  "limitaciones": [
+    "No toca el aislamiento entre tenants: eso lo cubre la certificacion local de 15 controles con dos empresas propias.",
+    "No se versiona la contrasena de la cuenta cert.inactiva.7193408@internal.apexos.local; queda solo el correo para reproducir la consulta."
+  ]
+}

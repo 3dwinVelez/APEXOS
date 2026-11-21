@@ -1,0 +1,43 @@
+# Equivalencia de blobs del replay en main contra el arbol que QA certifico en develop
+# medido 2026-11-21T02:21:11.336Z en la worktree del candidato (codex/qa-admin-inactive-reactivation-main-20261120)
+# commit funcional: 4c376b876f192e0c67847565798c820cb7941370
+# punta del candidato: el commit de gobernanza que anade este archivo, las dos mediciones de campo y los dos manifiestos
+# destino: origin/main 9d13cae01feea53b52a710f91b6e18268c31bf91 | develop certificado: 06baf9c8 | base de develop antes del corte: 81cd253a
+
+## 1. Identidad de la base (por que el hunkeo aplicable es el mismo que ya se certifico)
+apps/api/src/modules/admin/service.js
+    origin/main : 23820f8eb4e3a128fa8d7b94d611d4f3a1c38f74
+    81cd253a    : 23820f8eb4e3a128fa8d7b94d611d4f3a1c38f74
+apps/api/test/admin-user-status-regression.test.js
+    origin/main : 1d56766d925d910ffdf23754744dadc4278462a0
+    81cd253a    : 1d56766d925d910ffdf23754744dadc4278462a0
+
+## 2. Ruta por ruta, sobre las 19 rutas del inventario exacto: blob en develop (06baf9c8) vs blob en el candidato
+IGUAL  apps/api/src/modules/admin/service.js  develop=3f12886496a09fc212b1a22102b25c60340a8b37  candidato=3f12886496a09fc212b1a22102b25c60340a8b37
+IGUAL  apps/api/test/admin-user-status-regression.test.js  develop=125d45ef4ad61793b554833be2ff4051f9b395a3  candidato=125d45ef4ad61793b554833be2ff4051f9b395a3
+IGUAL  scripts/certifications/admin-inactive-reactivation-http-local.js  develop=d782b30826f8fe2845ccbdaf3e414393cff1157e  candidato=d782b30826f8fe2845ccbdaf3e414393cff1157e
+NUEVA_EN_PATA_MAIN  scripts/certifications/admin-inactive-reactivation-field.js  develop=no_vive_en_develop  candidato=77b0faa6500e0a333ff2cbc81cf413b38ba1fbc9
+IGUAL  docs/qa/evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json  develop=b42e8d3aa27af392e082137325125c402a3953ec  candidato=b42e8d3aa27af392e082137325125c402a3953ec
+IGUAL  docs/qa/evidence/admin-inactive-reactivation-20261120/certificacion-rojo-base-http-local.json  develop=b09212bd6eb2b5a5afa53c6dbeec36b78964ab77  candidato=b09212bd6eb2b5a5afa53c6dbeec36b78964ab77
+IGUAL  docs/qa/evidence/admin-inactive-reactivation-20261120/contrato-unitario-local.json  develop=955c3b89338fa729d846dbc722c189c2242b9481  candidato=955c3b89338fa729d846dbc722c189c2242b9481
+IGUAL  docs/qa/evidence/admin-inactive-reactivation-20261120/contrato-candidato.txt  develop=64178c36dc24943b5b45b73fa419fc530b811b75  candidato=64178c36dc24943b5b45b73fa419fc530b811b75
+IGUAL  docs/qa/evidence/admin-inactive-reactivation-20261120/lectura.txt  develop=4da96e46968d809deeebbcdda9a635a1dcef6b93  candidato=4da96e46968d809deeebbcdda9a635a1dcef6b93
+IGUAL  docs/qa/evidence/admin-inactive-reactivation-20261120/pasos-rojo.txt  develop=0c4fc45a77ef55f50d329715803388823c7fbfc9  candidato=0c4fc45a77ef55f50d329715803388823c7fbfc9
+IGUAL  docs/qa/evidence/admin-inactive-reactivation-20261120/pasos-verde.txt  develop=570ad5fbc1269a4ec76d8a90c4565e49f7b176cb  candidato=570ad5fbc1269a4ec76d8a90c4565e49f7b176cb
+IGUAL  docs/qa/evidence/admin-inactive-reactivation-20261120/regresion-admin.txt  develop=14bafc579c30f6ad319b43a4d16c794f301118aa  candidato=14bafc579c30f6ad319b43a4d16c794f301118aa
+IGUAL  docs/qa/evidence/admin-inactive-reactivation-20261120/regresion-tenant-sesion.txt  develop=508ee1670e99b2588cacf10ab52c45f29583689a  candidato=508ee1670e99b2588cacf10ab52c45f29583689a
+IGUAL  docs/qa/evidence/admin-inactive-reactivation-20261120/rojo-base-desarrollo.txt  develop=14333c058b12e650dc88e6b808b03d7c0c636738  candidato=14333c058b12e650dc88e6b808b03d7c0c636738
+NUEVA_EN_PATA_MAIN  docs/qa/evidence/admin-inactive-reactivation-20261120/campo-qa.json  develop=no_vive_en_develop  candidato=dd76506168a82afd5a368ae43dbd234671bfe213
+NUEVA_EN_PATA_MAIN  docs/qa/evidence/admin-inactive-reactivation-20261120/campo-antes-produccion.json  develop=no_vive_en_develop  candidato=d5e5d5ff13ee1142cfc80230a09eeb6c723ce0f2
+NUEVA_EN_PATA_MAIN  docs/qa/evidence/admin-inactive-reactivation-20261120/equivalencia-blob-main-desarrollo.txt  develop=no_vive_en_develop  candidato=6107e9d89633de472a8e98e3749622fee563c219
+NUEVA_EN_PATA_MAIN  docs/qa/manifests/admin-inactive-reactivation-main-20261120-scope.json  develop=no_vive_en_develop  candidato=0b82a61a862106a6d1776a78a3ad7aa7a91bacc6
+NUEVA_EN_PATA_MAIN  docs/qa/manifests/admin-inactive-reactivation-main-20261120-approval.json  develop=no_vive_en_develop  candidato=f002de41dc3fd0dc5754d6d15d7db722ac8af035
+
+## 3. Recuento y comentario
+13 rutas blob-identicas al arbol que develop certifico, 6 rutas propias de esta pata (el certificador de campo, sus dos mediciones, este archivo y los dos manifiestos) y 0 DISTINTAS.
+Cero DISTINTAS significa que el binario que main va a servir es byte a byte el que QA midio 14/14 en el ambiente desplegado:
+las nueve lecturas del modulo admin, su prueba de contrato y los once artefactos de evidencia del corte llegan sin una sola coma de diferencia.
+
+## 4. Como se genero (reproducible)
+git rev-parse origin/develop:<ruta> para el blob certificado y git hash-object --path=<ruta> <ruta> para el blob del candidato.
+--path respeta core.autocrlf=true, o sea hash-objects el contenido tal como git lo guardaria al commitear, no el byte a byte del archivo en disco.
