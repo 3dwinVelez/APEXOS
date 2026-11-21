@@ -1,0 +1,109 @@
+{
+  "certificacion": "retiro-cuentas-cert-qa",
+  "version": 1,
+  "ambiente": "QA",
+  "api_host": "apexos-api-qa-production.up.railway.app",
+  "commit_servido": "06baf9c89360",
+  "generado_en": "2026-11-21T02:34:38.248Z",
+  "script_sha256": "d453e791c912406ae25fa23e5ddba5fc4415ea89994c87e0c27821f6a2b026a4",
+  "arbol_de_trabajo_igual_a_cabeza": true,
+  "blob_servicio_medido": "3f12886496a09fc212b1a22102b25c60340a8b37",
+  "motivo": "Las dos primeras patas del certificador de campo (campo-qa.json, seccion 8 de lectura-pata-main.txt) dejaron estas dos cuentas habilitadas y con su sesion sin revocar, antes de que el arnes incluyera el control la_cuenta_de_medicion_queda_retirada. Se retiran por el canal del API y no por UPDATE: solo el endpoint revoke las sesiones.",
+  "tenant": {
+    "id": "1d162ffd-bd27-4855-8141-b015388265fc",
+    "name": "NYVORA"
+  },
+  "cuenta_de_retiro": {
+    "id": 772,
+    "correo": "cert.retiro.8470693@internal.apexos.local",
+    "clave_versionada": false,
+    "peticion": {
+      "status": 200,
+      "fila": {
+        "id": 772,
+        "active": false
+      }
+    },
+    "sesiones": [
+      {
+        "id": "59e6e831-2482-4dbd-b2d1-b9d915975e0d",
+        "revoked_at": "2026-11-21T02:34:36.567Z",
+        "revoke_reason": "user_deactivated"
+      }
+    ]
+  },
+  "antes": [
+    {
+      "id": 766,
+      "email": "cert.inactiva.6828814@internal.apexos.local",
+      "active": true
+    },
+    {
+      "id": 768,
+      "email": "cert.inactiva.6904081@internal.apexos.local",
+      "active": true
+    }
+  ],
+  "sesiones_antes": [
+    {
+      "user_id": 766,
+      "id": "c054f482-31c9-4b0b-aab5-f4bf977a8345",
+      "revoked_at": null,
+      "revoke_reason": null,
+      "expires_at": "2026-12-21T02:07:18.020Z"
+    },
+    {
+      "user_id": 768,
+      "id": "c3a6e930-c9a2-4958-9f71-6b327f2cd654",
+      "revoked_at": null,
+      "revoke_reason": null,
+      "expires_at": "2026-12-21T02:08:33.280Z"
+    }
+  ],
+  "peticiones": [
+    {
+      "usuario": 766,
+      "status": 200,
+      "activo_leido": false,
+      "code": "CERT-INACT-6828814"
+    },
+    {
+      "usuario": 768,
+      "status": 200,
+      "activo_leido": false,
+      "code": "CERT-INACT-6904081"
+    }
+  ],
+  "despues": [
+    {
+      "id": 766,
+      "email": "cert.inactiva.6828814@internal.apexos.local",
+      "active": false
+    },
+    {
+      "id": 768,
+      "email": "cert.inactiva.6904081@internal.apexos.local",
+      "active": false
+    }
+  ],
+  "sesiones_despues": [
+    {
+      "user_id": 766,
+      "id": "c054f482-31c9-4b0b-aab5-f4bf977a8345",
+      "revoked_at": "2026-11-21T02:34:33.526Z",
+      "revoke_reason": "user_deactivated"
+    },
+    {
+      "user_id": 768,
+      "id": "c3a6e930-c9a2-4958-9f71-6b327f2cd654",
+      "revoked_at": "2026-11-21T02:34:34.419Z",
+      "revoke_reason": "user_deactivated"
+    }
+  ],
+  "veredicto": {
+    "todas_inactivas": true,
+    "todas_las_sesiones_revocadas": true,
+    "sesion_de_retiros_retirada": true,
+    "cumple": true
+  }
+}
