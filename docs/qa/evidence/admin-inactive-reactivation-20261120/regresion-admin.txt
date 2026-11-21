@@ -1,0 +1,250 @@
+(node:20208) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+TAP version 13
+# (node:13268) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: reconoce administradores confiables por role_type aunque el nombre sea personalizado
+ok 1 - reconoce administradores confiables por role_type aunque el nombre sea personalizado
+  ---
+  duration_ms: 3.5582
+  type: 'test'
+  ...
+# Subtest: un gestor de usuarios cumple solo las capacidades concedidas en su matriz
+ok 2 - un gestor de usuarios cumple solo las capacidades concedidas en su matriz
+  ---
+  duration_ms: 0.6423
+  type: 'test'
+  ...
+# Subtest: admin write agregado no permite crear usuarios cuando la matriz solo concede editar
+ok 3 - admin write agregado no permite crear usuarios cuando la matriz solo concede editar
+  ---
+  duration_ms: 0.5592
+  type: 'test'
+  ...
+# Subtest: mantiene compatibilidad con roles antiguos que solo tienen permisos RBAC agregados
+ok 4 - mantiene compatibilidad con roles antiguos que solo tienen permisos RBAC agregados
+  ---
+  duration_ms: 0.4331
+  type: 'test'
+  ...
+# Subtest: la capacidad no omite suscripcion ni alcance del tenant
+ok 5 - la capacidad no omite suscripcion ni alcance del tenant
+  ---
+  duration_ms: 0.7512
+  type: 'test'
+  ...
+# Subtest: las rutas de usuarios y roles exigen capacidades granulares
+ok 6 - las rutas de usuarios y roles exigen capacidades granulares
+  ---
+  duration_ms: 0.9898
+  type: 'test'
+  ...
+# Subtest: la edicion administrativa aplica los campos enviados y no conserva silenciosamente el valor anterior
+ok 7 - la edicion administrativa aplica los campos enviados y no conserva silenciosamente el valor anterior
+  ---
+  duration_ms: 1.273
+  type: 'test'
+  ...
+# Subtest: todas las operaciones administrativas por id acotan usuario y rol al tenant autenticado
+ok 8 - todas las operaciones administrativas por id acotan usuario y rol al tenant autenticado
+  ---
+  duration_ms: 2.5283
+  type: 'test'
+  ...
+# (node:12144) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: un administrador de empresa no puede crear un usuario con rol APEX_ADMIN
+ok 9 - un administrador de empresa no puede crear un usuario con rol APEX_ADMIN
+  ---
+  duration_ms: 450.3465
+  type: 'test'
+  ...
+# Subtest: el rol se bloquea por metadata superadmin aunque el nombre sea otro
+ok 10 - el rol se bloquea por metadata superadmin aunque el nombre sea otro
+  ---
+  duration_ms: 829.7674
+  type: 'test'
+  ...
+# Subtest: APEX_ADMIN puede crear usuarios con el rol APEX_ADMIN y la clave se guarda hasheada
+ok 11 - APEX_ADMIN puede crear usuarios con el rol APEX_ADMIN y la clave se guarda hasheada
+  ---
+  duration_ms: 649.7713
+  type: 'test'
+  ...
+# Subtest: un administrador de empresa no puede elevar a APEX_ADMIN con updateUser
+ok 12 - un administrador de empresa no puede elevar a APEX_ADMIN con updateUser
+  ---
+  duration_ms: 38.9227
+  type: 'test'
+  ...
+# Subtest: cambiar la clave de otro usuario sin confirmar la propia responde 428
+ok 13 - cambiar la clave de otro usuario sin confirmar la propia responde 428
+  ---
+  duration_ms: 680.5599
+  type: 'test'
+  ...
+# Subtest: cambiar la clave con una clave de administrador incorrecta responde 403
+ok 14 - cambiar la clave con una clave de administrador incorrecta responde 403
+  ---
+  duration_ms: 817.6079
+  type: 'test'
+  ...
+# Subtest: con la clave correcta se escribe el hash y nunca la clave en claro
+ok 15 - con la clave correcta se escribe el hash y nunca la clave en claro
+  ---
+  duration_ms: 1484.5111
+  type: 'test'
+  ...
+# Subtest: la ruta de acceso aplica la misma re-autenticacion antes de cambiar la clave
+ok 16 - la ruta de acceso aplica la misma re-autenticacion antes de cambiar la clave
+  ---
+  duration_ms: 726.8591
+  type: 'test'
+  ...
+# (node:18572) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: desactivar usuario responde con el registro inactivo y revoca sesiones
+ok 17 - desactivar usuario responde con el registro inactivo y revoca sesiones
+  ---
+  duration_ms: 40.9167
+  type: 'test'
+  ...
+# Subtest: el cambio de estado no puede operar sobre un usuario de otro tenant
+ok 18 - el cambio de estado no puede operar sobre un usuario de otro tenant
+  ---
+  duration_ms: 6.834
+  type: 'test'
+  ...
+# Subtest: la ruta publica el resultado exitoso del servicio sin convertirlo en 404
+ok 19 - la ruta publica el resultado exitoso del servicio sin convertirlo en 404
+  ---
+  duration_ms: 1.0563
+  type: 'test'
+  ...
+# Subtest: reactivar un usuario inactivo opera sobre el mismo id que se desactivó
+ok 20 - reactivar un usuario inactivo opera sobre el mismo id que se desactivó
+  ---
+  duration_ms: 6.0768
+  type: 'test'
+  ...
+# Subtest: el bloqueo de acceso de una cuenta inactiva no se pierde en un 404 al leerla
+ok 21 - el bloqueo de acceso de una cuenta inactiva no se pierde en un 404 al leerla
+  ---
+  duration_ms: 8.5014
+  type: 'test'
+  ...
+# Subtest: inactivar desde el acceso responde con la fila escrita, no con un 404 posterior
+ok 22 - inactivar desde el acceso responde con la fila escrita, no con un 404 posterior
+  ---
+  duration_ms: 6.6076
+  type: 'test'
+  ...
+# Subtest: toda lectura de cuenta en administracion ve la inactiva y conserva su tenant
+ok 23 - toda lectura de cuenta en administracion ve la inactiva y conserva su tenant
+  ---
+  duration_ms: 1.6335
+  type: 'test'
+  ...
+# (node:18816) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: matches normalized document and case-insensitive email without replacing labor data
+ok 24 - matches normalized document and case-insensitive email without replacing labor data
+  ---
+  duration_ms: 2.6108
+  type: 'test'
+  ...
+# Subtest: rejects ambiguous matches, contradictory documents, document types and occupied links
+ok 25 - rejects ambiguous matches, contradictory documents, document types and occupied links
+  ---
+  duration_ms: 0.8487
+  type: 'test'
+  ...
+# Subtest: user lookup explicitly scopes tenant, includes inactive records and normalizes email
+ok 26 - user lookup explicitly scopes tenant, includes inactive records and normalizes email
+  ---
+  duration_ms: 1.8299
+  type: 'test'
+  ...
+# Subtest: existing employee link is never taken over
+ok 27 - existing employee link is never taken over
+  ---
+  duration_ms: 1.7898
+  type: 'test'
+  ...
+# Subtest: employee lookup is tenant-scoped and includes inactive employees to prevent duplicates
+ok 28 - employee lookup is tenant-scoped and includes inactive employees to prevent duplicates
+  ---
+  duration_ms: 0.7982
+  type: 'test'
+  ...
+# Subtest: absent and ambiguous users are handled explicitly
+ok 29 - absent and ambiguous users are handled explicitly
+  ---
+  duration_ms: 0.5961
+  type: 'test'
+  ...
+# Subtest: HR services persist automatic links on create and edit, and reject occupied links before writing
+ok 30 - HR services persist automatic links on create and edit, and reject occupied links before writing
+  ---
+  duration_ms: 285.4565
+  type: 'test'
+  ...
+# Subtest: user creation connects the existing employee without overwriting payroll
+ok 31 - user creation connects the existing employee without overwriting payroll
+  ---
+  duration_ms: 1832.2989
+  type: 'test'
+  ...
+# (node:6468) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: sin buzon configurado responde honesto: no finge un ok y no escribe
+ok 32 - sin buzon configurado responde honesto: no finge un ok y no escribe
+  ---
+  duration_ms: 1186.1524
+  type: 'test'
+  ...
+# Subtest: con buzon el reporte anonimo cae en el tenant del despliegue y sin usuario
+ok 33 - con buzon el reporte anonimo cae en el tenant del despliegue y sin usuario
+  ---
+  duration_ms: 125.7768
+  type: 'test'
+  ...
+# Subtest: el cuerpo no elige tenant ni siembra PII: lo que no esta en el contrato se descarta
+ok 34 - el cuerpo no elige tenant ni siembra PII: lo que no esta en el contrato se descarta
+  ---
+  duration_ms: 67.478
+  type: 'test'
+  ...
+# Subtest: el mensaje es obligatorio y acotado: no es un vertedero de trazas
+ok 35 - el mensaje es obligatorio y acotado: no es un vertedero de trazas
+  ---
+  duration_ms: 64.5381
+  type: 'test'
+  ...
+# Subtest: el detalle y la metadata extra se limitan por contrato, no por bondad
+ok 36 - el detalle y la metadata extra se limitan por contrato, no por bondad
+  ---
+  duration_ms: 30.797
+  type: 'test'
+  ...
+# Subtest: la ingesta publica no hereda el limite de 25 MB de la API
+ok 37 - la ingesta publica no hereda el limite de 25 MB de la API
+  ---
+  duration_ms: 103.5399
+  type: 'test'
+  ...
+# Subtest: el reporte anonimo conserva la causa clasificada y el codigo del rechazo
+ok 38 - el reporte anonimo conserva la causa clasificada y el codigo del rechazo
+  ---
+  duration_ms: 56.7441
+  type: 'test'
+  ...
+1..38
+# tests 38
+# suites 0
+# pass 38
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5907.2588
