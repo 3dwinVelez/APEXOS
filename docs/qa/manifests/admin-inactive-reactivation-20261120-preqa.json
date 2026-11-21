@@ -1,0 +1,98 @@
+{
+  "change_id": "admin-inactive-reactivation-20261120",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "promotion_branch": "codex/qa-admin-inactive-reactivation-20261120",
+  "commit": "b3187c5b62d195d04dfa452b35c658db5b481071",
+  "target_head": "81cd253a2dea827bda909cb0ce7c17d27877757a",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json",
+        "../evidence/admin-inactive-reactivation-20261120/pasos-verde.txt",
+        "../evidence/admin-inactive-reactivation-20261120/lectura.txt"
+      ],
+      "detalle": "Flujo real por HTTP sobre Fastify + Prisma + PostgreSQL local en base efimera: alta de empresa con licencia, login real, crear cuenta, desactivar, reactivar el mismo id, dos ciclos mas, adjuntar documento inactiva y reactivar. 15/15 verdes."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/certificacion-rojo-base-http-local.json",
+        "../evidence/admin-inactive-reactivation-20261120/pasos-rojo.txt",
+        "../evidence/admin-inactive-reactivation-20261120/rojo-base-desarrollo.txt"
+      ],
+      "detalle": "Pata de contraste: mismo arnes, mismo esquema, mismo contrato, cambiando solo el blob de service.js por el de develop (23820f8eb4e3). Siete rojos con la firma exacta del reporte del dueño: 404 NO_ENCONTRADO en reactivar, en los ciclos, en el adjunto y en la lectura de persistencia. El arnes registra el blob servido y declara arbol_de_trabajo_igual_a_cabeza=false, asi que el rojo se autocaracteriza."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/contrato-unitario-local.json",
+        "../evidence/admin-inactive-reactivation-20261120/contrato-candidato.txt",
+        "../evidence/admin-inactive-reactivation-20261120/lectura.txt"
+      ],
+      "detalle": "scripts/certifications/admin-inactive-reactivation-http-local.js queda versionado con su lectura de evidencia, sus limitaciones declaradas y tres hallazgos de ambiente que la corrida expuso (db push deja AuthorizationSession.id en text, migrate deploy desde cero no completa, el alta por /auth/register depende de una tabla del esquema Supabase)."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/regresion-admin.txt",
+        "../evidence/admin-inactive-reactivation-20261120/regresion-tenant-sesion.txt",
+        "../evidence/admin-inactive-reactivation-20261120/contrato-candidato.txt"
+      ],
+      "detalle": "Sobre el arbol del candidato: capacidades y permisos de administracion 38/38, tenant y sesion 26/26 y el contrato de estado de cuenta 7/7 (tres casos preexistentes en develop mas los cuatro de este paquete)."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json",
+        "../evidence/admin-inactive-reactivation-20261120/regresion-tenant-sesion.txt",
+        "../evidence/admin-inactive-reactivation-20261120/lectura.txt"
+      ],
+      "detalle": "El arnes levanta el servidor completo, asi que la pata plataformas queda cubierta por el camino que atraviesa: autenticacion JWT, licencia de modulo (M-22), RBAC de capacidades administrativas, aislamiento multi-tenant y bitacora de auditoria. El chequeo 13 mide que una empresa vecina obtiene 404 sobre la cuenta inactiva del vecino: la excepcion de borrado logico no abre la frontera."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/admin-inactive-reactivation-http-local.js",
+    "evidence": [
+      "../evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json",
+      "../evidence/admin-inactive-reactivation-20261120/lectura.txt"
+    ],
+    "controls": 15,
+    "passed": 15,
+    "failed": 0,
+    "substrate": "Fastify real + Prisma + PostgreSQL local sobre base efimera (apex_admin_inactive_cert_*, descartada al terminar)"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/admin-inactive-reactivation-http-local.js",
+    "evidence": [
+      "../evidence/admin-inactive-reactivation-20261120/regresion-admin.txt",
+      "../evidence/admin-inactive-reactivation-20261120/regresion-tenant-sesion.txt",
+      "../evidence/admin-inactive-reactivation-20261120/contrato-candidato.txt"
+    ],
+    "basis": "El mismo arnes HTTP ejercita autenticacion, licencia de modulo, RBAC y auditoria sobre el candidato; las tres patas unitarias se corrieron con node --test sobre apps/api/test/ (contrato de estado 7/7, capacidades admin 38/38, tenant y sesion 26/26) en la rama auxiliar y su salida cruda queda versionada en la evidencia enlazada."
+  },
+  "validation_summary": {
+    "certified_application_commit": "b3187c5b62d195d04dfa452b35c658db5b481071",
+    "baseline_preserved": "81cd253a2dea827bda909cb0ce7c17d27877757a",
+    "migraciones": "ninguna: el paquete no toca schema.prisma ni apps/api/prisma/migrations",
+    "flujo_certificado": "Desactivar una cuenta en Administracion y volver a reactivarla, adjuntarle documentos y bloquearle el acceso, sobre el mismo id",
+    "evidencia_pendiente": "La pata de ambiente: lectura en pantalla del estado reactivado y sincronizacion con Supabase Auth, que se mide contra el build desplegado en QA con scripts/certifications/admin-user-login-sync.js. qa_status queda pending hasta esa medicion.",
+    "evidence_policy": "La evidencia cruda viaja revisada en docs/qa/evidence/admin-inactive-reactivation-20261120; los logs del servidor local no entran al repositorio y las bases efimeras se descartan al terminar la corrida."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-20T21:40:00-05:00",
+    "instruction": "procede explicitamente con la promocion completa autorizado de mi parte",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo completo desarrollo -> develop -> main con sus compuertas y su despliegue. No otorga force push, reescritura de historia, borrado de ramas, cambios de infraestructura o secretos, ni migraciones remotas."
+  }
+}
