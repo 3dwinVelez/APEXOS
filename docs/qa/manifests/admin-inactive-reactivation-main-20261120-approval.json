@@ -1,0 +1,120 @@
+{
+  "change_id": "admin-inactive-reactivation-main-20261120",
+  "commit": "4c376b876f192e0c67847565798c820cb7941370",
+  "tree_evaluated": "punta de codex/qa-admin-inactive-reactivation-main-20261120: el commit funcional 4c376b87 (replay del corte 06baf9c8 de develop sobre main 9d13cae0) mas este commit de gobernanza con las dos mediciones de campo, la equivalencia de blobs y los dos manifiestos",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-20T21:20:00-05:00",
+    "instruction": "procede explicitamente con la promocion completa autorizado de mi parte",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "auxiliary_branch_promotion": true,
+      "reason": "El contenido ya esta certificado en el ambiente QA desplegado (06baf9c89360): la medicion de campo con la empresa modelo NYVORA dio 14/14 sobre ese binario y 13 de las 14 rutas del commit funcional son blob-identicas a las que se midieron."
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas. No otorga force push, reescritura de historia, borrado de ramas, migraciones remotas ni cambios de infraestructura o secretos.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen manifiesto v2, qa:promotion:scope y qa:approval:evidence, y el DESPUES de Produccion se versiona despues del despliegue."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/campo-qa.json",
+        "../evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json",
+        "../evidence/admin-inactive-reactivation-20261120/lectura.txt"
+      ],
+      "notes": "El mismo boton que desactiva vuelve a reactivar, medido dos veces: en el flujo real por HTTP contra PostgreSQL efimero (15 controles, Fastify + Prisma + autenticacion y RBAC del producto, sin mocks) y contra el API de QA ya desplegado con la empresa modelo (14 controles, anclado al commit servido 06baf9c89360). La propiedad reactivar_el_mismo_id_no_es_404 dio 200 con active=true en las dos."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/campo-antes-produccion.json",
+        "../evidence/admin-inactive-reactivation-20261120/certificacion-rojo-base-http-local.json",
+        "../evidence/admin-inactive-reactivation-20261120/rojo-base-desarrollo.txt"
+      ],
+      "notes": "El defecto se vio en el ambiente que recibe esta promocion: Produccion, con el arbol 9d13cae01fee, respondio 404 NO_ENCONTRADO al reactivar la cuenta que la misma corrida acababa de desactivar (y 404 tambien al intentar dejarla inactiva por segunda vez, porque la lectura esta ciega en los dos sentidos). El rojo local contra el blob 23820f8eb4e3 -el mismo que main sirve hoy- dio 8/15 con la misma firma, y el contrato unitario 7/3/4 con Inactive record filtered."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/admin-inactive-reactivation-http-local.js",
+        "../../../scripts/certifications/admin-inactive-reactivation-field.js",
+        "../evidence/admin-inactive-reactivation-20261120/pasos-verde.txt",
+        "../evidence/admin-inactive-reactivation-20261120/pasos-rojo.txt",
+        "../evidence/admin-inactive-reactivation-20261120/contrato-candidato.txt"
+      ],
+      "notes": "Dos certificadores versionados: el local levanta una base efimera, la alinea al esquema desplegado (AuthorizationSession.id uuid) y ancla el arbol evaluado por /health; el de campo solo corre contra config/qa.env o config/production.env, rechaza origenes que contradigan el archivo de ambiente y decide la pierna con dos lecturas independientes (lo que devolvio la peticion y lo que el commit servido anuncia). Su --selftest tiene cinco casos, tres de ellos rojos obligatorios."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/regresion-admin.txt",
+        "../evidence/admin-inactive-reactivation-20261120/regresion-tenant-sesion.txt",
+        "../evidence/admin-inactive-reactivation-20261120/contrato-unitario-local.json"
+      ],
+      "notes": "Regresion cercana al modulo tocado: admin y cercanos 38/38 y autenticacion/tenant/sesiones 26/26. El contrato unitario sube de 3 a 7 pruebas y las tres previas siguieron verdes en la corrida roja y en la verde. authorization-status-codes queda rojo por falta de Redis en el puesto, reproducido igual sobre HEAD y declarado en la lectura."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/equivalencia-blob-main-desarrollo.txt",
+        "../evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json",
+        "../evidence/admin-inactive-reactivation-20261120/lectura.txt"
+      ],
+      "notes": "No hay esquema nuevo: ninguna migracion se aplica ni se revierte, y las 72 migraciones de QA y Produccion quedan intactas. La superficie tocada son nueve sentencias de lectura del modulo admin, que ganan __includeInactive conservando tenant_id en el mismo where; la excepcion no abre la frontera entre empresas, medido con un tenant vecino que sigue obteniendo 404."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/admin-inactive-reactivation-field.js",
+    "evidence": [
+      "../evidence/admin-inactive-reactivation-20261120/campo-qa.json",
+      "../evidence/admin-inactive-reactivation-20261120/campo-antes-produccion.json",
+      "../evidence/admin-inactive-reactivation-20261120/lectura.txt"
+    ],
+    "controls": 14,
+    "passed": 14,
+    "failed": 0,
+    "substrate": "ambiente QA desplegado desde la fusion 06baf9c8 de develop (commit servido 06baf9c89360, anclado por GET /health), tenant NYVORA de QA con cuenta efimera de medicion creada por el propio arnes y retirada al cerrar",
+    "basis": "La corrida no puede atribuirse a otro arbol: el control health_ancla_el_commit_servido lee el commit del despliegue y el veredicto exige que ese commit sea ancestro del arreglo (git merge-base --is-ancestor). El --selftest bloquea la pierna que declara defecto mientras sirve el arbol arreglado, y a la inversa."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/admin-inactive-reactivation-http-local.js",
+    "evidence": [
+      "../evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json",
+      "../evidence/admin-inactive-reactivation-20261120/certificacion-rojo-base-http-local.json",
+      "../evidence/admin-inactive-reactivation-20261120/equivalencia-blob-main-desarrollo.txt"
+    ],
+    "basis": "El certificador local corre el flujo completo contra PostgreSQL efimero y declara en cada artefacto el blob que efectivamente sirvio (git hash-object --path), no el que estaba commiteado: por eso el rojo dice blob_servicio_medido=23820f8eb4e3 con arbol_de_trabajo_igual_a_cabeza=false y el verde dice 3f12886496a0 con true. La equivalencia ruta por ruta contra el arbol de develop (13 de 14 identicas) es el puente entre esa corrida y el binario que main va a servir."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/admin-inactive-reactivation-field.js",
+    "evidence": [
+      "../evidence/admin-inactive-reactivation-20261120/campo-qa.json",
+      "../evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json"
+    ],
+    "notes": "Medido sobre la empresa modelo real NYVORA en el ambiente QA: 14/14 con alta por HTTP, desactivar, reactivar (la propiedad), dos ciclos mas, adjunto sobre cuenta inactiva, paridad listado/columna, cuatro movimientos de auditoria y retiro verificado de la cuenta de medicion (200 y active=false leido en la base). Ningun dato de cliente se toco en esta pata; la cuenta efimera queda declarada como deuda junto con las de las corridas anteriores."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "9d13cae01feea53b52a710f91b6e18268c31bf91",
+    "trigger": "Si en Produccion una cuenta desactivada vuelve a responder 404 NO_ENCONTRADO o P2025 al reactivarla; si la excepcion de lectura empieza a devolver filas de otro tenant (cualquier 200 de PATCH /admin/users/:id/status con un id de otra empresa); si PUT /admin/users/:id o los documentos de cuenta dejan de responder; o si el listado de usuarios empieza a mezclar cuentas inactivas.",
+    "notes": "Revert controlado del commit de promocion sobre main (git revert del replay, sin reescribir historia compartida) y redeploy de apexos-api-prod. No hay migraciones: al revertir, las nueve sentencias vuelven a leer sin __includeInactive y la cuenta inactiva vuelve a ser ilegible para su propia pantalla. Las cuentas efimeras que esta intervencion dejo inactivas (NYVORA QA y el objetivo 248 de NYVORA Produccion, mas la cuenta de medicion 247) quedan declaradas y no requieren accion: con el codigo revertido simplemente no se pueden reactivar, que es el defecto que se promociona cerrar."
+  },
+  "evidencia_pendiente_de_despliegue": {
+    "artefacto": "docs/qa/evidence/admin-inactive-reactivation-20261120/campo-despues-produccion.json",
+    "que_falta": "La corrida DESPUES en Produccion, que solo puede existir despues de que Railway sirva el commit promocionado y que se versiona en cuanto se obtenga, como en la intervencion anterior.",
+    "como_se_corre": "node scripts/certifications/admin-inactive-reactivation-field.js --env-file=config/production.env --espera=arreglo --cuenta=efimera --usuario=cert.reactivacion.7193408@internal.apexos.local --etiqueta=despues-produccion --output=docs/qa/evidence/admin-inactive-reactivation-20261120/campo-despues-produccion.json",
+    "control_de_contraste": "La pierna usa por argumento la cuenta 248 que la corrida ANTES dejo atascada en Produccion: si el arreglo llego, esa fila exactamente (nadie mas puede tocarla hoy) pasa de ilegible a reactivable, y el rojo deja de ser teoria."
+  }
+}
