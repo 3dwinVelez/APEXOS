@@ -1,0 +1,145 @@
+{
+  "certification": "admin-inactive-reactivation-http-local",
+  "version": 1,
+  "certification_role": "local_e2e_support",
+  "environment": "LOCAL",
+  "status": "failed",
+  "fecha": "2026-11-21T01:46:37.474Z",
+  "arbol": {
+    "rama": "desarrollo",
+    "commit": "9d5504256388a36db5ad25b289097789a84d43e5",
+    "candidato_declarado": "origin/develop@81cd253a blob 23820f8eb4e3 (linea base: el codigo que hoy corre en QA/Produccion)",
+    "blob_servicio": "3f12886496a09fc212b1a22102b25c60340a8b37",
+    "blob_contrato": "125d45ef4ad61793b554833be2ff4051f9b395a3",
+    "blob_servicio_medido": "23820f8eb4e3a128fa8d7b94d611d4f3a1c38f74",
+    "blob_contrato_medido": "125d45ef4ad61793b554833be2ff4051f9b395a3",
+    "arbol_de_trabajo_igual_a_cabeza": false
+  },
+  "base_de_datos": {
+    "host": "localhost",
+    "puerto": "55432",
+    "nombre": "apex_admin_inactive_cert_5557115f8fa (descartada)"
+  },
+  "cheques": [
+    {
+      "chequeo": "base_efimera_alineada_al_esquema_desplegado",
+      "etapa": "preparacion",
+      "resultado": "OK",
+      "detalle": "apex_admin_inactive_cert_5557115f8fa: prisma db push + ALTER de apps/api/prisma/migrations/20260727042000_authorization_versions/migration.sql (AuthorizationSession.id = uuid)"
+    },
+    {
+      "chequeo": "health_ancla_el_commit_evaluado",
+      "etapa": "arranque",
+      "esperado": "200 con commit == HEAD del arbol",
+      "resultado": "OK",
+      "detalle": "{\"commit\":\"9d5504256388\"}"
+    },
+    {
+      "chequeo": "empresa_administradora_con_sesion_local",
+      "etapa": "inventario",
+      "esperado": "tenant con licencia crown, login por HTTP y token",
+      "resultado": "OK",
+      "detalle": "{\"tenant\":\"4be7dc70-fece-4cae-aedf-d482ba362010\",\"user\":1,\"rol\":\"APEX_ADMIN\"}"
+    },
+    {
+      "chequeo": "el_modulo_admin_esta_habilitado",
+      "etapa": "inventario",
+      "esperado": "GET /admin/roles responde 200 (el filtro de modulo no rechaza)",
+      "resultado": "OK",
+      "detalle": "{\"roles\":17,\"role_id\":15}"
+    },
+    {
+      "chequeo": "crear_cuenta_objetivo",
+      "etapa": "flujo",
+      "esperado": "201 con active=true",
+      "resultado": "OK",
+      "detalle": "{\"user_id\":2,\"role_id\":15}"
+    },
+    {
+      "chequeo": "desactivar_responde_la_fila_inactiva",
+      "etapa": "flujo",
+      "esperado": "200 con active=false",
+      "resultado": "OK",
+      "detalle": "{\"activo\":false}"
+    },
+    {
+      "chequeo": "reactivar_el_mismo_id_no_es_404",
+      "etapa": "flujo",
+      "esperado": "200 con active=true (aqui caia el corte)",
+      "resultado": "FALLO",
+      "detalle": "{\"error\":\"No encontrado\",\"code\":\"NO_ENCONTRADO\",\"request_id\":\"req-7\"}"
+    },
+    {
+      "chequeo": "segundo_ciclo_desactivar_reactivar",
+      "etapa": "flujo",
+      "esperado": "idempotencia: dos vueltas seguidas responden 200",
+      "resultado": "FALLO",
+      "detalle": "{\"error\":\"No encontrado\",\"code\":\"NO_ENCONTRADO\",\"request_id\":\"req-8\"}"
+    },
+    {
+      "chequeo": "inactivar_de_nuevo_para_poner_la_prueba_del_adjunto",
+      "etapa": "flujo",
+      "esperado": "200 con active=false",
+      "resultado": "FALLO",
+      "detalle": "{\"error\":\"No encontrado\",\"code\":\"NO_ENCONTRADO\",\"request_id\":\"req-9\"}"
+    },
+    {
+      "chequeo": "adjuntar_documento_a_cuenta_inactiva_no_es_404",
+      "etapa": "flujo",
+      "esperado": "201 pese a la soft-delete global",
+      "resultado": "FALLO",
+      "detalle": "{\"error\":\"No encontrado\",\"code\":\"NO_ENCONTRADO\",\"request_id\":\"req-a\"}"
+    },
+    {
+      "chequeo": "reactivar_despues_del_adjunto",
+      "etapa": "flujo",
+      "esperado": "200 con active=true: la cuenta vuelve a la pantalla",
+      "resultado": "FALLO",
+      "detalle": "{\"error\":\"No encontrado\",\"code\":\"NO_ENCONTRADO\",\"request_id\":\"req-b\"}"
+    },
+    {
+      "chequeo": "empresa_vecina_con_sesion_propia",
+      "etapa": "aislamiento",
+      "esperado": "hace falta un vecino para medir la frontera",
+      "resultado": "OK",
+      "detalle": "{\"tenant\":\"59ddd6a0-e718-4bd6-8f8e-23f197483d5e\"}"
+    },
+    {
+      "chequeo": "otro_tenant_no_reactiva_ni_en_contra_de_soft_delete",
+      "etapa": "aislamiento",
+      "esperado": "404: la excepcion inactiva no abre la frontera",
+      "resultado": "OK",
+      "detalle": "{\"estado\":404}"
+    },
+    {
+      "chequeo": "el_estado_escrito_es_el_que_lee_la_base",
+      "etapa": "persistencia",
+      "esperado": "active=true en el listado y en la fila",
+      "resultado": "FALLO",
+      "detalle": "{\"error\":\"la cuenta reactivada no aparece en el listado (1 filas: 1)\"}"
+    },
+    {
+      "chequeo": "la_auditoria_deja_las_vueltas",
+      "etapa": "persistencia",
+      "esperado": "al menos 4 registros activated/deactivated",
+      "resultado": "FALLO",
+      "detalle": "{\"error\":\"solo hay 1 movimientos auditados\"}"
+    }
+  ],
+  "total": 15,
+  "ok": 8,
+  "fallos": [
+    "reactivar_el_mismo_id_no_es_404",
+    "segundo_ciclo_desactivar_reactivar",
+    "inactivar_de_nuevo_para_poner_la_prueba_del_adjunto",
+    "adjuntar_documento_a_cuenta_inactiva_no_es_404",
+    "reactivar_despues_del_adjunto",
+    "el_estado_escrito_es_el_que_lee_la_base",
+    "la_auditoria_deja_las_vueltas"
+  ],
+  "limitaciones": [
+    "No toca Supabase Auth: certifica la ruta del API contra PostgreSQL local, que es donde vive el defecto de lectura.",
+    "No sustituye la medicion en navegador ni la pata QA/Produccion despues del despliegue.",
+    "No ejecuta migraciones remotas."
+  ]
+}

@@ -1250,7 +1250,7 @@ async function createUser(tenantId, input, actorId = null, actorRoleName = "") {
 async function updateUser(tenantId, id, input, actorId = null, actorRoleName = "") {
   tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId, __includeInactive: true }, include: { employee: true } });
     const previousSnapshot = userAuditSnapshot(current, current.employee);
     const previousMetadata = current.employee?.metadata || {};
     const previousAccess = previousMetadata.access || {};
@@ -1375,7 +1375,7 @@ async function updateUser(tenantId, id, input, actorId = null, actorRoleName = "
     } else {
       await prisma.employee.create({ data: { ...employeeData, tenant_id: tenantId, user_id: current.id, salary_type: "monthly", hire_date: new Date(), contract_type: "indefinite" } });
     }
-    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId }, include: { role: true, employee: true } });
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId, __includeInactive: true }, include: { role: true, employee: true } });
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
@@ -1396,7 +1396,9 @@ async function setUserActive(tenantId, id, active, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const enabled = toBoolean(active);
-    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });
+    // Sin la excepcion de soft-delete, la cuenta ya inactiva desaparece del alcance global y el
+    // mismo boton que desactiva queda sin como reactivar: desactivar y reactivar son esta funcion.
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId, __includeInactive: true }, include: { employee: true } });
     const previousSnapshot = userAuditSnapshot(current, current.employee);
     await prisma.user.update({
       where: { id: Number(id) },
@@ -1440,7 +1442,7 @@ async function setUserActive(tenantId, id, active, actorId = null) {
 async function updateUserAccess(tenantId, id, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId, __includeInactive: true }, include: { employee: true } });
     const previousSnapshot = userAuditSnapshot(current, current.employee);
     const metadata = current.employee?.metadata || {};
     const access = metadata.access || {};
@@ -1482,7 +1484,7 @@ async function updateUserAccess(tenantId, id, input, actorId = null) {
         }
       });
     }
-    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId }, include: { role: true, employee: true } });
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId, __includeInactive: true }, include: { role: true, employee: true } });
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
@@ -1502,7 +1504,7 @@ async function updateUserAccess(tenantId, id, input, actorId = null) {
 async function addUserDocument(tenantId, id, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId, __includeInactive: true }, include: { employee: true } });
     if (!input.document_type || !input.file_name) {
       const err = new Error("Tipo documental y nombre de archivo son obligatorios");
       err.statusCode = 400;
@@ -1538,7 +1540,7 @@ async function addUserDocument(tenantId, id, input, actorId = null) {
         }
       });
     }
-    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId }, include: { role: true, employee: true } });
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId, __includeInactive: true }, include: { role: true, employee: true } });
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
@@ -1558,7 +1560,7 @@ async function addUserDocument(tenantId, id, input, actorId = null) {
 async function removeUserDocument(tenantId, id, documentId, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId, __includeInactive: true }, include: { employee: true } });
     const metadata = current.employee?.metadata || {};
     const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
     const removed = documents.find((document) => String(document.id) === String(documentId)) || null;
@@ -1578,7 +1580,7 @@ async function removeUserDocument(tenantId, id, documentId, actorId = null) {
         }
       });
     }
-    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId }, include: { role: true, employee: true } });
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId, __includeInactive: true }, include: { role: true, employee: true } });
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,

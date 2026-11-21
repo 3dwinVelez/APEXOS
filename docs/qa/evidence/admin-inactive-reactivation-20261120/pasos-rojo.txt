@@ -1,0 +1,19 @@
+[preparacion] creando apex_admin_inactive_cert_5557115f8fa
+[preparacion] prisma db push sobre la base efimera
+[arranque] cargando apps/api/server.js
+(node:22108) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[arranque] OK health_ancla_el_commit_evaluado :: {"commit":"9d5504256388"}
+[inventario] OK empresa_administradora_con_sesion_local :: {"tenant":"4be7dc70-fece-4cae-aedf-d482ba362010","user":1,"rol":"APEX_ADMIN"}
+[inventario] OK el_modulo_admin_esta_habilitado :: {"roles":17,"role_id":15}
+[flujo] OK crear_cuenta_objetivo :: {"user_id":2,"role_id":15}
+[flujo] OK desactivar_responde_la_fila_inactiva :: {"activo":false}
+[flujo] FALLO reactivar_el_mismo_id_no_es_404 :: {"error":"No encontrado","code":"NO_ENCONTRADO","request_id":"req-7"}
+[flujo] FALLO segundo_ciclo_desactivar_reactivar :: {"error":"No encontrado","code":"NO_ENCONTRADO","request_id":"req-8"}
+[flujo] FALLO inactivar_de_nuevo_para_poner_la_prueba_del_adjunto :: {"error":"No encontrado","code":"NO_ENCONTRADO","request_id":"req-9"}
+[flujo] FALLO adjuntar_documento_a_cuenta_inactiva_no_es_404 :: {"error":"No encontrado","code":"NO_ENCONTRADO","request_id":"req-a"}
+[flujo] FALLO reactivar_despues_del_adjunto :: {"error":"No encontrado","code":"NO_ENCONTRADO","request_id":"req-b"}
+[aislamiento] OK empresa_vecina_con_sesion_propia :: {"tenant":"59ddd6a0-e718-4bd6-8f8e-23f197483d5e"}
+[aislamiento] OK otro_tenant_no_reactiva_ni_en_contra_de_soft_delete :: {"estado":404}
+[persistencia] FALLO el_estado_escrito_es_el_que_lee_la_base :: {"error":"la cuenta reactivada no aparece en el listado (1 filas: 1)"}
+[persistencia] FALLO la_auditoria_deja_las_vueltas :: {"error":"solo hay 1 movimientos auditados"}
