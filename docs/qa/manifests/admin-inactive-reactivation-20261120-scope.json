@@ -1,0 +1,157 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "admin-inactive-reactivation-20261120",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-admin-inactive-reactivation-20261120",
+  "certified_commit": "b3187c5b62d195d04dfa452b35c658db5b481071",
+  "base_commit": "81cd253a2dea827bda909cb0ce7c17d27877757a",
+  "base_commits": {
+    "develop": "81cd253a2dea827bda909cb0ce7c17d27877757a"
+  },
+  "target_head": "81cd253a2dea827bda909cb0ce7c17d27877757a",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "b3187c5b62d195d04dfa452b35c658db5b481071",
+    "origen_certificado_en_desarrollo": [
+      "cca4d048"
+    ],
+    "replay_sobre_develop": "Replay puntual del commit cca4d048 de desarrollo sobre el tip de develop 81cd253a, en su propia worktree auxiliar (codex/qa-admin-inactive-reactivation-20261120). No es un merge de desarrollo: desarrollo..develop trae el resto de los frentes abiertos (evidencia de marcacion en Storage, comercio, torre de control) que todavia no tienen su propia pata certificada y no viajan con este paquete.",
+    "excluido_explicitamente": [
+      "agents/**",
+      ".qoder/skills/**",
+      "docs/briefs/**",
+      "apps/control-tower/**"
+    ],
+    "motivo_de_la_exclusion": "El contexto vivo del equipo (agents/, .qoder/skills/) no existe en las ramas de integracion: su version actual vive solo en desarrollo, que es la fuente de version del equipo. El brief de la intervencion se queda ahi por el mismo motivo. apps/control-tower/** reposa solo en desarrollo por regla de gobernanza y no se promueve.",
+    "como_se_le_yo_que_no_es_un_merge": "El commit certificado b3187c5b vive en la rama auxiliar y su padre es el tip de develop 81cd253a. Trae el mismo contenido de cca4d048 (service.js y su contrato) verificado por igualdad de blobs, mas el certificador HTTP y su evidencia generada sobre el arbol del destino. candidate_source.branch dice de donde viene el trabajo (desarrollo); origen_certificado_en_desarrollo lista el sha original."
+  },
+  "change_intent": {
+    "summary": "La cuenta inactiva vuelve a ser administrable desde Administracion. El alcance global de borrado logico (apps/api/src/core/prisma.js) inyecta active:true a toda lectura de User, y nueve lecturas de entrada de apps/api/src/modules/admin/service.js no pedian la excepcion __includeInactive: al desactivar una cuenta, la misma pantalla la perdia de vista y el boton que revierte el estado, el bloqueo de acceso, la edicion y el adjunto de documentos respondian 404 NO_ENCONTRADO sobre una fila que si existe. El arreglo agrega __includeInactive: a esas lecturas sin soltar el filtro de tenant_id en ninguna. Toca un archivo de logica del modulo admin, su contrato unitario, un certificador HTTP nuevo y la evidencia: no toca Prisma ni el esquema, no hay migraciones, no toca la capa de alertas del cliente ya publicada.",
+    "modules": [
+      "api-admin",
+      "api-autenticacion-sesion",
+      "certification-harness",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/admin/service.js" },
+    { "status": "M", "file": "apps/api/test/admin-user-status-regression.test.js" },
+    { "status": "A", "file": "scripts/certifications/admin-inactive-reactivation-http-local.js" },
+    { "status": "A", "file": "docs/qa/evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json" },
+    { "status": "A", "file": "docs/qa/evidence/admin-inactive-reactivation-20261120/certificacion-rojo-base-http-local.json" },
+    { "status": "A", "file": "docs/qa/evidence/admin-inactive-reactivation-20261120/contrato-candidato.txt" },
+    { "status": "A", "file": "docs/qa/evidence/admin-inactive-reactivation-20261120/contrato-unitario-local.json" },
+    { "status": "A", "file": "docs/qa/evidence/admin-inactive-reactivation-20261120/lectura.txt" },
+    { "status": "A", "file": "docs/qa/evidence/admin-inactive-reactivation-20261120/pasos-rojo.txt" },
+    { "status": "A", "file": "docs/qa/evidence/admin-inactive-reactivation-20261120/pasos-verde.txt" },
+    { "status": "A", "file": "docs/qa/evidence/admin-inactive-reactivation-20261120/regresion-admin.txt" },
+    { "status": "A", "file": "docs/qa/evidence/admin-inactive-reactivation-20261120/regresion-tenant-sesion.txt" },
+    { "status": "A", "file": "docs/qa/evidence/admin-inactive-reactivation-20261120/rojo-base-desarrollo.txt" },
+    { "status": "A", "file": "docs/qa/manifests/admin-inactive-reactivation-20261120-scope.json" },
+    { "status": "A", "file": "docs/qa/manifests/admin-inactive-reactivation-20261120-preqa.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/test/admin-user-status-regression.test.js",
+    "scripts/certifications/admin-inactive-reactivation-http-local.js",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/certificacion-rojo-base-http-local.json",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/contrato-candidato.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/contrato-unitario-local.json",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/lectura.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/pasos-rojo.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/pasos-verde.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/regresion-admin.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/regresion-tenant-sesion.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/rojo-base-desarrollo.txt",
+    "docs/qa/manifests/admin-inactive-reactivation-20261120-scope.json",
+    "docs/qa/manifests/admin-inactive-reactivation-20261120-preqa.json"
+  ],
+  "allowed_deletions": [],
+  "certified_functional_paths": [
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/test/admin-user-status-regression.test.js",
+    "scripts/certifications/admin-inactive-reactivation-http-local.js",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/certificacion-rojo-base-http-local.json",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/contrato-candidato.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/contrato-unitario-local.json",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/lectura.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/pasos-rojo.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/pasos-verde.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/regresion-admin.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/regresion-tenant-sesion.txt",
+    "docs/qa/evidence/admin-inactive-reactivation-20261120/rojo-base-desarrollo.txt"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "el_mismo_boton_que_desactiva_puede_reactivar_sin_404",
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json",
+        "../evidence/admin-inactive-reactivation-20261120/contrato-candidato.txt"
+      ]
+    },
+    {
+      "name": "la_excepcion_de_borrado_logico_no_abre_la_frontera_del_tenant",
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json",
+        "../evidence/admin-inactive-reactivation-20261120/lectura.txt"
+      ]
+    },
+    {
+      "name": "adjuntar_y_quitar_documento_y_bloquear_el_acceso_de_una_cuenta_inactiva_dejan_de_ser_404",
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json",
+        "../evidence/admin-inactive-reactivation-20261120/contrato-unitario-local.json"
+      ]
+    },
+    {
+      "name": "el_estado_que_responde_el_api_es_el_que_lee_la_base_y_el_listado_y_la_auditoria_registra_las_vueltas",
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/pasos-verde.txt",
+        "../evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json"
+      ]
+    },
+    {
+      "name": "el_arnes_es_capaz_de_fallar: la pata de contraste cambia solo el blob de service.js por el de develop 23820f8eb4e3 y produce siete rojos con la firma NO_ENCONTRADO del reporte del dueño",
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/certificacion-rojo-base-http-local.json",
+        "../evidence/admin-inactive-reactivation-20261120/pasos-rojo.txt",
+        "../evidence/admin-inactive-reactivation-20261120/rojo-base-desarrollo.txt"
+      ]
+    },
+    {
+      "name": "autorizacion, sesion y capacidades de administracion del destino no suman rojos sobre el arbol del candidato",
+      "status": "passed",
+      "evidence": [
+        "../evidence/admin-inactive-reactivation-20261120/regresion-admin.txt",
+        "../evidence/admin-inactive-reactivation-20261120/regresion-tenant-sesion.txt"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario exacto del diff origin/develop 81cd253a..tip del candidato (rama codex/qa-admin-inactive-reactivation-20261120): 15 rutas (13 A, 2 M, 0 D), cero eliminaciones. certified_commit b3187c5b es el commit de aplicacion y trae las 13 rutas funcionales; el tip agrega unicamente estos dos manifiestos, que la compuerta trata como gobernanza.",
+    "equivalencia_con_desarrollo": "apps/api/src/modules/admin/service.js y apps/api/test/admin-user-status-regression.test.js son byte a byte identicos al commit cca4d048 de desarrollo (blob 3f12886496a0 y blob 125d45ef4ad6 en ambos arboles). El contrato ya vivia en develop con tres casos (0d5caa7f); el paquete le suma cuatro.",
+    "medicion": "Flujo real por HTTP sobre Fastify + Prisma + PostgreSQL local en base efimera, sin mocks: 15/15 verdes sobre el candidato y 8/15 con la pata de contraste, con la firma exacta del reporte. Contrato unitario 7/7 sobre el candidato y 3/7 sobre la base. Regresion admin 38/38 y tenant/sesion 26/26. Detalle y limitaciones en ../evidence/admin-inactive-reactivation-20261120/lectura.txt.",
+    "puente_de_arbol": "Las patas HTTP se corrieron en el arbol de trabajo de desarrollo (commit 9d550425), donde vive node_modules, y cada corrida ancla el commit servido contra /health y declara el blob de service.js efectivamente ejecutado; el candidato lleva esos mismos blobs. Las suites unitarias y de regresion se corrieron sobre el arbol de la rama auxiliar.",
+    "pendiente_de_compuerta": "Esta pata no toca Supabase Auth ni abre el navegador. La lectura de la cuenta reactivada en pantalla, la sincronizacion con Supabase y la reactivacion real en campo se miden contra el ambiente desplegado con scripts/certifications/admin-user-login-sync.js despues del despliegue en QA, y esa evidencia es la que autoriza develop -> main."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-20T21:40:00-05:00",
+    "instruction": "procede explicitamente con la promocion completa autorizado de mi parte",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo completo desarrollo -> develop -> main con sus compuertas y su despliegue. No otorga force push, reescritura de historia, borrado de ramas, cambios de infraestructura o secretos, ni migraciones remotas: las dos migraciones sin aplicar en la nube (recibidas de comercio y apex-control) siguen esperando autorizacion independiente y no viajan en este paquete."
+  }
+}
