@@ -3131,6 +3131,10 @@ async function createOwnPunch(tenantId, user, input) {
       throw validationError("Este telefono esta registrado para mas de un empleado. Pide a un administrador que restablezca el registro de quien no es dueño del telefono.", 403, "DISPOSITIVO_COMPARTIDO");
     }
   }
+  // Maestro de rostros: la selfie se compara con el rostro registrado y la marcacion
+  // queda SENALADA si no coincide. Nunca la rechaza (ver faceMatchForPunch).
+  const faceMatch = await faceMatchForPunch(tenantId, employee.id, identity.identity_photo);
+  if (faceMatch && identity.identity_verification) identity.identity_verification = { ...identity.identity_verification, face_match: faceMatch };
   const { identity: _signature, identity_photo: _photo, ...metadata } = input.metadata || {};
   const verifiedInput = { ...input, metadata: { ...metadata, ...identity } };
   return createPunch(tenantId, ownOperationalInput(verifiedInput, employee, user), user, { scope: "own" });
@@ -3417,6 +3421,138 @@ async function createCrewPunch(tenantId, user, deviceId, input = {}) {
     }
   };
   return createPunch(tenantId, crewInput, user, { scope: "shared_device", employeeId });
+}
+
+// ------------------------------------------------------------------------------------
+// Maestro de rostros (varios empleados en el mismo celular). Cada empleado registra su
+// rostro una vez; cada selfie de marcacion se compara con el y la marcacion queda
+// SENALADA si no coincide (nunca se rechaza por el rostro). Ver face-identity.js.
+// ------------------------------------------------------------------------------------
+const faceIdentity = require("./face-identity");
+const faceConsent = require("./face-consent");
+const MAX_FACE_PHOTO_BYTES = 2 * 1024 * 1024;
+
+async function findActiveFaceEnrollment(tenantId, employeeId) {
+  return prisma.runWithTenant(tenantId, () => prisma.hrFaceEnrollment.findFirst({
+    where: { tenant_id: tenantId, employee_id: employeeId, active: true },
+    orderBy: { id: "desc" }
+  }));
+}
+
+async function getOwnFaceEnrollment(tenantId, user) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  const enrollment = await findActiveFaceEnrollment(tenantId, employee.id);
+  const config = faceIdentity.faceConfig();
+  return {
+    enrolled: Boolean(enrollment),
+    enrolled_at: enrollment?.enrolled_at || null,
+    model: enrollment?.model || faceIdentity.FACE_MODEL,
+    // El embedding PROPIO viaja al celular para comparar la selfie sin senal.
+    embedding: enrollment?.embedding || null,
+    match_threshold: config.matchThreshold,
+    consent: { version: faceConsent.FACE_CONSENT_VERSION, text: faceConsent.FACE_CONSENT_TEXT }
+  };
+}
+
+async function enrollOwnFace(tenantId, user, input = {}) {
+  if (input.consent_accepted !== true || input.consent_version !== faceConsent.FACE_CONSENT_VERSION) {
+    throw validationError("Debes aceptar la autorizacion de datos biometricos vigente para registrar tu rostro.", 400, "CONSENTIMIENTO_REQUERIDO");
+  }
+  const employee = await getCurrentEmployee(tenantId, user);
+  if (await findActiveFaceEnrollment(tenantId, employee.id)) {
+    throw validationError("Ya tienes un rostro registrado. Para cambiarlo, pide a un administrador que restablezca el registro.", 409, "ROSTRO_YA_REGISTRADO");
+  }
+  const photo = input.photo && typeof input.photo === "object" ? input.photo : null;
+  if (!photo?.base64 && !photo?.base64_data) throw validationError("Toma la foto de tu rostro.", 400, "FOTO_REQUERIDA");
+  const { stored } = mobileIdentity.normalizeSelfie(photo, { maxBytes: MAX_FACE_PHOTO_BYTES });
+  const analysis = await faceIdentity.enrollmentFromImage(faceIdentity.dataUrlBytes(stored.base64_data));
+  if (!analysis.ok) throw validationError(analysis.message, 422, analysis.code);
+  const now = new Date();
+  const saved = await prisma.runWithTenant(tenantId, () => prisma.hrFaceEnrollment.create({
+    data: {
+      tenant_id: tenantId,
+      employee_id: employee.id,
+      user_id: user?.id || null,
+      embedding: analysis.embedding,
+      model: analysis.model,
+      reference_photo: stored,
+      consent_version: faceConsent.FACE_CONSENT_VERSION,
+      consent_text_sha256: faceConsent.FACE_CONSENT_SHA256,
+      consent_at: now,
+      active: true,
+      enrolled_by: user?.id || null,
+      enrolled_at: now
+    }
+  }));
+  return {
+    enrolled: true,
+    enrolled_at: saved.enrolled_at,
+    model: saved.model,
+    embedding: saved.embedding,
+    match_threshold: faceIdentity.faceConfig().matchThreshold,
+    antispoof: analysis.antispoof,
+    liveness: analysis.liveness
+  };
+}
+
+async function resetEmployeeFace(tenantId, user, employeeId, input = {}) {
+  if (!(user?.role?.name === "APEX_ADMIN" || isAdministrativeRole(user?.role))) {
+    throw validationError("Solo un administrador puede restablecer el rostro registrado.", 403, "ROSTRO_RESTABLECER_DENEGADO");
+  }
+  const id = optionalNumericId(employeeId);
+  if (!id) throw validationError("Empleado invalido.", 400, "EMPLEADO_INVALIDO");
+  return prisma.runWithTenant(tenantId, async () => {
+    const employee = await prisma.employee.findFirst({ where: { id, tenant_id: tenantId } });
+    if (!employee) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
+    const enrollment = await prisma.hrFaceEnrollment.findFirst({ where: { tenant_id: tenantId, employee_id: id, active: true }, orderBy: { id: "desc" } });
+    if (!enrollment) return { ok: true, employee_id: id, previous: null };
+    await prisma.hrFaceEnrollment.update({
+      where: { id: enrollment.id },
+      data: { active: false, revoked_by: user?.id || null, revoked_at: new Date(), revoke_reason: String(input.reason || "").trim().slice(0, 200) || null }
+    });
+    return { ok: true, employee_id: id, previous: { enrolled_at: enrollment.enrolled_at } };
+  });
+}
+
+async function listFaceEnrollments(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const rows = await prisma.hrFaceEnrollment.findMany({
+      where: { tenant_id: tenantId, active: true },
+      orderBy: { enrolled_at: "desc" },
+      take: 1000
+    });
+    const employees = rows.length
+      ? await prisma.employee.findMany({ where: { tenant_id: tenantId, id: { in: rows.map((r) => r.employee_id) } }, include: { user: { select: safeUserSelect } } })
+      : [];
+    const byId = new Map(employees.map((e) => [e.id, e]));
+    // Sin embedding: el monitor no lo necesita.
+    return rows.map((row) => ({
+      id: row.id,
+      employee_id: row.employee_id,
+      employee_name: employeeDisplayName(byId.get(row.employee_id)) || `Empleado ${row.employee_id}`,
+      employee_code: byId.get(row.employee_id)?.code || null,
+      reference_photo: row.reference_photo,
+      model: row.model,
+      consent_version: row.consent_version,
+      consent_at: row.consent_at,
+      enrolled_at: row.enrolled_at
+    }));
+  });
+}
+
+// Evalua la selfie de una marcacion contra el rostro registrado. Nunca lanza.
+async function faceMatchForPunch(tenantId, employeeId, storedPhoto) {
+  try {
+    if (!storedPhoto?.base64_data) return null;
+    const enrollment = await findActiveFaceEnrollment(tenantId, employeeId);
+    if (!enrollment) return { status: "sin_registro" };
+    return await faceIdentity.evaluateSelfie({
+      enrolledEmbedding: enrollment.embedding,
+      selfieBuffer: faceIdentity.dataUrlBytes(storedPhoto.base64_data)
+    });
+  } catch (error) {
+    return { status: "no_disponible", reason: String(error?.message || error).slice(0, 160) };
+  }
 }
 
 async function createGpsPing(tenantId, input) {
@@ -8280,6 +8416,10 @@ async function listPayroll(tenantId, query = {}) {
 }
 
 module.exports = {
+  getOwnFaceEnrollment,
+  enrollOwnFace,
+  resetEmployeeFace,
+  listFaceEnrollments,
   createSharedDeviceChallenge,
   registerSharedDevice,
   listSharedDevices,

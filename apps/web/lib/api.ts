@@ -276,7 +276,9 @@ function shouldBlockHrWriteFallback(path: string, method: string) {
   const hrSelfServiceWrite = pathname.startsWith("/api/v1/hr/self/");
   // Maestro de celulares del camion y sus marcaciones: solo existen en la API operativa.
   const hrSharedDeviceWrite = pathname.startsWith("/api/v1/hr/shared-devices");
-  return method !== "GET" && (criticalWritePaths.has(pathname) || hrRouteDetailWrite || hrSelfServiceWrite || hrSharedDeviceWrite);
+  // Maestro de rostros: el restablecimiento solo existe en la API operativa.
+  const hrFaceWrite = /^\/api\/v1\/hr\/employees\/[^/]+\/face-enrollment$/.test(pathname);
+  return method !== "GET" && (criticalWritePaths.has(pathname) || hrRouteDetailWrite || hrSelfServiceWrite || hrSharedDeviceWrite || hrFaceWrite);
 }
 
 async function refreshSessionToken() {

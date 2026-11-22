@@ -2345,6 +2345,37 @@ model HrSharedDevice {
   @@index([tenant_id, vehicle_plate, active])
 }
 
+// Maestro de rostros para marcar jornada (M-17).
+// Varios empleados marcan en el MISMO celular y el lector de huella del telefono no
+// dice de quien es la huella. Cada empleado registra su rostro (con autorizacion de
+// datos biometricos, Ley 1581) y cada selfie de marcacion se compara con el.
+// embedding: vector del modelo (model); reference_photo: la foto del registro.
+// Un registro activo por empleado: cambiarlo exige restablecimiento de un administrador.
+model HrFaceEnrollment {
+  id                  Int       @id @default(autoincrement())
+  tenant_id           String
+  employee_id         Int
+  user_id             Int?
+  embedding           Json
+  model               String
+  reference_photo     Json
+  consent_version     String
+  consent_text_sha256 String
+  consent_at          DateTime
+  active              Boolean   @default(true)
+  enrolled_by         Int?
+  enrolled_at         DateTime  @default(now())
+  revoked_by          Int?
+  revoked_at          DateTime?
+  revoke_reason       String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  @@map("hr_face_enrollments")
+  @@index([tenant_id, employee_id, active])
+  @@index([tenant_id, active])
+}
+
 model ProcessedWorkday {
   id                                      Int           @id @default(autoincrement())
   tenant_id                               String

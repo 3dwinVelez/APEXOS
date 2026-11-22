@@ -117,6 +117,29 @@ const crewPunchSchema = {
   }
 };
 
+// Registro del rostro propio (maestro de rostros). La foto viaja como data URL.
+const faceEnrollmentSchema = {
+  body: {
+    type: "object",
+    required: ["photo", "consent_accepted", "consent_version"],
+    properties: {
+      consent_accepted: { type: "boolean" },
+      consent_version: { type: "string", maxLength: 40 },
+      photo: {
+        type: "object",
+        required: ["base64"],
+        properties: {
+          base64: { type: "string", minLength: 100 },
+          name: { type: "string", maxLength: 120 },
+          type: { type: "string", maxLength: 40 },
+          size: { type: "integer" }
+        }
+      },
+      client_check: { type: "object" }
+    }
+  }
+};
+
 const routeSchema = {
   body: {
     type: "object",
@@ -838,6 +861,7 @@ const preopSubmitSchema = {
 };
 
 module.exports = {
+  faceEnrollmentSchema,
   sharedDeviceRegistrationSchema,
   crewPunchSchema,
   scheduleSchema,
