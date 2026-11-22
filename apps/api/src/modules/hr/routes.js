@@ -78,6 +78,17 @@ async function hrRoutes(fastify) {
   fastify.post("/hr/self/time-punches", { schema: schemas.punchSchema, preHandler: ownWrite, config: { rateLimit: { max: 600, timeWindow: "1 minute" } } }, (request) => service.createOwnPunch(request.user?.tenant_id, request.user, request.body));
   fastify.post("/hr/self/work-activities", { schema: schemas.workActivitySchema, preHandler: ownWrite }, (request) => service.createOwnWorkActivity(request.user?.tenant_id, request.user, request.body));
 
+  // Maestro de celulares compartidos (camion: un celular, dos empleados). El registro y
+  // la revocacion exigen ademas rol administrativo (ver service.assertSharedDeviceAdmin).
+  // La tripulacion y la marcacion usan la sesion del tripulante: lo que autoriza es la
+  // firma del celular registrado + la malla del dia en esa placa.
+  fastify.post("/hr/shared-devices/registration-challenge", { preHandler: requirePermission("hr", "write") }, (request) => service.createSharedDeviceChallenge(request.user?.tenant_id, request.user));
+  fastify.post("/hr/shared-devices", { schema: schemas.sharedDeviceRegistrationSchema, preHandler: requirePermission("hr", "write") }, async (request, reply) => reply.code(201).send(await service.registerSharedDevice(request.user?.tenant_id, request.user, request.body)));
+  fastify.get("/hr/shared-devices", { preHandler: requirePermission("hr", "read") }, (request) => service.listSharedDevices(request.user?.tenant_id, request.query));
+  fastify.post("/hr/shared-devices/:id/revoke", { preHandler: requirePermission("hr", "write") }, (request) => service.revokeSharedDevice(request.user?.tenant_id, request.user, request.params.id, request.body || {}));
+  fastify.get("/hr/shared-devices/:deviceId/crew", { preHandler: ownRead }, (request) => service.getSharedDeviceCrewToday(request.user?.tenant_id, request.user, request.params.deviceId));
+  fastify.post("/hr/shared-devices/:deviceId/punches", { schema: schemas.crewPunchSchema, preHandler: ownWrite, config: { rateLimit: { max: 600, timeWindow: "1 minute" } } }, (request) => service.createCrewPunch(request.user?.tenant_id, request.user, request.params.deviceId, request.body));
+
   fastify.get("/hr/schedules", { preHandler: requirePermission("hr", "read") }, (request) => service.listSchedules(request.user?.tenant_id, request.query));
   fastify.post("/hr/schedules", { schema: schemas.scheduleSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createSchedule(request.user?.tenant_id, request.body));
   fastify.patch("/hr/schedules/:id", { schema: schemas.scheduleSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateSchedule(request.user?.tenant_id, request.params.id, request.body));

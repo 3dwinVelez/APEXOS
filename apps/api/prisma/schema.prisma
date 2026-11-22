@@ -2311,6 +2311,40 @@ model TimePunch {
   @@index([tenant_id, date, punched_at])
 }
 
+// Maestro de celulares compartidos para marcar jornada (M-17).
+// Un camion tiene UN celular y lo usan conductor y auxiliar. El celular se registra
+// con una llave de acceso WebAuthn (huella del telefono): la firma prueba que la
+// marcacion salio de ESE celular autorizado; la selfie de cada marcacion prueba
+// QUIEN marco, porque el lector del telefono acepta cualquier huella inscrita.
+// Pueden marcar en el celular los empleados con malla de HOY en la misma placa.
+model HrSharedDevice {
+  id            Int       @id @default(autoincrement())
+  tenant_id     String
+  device_id     String
+  credential_id String
+  public_key    String
+  key_algorithm String    @default("WEBAUTHN_ES256")
+  sign_count    Int       @default(0)
+  rp_id         String
+  vehicle_plate String
+  label         String?
+  device_model  String?
+  active        Boolean   @default(true)
+  enrolled_by   Int?
+  enrolled_at   DateTime  @default(now())
+  revoked_by    Int?
+  revoked_at    DateTime?
+  revoke_reason String?
+  last_used_at  DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  @@map("hr_shared_devices")
+  @@unique([tenant_id, device_id])
+  @@unique([tenant_id, credential_id])
+  @@index([tenant_id, vehicle_plate, active])
+}
+
 model ProcessedWorkday {
   id                                      Int           @id @default(autoincrement())
   tenant_id                               String
