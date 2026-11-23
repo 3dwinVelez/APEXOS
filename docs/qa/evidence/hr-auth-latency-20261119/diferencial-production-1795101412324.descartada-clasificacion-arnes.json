@@ -1,0 +1,240 @@
+{
+  "evento": "hr_auth_latency_diferencial",
+  "ejecutado_en": "2026-11-19T15:16:52.322Z",
+  "rama": "desarrollo",
+  "commit": "b5969ad4",
+  "ambiente": "production",
+  "project_ref": "jzbwzmkidfthknsohhnr",
+  "muestra_usuarios": 3,
+  "casos": 18,
+  "preservacion": {
+    "decisiones_revisadas": 18,
+    "divergencias": 0,
+    "lista": [],
+    "anomalías_401": 0,
+    "lista_anomalias": []
+  },
+  "latencia_ms": {
+    "cinco_sentencias": {
+      "mediana": 570.9,
+      "min": 568.5,
+      "max": 1141.9
+    },
+    "una_sentencia": {
+      "mediana": 144.6,
+      "min": 143,
+      "max": 287.7
+    },
+    "factor": 0.25,
+    "presupuesto_factor": 0.6
+  },
+  "cobertura": {
+    "ACEPTA": 9,
+    "MIDE_Y_DEJA_PASAR": 9,
+    "RECHAZA": 0,
+    "RECHAZA_INTERNO": 0
+  },
+  "corridas": [
+    {
+      "caso": "3f2313 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1141.9,
+      "nueva_ms": 287.7,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 854.9,
+      "nueva_ms": 286.1,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "3f2313 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 570.8,
+      "nueva_ms": 144.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 570.1,
+      "nueva_ms": 144.2,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "3f2313 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 569.5,
+      "nueva_ms": 144,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 573,
+      "nueva_ms": 144.7,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 568.6,
+      "nueva_ms": 144.6,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 712.2,
+      "nueva_ms": 145.5,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "3f2313 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 571,
+      "nueva_ms": 144.5,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 570.4,
+      "nueva_ms": 143,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "3f2313 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 570.8,
+      "nueva_ms": 144.6,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 569.3,
+      "nueva_ms": 149.3,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 569.5,
+      "nueva_ms": 144.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 731.3,
+      "nueva_ms": 144.1,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "3f2313 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 572,
+      "nueva_ms": 143.3,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 568.5,
+      "nueva_ms": 143.4,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "3f2313 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 571.7,
+      "nueva_ms": 143.4,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 570.9,
+      "nueva_ms": 283.4,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    }
+  ],
+  "omitidos": [],
+  "veredicto": "VERDE",
+  "lectura": "Una sentencia decide igual que cinco en 18 casos y mediana 145 ms vs 571 ms."
+}

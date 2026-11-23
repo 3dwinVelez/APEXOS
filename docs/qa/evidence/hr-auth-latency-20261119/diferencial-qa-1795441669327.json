@@ -1,0 +1,240 @@
+{
+  "evento": "hr_auth_latency_diferencial",
+  "ejecutado_en": "2026-11-23T13:47:49.325Z",
+  "rama": "codex/qa-auth-latency-single-statement-20261119",
+  "commit": "61b41fd1",
+  "ambiente": "qa",
+  "project_ref": "jbirkghkekuifgfsgquq",
+  "muestra_usuarios": 3,
+  "casos": 18,
+  "preservacion": {
+    "decisiones_revisadas": 18,
+    "divergencias": 0,
+    "lista": [],
+    "anomalías_401": 0,
+    "lista_anomalias": []
+  },
+  "latencia_ms": {
+    "cinco_sentencias": {
+      "mediana": 1690.1,
+      "min": 1245.9,
+      "max": 1778
+    },
+    "una_sentencia": {
+      "mediana": 445.8,
+      "min": 443.1,
+      "max": 461.8
+    },
+    "factor": 0.26,
+    "presupuesto_factor": 0.6
+  },
+  "cobertura": {
+    "ACEPTA": 6,
+    "MIDE_Y_DEJA_PASAR": 9,
+    "RECHAZA": 3,
+    "RECHAZA_INTERNO": 0
+  },
+  "corridas": [
+    {
+      "caso": "f5bfb2 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1770.6,
+      "nueva_ms": 461.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1694.7,
+      "nueva_ms": 447.4,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "f5bfb2 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1245.9,
+      "nueva_ms": 446.1,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1691.7,
+      "nueva_ms": 445.9,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "f5bfb2 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1691.4,
+      "nueva_ms": 445.4,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "RECHAZA",
+      "antigua_ms": 1343.6,
+      "nueva_ms": 449.7,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1694.2,
+      "nueva_ms": 444.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1778,
+      "nueva_ms": 447.9,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "f5bfb2 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1247,
+      "nueva_ms": 444.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1687.4,
+      "nueva_ms": 444.9,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "f5bfb2 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1688.6,
+      "nueva_ms": 445.3,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "RECHAZA",
+      "antigua_ms": 1250.8,
+      "nueva_ms": 449.3,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1691.8,
+      "nueva_ms": 443.1,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1690.1,
+      "nueva_ms": 444.2,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "f5bfb2 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1330.9,
+      "nueva_ms": 445,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1689.1,
+      "nueva_ms": 445.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "f5bfb2 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1692.7,
+      "nueva_ms": 443.7,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "RECHAZA",
+      "antigua_ms": 1247.7,
+      "nueva_ms": 447.5,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    }
+  ],
+  "omitidos": [],
+  "veredicto": "VERDE",
+  "lectura": "Una sentencia decide igual que cinco en 18 casos y mediana 446 ms vs 1690 ms."
+}

@@ -1,0 +1,240 @@
+{
+  "evento": "hr_auth_latency_diferencial",
+  "ejecutado_en": "2026-11-23T13:48:08.975Z",
+  "rama": "codex/qa-auth-latency-single-statement-20261119",
+  "commit": "61b41fd1",
+  "ambiente": "production",
+  "project_ref": "jzbwzmkidfthknsohhnr",
+  "muestra_usuarios": 3,
+  "casos": 18,
+  "preservacion": {
+    "decisiones_revisadas": 18,
+    "divergencias": 0,
+    "lista": [],
+    "anomalías_401": 0,
+    "lista_anomalias": []
+  },
+  "latencia_ms": {
+    "cinco_sentencias": {
+      "mediana": 527.3,
+      "min": 524.4,
+      "max": 1316.4
+    },
+    "una_sentencia": {
+      "mediana": 133.3,
+      "min": 131,
+      "max": 268.5
+    },
+    "factor": 0.25,
+    "presupuesto_factor": 0.6
+  },
+  "cobertura": {
+    "ACEPTA": 6,
+    "MIDE_Y_DEJA_PASAR": 9,
+    "RECHAZA": 3,
+    "RECHAZA_INTERNO": 0
+  },
+  "corridas": [
+    {
+      "caso": "3f2313 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1316.4,
+      "nueva_ms": 268.5,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 659.3,
+      "nueva_ms": 136,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "3f2313 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 530.9,
+      "nueva_ms": 265.9,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 659,
+      "nueva_ms": 133.3,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "3f2313 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 659.2,
+      "nueva_ms": 134.7,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "RECHAZA",
+      "antigua_ms": 532.8,
+      "nueva_ms": 135.3,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 524.4,
+      "nueva_ms": 132.5,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 658.3,
+      "nueva_ms": 134.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "3f2313 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 525.5,
+      "nueva_ms": 132.6,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 526.5,
+      "nueva_ms": 132.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "3f2313 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 526.7,
+      "nueva_ms": 132.7,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "RECHAZA",
+      "antigua_ms": 524.9,
+      "nueva_ms": 134.1,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 524.4,
+      "nueva_ms": 131,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 663,
+      "nueva_ms": 132.9,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "3f2313 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 526.7,
+      "nueva_ms": 133,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 526.1,
+      "nueva_ms": 132.3,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "3f2313 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 527.3,
+      "nueva_ms": 135.1,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "RECHAZA",
+      "antigua_ms": 525.1,
+      "nueva_ms": 131.4,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    }
+  ],
+  "omitidos": [],
+  "veredicto": "VERDE",
+  "lectura": "Una sentencia decide igual que cinco en 18 casos y mediana 133 ms vs 527 ms."
+}
