@@ -211,13 +211,91 @@ de 3 días (2026-11-21 05:00Z a 2026-11-24 05:00Z, jornada colombiana), leídos 
   `MARCACION_DIFERIDA_EXPIRADA`, 400 de formato) siguen ahí y **no** los toca esta pierna: son conducta
   correcta del producto.
 
+## El DESPUÉS en Producción, medido sobre el commit desplegado
+
+### Cómo se publicó (forma medida, no asumida)
+
+`origin/main` seguía en `4be0dd5a3262` cuando se revalidó antes de mergear, así que la base del candidato
+era exactamente el tip del destino. La compuerta `promote develop-to-main` respondió `exit 0` con la
+autorización del dueño, y su control negativo (la misma invocación sin `APEXOS_PROMOTION_AUTH`) devolvió
+`GOBIERNO GIT BLOQUEADO`, que es lo que prueba que la compuerta puede fallar. El merge local no-ff dejó
+`9cd7a0cf78d9` con padres `4be0dd5a` + `3b8a32ed`, **árbol idéntico al candidato** (`git diff 3b8a32ed
+9cd7a0cf` vacío) y net diff contra el destino de **40 rutas, las mismas 40 del inventario, cero
+borrados**; las dos compuertas (`qa:promotion:scope`, `qa:approval:evidence`) se reverdecieron sobre el
+propio commit de merge. Se empujó `main` a las **14:58:00Z** (`origin/main@{2026-11-23T09:58:00-05:00}`,
+update by push).
+
+Identidad servida a las 15:16:58Z: `/health` de Producción `commit 9cd7a0cf78d9` y `/health` de QA
+`commit de7af667786a`. Los dos ambientes corren el arreglo.
+
+### 1. Presupuesto del monitor (`presupuesto-produccion-despues.json`) → `status: passed`
+
+5 muestras por endpoint, la misma sonda, mismo tenant, mismo host
+(`apexos-api-prod-production.up.railway.app`), sobre el build nuevo:
+
+| Lectura | p50 ANTES | p50 DESPUÉS | p95 ANTES | p95 DESPUÉS | Δ p95 | Bytes | Inline |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Mapa del día (`operations_map`) | 3 625 ms | 1 804 ms | 5 000 ms | **1 987 ms** | −60 % | 299 B = 299 B | 0 |
+| Contadores de eventos (`event_summaries`) | 4 807 ms | 2 844 ms | 5 511 ms | **2 922 ms** | −47 % | 6 693 B = 6 693 B | 0 |
+| Asistencia (`attendance`) | 2 878 ms | 1 226 ms | 2 994 ms | **1 243 ms** | −59 % | 2 B = 2 B | 0 |
+
+Los bytes servidos son idénticos en las tres lecturas: lo que cambió es el tiempo, no la carga, que es
+exactamente lo que esta pierna promete. **El gate pasa de rojo a verde en las tres rutas.**
+
+Se versiona además la corrida intermedia, porque es verdad y porque enseña el piso frío: la primera
+medición posterior al despliegue (`--samples 3`, 15:13:47Z, minuto 15 de la rodada) dio
+p95 3 328 ms y 3 220 ms, es decir **aún en rojo** mientras el contenedor terminaba de templar piscina de
+conexiones. No se descartó ese dato para quedarse con el verde; el verde se obtuvo con el mismo número de
+muestras del ANTES y con el ambiente ya servido por completo.
+
+### 2. Censo de rechazos (`triage-rechazos-produccion-despues.json`) → 527 → 527, y eso aún no prueba nada
+
+Con la misma ventana de 3 días y la misma sonda, leída a las 15:14:04Z (44 minutos después del ANTES y
+16 después del push): `total_rechazos` **527 → 527 (Δ 0)**, 21 trabajadores afectados sin cambio, 466
+fallas de transporte sin cambio, 11 jornadas sin registro sin cambio. Cero rechazos nuevos.
+
+El control de contraste impide vender ese cero como el arreglo. Una histograma de 15 minutos de
+`AuditLog`/`platform_logs` del día (lectura puntual de solo lectura, compuesta contra el project ref de
+Producción antes de conectar) da 85 filas entre las 05:00Z y la ancla del push, con actividad en
+09:45–11:15Z y 13:00–14:00Z, y **ninguna fila en los 58 minutos previos al despliegue**. Es decir: la
+ventana posterior (17 minutos) es demasiado corta y el ritmo previo ya estaba en cero por la hora del día,
+así que este Δ 0 no discrimina entre «dejaron de caer» y «no había nadie marcando». Lo que sí queda
+publicado es que el mecanismo que los producía está desplegado y su piso medido 2× más rápido.
+
+El DESPUÉS que cierra la promesa es una jornada operativa completa sobre `9cd7a0cf78d9`, con el mismo
+mando declarado en el manifiesto y `--days=1`, comparado contra la misma cifra del ANTES del día 23.
+
+### 3. Defecto de arnés descubierto al medir el después (no es del producto)
+
+El primer intento del DESPUÉS devolvió `El ambiente no acepto la sesion de medicion (HTTP 401)` con
+`--env-file=config/production.env`. Reproducción con espía del `fetch` dentro del propio arnés: la petición
+salió contra **`apexos-api-qa-production.up.railway.app`**, no contra Producción. La causa es
+`argsFrom` (scripts/certifications/hr-monitor-byte-budget.js:36-44), que solo reconoce `--clave valor` y
+no `--clave=valor`: la forma con igual se convierte en una clave basura, `args["env-file"]` queda
+`undefined` y el script cae en su predeterminado `config/qa.env`. El 401 era real y era de QA rechazando
+la credencial de Producción; la cuenta de Producción responde `200` en la misma ventana (probado directo
+contra `hr/self` login de ambos ambientes).
+
+Consecuencias publicadas: (a) el ANTES es válido, su evidencia declara
+`api_url: apexos-api-prod-production.up.railway.app` porque se corrió con la forma de espacio; (b) el
+mando que este documento declara con `--env-file=config/production.env` **no puede usarse con este
+certificador** hasta corregirlo, y la corrección es implementación en `desarrollo` con su control rojo
+provocado (pasar `--env-file=X` debe resolverse X), dueño `apexos-qa`/`apexos-performance`; (c) mientras
+tanto el mando correcto es `--env-file config/production.env`. Es la misma clase de falla que la regla 15
+de `equipo-apexos` llama atribución falsa de ambiente, y esta vez la produjo el analizador de argumentos.
+
 ## Qué sigue siendo verdad después de esta pierna
 
-1. **El factor medido no es la promesa cumplida.** Que el piso baje 4× está probado. Que los 466
-   rechazos de transporte desaparezcan **solo se sabe midiéndolo después del despliegue**, en Producción,
-   con la misma sonda versionada y la misma ventana. Ese DESPUÉS se versiona en cuanto Railway sirva el
-   commit promocionado; mientras no exista, la compuerta de Producción está abierta.
-2. **El rojo del presupuesto en Producción** se cierra (o no) con la misma remedienda posterior.
+1. **El factor medido no es la promesa cumplida.** Que el piso baje 4× está probado en el candidato y,
+   ya desplegado, el presupuesto de Producción pasó de rojo a verde en las tres rutas. Que los 466
+   rechazos de transporte desaparezcan **todavía no está probado**: la ventana posterior al despliegue fue
+   de 17 minutos con ritmo previo ya en cero (sección 2 del DESPUÉS). La promeda queda abierta hasta la
+   jornada completa sobre `9cd7a0cf78d9`.
+2. **El rojo del presupuesto en Producción se cerró** sobre el build desplegado. Queda abierto el lado
+   QA de esa misma gate: `hr-monitor-byte-budget.js` contra `config/qa.env` necesita una credencial QA
+   vigente, y la única que existe hoy para ese flujo es la cuenta efímera de certificación que la propia
+   intervención dejó pendiente de retiro (punto 4). No se mide QA con la credencial de Producción: eso es
+   justo el defecto de atribución del punto 3.
 3. **Deuda del arnés recién descubierta:** `protected-regression-local.js` declara `database: passed`
    sin conectar. Su dueño es `apexos-performance`/`apexos-qa` y se corrige en `desarrollo`, no dentro de
    esta promoción.
