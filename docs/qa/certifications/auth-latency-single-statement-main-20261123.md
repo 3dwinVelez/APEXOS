@@ -226,9 +226,12 @@ propio commit de merge. Se empujó `main` a las **14:58:00Z** (`origin/main@{202
 update by push).
 
 Identidad servida a las 15:16:58Z: `/health` de Producción `commit 9cd7a0cf78d9` y `/health` de QA
-`commit de7af667786a`. Los dos ambientes corren el arreglo.
+`commit de7af667786a`. Los dos ambientes corren el arreglo. Reconfirmado a las 15:32:57Z: Producción servía
+`7de02a3b2896` (el commit de esta evidencia, con producto idéntico porque solo toca documentación) y QA
+servía `43e5510cfe2d`, movido por otra intervención; se verificó por ancestro que `43e5510cfe2d` contiene la
+pata `de7af667786a`, así que el arreglo sigue desplegado en QA.
 
-### 1. Presupuesto del monitor (`presupuesto-produccion-despues.json`) → `status: passed`
+### 1. Presupuesto del monitor en Producción: el piso baja 37-54 %, pero la puerta sigue en rojo en `event-summaries`
 
 5 muestras por endpoint, la misma sonda, mismo tenant, mismo host
 (`apexos-api-prod-production.up.railway.app`), sobre el build nuevo:
@@ -239,8 +242,25 @@ Identidad servida a las 15:16:58Z: `/health` de Producción `commit 9cd7a0cf78d9
 | Contadores de eventos (`event_summaries`) | 4 807 ms | 2 844 ms | 5 511 ms | **2 922 ms** | −47 % | 6 693 B = 6 693 B | 0 |
 | Asistencia (`attendance`) | 2 878 ms | 1 226 ms | 2 994 ms | **1 243 ms** | −59 % | 2 B = 2 B | 0 |
 
-Los bytes servidos son idénticos en las tres lecturas: lo que cambió es el tiempo, no la carga, que es
-exactamente lo que esta pierna promete. **El gate pasa de rojo a verde en las tres rutas.**
+Los bytes servidos son idénticos en las tres lecturas: lo que cambió es el tiempo, no la carga. La frase
+que esta sección llevaba antes —«el gate pasa de rojo a verde en las tres rutas»— se retira: era cierta en
+esa corrida de las 15:16:18Z y no resiste las otras cuatro que se corrieron después sobre el mismo build.
+
+| Lectura | p95 ANTES | p95 de las 5 corridas DESPUÉS | mediana | Δ mediana | contra el tope de 3 000 ms |
+| --- | --- | --- | --- | --- | --- |
+| Mapa del día (`operations_map`) | 5000 ms | 1987 · 2067 · 2403 · 3510 · 3648 | **2403 ms** | −52 % | verde en 3 de 5 |
+| Contadores de eventos (`event_summaries`) | 5511 ms | 2922 · 3158 · 3488 · 3499 · 3777 | **3488 ms** | −37 % | **rojo en 4 de 5** |
+| Reporte de asistencia (`attendance`) | 2994 ms | 1243 · 1264 · 1383 · 1393 · 1457 | **1383 ms** | −54 % | verde en 5 de 5 |
+
+Lectura honesta: el arreglo cumple lo que promete sobre el **piso común** (el que pagan todas las rutas
+autenticadas) y baja el tiempo 37-54 % en el pico real de marcación. Lo que queda por encima del presupuesto
+en `operations_map` y `event-summaries` ya no es el piso: es el costo propio de esas dos consultas, y por
+eso el pendiente #21/#23 se queda abierto con dueño (`apexos-performance`) en lugar de cerrarse con este
+documento. Dos rojos adicionales se explican por el enfriamiento: empujar esta evidencia a `main` vuelve a
+rodar Producción, y la corrida tomada justo después de `7de02a3b2896` midió en frío. Las corridas crudas se
+versionan en `desarrollo` bajo `docs/qa/evidence/hr-monitor-byte-budget-20261123/`
+(`gate-produccion-instrumento-corregido.json`, `gate-produccion-corrida-a/b/c.json`), y la corrida verde de
+las 15:16:18Z es el archivo `presupuesto-produccion-despues.json` de esta misma carpeta.
 
 Se versiona además la corrida intermedia, porque es verdad y porque enseña el piso frío: la primera
 medición posterior al despliegue (`--samples 3`, 15:13:47Z, minuto 15 de la rodada) dio
@@ -274,24 +294,40 @@ salió contra **`apexos-api-qa-production.up.railway.app`**, no contra Producci�
 no `--clave=valor`: la forma con igual se convierte en una clave basura, `args["env-file"]` queda
 `undefined` y el script cae en su predeterminado `config/qa.env`. El 401 era real y era de QA rechazando
 la credencial de Producción; la cuenta de Producción responde `200` en la misma ventana (probado directo
-contra `hr/self` login de ambos ambientes).
+contra `/api/v1/auth/login` de ambos ambientes).
 
 Consecuencias publicadas: (a) el ANTES es válido, su evidencia declara
 `api_url: apexos-api-prod-production.up.railway.app` porque se corrió con la forma de espacio; (b) el
-mando que este documento declara con `--env-file=config/production.env` **no puede usarse con este
-certificador** hasta corregirlo, y la corrección es implementación en `desarrollo` con su control rojo
-provocado (pasar `--env-file=X` debe resolverse X), dueño `apexos-qa`/`apexos-performance`; (c) mientras
-tanto el mando correcto es `--env-file config/production.env`. Es la misma clase de falla que la regla 15
-de `equipo-apexos` llama atribución falsa de ambiente, y esta vez la produjo el analizador de argumentos.
+soporte de `--clave=valor` en este certificador **ya existía en `desarrollo`** con su control
+`parseo-ambas-formas` dentro de `--selftest`: la trampa no era el código de la rama de trabajo, era que la
+copia desplegada de `main` y `develop` sigue siendo la versión vieja, así que medir un ambiente liberado con
+el instrumento local no es lo mismo que medir con el instrumento de esa rama; (c) lo que sí faltaba y se
+cierra en esta intervención es la otra mitad del mismo defecto: el script elegía `config/qa.env` cuando no
+le declaraban ambiente, y ahora `declareEnvFile` aborta con `Falta --env-file=config/<ambiente>.env` antes
+de tocar la red, con `--selftest` en 6/6 y su rojo provocado (invocar sin `--env-file` sale 1 en vez de medir
+QA en silencio). El control de ese rojo y las cuatro corridas de la medición quedaron versionados en
+`desarrollo` con `56b0c097`, junto con las reglas nuevas `apexos-qa` 112 y `apexos-performance` 30. Medido por rama para que nadie confíe en el instrumento equivocado: `desarrollo` ya tenía el
+parseo de `=` y la línea `Destino declarado: <ambiente> desde <archivo> · <host>`, mientras `origin/main` y
+`origin/develop` siguen con la copia vieja que no tiene ninguna de las dos y todavía defaultea
+`config/qa.env`. Promover el certificador a las ramas liberadas es alcance propio con su manifiesto. (d) Deuda declarada con
+dueño `apexos-qa`: 15 certificadores más comparten el analizador viejo, y 7 de ellos también defaultean
+`config/qa.env` (`hr-marking-gate-qa`, `hr-marking-only-qa`, `hr-monitor-evidence-demand-qa`,
+`hr-monitor-silent-failures-qa`, `hr-monitor-ui-modernization-qa`, `hr-monitor-ux-fixes-qa`,
+`technical-alert-silence-browser-qa`); barrerlos es una pasada propia, no se hace dentro de una promoción. Es la misma clase de
+falla que la regla 15 de `equipo-apexos` llama atribución falsa de ambiente, y esta vez la produjo el
+analizador de argumentos. Mientras el certificador de `main` no se promocione, el mando correcto contra un
+ambiente liberado es `--env-file config/production.env`, con el host confirmado en la evidencia.
 
 ## Qué sigue siendo verdad después de esta pierna
 
-1. **El factor medido no es la promesa cumplida.** Que el piso baje 4× está probado en el candidato y,
-   ya desplegado, el presupuesto de Producción pasó de rojo a verde en las tres rutas. Que los 466
-   rechazos de transporte desaparezcan **todavía no está probado**: la ventana posterior al despliegue fue
-   de 17 minutos con ritmo previo ya en cero (sección 2 del DESPUÉS). La promeda queda abierta hasta la
-   jornada completa sobre `9cd7a0cf78d9`.
-2. **El rojo del presupuesto en Producción se cerró** sobre el build desplegado. Queda abierto el lado
+1. **El factor medido no es la promesa cumplida.** Que el piso baje está probado en el candidato y también
+   desplegado: en el pico real de marcación la mediana de cinco corridas baja 52 %, 37 % y 54 % según la
+   ruta, con los mismos bytes y cero binarios en línea. Pero la puerta de presupuesto **no quedó verde**:
+   `event-summaries` sigue entre 2 922 y 3 777 ms, pegada al tope de 3 000. Y que los 466 rechazos de
+   transporte desaparezcan **todavía no está probado**: la ventana posterior al despliegue fue de 17 minutos
+   con el ritmo previo ya en cero (sección 2 del DESPUÉS). La promesa queda abierta hasta la jornada completa
+   sobre el commit desplegado.
+2. **El rojo del presupuesto en Producción bajó, no se cerró.** Queda abierto el lado
    QA de esa misma gate: `hr-monitor-byte-budget.js` contra `config/qa.env` necesita una credencial QA
    vigente, y la única que existe hoy para ese flujo es la cuenta efímera de certificación que la propia
    intervención dejó pendiente de retiro (punto 4). No se mide QA con la credencial de Producción: eso es
