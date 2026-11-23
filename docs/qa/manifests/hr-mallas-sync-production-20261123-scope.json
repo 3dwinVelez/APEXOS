@@ -174,5 +174,6 @@
         "../evidence/hr-mallas-sync-production-20261123/qa-platform.json"
       ]
     }
-  ]
+  ],
+  "base_commit": "a0fb7e05b65d84e619b80cb30790b27f3b940fb3"
 }
