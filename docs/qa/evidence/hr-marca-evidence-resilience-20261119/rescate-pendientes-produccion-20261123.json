@@ -1,0 +1,158 @@
+{
+  "inventario_en": "2026-11-23T13:51:25.936Z",
+  "ambiente": "produccion",
+  "manifiesto_sha256": "03520b180b5249fb",
+  "corridas": {
+    "16_piernas_propuestas_20261123": {
+      "piernas_propuestas": 16,
+      "escritas": 9,
+      "asentadas_por_verificacion": 9,
+      "marcas": [
+        2611,
+        2612,
+        2613,
+        2614,
+        2615,
+        2616,
+        2617,
+        2618,
+        2619
+      ],
+      "rechazadas": 7,
+      "rechazo_por_codigo": {
+        "MARCACION_FUERA_DE_SECUENCIA": 6,
+        "KILOMETRAJE_REQUERIDO": 1
+      },
+      "lecturas_ciegas": 0,
+      "sesiones_sin_alcance": 0
+    },
+    "entrada_539_escrita_despues": {
+      "id_marca": 2620,
+      "dia": "2026-11-23",
+      "tipo": "entrada",
+      "fuente": "intento_real_en_log",
+      "veredicto": "asentada"
+    }
+  },
+  "resumen_ejecucion": "10 piernas asentadas (marcas 2611-2620) sobre 17 propuestas en dos tandas; 8 quedan pendientes con causa y dueño",
+  "pendientes": [
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-21",
+      "tipo": "salida",
+      "hora_colombia": "2026-11-21 15:00",
+      "fuente_de_la_hora": "horario_asignado",
+      "intentada_en_la_corrida": true,
+      "codigo_observado": "MARCACION_FUERA_DE_SECUENCIA",
+      "causa": "MARCACION_FUERA_DE_SECUENCIA",
+      "motivo_del_descarte": null,
+      "dueno": "el dueño de la promocion #6",
+      "destrabe": "promocionar resolvePunchLadder (apps/api/src/modules/hr) de desarrollo a main",
+      "escritura_por_debajo_del_api": "prohibida: fabricaria las piernas de almuerzo que el dia nunca tuvo"
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-21",
+      "tipo": "salida",
+      "hora_colombia": "2026-11-21 15:00",
+      "fuente_de_la_hora": "horario_asignado",
+      "intentada_en_la_corrida": true,
+      "codigo_observado": "MARCACION_FUERA_DE_SECUENCIA",
+      "causa": "MARCACION_FUERA_DE_SECUENCIA",
+      "motivo_del_descarte": null,
+      "dueno": "el dueño de la promocion #6",
+      "destrabe": "promocionar resolvePunchLadder (apps/api/src/modules/hr) de desarrollo a main",
+      "escritura_por_debajo_del_api": "prohibida: fabricaria las piernas de almuerzo que el dia nunca tuvo"
+    },
+    {
+      "empleado_id": 515,
+      "dia": "2026-11-21",
+      "tipo": "salida",
+      "hora_colombia": "2026-11-21 17:00",
+      "fuente_de_la_hora": "horario_asignado",
+      "intentada_en_la_corrida": true,
+      "codigo_observado": "MARCACION_FUERA_DE_SECUENCIA",
+      "causa": "MARCACION_FUERA_DE_SECUENCIA",
+      "motivo_del_descarte": null,
+      "dueno": "el dueño de la promocion #6",
+      "destrabe": "promocionar resolvePunchLadder (apps/api/src/modules/hr) de desarrollo a main",
+      "escritura_por_debajo_del_api": "prohibida: fabricaria las piernas de almuerzo que el dia nunca tuvo"
+    },
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-22",
+      "tipo": "salida",
+      "hora_colombia": "2026-11-22 16:00",
+      "fuente_de_la_hora": "horario_asignado",
+      "intentada_en_la_corrida": true,
+      "codigo_observado": "MARCACION_FUERA_DE_SECUENCIA",
+      "causa": "MARCACION_FUERA_DE_SECUENCIA",
+      "motivo_del_descarte": null,
+      "dueno": "el dueño de la promocion #6",
+      "destrabe": "promocionar resolvePunchLadder (apps/api/src/modules/hr) de desarrollo a main",
+      "escritura_por_debajo_del_api": "prohibida: fabricaria las piernas de almuerzo que el dia nunca tuvo"
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-22",
+      "tipo": "salida",
+      "hora_colombia": "2026-11-22 15:30",
+      "fuente_de_la_hora": "horario_asignado",
+      "intentada_en_la_corrida": true,
+      "codigo_observado": "MARCACION_FUERA_DE_SECUENCIA",
+      "causa": "MARCACION_FUERA_DE_SECUENCIA",
+      "motivo_del_descarte": null,
+      "dueno": "el dueño de la promocion #6",
+      "destrabe": "promocionar resolvePunchLadder (apps/api/src/modules/hr) de desarrollo a main",
+      "escritura_por_debajo_del_api": "prohibida: fabricaria las piernas de almuerzo que el dia nunca tuvo"
+    },
+    {
+      "empleado_id": 507,
+      "dia": "2026-11-22",
+      "tipo": "salida",
+      "hora_colombia": "2026-11-22 15:30",
+      "fuente_de_la_hora": "horario_asignado",
+      "intentada_en_la_corrida": false,
+      "codigo_observado": "no_intentada",
+      "causa": "ORDEN_CONTRADICHO_ENTRE_PIERNAS_RESCATADAS",
+      "motivo_del_descarte": "la salida de horario (15:30 CO) cae antes del fin_almuerzo rescatado con la hora real del intento (19:12 CO); escribir la salida exigiria mover una de las dos",
+      "dueno": "Talento Humano",
+      "destrabe": "definir cual de las dos horas de la jornada es la correcta y corregir por el canal administrativo",
+      "escritura_por_debajo_del_api": "prohibida: el orden de la escalera es un contrato del negocio"
+    },
+    {
+      "empleado_id": 527,
+      "dia": "2026-11-22",
+      "tipo": "salida",
+      "hora_colombia": "2026-11-22 16:00",
+      "fuente_de_la_hora": "horario_asignado",
+      "intentada_en_la_corrida": true,
+      "codigo_observado": "KILOMETRAJE_REQUERIDO",
+      "causa": "KILOMETRAJE_REQUERIDO",
+      "motivo_del_descarte": null,
+      "dueno": "operacion (el conductor reporta el cierre de kilometraje)",
+      "destrabe": "lectura de odometro del dia, que ningun registro del sistema contiene",
+      "escritura_por_debajo_del_api": "prohibida: el kilometraje alimenta combustible y PYG"
+    },
+    {
+      "empleado_id": 547,
+      "dia": "2026-11-22",
+      "tipo": "salida",
+      "hora_colombia": "2026-11-22 16:30",
+      "fuente_de_la_hora": "horario_asignado",
+      "intentada_en_la_corrida": true,
+      "codigo_observado": "MARCACION_FUERA_DE_SECUENCIA",
+      "causa": "MARCACION_FUERA_DE_SECUENCIA",
+      "motivo_del_descarte": null,
+      "dueno": "el dueño de la promocion #6",
+      "destrabe": "promocionar resolvePunchLadder (apps/api/src/modules/hr) de desarrollo a main",
+      "escritura_por_debajo_del_api": "prohibida: fabricaria las piernas de almuerzo que el dia nunca tuvo"
+    }
+  ],
+  "por_causa": {
+    "MARCACION_FUERA_DE_SECUENCIA": 6,
+    "ORDEN_CONTRADICHO_ENTRE_PIERNAS_RESCATADAS": 1,
+    "KILOMETRAJE_REQUERIDO": 1
+  },
+  "control_de_ambos_sentidos": "el ANTES (rescate-antes-produccion-20261123.json) midio 0/16 asentadas con sesion con alcance (17/11/10 filas leidas, cero SESION SIN ALCANCE); el DESPUES (rescate-verificacion-produccion-20261123.json) mide 9/16 por la misma clave de idempotencia. El instrumento sale con 1 porque 7 piernas no se ven: es un inventario, no un verde."
+}

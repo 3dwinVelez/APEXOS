@@ -1,0 +1,31 @@
+{
+  "ambiente": "qa",
+  "run": 5574441,
+  "accion": "retiro_por_endpoint_de_cuentas_efimeras_rezagadas",
+  "filas": [
+    {
+      "user_id": 801,
+      "tenant": "QA Empresa A RLS",
+      "modulos_licenciados": 0,
+      "sesion_administrador_efimero": 200,
+      "retiro_status": 403,
+      "retiro_code": "MODULO_NO_HABILITADO",
+      "objetivo_activo_tras_retiro": true,
+      "administrador_efimero_id": 808,
+      "retiro_propio_status": 403,
+      "login_administrador_efimero_tras_retiro": 200
+    },
+    {
+      "user_id": 804,
+      "tenant": "NYVORA",
+      "modulos_licenciados": 37,
+      "sesion_administrador_efimero": 200,
+      "retiro_status": 200,
+      "retiro_code": "CERTL8772505O",
+      "objetivo_activo_tras_retiro": false,
+      "administrador_efimero_id": 809,
+      "retiro_propio_status": 200,
+      "login_administrador_efimero_tras_retiro": 401
+    }
+  ]
+}

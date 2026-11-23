@@ -24,7 +24,11 @@ const reportSchema = {
         additionalProperties: false,
         properties: {
           href: { type: "string", maxLength: 200 },
-          provider: { type: "string", maxLength: 20 }
+          provider: { type: "string", maxLength: 20 },
+          // El navegador clasifica la causa (request_rejected | timeout | offline | unknown) antes
+          // de reportar. Sin esta clave, el payload anonimo -el unico que queda cuando no hay
+          // sesion, justo cuando la plataforma esta caida- rebotaba con 400 de esquema.
+          failure_cause: { type: "string", maxLength: 40 }
         }
       }
     }
