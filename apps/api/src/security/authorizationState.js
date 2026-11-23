@@ -84,13 +84,51 @@ async function createSession(user, tenant, expiresInDays = 30) {
   });
 }
 
+// El costo de una peticion autenticada es por SENTENCIA, no por trabajo: cada viaje al pooler paga su
+// ida y vuelta (~114 ms medidos a Produccion y ~400 ms a QA desde el puesto; 500-600 ms desde Railway)
+// y Prisma parte cada `include` en sentencias propias, asi que usuario+rol+permisos+tenant+sesion eran
+// 5 viajes de piso en TODA peticion. Aqui se decide en una sola. Medido con
+// `npm run certify:hr-auth-latency:qa|production`: 2 009 ms -> 532 ms y 572 ms -> 144 ms, 18 decisiones
+// por ambiente sin divergencias. Las fechas salen como texto desde jsonb y `authorizationDecision` las
+// compara como Date, asi que se normalizan aqui: sin este paso una sesion vencida no se veria vencida.
+// `user` es palabra reservada en Postgres: los alias van entrecomillados o la sentencia revienta
+// en 42601 antes de llegar a decidir nada.
+const AUTHORIZATION_SNAPSHOT = `
+  select to_jsonb(u) as "user",
+    case when r.id is null then null
+         else to_jsonb(r) || jsonb_build_object('permissions', coalesce(perms.perm_rows, '[]'::jsonb))
+    end as "role",
+    to_jsonb(t) as "tenant",
+    case when s.id is null then null else to_jsonb(s) end as "session"
+  from "User" u
+  left join "Role" r on r.id = u.role_id
+  left join lateral (select jsonb_agg(to_jsonb(p)) as perm_rows from "Permission" p where p.role_id = r.id) perms on true
+  left join "Tenant" t on t.id = u.tenant_id
+  left join "AuthorizationSession" s on s.id = cast(__SID__ as uuid) and s.user_id = u.id
+  where u.id = cast(__UID__ as int4)
+  limit 1`;
+
+function dateOrNull(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 async function validateAuthorization(payload) {
-  const user = await prisma.user.findUnique({
-    where: { id: Number(payload.id) },
-    include: { role: { include: { permissions: true } } }
-  });
-  const tenant = user ? await prisma.tenant.findUnique({ where: { id: user.tenant_id } }) : null;
-  const session = payload.sid ? await prisma.authorizationSession.findUnique({ where: { id: payload.sid } }) : null;
+  // El sid viene de una columna uuid creada por el propio sistema, asi que se pasa tal cual: un
+  // valor mal formado hace fallar el cast y el middleware responde 401, igual que hoy.
+  const sid = payload.sid ? String(payload.sid) : null;
+  const rows = await prisma.$queryRawUnsafe(
+    AUTHORIZATION_SNAPSHOT.replace("__SID__", "$1").replace("__UID__", "$2"),
+    sid,
+    Number(payload.id)
+  );
+  const row = rows[0] || null;
+  const user = row?.user ? { ...row.user, role: row.role || null } : null;
+  const tenant = row?.tenant || null;
+  const session = row?.session
+    ? { ...row.session, revoked_at: dateOrNull(row.session.revoked_at), expires_at: dateOrNull(row.session.expires_at) }
+    : null;
   const reason = authorizationDecision(payload, user, tenant, session);
 
   if (reason) recordMismatch(reason, payload, session);

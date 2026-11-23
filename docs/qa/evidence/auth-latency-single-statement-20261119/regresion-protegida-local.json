@@ -1,0 +1,92 @@
+{
+  "certification": "protected-regression-local",
+  "version": 1,
+  "certification_role": "support_only",
+  "environment": "LOCAL",
+  "status": "passed",
+  "commit": "61b41fd19cd6f727ada85d07c4a5dce699313083",
+  "database": {
+    "status": "passed",
+    "host": "127.0.0.1",
+    "port": "55432"
+  },
+  "coverage_mode": "versioned_contract_and_service_harness",
+  "suites": [
+    {
+      "capability": "accounting_opening_balances_and_numbering",
+      "file": "apps/api/test/accounting-opening-balances.test.js",
+      "status": "passed",
+      "duration_ms": 1499,
+      "output_tail": "r lote de terceros conserva fallback a id interno solo sin NIT\nok 31 - resolucion por lote de terceros conserva fallback a id interno solo sin NIT\n  ---\n  duration_ms: 0.1911\n  type: 'test'\n  ...\n# Subtest: resolucion por lote de terceros no cae de un NIT numerico inactivo a otro id\nok 32 - resolucion por lote de terceros no cae de un NIT numerico inactivo a otro id\n  ---\n  duration_ms: 0.2153\n  type: 'test'\n  ...\n# Subtest: resolucion por lote de terceros mantiene opcionalidad en blanco\nok 33 - resolucion por lote de terceros mantiene opcionalidad en blanco\n  ---\n  duration_ms: 0.1076\n  type: 'test'\n  ...\n# Subtest: resolucion por lote de terceros respeta minuto de consultas acotadas (una por lote)\nok 34 - resolucion por lote de terceros respeta minuto de consultas acotadas (una por lote)\n  ---\n  duration_ms: 0.4319\n  type: 'test'\n  ...\n# Subtest: contabilizar saldos iniciales resuelve config.accounting del tenant sin ReferenceError\nok 35 - contabilizar saldos iniciales resuelve config.accounting del tenant sin ReferenceError\n  ---\n  duration_ms: 190.9847\n  type: 'test'\n  ...\n1..35\n# tests 35\n# suites 0\n# pass 35\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1373.3362\n"
+    },
+    {
+      "capability": "accounting_routes_contract",
+      "file": "apps/api/test/accounting-routes-contract.test.js",
+      "status": "passed",
+      "duration_ms": 4953,
+      "output_tail": "v1/treasury/advances\",\"host\":\"localhost:80\",\"remoteAddress\":\"127.0.0.1\"},\"msg\":\"incoming request\"}\n# {\"level\":30,\"time\":1795441985534,\"pid\":19244,\"hostname\":\"DESKTOP-6QIJ49H\",\"reqId\":\"req-1l\",\"res\":{\"statusCode\":401},\"responseTime\":1.092200000000048,\"msg\":\"request completed\"}\n# {\"level\":30,\"time\":1795441985534,\"pid\":19244,\"hostname\":\"DESKTOP-6QIJ49H\",\"reqId\":\"req-1m\",\"req\":{\"method\":\"POST\",\"url\":\"/api/v1/treasury/advances\",\"host\":\"localhost:80\",\"remoteAddress\":\"127.0.0.1\"},\"msg\":\"incoming request\"}\n# {\"level\":30,\"time\":1795441985536,\"pid\":19244,\"hostname\":\"DESKTOP-6QIJ49H\",\"reqId\":\"req-1m\",\"res\":{\"statusCode\":400},\"responseTime\":1.6683000000002721,\"msg\":\"request completed\"}\n# {\"level\":30,\"time\":1795441985537,\"pid\":19244,\"hostname\":\"DESKTOP-6QIJ49H\",\"reqId\":\"req-1n\",\"req\":{\"method\":\"POST\",\"url\":\"/api/v1/treasury/advances/1/apply\",\"host\":\"localhost:80\",\"remoteAddress\":\"127.0.0.1\"},\"msg\":\"incoming request\"}\n# {\"level\":30,\"time\":1795441985538,\"pid\":19244,\"hostname\":\"DESKTOP-6QIJ49H\",\"reqId\":\"req-1n\",\"res\":{\"statusCode\":400},\"responseTime\":1.3742000000002008,\"msg\":\"request completed\"}\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 4817.4754\n"
+    },
+    {
+      "capability": "petty_cash_masters_and_numbering_GM_APC_LCM",
+      "file": "apps/api/test/petty-cash-masters.test.js",
+      "status": "passed",
+      "duration_ms": 556,
+      "output_tail": "ermiso correcto\n  ---\n  duration_ms: 1.8834\n  type: 'test'\n  ...\n# Subtest: routes reutiliza el modulo de permisos accounting y no inventa petty-cash\nok 31 - routes reutiliza el modulo de permisos accounting y no inventa petty-cash\n  ---\n  duration_ms: 1.5605\n  type: 'test'\n  ...\n# Subtest: las rutas quedan bajo /petty-cash para que la auditoria registre el modulo\nok 32 - las rutas quedan bajo /petty-cash para que la auditoria registre el modulo\n  ---\n  duration_ms: 0.5876\n  type: 'test'\n  ...\n# Subtest: server registra el modulo petty-cash con el prefijo global\nok 33 - server registra el modulo petty-cash con el prefijo global\n  ---\n  duration_ms: 0.5403\n  type: 'test'\n  ...\n# Subtest: los maestros quedan en SOFT_DELETE y fuera del borrado fisico\nok 34 - los maestros quedan en SOFT_DELETE y fuera del borrado fisico\n  ---\n  duration_ms: 0.6984\n  type: 'test'\n  ...\n# Subtest: la reporteria de T4 queda expuesta bajo /petty-cash/reports (solo lectura)\nok 35 - la reporteria de T4 queda expuesta bajo /petty-cash/reports (solo lectura)\n  ---\n  duration_ms: 2.1127\n  type: 'test'\n  ...\n1..35\n# tests 35\n# suites 0\n# pass 35\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 384.2374\n"
+    },
+    {
+      "capability": "petty_cash_vouchers_and_reversal",
+      "file": "apps/api/test/petty-cash-vouchers.test.js",
+      "status": "passed",
+      "duration_ms": 1670,
+      "output_tail": "quemas de T3 son cerrados, exigen los minimos y no aceptan campos calculados\n  ---\n  duration_ms: 0.2535\n  type: 'test'\n  ...\n# Subtest: Fastify descarta los campos no declarados y acepta liquidar sin cuerpo\nok 51 - Fastify descarta los campos no declarados y acepta liquidar sin cuerpo\n  ---\n  duration_ms: 973.4468\n  type: 'test'\n  ...\n# Subtest: routes registra los 9 endpoints de T3 con el permiso correcto (approve para liquidar y anular)\nok 52 - routes registra los 9 endpoints de T3 con el permiso correcto (approve para liquidar y anular)\n  ---\n  duration_ms: 1.6826\n  type: 'test'\n  ...\n# Subtest: los documentos de caja menor se emiten dentro de la transaccion del modulo, no con createAccountingDocument\nok 53 - los documentos de caja menor se emiten dentro de la transaccion del modulo, no con createAccountingDocument\n  ---\n  duration_ms: 5.3121\n  type: 'test'\n  ...\n# Subtest: T4 implementa la reporteria y conserva el borrado logico de los maestros\nok 54 - T4 implementa la reporteria y conserva el borrado logico de los maestros\n  ---\n  duration_ms: 1.1861\n  type: 'test'\n  ...\n1..54\n# tests 54\n# suites 0\n# pass 54\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1550.6447\n"
+    },
+    {
+      "capability": "petty_cash_reports",
+      "file": "apps/api/test/petty-cash-reports.test.js",
+      "status": "passed",
+      "duration_ms": 1307,
+      "output_tail": "test'\n  ...\n# Subtest: los reportes truncan en REPORT_ROW_CAP y piden tope+1 para detectarlo\nok 31 - los reportes truncan en REPORT_ROW_CAP y piden tope+1 para detectarlo\n  ---\n  duration_ms: 587.0381\n  type: 'test'\n  ...\n# Subtest: la reporteria aísla por tenant: cada empresa solo ve su historico\nok 32 - la reporteria aísla por tenant: cada empresa solo ve su historico\n  ---\n  duration_ms: 5.2469\n  type: 'test'\n  ...\n# Subtest: el detalle lee el estado del anticipo del campo status, nunca del saldo\nok 33 - el detalle lee el estado del anticipo del campo status, nunca del saldo\n  ---\n  duration_ms: 6.7437\n  type: 'test'\n  ...\n# Subtest: routes registra los tres reportes GET con permiso read de contabilidad\nok 34 - routes registra los tres reportes GET con permiso read de contabilidad\n  ---\n  duration_ms: 1.6544\n  type: 'test'\n  ...\n# Subtest: la reporteria de T4 usa solo el constructor de consultas de Prisma dentro de runWithTenant\nok 35 - la reporteria de T4 usa solo el constructor de consultas de Prisma dentro de runWithTenant\n  ---\n  duration_ms: 1.4483\n  type: 'test'\n  ...\n1..35\n# tests 35\n# suites 0\n# pass 35\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1105.4603\n"
+    },
+    {
+      "capability": "purchases_supplier_and_transaction_flow",
+      "file": "apps/api/test/purchases-supplier-flow.test.js",
+      "status": "passed",
+      "duration_ms": 525,
+      "output_tail": "TAP version 13\n# (node:3240) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Redis disabled - using noop queues\n# Subtest: supplier creation returns the complete UI contract\nok 1 - supplier creation returns the complete UI contract\n  ---\n  duration_ms: 54.1632\n  type: 'test'\n  ...\n# Subtest: supplier partial update does not require name\nok 2 - supplier partial update does not require name\n  ---\n  duration_ms: 4.4434\n  type: 'test'\n  ...\n# Subtest: supplier creation promotes an existing customer without overwriting canonical identity\nok 3 - supplier creation promotes an existing customer without overwriting canonical identity\n  ---\n  duration_ms: 2.4579\n  type: 'test'\n  ...\n1..3\n# tests 3\n# suites 0\n# pass 3\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 335.5557\n"
+    },
+    {
+      "capability": "purchases_invoice_transaction",
+      "file": "apps/api/test/purchase-invoice-transaction.test.js",
+      "status": "passed",
+      "duration_ms": 700,
+      "output_tail": "TAP version 13\n# (node:7932) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: purchase invoice posts accounting and PO controls in one extended transaction\nok 1 - purchase invoice posts accounting and PO controls in one extended transaction\n  ---\n  duration_ms: 25.3213\n  type: 'test'\n  ...\n# Subtest: purchase invoice blocks an EM/RF account equal to the supplier payable account\nok 2 - purchase invoice blocks an EM/RF account equal to the supplier payable account\n  ---\n  duration_ms: 3.9325\n  type: 'test'\n  ...\n1..2\n# tests 2\n# suites 0\n# pass 2\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 423.5188\n"
+    },
+    {
+      "capability": "inventory_adjustments_and_accounting",
+      "file": "apps/api/test/inventory-adjustments-contract.test.js",
+      "status": "passed",
+      "duration_ms": 337,
+      "output_tail": "I-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: AE y AS son documentos multiposicion atomicos con motivo\nok 1 - AE y AS son documentos multiposicion atomicos con motivo\n  ---\n  duration_ms: 2.4484\n  type: 'test'\n  ...\n# Subtest: AE usa promedio o exige costo y AS bloquea saldo negativo\nok 2 - AE usa promedio o exige costo y AS bloquea saldo negativo\n  ---\n  duration_ms: 0.6703\n  type: 'test'\n  ...\n# Subtest: contabilizacion usa cuentas manuales de familia y clases AE AS\nok 3 - contabilizacion usa cuentas manuales de familia y clases AE AS\n  ---\n  duration_ms: 1.8212\n  type: 'test'\n  ...\n# Subtest: frontend incluye creacion reporte detalle y navegacion\nok 4 - frontend incluye creacion reporte detalle y navegacion\n  ---\n  duration_ms: 3.3679\n  type: 'test'\n  ...\n# Subtest: el esquema de producto conserva stock_max null como límite opcional\nok 5 - el esquema de producto conserva stock_max null como límite opcional\n  ---\n  duration_ms: 4.0369\n  type: 'test'\n  ...\n1..5\n# tests 5\n# suites 0\n# pass 5\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 182.3719\n"
+    },
+    {
+      "capability": "inventory_transfer_tenancy",
+      "file": "apps/api/test/inventory-transfer-tenancy-contract.test.js",
+      "status": "passed",
+      "duration_ms": 349,
+      "output_tail": "TAP version 13\n# (node:11328) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: los traslados y sus lineas reciben tenant_id mediante el middleware Prisma\nok 1 - los traslados y sus lineas reciben tenant_id mediante el middleware Prisma\n  ---\n  duration_ms: 0.8859\n  type: 'test'\n  ...\n# Subtest: la bodega de consignacion persiste y presenta el cliente enlazado\nok 2 - la bodega de consignacion persiste y presenta el cliente enlazado\n  ---\n  duration_ms: 0.8865\n  type: 'test'\n  ...\n# Subtest: ajustes y posiciones reciben tenant_id y filtro multiempresa del middleware\nok 3 - ajustes y posiciones reciben tenant_id y filtro multiempresa del middleware\n  ---\n  duration_ms: 0.5236\n  type: 'test'\n  ...\n1..3\n# tests 3\n# suites 0\n# pass 3\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 222.7982\n"
+    },
+    {
+      "capability": "rbac_module_access",
+      "file": "apps/api/test/rbac-module-access.test.js",
+      "status": "passed",
+      "duration_ms": 286,
+      "output_tail": "TAP version 13\n# (node:9288) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: RBAC reconoce todos los identificadores vigentes de Inventario\nok 1 - RBAC reconoce todos los identificadores vigentes de Inventario\n  ---\n  duration_ms: 1.4659\n  type: 'test'\n  ...\n# Subtest: RBAC normaliza espacios y mayusculas en los modulos del tenant\nok 2 - RBAC normaliza espacios y mayusculas en los modulos del tenant\n  ---\n  duration_ms: 0.4914\n  type: 'test'\n  ...\n# Subtest: RBAC mantiene bloqueado Inventario cuando no esta habilitado\nok 3 - RBAC mantiene bloqueado Inventario cuando no esta habilitado\n  ---\n  duration_ms: 0.3459\n  type: 'test'\n  ...\n# Subtest: RBAC reconoce los identificadores tecnicos usados por permisos y sincronizacion\nok 4 - RBAC reconoce los identificadores tecnicos usados por permisos y sincronizacion\n  ---\n  duration_ms: 0.4773\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 170.4151\n"
+    }
+  ],
+  "missing": [],
+  "limitations": [
+    "Esta certificacion no sustituye la certificacion de navegador en QA ni la regresion sobre el commit desplegado.",
+    "Las suites seleccionadas incluyen contratos y harnesses de servicio; cualquier flujo de base local o navegador debe adjuntarse por separado.",
+    "No se ejecutan llamadas a Railway, Supabase ni migraciones remotas."
+  ]
+}

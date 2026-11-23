@@ -8,6 +8,7 @@
 | Refetch completo después de una mutación | Actualización local e invalidación específica |
 | Base64 en respuesta o base de datos | Storage privado y ruta firmada |
 | Auth o permisos repetidos | Contexto por solicitud y caché acotada |
+| `include` de Prisma en la decisión de autorización | Una sola sentencia: el costo es por viaje al pooler, no por trabajo |
 | Maestro solicitado por cada componente | Lectura compartida con TTL |
 | Procesamiento de imagen en el hilo principal | Compresión controlada y subida no bloqueante |
 | Polling sin visibilidad ni backoff | Evento, refresh manual o polling adaptativo |
