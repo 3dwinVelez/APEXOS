@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.58.0
+version: 2.59.0
 updated_at: 2026-11-23
 contract: 2
 ---
@@ -194,6 +194,8 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
     - **Se rechaza el alcance que asoma de paso**, aunque sea barato: destrabar `/api/v1/hr/monitor-evidence/` del cercado y agrandar la rama REST implicaba reescribir `hr-punch-mobile-evidence.test.mjs`, una guard ya certificada. Se declara como tarea propia con su riesgo, no se hace «de paso» dentro del cierre.
     - **El hallazgo nuevo se reparte por capas antes de despachar**: contrato del silencio degradado (frontend + backend), quién debió escribir esa tabla y quién la retira (db-nube), y el control positivo que exige la simulación de caída (qa). Ninguna de las cuatro entra en esta intervención sin alcance aprobado.
     - **Y el incidente del árbol se integra, no se oculta**: entre el primer y el segundo preflight, una sesión paralela movió el tip y se llevó puesto un cambio propio del árbol de trabajo; el veredicto lo nombra con el hash nuevo y reetiqueta la fila como «ya publicada fuera de este commit». Por qué: el orquestador es el único que ve los cuatro dominios a la vez, y su tentación es entregar el plan completo; aquí el plan completo habría sumado código muerto sobre dato muerto y habría ocultado que el reporte degradado miente por omisión.
+
+71. **Cuando el destino se mueve entre la medición y el cierre, el orquestador re-mide sobre lo que el ambiente sirve y funda la contabilidad: no entrega un verde huérfano.** El 2026-11-23, con la pata main de la escalera ya desplegada (`790870a0`) y su `DESPUÉS` cerrado en 16/16, otra sesión promovió `80681aa1` sobre ese mismo merge. El cierre tenía tres lecturas posibles y se hizo la cara: (a) citar el verde anterior, que anclaba un commit que Producción ya no servía; (b) tocar el producto para «volver a alinear», que no pidió nadie; (c) **volver a correr el mismo instrumento contra el binario servido** y fundir la contabilidad con el tip ajeno. Se hizo (c): 16/16 otra vez sobre `80681aa1d998`, y el push de la contabilidad como `merge --no-ff` con su diff neto medido en 11 rutas de documentación. La regla tiene dos consecuencias de despacho: el verde que se reporta lleva el commit servido que lo ancla en el momento del reporte, y una promoción ajena en el destino **no** se trata como conflicto que haya que deshacer — se verifica en el blob que lo propio sigue vivo y se encadena hacia adelante. Por qué: el valor de una certificación de campo es que describe el ambiente, y un ambiente que cambió invalida la afirmación aunque no invalide el arreglo.
 
 ## Checklist de intervención
 

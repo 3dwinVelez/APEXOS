@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.79.0
+version: 2.80.0
 updated_at: 2026-11-23
 contract: 2
 ---
@@ -233,6 +233,8 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
     - **El hallazgo que ocupa el lugar del cancelado se escribe con dueño por capa**: aquí no había mochila, había un reporte que en modo degradado consulta un almacén vacío y pinta «sin marcaciones» sin avisar. Son cuatro preguntas distintas (contrato del silencio: frontend/backend; por qué nadie escribe esa tabla: db-nube; control positivo de la simulación: qa) y el brief las reparte en vez de agruparlas como «pendiente».
     - **La deuda que el incidente revela se registra con su causa exacta**: el `service_role` de Producción responde `403 42501 permission denied for table time_punches` mientras en QA la misma proyección jsonb funciona; eso es un diferencial de grants entre nubes, se declara y no se «arregla» desde la pantalla.
     Por qué: el criterio refutado se habría cumplido escribiendo código vivo sobre un almacén muerto —bajaría de 0,0 MB a 0,0 MB—, y el defecto real (un reporte que miente por omisión) habría quedado sin dueño ni cifra.
+
+93. **Un pendiente con ventana de reloj se redacta con la hora del ambiente derivada de UTC, y la regla que lo frena se cita con el código que la aplica.** El 2026-11-23, al escribir la sección 18 del brief de la escalera, seis salidas del mismo día aparecían `DESCARTADA ... hora futura` cuando el reloj del puesto marcaba las 16:27 y la etiqueta de zona decía `America/Bogota`. El puesto estaba equivocado: la máquina corre en UTC-5 sin zona, así que `TZ=America/Bogota date` devolvía la hora UTC y Colombia eran las 11:27 — las 14:00 sí eran futuro. El brief no puede heredar esa confusión: se escribe la ventana en horas UTC (`19:00Z = 14:00 CO`), se cita la regla con su línea (`scripts/certifications/hr-marking-blocked-workers.js:389`, `ms > ahora` en `construirRescate`) y se dice qué pasa al abrirse la ventana: si la ruta tiene placa, la misma recogida va a tropezar con `KILOMETRAJE_REQUERIDO`, que es otra regla y otro dueño. Por qué: un pendiente redactado «se recoge al cierre del día» sobre un reloj mal leído se planifica para una hora que nunca llega, y una tarea que no nombra la regla que la bloquea se reabre como si fuera falta de voluntad en vez de una compuerta de producto.
 
 ## Checklist de intervención
 

@@ -2,7 +2,7 @@
 name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
-version: 2.26.0
+version: 2.27.0
 updated_at: 2026-11-23
 contract: 2
 ---
@@ -112,6 +112,12 @@ Si la intervención toca agentes o gobernanza, leer además `.qoder/skills/equip
     - **Lo que ya entró por otro lado no se recomittea**: la fila correspondiente queda marcada en el brief como «ya publicado fuera de este commit» con el hash nuevo, y el `agents:coverage` se corre con `--paths` sobre las rutas propias, porque sin esa bandera los artefactos ajenos del árbol exigen bumps de agentes que no intervinieron.
     - **Los artefactos que el propio proceso genera se devuelven, no se commitean**: `next build` reescribió `apps/web/next-env.d.ts` cambiando la referencia de tipos de `.next-dev` a `.next`. Es un estado del ambiente, no un cambio de producto; se restauró con `git checkout --` sobre ese único archivo (diff verificado antes: dos líneas de referencia de tipos) y quedó fuera del commit.
     Por qué: en un árbol compartido, un barrido ajeno convierte «lo que yo escribí» en algo indistingible de «lo que está publicado»; la única autoridad es la remota del momento, y firmar el inventario de memoria produce commits duplicados o filas que reclaman crédito por trabajo ya ido.
+
+43. **La contabilidad que se escribe después del despliegue se declara en el propio manifiesto y se funda con el tip ajeno: nunca se reescribe ni se salta.** El 2026-11-23, cerrada la pata main de la escalera (`merge 790870a0`, `origin/main` sirviendo ese commit), quedó por versionar el `DESPUÉS` de Producción, que solo puede existir después de que el ambiente corra. Tres decisiones, con el precedente `a0fb7e05` delante:
+    - **Se empuja hacia adelante, no se retroescribe.** Las 8 evidencias del después entraron como `A` en `expected_changes`/`allowed_paths` del manifiesto ya publicado, con `notas.post_publicacion` que dice cuántas rutas tenía el inventario aprobado (36), cuántas quedaron (44), que las nuevas son evidencia leída del ambiente y que no son producto ni migración. Un manifiesto incompleto se subsana declarando, no enmendando un commit que ya está en el remoto.
+    - **Si el destino avanzó por otro, se funde; la contabilidad no se rebase sobre trabajo ajeno.** Mientras se preparaba el empuje, otra pierna promovió `80681aa1` tomando mi merge como ancestro. `git push` habría sido `non-fast-forward`; la salida no fue `reset` ni fuerza: `git merge --no-ff origin/main` (`ee9abd27`) y verificar que el diff neto contra `origin/main` eran solo mis 11 rutas de `docs/qa`, cero rutas de producto y cero borrados. Antes de empujar se revalida `origin/main` con `git fetch`, y se comprueba en el blob fusionado que lo promovido sigue intacto (las 3 líneas de `resolvePunchLadder`).
+    - **La puerta se corre contra el baseline que se aprobó, y su rojo posterior se explica en el propio manifiesto.** `qa:promotion:scope` responde `VALIDO (44 rutas)` con candidato contra `a0fb7e05` —la comparación que certifica la promoción— y `INVALIDO` contra el `origin/main` ya fundido, porque las 22 rutas de la otra pierna pertenecen a su manifiesto. Ese contraste se escribe en `notas.fundo_con_el_tip_actual` en lugar de esconderse o relajar el gate; el rojo no es un fallo del candidato, es la señal de que se está comparando contra la baseline equivocada.
+    Por qué: una evidencia de despliegue que no entra al inventario deja la puerta en rojo o la historia reescrita, y ambas opciones cuestan más que un commit de documentación; en un puesto donde otras sesiones empujan a `main`, fundir y medir el neto es lo único que separa «mi contabilidad» de «lo que el remoto ya tenía».
 
 ## Checklist de intervención
 

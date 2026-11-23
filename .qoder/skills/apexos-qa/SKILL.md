@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.101.0
+version: 2.102.0
 updated_at: 2026-11-23
 contract: 2
 ---
@@ -325,6 +325,11 @@ Antes de actuar, leer en este orden:
     - **`--selftest` con corpora sintéticos**: un fixture que lleva la cadena debe producirla (el detector puede fallar), un fuente limpio no debe inventarla y un directorio inexistente debe devolver `files: 0`.
     - **Umbral de lectura, no verde silencioso**: el reporte publica `archivos_escaneados`, y con `BUILD_ID` ausente los dos checks de bundle salen `FALLO` con `motivo: falta next build`. Un corpus vacío no certifica una ausencia, igual que un grep sobre un archivo que no existe.
     Dos detalles del mismo día que valen como patrón: `npx eslint app/.../mapa/page.tsx test/...mjs` no cubre `components/`, y el único aviso que queda (`react-hooks/exhaustive-deps` en `:431`) es anterior al retiro y ajeno a la línea cambiada: se declara con su línea, no se borra para que el log salga limpio. Y la limitación se escribe tal cual —«no hubo certificación en navegador de la pantalla»— porque la verificación fue de fuente y de artefacto. Por qué: la ausencia es la aserción más fácil de falsificar; sin el mismo escáner encontrando otra cadena en el mismo corpus, cualquier bug de ruta o de filtro da un verde que parece riguroso.
+
+114. **La identidad con que se escribe en Producción se deriva del dato que se va a tocar, y el verde se re-mide cada vez que el destino avanza.** Dos formas de medir mal sin que el instrumento tenga un defecto, vistas el 2026-11-23 en la pata main de la escalera:
+    - **El andamio se sienta en el tenant dueño de la fila.** El administrador efímero se había creado siempre en la empresa modelo NYVORA; las seis jornadas del rescate eran de IMPORTADORA SCJ SAS, así que el API respondió 6× 404 `EMPLEADO_NO_ENCONTRADO` y no escribió nada (`rescate-escalera-intento-tenant-erroneo-20261123.json`, conservado en lugar de borrado). El `tenant_id` sale del manifiesto, no de la costumbre: si las filas abarcan más de un tenant, la corrida aborta en vez de escribir a medias.
+    - **El correo del andamio se crea en minúsculas.** `/auth/login` normaliza a minúsculas antes de buscar (`apps/api/src/modules/auth/service.js:125`), así que una cuenta alta con el sello de corrida en mayúsculas no puede iniciar sesión ni retirarse por el endpoint: queda colgada y solo sale normalizando el correo, poniéndole clave nueva y retirándola **por el endpoint**, nunca por UPDATE. El sello va en minúsculas por eso, no por gusto.
+    - **Un DESPUÉS ancla al binario servido, y el binario se mueve.** La corrida cerró 16/16 sobre `790870a0e439`; mientras se publicaba la contabilidad, otra pierna promovió `80681aa1` tomando ese merge como ancestro, de modo que el ancla `health_ancla_el_commit_servido` pasó a señalar otro commit. La respuesta no es citar el verde viejo ni reetiquetar el artefacto: es **volver a correr el instrumento** contra lo que el ambiente sirve hoy (`campo-despues-produccion-sobre-80681aa1.json`, otra vez 16/16) y dejar el primer artefacto intacto como lo que fue. Por qué: en las dos formas el instrumento estaba bien y la aseveración estaba mal —una escribía en la empresa equivocada, la otra atribuía a un binario que ya no corría—, y en Producción eso se lee como que el arreglo funciona cuando nadie lo midió.
 
 ## Checklist de intervención
 
