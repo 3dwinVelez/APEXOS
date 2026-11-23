@@ -287,9 +287,9 @@
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.20.0",
-      "updated_at": "2026-11-19",
-      "sha256": "dc24ad7e9f641ab7db05bf440c358aed6dc37ddc910ba552580c829c4c23703d",
+      "version": "2.21.0",
+      "updated_at": "2026-11-23",
+      "sha256": "d77b9a34954c6ab0b081e3b203551ee611e1da19b31c6697f1cfb2ab7b21d79c",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -321,9 +321,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.99.0",
+      "version": "2.100.0",
       "updated_at": "2026-11-23",
-      "sha256": "e4df439d462d1ab84c759d5a48005788a0498c3e96eae38e43a206bdb0647f81",
+      "sha256": "13f086c0ea5fff14227c183dd1e23849d2d565a1c0fc24416bdac7a8a53da67b",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [

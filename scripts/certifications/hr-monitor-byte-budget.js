@@ -51,6 +51,17 @@ function argsFrom(argv) {
   return result;
 }
 
+// El ambiente se declara o no se mide. Mientras el predeterminado fue `config/qa.env`, una corrida
+// pedida con una forma que el analizador no entendia terminaba midiendo QA y publicando la evidencia
+// con el nombre del otro ambiente: la puerta media bien, sobre un destino equivocado.
+function declareEnvFile(args) {
+  const value = String(args["env-file"] || "").trim();
+  if (!value) {
+    throw new Error("Falta --env-file=config/<ambiente>.env: esta medicion nunca usa un ambiente predeterminado.");
+  }
+  return path.resolve(value);
+}
+
 function percentile(values, fraction) {
   if (!values.length) return 0;
   const sorted = [...values].sort((a, b) => a - b);
@@ -159,12 +170,26 @@ function selftest() {
   if (parsed.samples !== "5") parseFailures.push(`--samples= se perdio (leo ${JSON.stringify(parsed.samples)})`);
   if (parsed.date !== "2026-11-18") parseFailures.push(`--date sin valor no booleano se perdio (leo ${JSON.stringify(parsed.date)})`);
   if (parsed.selftest !== true) parseFailures.push(`--selftest booleano se perdio (leo ${JSON.stringify(parsed.selftest)})`);
+  // El sentido rojo de la declaracion: sin --env-file el certificador tiene que abortar en vez de
+  // elegir un ambiente por su cuenta. Un control que solo sabe pasar no cierra la puerta.
+  const declareFailures = [];
+  let abortaSinDeclarar = false;
+  try {
+    declareEnvFile({});
+  } catch (error) {
+    abortaSinDeclarar = /Falta --env-file/.test(String(error.message));
+  }
+  if (!abortaSinDeclarar) declareFailures.push("sin --env-file no aborta: mediria un ambiente predeterminado");
+  if (declareEnvFile({ "env-file": "config/production.env" }) !== path.resolve("config/production.env")) {
+    declareFailures.push("con --env-file declarado no resuelve ese archivo");
+  }
   const cases = [
     { id: "gordo-rojo", ok: fatFailures.some((line) => /superan el presupuesto/.test(line)) && fatFailures.some((line) => /binario\(s\) inline/.test(line)), failures: fatFailures },
     { id: "anunciado-verde", ok: leanFailures.length === 0, failures: leanFailures },
     { id: "lento-rojo", ok: slowFailures.some((line) => /p95/.test(line)), failures: slowFailures },
     { id: "volumen-rojo", ok: heavyFailures.some((line) => /superan el presupuesto/.test(line)), failures: heavyFailures },
-    { id: "parseo-ambas-formas", ok: parseFailures.length === 0, failures: parseFailures }
+    { id: "parseo-ambas-formas", ok: parseFailures.length === 0, failures: parseFailures },
+    { id: "ambiente-declarado-obligatorio", ok: declareFailures.length === 0, failures: declareFailures }
   ];
   return cases;
 }
@@ -198,7 +223,7 @@ async function main() {
     return;
   }
 
-  const envFile = path.resolve(String(args["env-file"] || "config/qa.env"));
+  const envFile = declareEnvFile(args);
   require("../load-env")(envFile);
   const environment = String(process.env.TARGET_ENV || process.env.APP_ENV || "").toLowerCase();
   if (!["qa", "production"].includes(environment)) {
