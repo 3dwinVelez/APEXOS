@@ -1,0 +1,120 @@
+{
+  "change_id": "auth-latency-single-statement-main-20261123",
+  "commit": "c42c8d061d816891d68a1405286e38da9617d2a1",
+  "tree_evaluated": "punta de codex/qa-auth-latency-single-statement-main-20261123: el commit funcional c42c8d06 (replay puntual del corte a6a5d73e de develop sobre el tip de main 4be0dd5a) mas este commit de gobernanza con las mediciones de la pierna, la equivalencia de blobs y los dos manifiestos. El arbol de producto medido es c42c8d06: las dos diferenciales en la nube, la regresion protegida y el foco llevan ese sha estampado en su propia evidencia.",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-23T09:55:00-05:00",
+    "instruction": "Despliega el arreglo de una sola sentencia en Produccion y QA para que dejen de caer los 321 rechazos de transporte",
+    "authorization_flags": {
+      "direct_push_to_main": false,
+      "auxiliary_branch_promotion": true,
+      "reason": "El contenido ya esta certificado y medido en el ambiente QA desplegado: campo-qa-sesion-autenticada.json dio 14/14 con sesion HTTP autentica sobre el binario de7af667786a (la fusion del PR #107, o sea este mismo contenido), anclado por GET /health y con la empresa modelo NYVORA. Las siete rutas de producto del candidato a main son blob-identicas a las que se midieron, y los cinco llamadores de validateAuthorization en main son los mismos bytes sobre los que QA certifico."
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas. No otorga force push, reescritura de historia, borrado de ramas, migraciones remotas ni cambios de infraestructura o secretos.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen manifiesto v2, qa:promotion:scope, qa:approval:evidence y el contrato de ci-promotion del destino. El DESPUES en Produccion se versiona despues de que Railway sirva el commit promocionado; mientras ese artefacto no exista, la promesa de que dejan de caer los rechazos queda declarada abierta y no certificada."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-latency-single-statement-main-20261123/campo-qa-sesion-autenticada.json",
+        "../evidence/hr-auth-latency-20261119/diferencial-production-1795445054659.json",
+        "../evidence/auth-latency-single-statement-main-20261123/foco-autenticacion.txt"
+      ],
+      "notes": "La decision de autorizacion resuelve con una sentencia y el piso baja: en Produccion, sobre filas reales, 560 ms con cinco sentencias contra 141 ms con una (factor 0,25, 18 casos, 0 divergencias). En el ambiente QA ya desplegado, la medicion de campo con sesion HTTP autentica y la empresa modelo NYVORA dio 14/14 con el commit servido anclado por /health. Las 18 pruebas de contrato del foco corren en el arbol del candidato y pasan 18/18."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-latency-single-statement-main-20261123/triage-rechazos-produccion-antes.json",
+        "../evidence/auth-latency-single-statement-main-20261123/presupuesto-produccion-antes.json",
+        "../evidence/auth-latency-single-statement-main-20261123/campo-qa-monitor-1795440000000.descartado-selfie-requerida.json"
+      ],
+      "notes": "El defecto esta visto en el ambiente que recibe esta promocion, con el binario 4be0dd5a3262 servido (medido por /health, y a6a5d73e no es ancestro de origin/main): 527 rechazos en la ventana de 3 dias, 466 de ellos de transporte con firma 'Backend no disponible desde frontend' sin codigo ni status HTTP, partida en 259 Load failed, 127 'la plataforma no respondio a tiempo' y 80 Failed to fetch, sobre 19 trabajadores que si marcaron. El presupuesto del monitor en Produccion sale failed por latencia (p95 5000 ms en el mapa del dia y 5511 ms en contadores de eventos) con payloads de 299 bytes y de 2 bytes: el costo esta antes del transporte. La corrida descartada del arnes muestra el otro extremo: el certificador de monitor por referencia choco contra la compuerta de selfie del build desplegado y se cambió de instrumento sin relajar el check."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/hr-auth-latency-differential.js",
+        "../../../scripts/certifications/protected-regression-local.js",
+        "../../../scripts/certifications/admin-inactive-reactivation-field.js",
+        "../evidence/auth-latency-single-statement-main-20261123/equivalencia-blob-main-desarrollo.txt",
+        "../../../scripts/certifications/hr-marking-blocked-workers.js"
+      ],
+      "notes": "Tres instrumentos versionados y con guarda de ambiente: el diferencial replica textualmente la version vieja de cinco sentencias y la compara con el modulo nuevo contra la base del ambiente declarado, aborta sin conectar si el project ref no coincide (QA jbirkghkekuifgfsgquq, Produccion jzbwzmkidfthknsohhnr) y estampa rama y commit en la evidencia; la regresión protegida selecciona diez suites y declara su coverage_mode; el certificador de campo ancla la pierna al commit servido por /health y exige que ese commit sea ancestro del arreglo. La equivalencia de blobs es falla-cerrada: una ruta ausente o un hash vacio se reporta como DIFIERE, nunca como IGUAL (la primera version de ese bloque comparaba vacios contra vacios y dio un falso IGUAL en tres rutas inventadas; se rehizo con los llamadores reales)."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-latency-single-statement-main-20261123/suite-api-candidato.txt",
+        "../evidence/auth-latency-single-statement-main-20261123/foco-autenticacion.txt",
+        "../evidence/auth-latency-single-statement-main-20261123/regresion-protegida-local.json"
+      ],
+      "notes": "Suite completa del API en el arbol del candidato: 1175 pruebas, 1172 pasan, 0 fallan, 3 saltadas y nombradas una por una (decorador de Supabase sin empresa, ciclo de cotizacion/visita en base local, commitments y visits en /api/v1); ninguna de las tres toca autorizacion. Foco de autenticacion 18/18. Regresion protegida 10/10 con 0 ausentes en contabilidad, caja menor, compras, inventario y RBAC. El conteo es menor que el de la pierna a develop (1175 contra 1213) porque main no hospeda buzon, facturas recibidas, comercio ni torre: un arbol menor, no una regresion. La primera corrida de la suite dio 7 rojos que resultaron ser del puesto (faltaban node_modules por paquete y los config/*.env de la worktree nueva); se arregló el arnes, no el check."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-latency-single-statement-main-20261123/equivalencia-blob-main-desarrollo.txt",
+        "../evidence/hr-auth-latency-20261119/diferencial-qa-1795445034395.json",
+        "../evidence/hr-auth-latency-20261119/diferencial-production-1795445054659.json"
+      ],
+      "notes": "No hay esquema nuevo: ninguna migracion se aplica ni se revierte y las 72 migraciones alineadas de QA y Produccion quedan intactas. La superficie tocada es el camino comun de toda peticion autenticada, y por eso la transversal no se fio al arbol: se midio contra los datos reales de los dos ambientes de la nube, con 18 casos por ambiente, cobertura 6 acepta / 9 mide y deja pasar / 3 rechaza, 0 divergencias de decision y 0 anomalias 401. En main los cinco llamadores de validateAuthorization son blob-identicos a la base certificada; el sexto (apex-control/routes.js) no existe en main porque ese modulo aun no se promociona."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/admin-inactive-reactivation-field.js",
+    "evidence": [
+      "../evidence/auth-latency-single-statement-main-20261123/campo-qa-sesion-autenticada.json",
+      "../evidence/auth-latency-single-statement-main-20261123/presupuesto-produccion-antes.json",
+      "../evidence/auth-latency-single-statement-main-20261123/triage-rechazos-produccion-antes.json"
+    ],
+    "controls": 14,
+    "passed": 14,
+    "failed": 0,
+    "substrate": "ambiente QA desplegado desde la fusion de7af667 del PR #107 en develop (commit servido de7af667786a, anclado por GET /health), tenant NYVORA de QA con sesion HTTP autentica y cuenta efimera creada por el propio arnes",
+    "basis": "La corrida no puede atribuirse a otro arbol: el control health_ancla_el_commit_servido lee el commit del despliegue y el veredicto exige que ese commit sea ancestro del arreglo; el artefacto declara codigo_servido_contiene_el_fix = 'arreglo'. El instrumento corre en la worktree del candidato y la equivalencia con el binario desplegado es la del replay blob por blob."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/protected-regression-local.js",
+    "evidence": [
+      "../evidence/auth-latency-single-statement-main-20261123/regresion-protegida-local.json",
+      "../evidence/auth-latency-single-statement-main-20261123/suite-api-candidato.txt",
+      "../evidence/auth-latency-single-statement-main-20261123/equivalencia-blob-main-desarrollo.txt"
+    ],
+    "basis": "Diez suites protegidas del vecindario (contabilidad, caja menor, compras, inventario, RBAC) sobre el arbol del candidato, con el commit c42c8d06 estampado en el artefacto. Se declara su limite: la regresion protegida usa cargadores con prisma falso en memoria y su guard solo comprueba que el host de DATABASE_URL sea local, no que haya base detras, asi que la primera corrida dio 10/10 sobre un puerto apagado. La corrida versionada se repito contra el PostgreSQL del compose (localhost:55432) y el defecto de arnes queda abierto con dueño en apexos-performance/apexos-qa; la prueba de base real de esta pierna son las dos diferenciales contra QA y Produccion, no esa corrida."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/admin-inactive-reactivation-field.js",
+    "evidence": [
+      "../evidence/auth-latency-single-statement-main-20261123/campo-qa-sesion-autenticada.json",
+      "../evidence/auth-latency-single-statement-main-20261123/foco-autenticacion.txt"
+    ],
+    "notes": "Medido sobre la empresa modelo real NYVORA en el ambiente QA desplegado: 14/14 controles con alta por HTTP, sesion autenticada y lectura de autorizacion por el camino comun, anclados al commit servido de7af667786a que es la fusion que promociona este mismo contenido. La differential en la nube complemento con los datos reales de la empresa en Produccion (18 casos, 141 ms con una sentencia contra 560 ms con cinco). Deuda declarada: la cuenta efimera cert.reactivacion.3849419@internal.apexos.local quedo activa en QA y se retira por el endpoint de estado, no con un UPDATE."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "4be0dd5a3262fa165b861d2ae1e9fc63c6e31235",
+    "trigger": "Si en Produccion cualquier peticion autenticada empieza a responder 401 o 403 donde antes respondia 200 (el camino comun es todo el producto: contabilidad, caja menor, compras, inventario, rutas y marcacion); si el diferencial post-despliegue declara alguna divergencia de decision entre una y cinco sentencias; si /health.commit no corresponde al commit promocionado tras el despliegue; o si el censo de rechazos de transporte en la misma ventana de dias resulta mayor que el ANTES de 466.",
+    "notes": "Revert controlado del commit de promocion sobre main (git revert del replay, sin reescribir historia compartida) y redeploy de apexos-api-prod. No hay migraciones: al revertir, la decision de autorizacion vuelve a pagarse en cinco viajes al pooler y el piso de 560 ms en Produccion (1472 ms en QA) regresa exactamente como estaba medido; ningun dato cambia de forma ni de lugar. Las cuentas efimeras que esta intervencion dejo activas en QA quedan declaradas y no requieren accion de rollback."
+  },
+  "evidencia_pendiente_de_despliegue": {
+    "artefacto": "docs/qa/evidence/auth-latency-single-statement-main-20261123/triage-rechazos-produccion-despues.json, presupuesto-produccion-despues.json y campo-qa-sesion-autenticada-despues-produccion.json",
+    "que_falta": "Las tres corridas DESPUES en Produccion, que solo pueden existir una vez que Railway sirva el commit promocionado y que se versionan en cuanto se obtienen. Sin ellas, la promesa de que dejan de caer los rechazos de transporte esta declarada abierta: lo certificado aqui es que el piso por peticion autenticada baja 4x sin cambiar ninguna decision de permiso.",
+    "como_se_corre": "node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/production.env --days=3 --sin-nombres --output=docs/qa/evidence/auth-latency-single-statement-main-20261123/triage-rechazos-produccion-despues.json",
+    "control_de_contraste": "La misma sonda versionada que genero el ANTES, contra la misma ventana de dias y el mismo host: el ANTES marco 527 rechazos y 466 de transporte con causa cruda 259 Load failed / 127 'la plataforma no respondio a tiempo' / 80 Failed to fetch, sobre el binario 4be0dd5a3262. El DESPUES tiene que mostrar otro /health.commit y la cifra comparada, no una reinterpretacion del numero anterior."
+  }
+}

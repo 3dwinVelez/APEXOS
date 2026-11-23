@@ -1,0 +1,19 @@
+# Suite completa del API en el arbol del candidato a main
+# rama: codex/qa-auth-latency-single-statement-main-20261123  commit: c42c8d061d816891d68a1405286e38da9617d2a1
+# fecha: 2026-11-23T09:39:10-05:00
+# Node: v22.23.1  DISABLE_REDIS=true
+
+$ cd apps/api && DISABLE_REDIS=true node --test --test-force-exit "test/*.test.js"
+# tests 1175
+# suites 0
+# pass 1172
+# fail 0
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 44308.3055
+
+=== pruebas saltadas, nombradas una por una ===
+ok 205 - el decorador real responde 403 al usuario Supabase sin empresa y 401 al token basura # SKIP
+ok 275 - cotizacion, cancelacion con motivo, pedido, visita y 360 en base local # SKIP
+ok 302 - commitments y visits estan montadas en /api/v1 y bloquean acceso anonimo # SKIP

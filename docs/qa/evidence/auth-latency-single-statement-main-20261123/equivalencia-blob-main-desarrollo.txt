@@ -1,0 +1,46 @@
+# Equivalencia de blobs ruta por ruta: candidato a main vs el corte certificado en develop
+# candidato: c42c8d061d816891d68a1405286e38da9617d2a1 (codex/qa-auth-latency-single-statement-main-20261123) sobre base main 4be0dd5a3262fa165b861d2ae1e9fc63c6e31235
+# corte certificado en develop: a6a5d73e (PR #107, fusion de7af667)
+# origen en desarrollo: 19df3ca2
+# fecha: 2026-11-23T09:44:36-05:00
+
+RUTA                                                       CANDIDATO     DEVELOP       DESARROLLO    VEREDICTO
+apps/api/src/security/authorizationState.js                f8335e88f5a9  f8335e88f5a9  f8335e88f5a9  IDENTICO al corte certificado
+apps/api/test/auth-session-hardening.test.js               52348fd15de0  52348fd15de0  52348fd15de0  IDENTICO al corte certificado
+apps/api/test/authorization-observe.test.js                c0fff14d6334  c0fff14d6334  c0fff14d6334  IDENTICO al corte certificado
+apps/api/test/security-authorization-revocation.test.js    8a5b0343b2ec  8a5b0343b2ec  8a5b0343b2ec  IDENTICO al corte certificado
+docs/AUTHORIZATION_REVOCATION_DESIGN.md                    d7f982433001  d7f982433001  d7f982433001  IDENTICO al corte certificado
+docs/PERFORMANCE_ANTI_PATTERNS.md                          a90e8186646a  a90e8186646a  a90e8186646a  IDENTICO al corte certificado
+docs/briefs/2026-11-19-piso-de-latencia-autenticacion.md   f6afe8206261  f6afe8206261  f6afe8206261  IDENTICO al corte certificado
+docs/qa/certifications/auth-latency-single-statement-20261119.md 8988254fa461  8988254fa461                IDENTICO al corte certificado
+docs/qa/evidence/auth-latency-single-statement-20261119/regresion-protegida-local.json 934528e5cbcf  934528e5cbcf                IDENTICO al corte certificado
+docs/qa/evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt 708c6f7fc073  708c6f7fc073                IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/00-veredicto.md  10439239a061  10439239a061  10439239a061  IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101013473.descartada-por-arnes.json 1785c1d6c4e7  1785c1d6c4e7  1785c1d6c4e7  IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101133595.descartada-sin-gate-de-cobertura.json 7bf611e070f5  7bf611e070f5  7bf611e070f5  IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101412324.descartada-clasificacion-arnes.json d5cd1bb3f4f2  d5cd1bb3f4f2  d5cd1bb3f4f2  IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101527356.json d5d8bef9835a  d5d8bef9835a  d5d8bef9835a  IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795104568970.json 21417dd40144  21417dd40144                IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795441688976.json 88b746b0d300  88b746b0d300                IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795100959367.descartada-por-arnes.json ff144c62fe36  ff144c62fe36  ff144c62fe36  IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101173303.descartada-cobertura-vacia.json 332a6f0c825b  332a6f0c825b  332a6f0c825b  IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101386852.descartada-clasificacion-arnes.json dbaa5548e60d  dbaa5548e60d  dbaa5548e60d  IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101503295.json 421674ee77ad  421674ee77ad  421674ee77ad  IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795104551670.json 387593ee855e  387593ee855e                IDENTICO al corte certificado
+docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795441669327.json 6f17ab342ba3  6f17ab342ba3                IDENTICO al corte certificado
+package.json                                               b0fb9a75a06f  9a525b1de3f9  1a187e86c4dd  DIFIERE
+scripts/certifications/hr-auth-latency-differential.js     49c92ebad1e4  49c92ebad1e4  49c92ebad1e4  IDENTICO al corte certificado
+
+# Rutas base del destino (blob en origin/main antes del replay):
+apps/api/src/security/authorizationState.js                main_antes:69c503b17914
+package.json                                               main_antes:f38ffc3e3ce5
+# Consumidores del camino comun en Produccion: blob en el tip de main vs blob sobre el que QA certifico (padre del corte)
+# Se comparan los llamadores reales de validateAuthorization, no el middleware generico.
+# La comparacion es falla-cerrada: una ruta ausente o un hash vacio se reportan como DIFIERE, nunca como IGUAL.
+RUTA                                                       MAIN(antes)    PADRE_DEL_CORTE VEREDICTO
+apps/api/src/core/prisma.js                                157fb6ffe3a2   157fb6ffe3a2   IGUAL
+apps/api/src/fabric/metrics.js                             75227814ea2d   75227814ea2d   IGUAL
+apps/api/src/modules/admin/service.js                      3f12886496a0   3f12886496a0   IGUAL
+apps/api/src/modules/apex-control/routes.js                AUSENTE        AUSENTE        DIFIERE (ruta ausente en alguno)
+apps/api/src/modules/auth/service.js                       41c4269af443   41c4269af443   IGUAL
+apps/api/src/modules/collaboration/routes.js               b81e4a288be1   b81e4a288be1   IGUAL

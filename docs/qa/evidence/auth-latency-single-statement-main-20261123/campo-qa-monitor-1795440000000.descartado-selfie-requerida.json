@@ -1,0 +1,30 @@
+{
+  "change_id": "hr-monitor-evidence-demand-20260824",
+  "environment": "QA",
+  "company": "NYVORA",
+  "generated_at": "2026-11-23T14:21:50.629Z",
+  "api_commit": "de7af667786a",
+  "checks": [
+    {
+      "name": "entrada_sin_selfie_rechazada",
+      "ok": true,
+      "detail": {
+        "code": "SELFIE_REQUERIDA"
+      }
+    }
+  ],
+  "fixture": {
+    "employee_user_id": 775,
+    "monitor_user_id": 776,
+    "route_id": 404
+  },
+  "status": "failed",
+  "error": {
+    "message": "POST /api/v1/hr/self/time-punches: esperado 200, obtenido 400",
+    "payload": {
+      "error": "Toma la selfie de validacion para registrar esta marcacion.",
+      "code": "SELFIE_REQUERIDA",
+      "request_id": "req-g"
+    }
+  }
+}
