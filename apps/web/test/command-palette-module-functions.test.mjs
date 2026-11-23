@@ -79,9 +79,10 @@ test("cada funcion declara modulo habilitable, etiqueta y palabras clave", () =>
 
 test("el buscador ofrece las funciones clave del modulo de talento humano", () => {
   const byLabel = new Map(functionEntries.map((entry) => [entry.label, entry]));
-  assert.equal(byLabel.get("Crear mallas")?.href, "/dashboard/talento-humano/rutas");
-  assert.equal(byLabel.get("Ver monitor de mallas")?.href, "/dashboard/talento-humano/mapa");
-  assert.match(byLabel.get("Ver monitor de mallas")?.keywords || "", /marcacion/);
+  assert.equal(byLabel.get("Horarios y mallas")?.href, "/dashboard/talento-humano/rutas");
+  assert.equal(byLabel.get("Ver mapa operativo")?.href, "/dashboard/talento-humano/mapa");
+  assert.match(byLabel.get("Horarios y mallas")?.keywords || "", /marcacion/);
+  assert.equal(byLabel.get("Gestionar bancos de empleados")?.href, "/dashboard/talento-humano/bancos");
 });
 
 test("los alias excluidos si son redirecciones y no destinos propios", () => {

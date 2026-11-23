@@ -1,6 +1,12 @@
+const { calculateTerminationBenefits } = require("./terminationBenefits");
+const { reviewDays } = require("./dayReview");
+const { assertPayrollPeriod } = require("./payrollPeriod");
+const { settleTerminationBenefits, reverseTerminationBenefits } = require("./terminationBenefitPayments");
+const { terminationDeductions } = require("./terminationDeductions");
 const { punchPhotoItems, punchMonitorMetadata } = require("./punchEvidence");
 const { findUserForEmployee } = require("./employeeUserLink");
 const prisma = require("../../core/prisma");
+const banks = require("./banks").bankService(prisma);
 const { Prisma } = require("@prisma/client");
 const { randomUUID } = require("crypto");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
@@ -1240,6 +1246,8 @@ async function listEmployeeContracts(tenantId, employeeId, query = {}) {
     `;
     return rows.map((row) => jsonSafeBigInt({
       ...row,
+      valid_from: row.valid_from instanceof Date ? row.valid_from.toISOString() : row.valid_from,
+      valid_to: row.valid_to instanceof Date ? row.valid_to.toISOString() : row.valid_to,
       id: Number(row.id),
       previous_contract_id: row.previous_contract_id == null ? null : Number(row.previous_contract_id),
       termination_document_id: row.termination_document_id == null ? null : Number(row.termination_document_id)
@@ -1372,6 +1380,7 @@ async function createEmployee(tenantId, input) {
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
     await assertEmployeeDocumentAvailable(tx, tenantId, input);
     const linkedUserId = await findUserForEmployee(tx, tenantId, input);
+    const banking = await banks.employeeMetadata(tx, tenantId, input);
     const employee = await tx.employee.create({
       data: {
         user_id: linkedUserId,
@@ -1385,6 +1394,7 @@ async function createEmployee(tenantId, input) {
         end_date: input.end_date ? new Date(input.end_date) : null,
         contract_type: normalizeContractType(input.contract_type),
         metadata: {
+          ...banking,
           name: fullName || "",
           document: input.document || "",
           document_type: input.document_type || "",
@@ -1490,6 +1500,7 @@ async function updateEmployee(tenantId, id, input = {}) {
         throw error;
       }
       const linkedUserId = latest.user_id || await findUserForEmployee(tx, tenantId, { ...nextMetadata, ...(input.user_id !== undefined ? { user_id: input.user_id } : {}) }, employeeId);
+      Object.assign(nextMetadata, await banks.employeeMetadata(tx, tenantId, input, latest.metadata || {}));
       const employee = await tx.employee.update({
       where: { id: employeeId },
       data: {
@@ -3285,6 +3296,7 @@ function ownOperationalInput(input, employee, user) {
 async function createOwnPunch(tenantId, user, input) {
   const employee = await getCurrentEmployee(tenantId, user);
   await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
+  input = require("./webPunchSelfie").prepareWebPunchSelfie(input);
   // Antes de crear nada: una marcacion de la app sin telefono registrado,
   // firma valida o selfie se rechaza aqui y no queda a medias.
   // `await` obligatorio: la inspeccion de la selfie decodifica con sharp para decidir si el
@@ -5084,7 +5096,6 @@ async function salarySnapshotsForEmployees(tenantId, employeeIds = [], start, en
 }
 
 function weightedSalaryForPeriod(employee, snapshots = [], start, end) {
-  const totalDays = Math.max(daysInclusive(start, end), 1);
   if (!snapshots.length) {
     const salary = Number(employee.salary_base || 0);
     return { monthly_salary: salary, daily_salary: salary / 30, source: "employee_current", segments: [] };
@@ -5100,7 +5111,10 @@ function weightedSalaryForPeriod(employee, snapshots = [], start, end) {
     weighted += monthly * days;
     segments.push({ valid_from: from.toISOString().slice(0, 10), valid_to: to.toISOString().slice(0, 10), days, monthly_salary: monthly });
   }
-  const monthlySalary = weighted ? money(weighted / totalDays) : Number(employee.salary_base || 0);
+  // A partial salary-history window is a monthly rate, not unpaid time. Days
+  // outside its validity must not dilute the rate and then be deducted again.
+  const coveredDays = segments.reduce((sum, segment) => sum + segment.days, 0);
+  const monthlySalary = coveredDays ? money(weighted / coveredDays) : Number(employee.salary_base || 0);
   return { monthly_salary: monthlySalary, daily_salary: monthlySalary / 30, source: "salary_history", segments };
 }
 
@@ -5225,6 +5239,9 @@ function payrollLine(code, name, quantity, rate, amount, source = "system", conc
 }
 
 function payrollConceptFallback(code) {
+  if (code === "BONIFICACION_NO_SALARIAL") return { name: "Bonificacion no salarial", concept_type: "devengo", salary_constitutive: false, affects_ibc: false, metadata: { exclude_from_social_benefits_base: true } };
+  if (code === "BONIFICACION_SALARIAL" || code === "COMISION") return { name: code === "COMISION" ? "Comision" : "Bonificacion salarial", concept_type: "devengo", salary_constitutive: true, affects_ibc: true };
+
   if (code === "JORNADA_ORDINARIA") {
     return { name: "Jornada ordinaria", concept_type: "devengo", salary_constitutive: true, affects_ibc: true, metadata: { legal_group: "salario" } };
   }
@@ -5455,14 +5472,20 @@ function buildTerminationBenefitLines({ salaryBase, startDate, terminationDate, 
   }).filter((line) => line.amount > 0);
 }
 
-async function benefitBalancesForEmployee(tenantId, employeeId) {
-  return prisma.$queryRaw`
-    SELECT concept_code, SUM(accrued_amount) AS accrued_amount, SUM(paid_amount) AS paid_amount, SUM(balance_amount) AS balance_amount
-    FROM th_prestaciones_saldos
-    WHERE tenant_id = ${tenantId}
-      AND employee_id = ${employeeId}
-    GROUP BY concept_code
-  `.catch(() => []);
+async function benefitBalancesForEmployee(tenantId, employeeId, db = prisma, terminationDate, contractStart) {
+  const rows = await db.$queryRaw`
+    SELECT b.*,
+      CASE WHEN b.metadata->'termination_settlement'->>'document_id' IN (
+        SELECT id::text FROM th_liquidaciones_trabajador WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} AND termination_date = ${terminationDate}::date
+      ) THEN (b.metadata->'termination_settlement'->'before'->>'paid_amount')::numeric ELSE b.paid_amount END AS effective_paid
+    FROM th_prestaciones_saldos b
+    WHERE b.tenant_id = ${tenantId} AND b.employee_id = ${employeeId} AND b.date_end >= ${contractStart}::date AND b.date_start <= ${terminationDate}::date
+      AND NOT (b.source_document_type = 'retiro' AND b.source_document_id IN (
+        SELECT id FROM th_liquidaciones_trabajador WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} AND termination_date = ${terminationDate}::date
+      ))
+    ORDER BY b.date_start, b.id
+  `;
+  return rows.map(row => ({ ...row, date_start: new Date(row.date_start).toISOString().slice(0, 10), date_end: new Date(row.date_end > terminationDate ? terminationDate : row.date_end).toISOString().slice(0, 10), paid_amount: Number(row.effective_paid) }));
 }
 
 async function updateBenefitBalancesFromPayroll(tx, tenantId, document) {
@@ -5482,30 +5505,59 @@ async function updateBenefitBalancesFromPayroll(tx, tenantId, document) {
   }
 }
 
-async function buildEmployeeTerminationLiquidation(tenantId, input = {}) {
+async function buildEmployeeTerminationLiquidation(tenantId, input = {}, db = prisma) {
   const employeeId = numericId(input.employee_id);
   if (!employeeId) throw validationError("Empleado invalido.", 400, "EMPLEADO_INVALIDO");
   const terminationDate = dateOnly(input.termination_date || input.fecha_retiro, null);
   if (!terminationDate) throw validationError("La fecha de retiro es obligatoria.", 400, "FECHA_RETIRO_REQUERIDA");
   return prisma.runWithTenant(tenantId, async () => {
-    const employee = await prisma.employee.findFirst({ where: { tenant_id: tenantId, id: employeeId }, include: { user: { select: safeUserSelect } } });
+    const employee = await db.employee.findFirst({ where: { tenant_id: tenantId, id: employeeId }, include: { user: { select: safeUserSelect } } });
     if (!employee) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
-    const startDate = startOfDay(input.hire_date || employee.hire_date || employee.created_at || terminationDate);
+    const contracts = await db.$queryRaw`
+      SELECT * FROM th_empleado_contratos WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId}
+        AND valid_from <= ${terminationDate}::date
+        AND (valid_to IS NULL OR valid_to >= ${terminationDate}::date)
+      ORDER BY valid_from DESC, id DESC LIMIT 1
+    `;
+    const contract = contracts[0];
+    const startDate = startOfDay(new Date(contract?.valid_from || employee.hire_date || employee.created_at).toISOString().slice(0, 10));
+    if (terminationDate < startDate) throw validationError("Retiro anterior al ingreso.", 422, "RETIRO_ANTERIOR_INGRESO");
+    const priorTermination = await db.$queryRaw`
+      SELECT id FROM th_liquidaciones_trabajador WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId}
+        AND termination_date >= ${startDate}::date AND termination_date <> ${terminationDate}::date LIMIT 1
+    `;
+    if (priorTermination.length) throw validationError("Este contrato ya tiene una liquidacion de retiro. Revisa el documento existente.", 409, "CONTRATO_YA_LIQUIDADO");
+    const payrolls = await db.$queryRaw`
+      SELECT date_start, date_end FROM th_nomina_documentos WHERE tenant_id = ${tenantId}
+        AND employee_id = ${employeeId} AND date_end >= ${startDate}::date ORDER BY date_end DESC
+    `;
+    const latest = payrolls[0]?.date_end;
+    if (latest && new Date(latest).toISOString().slice(0, 10) > terminationDate.toISOString().slice(0, 10)) {
+      throw validationError("Hay nominas posteriores al retiro. Corrigelas antes de liquidar para evitar pagos superpuestos.", 409, "NOMINA_POSTERIOR_RETIRO");
+    }
+    const pendingStart = startOfDay(input.pending_start || (latest ? new Date(new Date(latest).getTime() + 86400000).toISOString().slice(0, 10) : startDate));
+    const requiredPendingStart = startOfDay(latest ? new Date(new Date(latest).getTime() + 86400000).toISOString().slice(0, 10) : startDate);
+    if (pendingStart.getTime() !== requiredPendingStart.getTime()) throw validationError("El inicio pendiente se deriva del contrato y las nominas registradas; no se pueden omitir dias sin revisar.", 422, "INICIO_PENDIENTE_REQUIERE_SOPORTE");
+    if (pendingStart < startDate) throw validationError("El inicio pendiente no puede preceder el contrato.", 422, "PENDIENTES_ANTES_CONTRATO");
+    if (payrolls.some(row => new Date(row.date_start).toISOString().slice(0, 10) <= terminationDate.toISOString().slice(0, 10) && new Date(row.date_end).toISOString().slice(0, 10) >= pendingStart.toISOString().slice(0, 10))) {
+      throw validationError("Hay una nomina que cubre el periodo pendiente. Corrige o elimina ese documento antes de liquidar el retiro.", 409, "NOMINA_SUPERPUESTA_RETIRO");
+    }
     const salarySnapshots = await salarySnapshotsForEmployees(tenantId, [employeeId], startDate, terminationDate);
     const salaryInfo = weightedSalaryForPeriod(employee, salarySnapshots.get(employee.id) || [], startDate, terminationDate);
-    const salaryBase = Number(input.salary_base || salaryInfo.monthly_salary || employee.salary_base || 0);
-    const benefitSalaryBase = Number(input.salary_base || salaryInfo.monthly_salary || employee.salary_base || 0);
-    const contractType = normalizeContractType(input.contract_type || employee.contract_type);
+    const salaryBase = Number(salaryInfo.monthly_salary || contract?.salary_base || employee.salary_base || 0);
+    const benefitSalaryBase = Number(salaryInfo.monthly_salary || contract?.salary_base || employee.salary_base || 0);
+    const contractType = normalizeContractType(contract?.contract_type || employee.contract_type);
     const serviceDays = daysInclusive(startDate, terminationDate);
-    const remainingDays = input.remaining_days !== undefined
-      ? Number(input.remaining_days || 0)
-      : employee.end_date ? Math.max(daysInclusive(new Date(terminationDate.getTime() + 86400000), employee.end_date), 0) : 0;
+    const contractEnd = contract?.valid_to || employee.end_date;
+    const remainingDays = contractEnd ? Math.max(daysInclusive(new Date(terminationDate.getTime() + 86400000), startOfDay(new Date(contractEnd).toISOString().slice(0, 10))), 0) : 0;
     const terminationReason = String(input.termination_reason || "retiro_voluntario").trim();
-    const balances = await benefitBalancesForEmployee(tenantId, employeeId);
+    const futurePayments = await db.$queryRaw`SELECT d.id FROM th_prestaciones_pagos_documentos d JOIN th_prestaciones_pagos_lineas l ON l.document_id = d.id AND l.tenant_id = d.tenant_id
+      WHERE d.tenant_id = ${tenantId} AND l.employee_id = ${employeeId} AND d.status <> 'anulado' AND d.payment_date > ${terminationDate}::date LIMIT 1`;
+    if (futurePayments.length) throw validationError("Hay pagos de prestaciones posteriores al corte. Revisalos antes de liquidar.", 409, "PRESTACION_POSTERIOR_RETIRO");
+    const balances = await benefitBalancesForEmployee(tenantId, employeeId, db, terminationDate, startDate);
     const smmlvRows = await activeLaborParameterValues(tenantId, terminationDate, ["SMMLV"]);
     const smmlv = Number(smmlvRows.SMMLV?.value || 0) || LEGAL_PARAMETER_FALLBACKS_CO_2026.SMMLV;
     const smmlvSource = Number(smmlvRows.SMMLV?.value || 0) > 0 ? "parametro_vigente" : "respaldo_legal_2026";
-    const benefitLines = buildTerminationBenefitLines({ salaryBase: benefitSalaryBase, startDate, terminationDate, paidBalances: balances });
     const indemnizationDays = terminationReason === "sin_justa_causa"
       ? indemnizationDaysForTermination({ contractType, salaryBase, serviceDays, remainingDays, smmlv })
       : 0;
@@ -5513,10 +5565,70 @@ async function buildEmployeeTerminationLiquidation(tenantId, input = {}) {
     const indemnizationLine = indemnizationAmount
       ? [payrollLine("INDEMNIZACION_SIN_JUSTA_CAUSA", "Indemnizacion por despido sin justa causa", indemnizationDays, salaryBase / 30, indemnizationAmount, "retiro", { concept_type: "devengo", salary_constitutive: false, affects_ibc: false, metadata: { legal_group: "indemnizacion" } })]
       : [];
-    const salaryDays = Math.min(Number(input.pending_salary_days || 0), 30);
-    const salaryLine = salaryDays > 0 ? [payrollLine("SALARIO_PENDIENTE", "Salario pendiente a la fecha de retiro", salaryDays, salaryBase / 30, (salaryBase / 30) * salaryDays, "retiro", { concept_type: "devengo", salary_constitutive: true, affects_ibc: true, metadata: { legal_group: "salario" } })] : [];
-    const lines = [...salaryLine, ...benefitLines, ...indemnizationLine];
-    const gross = money(lines.filter((line) => Number(line.amount || 0) > 0).reduce((sum, line) => sum + Number(line.amount || 0), 0));
+    const pendingLines = [];
+    const pendingPeriods = [];
+    const dayReviews = [];
+    let cursor = pendingStart;
+    while (cursor <= terminationDate) {
+      if (pendingPeriods.length >= 120) throw validationError("Revisa el rango pendiente: supera 120 quincenas.", 422, "RANGO_PENDIENTE_EXCESIVO");
+      const day = cursor.getUTCDate();
+      const naturalEnd = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + (day > 15 ? 1 : 0), day <= 15 ? 15 : 0));
+      const end = startOfDay((naturalEnd < terminationDate ? naturalEnd : terminationDate).toISOString().slice(0, 10));
+      const naturalStart = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), day <= 15 ? 1 : 16));
+      const periodKey = periodKeyFromRange({ start: naturalStart, end: startOfDay(naturalEnd.toISOString().slice(0, 10)), type: "quincena" });
+      const payrollRows = await buildPayrollLiquidationRows(tenantId, { employee_id: employeeId, fecha_inicio: cursor.toISOString().slice(0, 10), fecha_fin: end.toISOString().slice(0, 10), period_type: "quincena", period_key: periodKey }, { termination: true });
+      dayReviews.push(...(payrollRows[0]?.source_summary?.revision_dias || []));
+      for (const line of payrollRows[0]?.lines || []) {
+        if (line.source === "prestaciones" || line.source === "libranza") continue;
+        pendingLines.push({ ...line, metadata: { ...line.metadata, pending_period: periodKey, date_start: cursor.toISOString().slice(0, 10), date_end: end.toISOString().slice(0, 10) } });
+      }
+      pendingPeriods.push({ start: cursor.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10), period_key: periodKey });
+      cursor = startOfDay(new Date(end.getTime() + 86400000));
+    }
+    const historicalDocuments = await db.$queryRaw`SELECT lines, date_start, date_end FROM th_nomina_documentos
+      WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} AND date_start >= ${startDate}::date AND date_end <= ${terminationDate}::date ORDER BY date_start, id`;
+    const historicalLines = historicalDocuments.flatMap(doc => (doc.lines || []).map(line => ({ ...line, metadata: { ...line.metadata, date_start: new Date(doc.date_start).toISOString().slice(0, 10), date_end: new Date(doc.date_end).toISOString().slice(0, 10) } })));
+    const vacationPaymentCodes = new Set(["VACACIONES", "VACACIONES_DISFRUTADAS", "VACACIONES_COMPENSADAS"]);
+    const vacationPayments = [...historicalLines, ...pendingLines].filter(line => vacationPaymentCodes.has(line.code) && line.amount > 0 && line.source !== "prestaciones");
+    const paymentBalances = [...balances, ...vacationPayments.map(line => ({ concept_code: "VACACIONES", date_start: startDate.toISOString().slice(0, 10), date_end: terminationDate.toISOString().slice(0, 10), paid_amount: line.amount }))];
+    const benefitWindows = calculateTerminationBenefits({
+      start: startDate.toISOString().slice(0, 10), end: terminationDate.toISOString().slice(0, 10),
+      balances: paymentBalances, lines: [...historicalLines, ...pendingLines],
+      salaryFor: (from, to, code) => {
+        const average = weightedSalaryForPeriod(employee, salarySnapshots.get(employee.id) || [], startOfDay(from), startOfDay(to)).monthly_salary;
+        if (code === "PRIMA_SERVICIOS") return average;
+        const last = weightedSalaryForPeriod(employee, salarySnapshots.get(employee.id) || [], startOfDay(to), startOfDay(to)).monthly_salary;
+        const recent = startOfDay(to); recent.setUTCMonth(recent.getUTCMonth() - 3);
+        const changed = (salarySnapshots.get(employee.id) || []).some(row => new Date(row.valid_to || to) >= recent && new Date(row.valid_from) <= startOfDay(to) && Number(row.monthly_salary) !== Number(last));
+        return changed ? average : last;
+      }
+    });
+    const benefitLines = benefitWindows.map(window => ({
+      ...benefitLine(window.code, window.amount, window.days), accrued_amount: window.accrued_amount, paid_amount: window.paid_amount, balance_amount: window.amount,
+      metadata: { date_start: window.start, date_end: window.end, base: window.base, averaging_start: window.averaging_start, commercial_days: window.days, payment_target: "trabajador" }
+    }));
+    const lines = [...pendingLines, ...benefitLines, ...indemnizationLine];
+    const gross = money(lines.filter(line => line.amount > 0).reduce((sum, line) => sum + line.amount, 0));
+    const beforeLoans = money(lines.reduce((sum, line) => sum + line.amount, 0));
+    const salaryEarnings = pendingLines.filter(line => line.amount > 0 && line.salary_constitutive !== false).reduce((sum, line) => sum + line.amount, 0);
+    const otherDeductions = Math.abs(pendingLines.filter(line => line.amount < 0).reduce((sum, line) => sum + line.amount, 0));
+    const loans = await db.$queryRaw`
+      SELECT l.*, c.code AS concept_code, c.name AS concept_name,
+        COALESCE(l.balance_amount, l.original_amount, 0) + COALESCE(own.amount, 0) AS balance_amount
+      FROM th_libranza_empleados l JOIN th_libranza_conceptos c ON c.id = l.concept_id AND c.tenant_id = l.tenant_id
+      LEFT JOIN LATERAL (
+        SELECT SUM(m.amount) AS amount FROM th_libranza_movimientos m JOIN th_liquidaciones_trabajador d
+          ON m.period_key = 'retiro:' || d.id::text AND m.tenant_id = d.tenant_id
+        WHERE m.tenant_id = l.tenant_id AND m.employee_libranza_id = l.id AND m.status = 'aplicado'
+          AND d.employee_id = ${employeeId} AND d.termination_date = ${terminationDate}::date
+      ) own ON true
+      WHERE l.tenant_id = ${tenantId} AND l.employee_id = ${employeeId} AND (l.status = 'activa' OR own.amount > 0)
+        AND l.start_date <= ${terminationDate}::date ORDER BY l.start_date, l.id
+    `;
+    const loanResult = terminationDeductions({ loans, authorizations: input.libranza_authorizations || [], salaryNet: Math.max(0, salaryEarnings - otherDeductions), benefits: benefitLines.reduce((sum, line) => sum + line.amount, 0), available: beforeLoans });
+    lines.push(...loanResult.lines);
+    const deductions = money(Math.abs(lines.filter(line => line.amount < 0).reduce((sum, line) => sum + line.amount, 0)));
+    if (deductions > gross) throw validationError("Los descuentos superan los devengos. Revisa las novedades.", 422, "LIQUIDACION_NETA_NEGATIVA");
     const benefitBalanceAmount = money(benefitLines.reduce((sum, line) => sum + Number(line.amount || 0), 0));
     return {
       employee_id: employee.id,
@@ -5526,29 +5638,46 @@ async function buildEmployeeTerminationLiquidation(tenantId, input = {}) {
       termination_reason: terminationReason,
       contract_type: contractType,
       gross,
-      deductions: 0,
-      net: gross,
+      deductions,
+      net: money(gross - deductions),
       indemnization_amount: indemnizationAmount,
       benefit_balance_amount: benefitBalanceAmount,
       lines,
       source_summary: {
+        contrato_id: contract?.id == null ? null : Number(contract.id),
+        contrato_fuente: contract ? "historial_contratos" : "maestro_empleado",
+        pendientes_desde: pendingStart.toISOString().slice(0, 10),
+        revision_dias: dayReviews,
+        dias_sin_justificar: dayReviews.filter(day => day.status === "pendiente").length,
+        resumen_salario_pendiente: { dias_reconocidos: dayReviews.filter(day => day.paid).length, dias_no_remunerados: dayReviews.filter(day => !day.paid && day.status !== "pendiente").length, dias_pendientes: dayReviews.filter(day => day.status === "pendiente").length, valor_diario: money(salaryBase / 30), salario_pendiente: money(pendingLines.filter(line => line.code === "SALARIO_BASICO").reduce((sum, line) => sum + Number(line.amount || 0), 0)) },
+        periodos_pendientes: pendingPeriods,
+        libranzas: loanResult.audit,
+        limite_libranza_salarial: loanResult.salary_limit,
+        politica_libranza: "50% del salario neto; prestaciones solo con autorizacion expresa y soporte juridico del porcentaje. Indemnizacion excluida.",
         fecha_ingreso: startDate.toISOString().slice(0, 10),
         fecha_retiro: terminationDate.toISOString().slice(0, 10),
         dias_servicio: serviceDays,
         dias_faltantes_contrato: remainingDays,
         dias_indemnizacion: indemnizationDays,
         base_salarial: salaryBase,
+        employee_document: employee.metadata?.document || null,
+        position: employee.position || null,
+        bank_entity_name: employee.metadata?.bank_entity_name || null,
+        bank_account_code: employee.metadata?.bank_account_code || null,
         base_prestaciones_retiro: benefitSalaryBase,
         historial_salarial_retiro: salaryInfo.segments,
         saldos_previos_prestaciones: balances,
         smmlv_referencia_indemnizacion: { valor: smmlv, fuente: smmlvSource },
+        periodos_prestaciones: benefitWindows,
+        pago_prestaciones: "Integrado al neto de retiro; cesantias definitivas al trabajador; comprobantes enlazados, no pagos adicionales.",
         regla_indemnizacion: terminationReason === "sin_justa_causa" ? "CST art. 64" : "No aplica indemnizacion por causal seleccionada"
       }
     };
   });
 }
 
-async function buildPayrollLiquidationRows(tenantId, input = {}) {
+async function buildPayrollLiquidationRows(tenantId, input = {}, options = {}) {
+  assertPayrollPeriod(input, { partial: Boolean(options.termination) });
   const { start, end } = periodFromRange(input);
   const periodType = input.period_type || input.tipo_periodo || "quincena";
   const periodKey = input.period_key || periodKeyFromRange({ start, end, type: periodType });
@@ -5556,15 +5685,26 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
   const sinMarcacionesJustificacion = String(input.justificacion_sin_marcaciones || input.sin_marcaciones_justificacion || "").trim();
   const endExclusive = endOfDay(end);
   const employeeFilter = input.employee_id ? { id: numericId(input.employee_id) } : {};
-  const [deductionMasters, legalParameterRows, surchargeMasters, payrollConcepts, employees, payrollConfig, socialContributionParameters] = await Promise.all([
+  const [deductionMasters, legalParameterRows, surchargeMasters, payrollConcepts, employeeCandidates, payrollConfig, socialContributionParameters] = await Promise.all([
     activeLaborDeductions(tenantId, start),
     activeLaborParameterValues(tenantId, start, ["SMMLV", "AUX_TRANSPORTE", "AUX_TRANSPORTE_TOPE_SMMLV", "HORAS_MENSUALES_ORDINARIAS", "EXONERACION_APORTES_TOPE_SMMLV", "EXONERACION_EMPRESA_ELEGIBLE", "IBC_TOPE_SMMLV", "IBC_CAPS_FLOORS", "REDONDEO_PILA", "MAX_HE_DIARIO", "MAX_HE_SEMANAL"]),
     activeSurchargeConcepts(tenantId, start),
     activePayrollConcepts(tenantId, start, input.country || "CO"),
-    prisma.employee.findMany({ where: { active: true, ...employeeFilter }, include: { user: { select: safeUserSelect } } }),
+    prisma.employee.findMany({ where: { tenant_id: tenantId, ...(options.termination ? {} : { active: true }), ...employeeFilter }, include: { user: { select: safeUserSelect } } }),
     getPayrollConfig(tenantId),
     activeSocialContributionParameters(tenantId, start)
   ]);
+  const settled = options.termination ? [] : await prisma.$queryRaw`
+    SELECT d.employee_id FROM th_liquidaciones_trabajador d
+    JOIN "Employee" e ON e.id = d.employee_id AND e.tenant_id = d.tenant_id
+    WHERE d.tenant_id = ${tenantId}
+      AND COALESCE((SELECT MAX(c.valid_from) FROM th_empleado_contratos c
+        WHERE c.tenant_id = d.tenant_id AND c.employee_id = d.employee_id AND c.status = 'activo'
+          AND c.valid_from <= ${end}::date), d.termination_date) <= d.termination_date
+      AND COALESCE(NULLIF(d.source_summary->>'pendientes_desde', '')::date, d.termination_date) <= ${end}::date
+  `;
+  const settledIds = new Set(settled.map(row => Number(row.employee_id)));
+  const employees = employeeCandidates.filter(employee => !settledIds.has(employee.id));
   const transportAllowancePaymentRaw = String(payrollConfig?.parameters?.transport_allowance_payment || "ambas").toLowerCase();
   // Solo se admite prorrateo en ambas quincenas o pago en la ultima quincena.
   // Cualquier otro valor (incluido "primera", retirado) se trata como "ambas".
@@ -5604,6 +5744,9 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       WHERE tenant_id = ${tenantId}
         AND status = 'activo'
         AND (period_key = ${periodKey} OR (
+          (${options.termination === true} OR adjustment_type = 'revision_dia') AND metadata->>'work_date' IS NOT NULL
+          AND (metadata->>'work_date')::date BETWEEN ${start}::date AND ${end}::date
+        ) OR (
           (LOWER(adjustment_type) IN ('licencia_remunerada', 'licencia_no_remunerada', 'vacaciones', 'vacaciones_disfrutadas', 'vacaciones_compensadas', 'sln') OR UPPER(concept_code) IN ('LICENCIA_REMUNERADA', 'LICENCIA_NO_REMUNERADA', 'VACACIONES', 'VACACIONES_DISFRUTADAS', 'VACACIONES_COMPENSADAS', 'SLN'))
           AND metadata->>'date_start' IS NOT NULL AND metadata->>'date_end' IS NOT NULL
           AND (metadata->>'date_start')::date <= ${end}::date AND (metadata->>'date_end')::date >= ${start}::date
@@ -5723,7 +5866,11 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     const hourly = salaryBase ? salaryBase / monthlyOrdinaryHours : 0;
     const periodDays = daysInclusive(start, end);
     const days = daysByEmployee.get(employee.id) || [];
-    const employeeAdjustments = adjustmentsByEmployee.get(employee.id) || [];
+    const employeeAdjustments = (adjustmentsByEmployee.get(employee.id) || []).filter(row => {
+      if (!options.termination) return true;
+      const workDate = row.metadata?.work_date || row.metadata?.date_start;
+      return !workDate || (String(workDate).slice(0, 10) >= start.toISOString().slice(0, 10) && String(workDate).slice(0, 10) <= end.toISOString().slice(0, 10));
+    });
     const correctionDates = new Set(employeeAdjustments
       .filter((adjustment) => isWorkdayCorrection(adjustment) && !isExternalWorkday(adjustment))
       .map((adjustment) => String(adjustment.metadata?.work_date || "").slice(0, 10))
@@ -5731,7 +5878,8 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     const externalOrdinaryAdjustments = employeeAdjustments.filter((adjustment) => isExternalWorkday(adjustment) && normalizeLaborCode(adjustment.concept_code || "") === "JORNADA_ORDINARIA");
     const externalWorkedDays = externalOrdinaryAdjustments.reduce((sum, adjustment) => sum + adjustmentDays(adjustment), 0);
     const correctedOrdinaryMinutes = employeeAdjustments.filter(isWorkdayCorrection).reduce((sum, adjustment) => sum + adjustmentPayrollMinutes(adjustment), 0);
-    const daysWorked = days.length + correctionDates.size + externalWorkedDays;
+    const workReviewDates = new Set(employeeAdjustments.filter(row => row.adjustment_type === "revision_dia" && ["trabajado_sin_marcacion", "induccion"].includes(row.metadata?.classification)).map(row => row.metadata?.work_date).filter(date => date && !correctionDates.has(date) && !days.some(day => new Date(day.date).toISOString().slice(0,10) === date) && !externalOrdinaryAdjustments.some(row => row.metadata?.work_date === date)));
+    const daysWorked = days.length + correctionDates.size + externalWorkedDays + workReviewDates.size;
     const calendarRestDays = days
       .map((day) => ({ date: new Date(day.date).toISOString().slice(0, 10), ...calendarRestDayMinutes(day, calendarDays) }))
       .filter((day) => day.dayMinutes || day.nightMinutes);
@@ -5771,7 +5919,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     //  - Dias pagados = base comercial - ausencias; el dia extra de meses de 31 es neutro y en
     //    febrero los dias faltantes se completan hasta la base.
     // Ref. norma: salario proporcional = salario mensual * dias trabajados / 30.
-    const commercialBaseDays = periodType === "mes" ? 30 : 15;
+    const commercialBaseDays = options.termination ? Math.min(periodDays, periodType === "mes" ? 30 : 15) : periodType === "mes" ? 30 : 15;
     const workedCalendarDays = days.length;
     const restDates = restDatesByEmployee.get(employee.id) || new Set();
     const paidLeaveDates = new Set(
@@ -5788,6 +5936,8 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     for (const dateKey of correctionDates) coveredDates.add(dateKey);
     for (const dateKey of restDates) coveredDates.add(dateKey);
     for (const dateKey of paidLeaveDates) coveredDates.add(dateKey);
+    const paidReviewDates = new Set(employeeAdjustments.filter(row => row.adjustment_type === "revision_dia" && ["trabajado_sin_marcacion", "induccion", "descanso", "permiso_remunerado"].includes(row.metadata?.classification)).map(row => row.metadata?.work_date));
+    for (const dateKey of paidReviewDates) coveredDates.add(dateKey);
     const uncoveredDays = Math.max(0, periodDays - coveredDates.size);
     const freeCommercialDays = Math.max(0, periodDays - commercialBaseDays);
     const computableAbsenceDays = Math.max(0, uncoveredDays - freeCommercialDays);
@@ -5796,6 +5946,19 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       .filter((adjustment) => segmentedAdjustmentType(adjustment) !== "VAC_COMPENSADAS")
       .reduce((sum, adjustment) => sum + Number(adjustment.metadata?.days_periodized ?? adjustment.metadata?.days ?? 0), 0);
     const availableCommercialDays = Math.max(0, commercialBaseDays - excludedNoveltyDays);
+    const supportedDates = new Set(coveredDates), unpaidDates = new Set();
+    for (const dateKey of paidReviewDates) supportedDates.delete(dateKey);
+    for (const day of days) supportedDates.add(new Date(day.date).toISOString().slice(0, 10));
+    for (const dateKey of correctionDates) supportedDates.add(dateKey);
+    for (const dateKey of restDates) supportedDates.add(dateKey);
+    for (const dateKey of paidLeaveDates) supportedDates.add(dateKey);
+    for (const row of externalOrdinaryAdjustments) if (row.metadata?.work_date) supportedDates.add(row.metadata.work_date);
+    for (const row of periodizedSalarySegments) {
+      const nonpaid = ["SLN", "LICENCIA_NO_REMUNERADA"].includes(normalizeLaborCode(row.concept_code || ""));
+      for (let cursor = startOfDay(row.metadata.date_start); cursor <= startOfDay(row.metadata.date_end); cursor = new Date(cursor.getTime() + 86400000)) (nonpaid ? unpaidDates : supportedDates).add(cursor.toISOString().slice(0, 10));
+    }
+    const supportedHire = [new Date(employee.hire_date || start).toISOString().slice(0,10), ...supportedDates, ...employeeAdjustments.filter(row => row.adjustment_type === "revision_dia").map(row => row.metadata?.work_date).filter(Boolean)].sort()[0];
+    const dayReview = reviewDays({ start, end, hire: options.termination ? start : supportedHire, covered: supportedDates, unpaid: unpaidDates, adjustments: employeeAdjustments });
     // Soporte del periodo: marcaciones, correcciones, descanso de malla, licencia, jornadas
     // externas y novedades segmentadas (vacaciones/incapacidades/licencias con dias).
     const supportDays = money(coveredDates.size + externalWorkedDays + excludedNoveltyDays);
@@ -5832,6 +5995,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       lines.push(payrollLine(code, concept.name || payrollConcepts[code]?.name || code, hours, hourly * factor, hours * hourly * factor, "marcaciones", payrollConcepts[code] || concept));
     }
     for (const rawAdjustment of employeeAdjustments) {
+      if (rawAdjustment.adjustment_type === "revision_dia") continue;
       const adjustment = segmentedAdjustmentType(rawAdjustment) ? periodizeSegmentAdjustment(rawAdjustment, start, end) : rawAdjustment;
       if (!adjustment) continue;
       const adjustmentDate = adjustment.metadata?.work_date || adjustment.metadata?.date_start || adjustment.date_start;
@@ -5839,6 +6003,9 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       const calendarConceptCode = adjustment.concept_code === "JORNADA_ORDINARIA" && ["festivo", "dominical", "no_laboral"].includes(adjustmentCalendarType)
         ? "DOM_FEST_DIURNO"
         : adjustment.concept_code;
+      if (options.termination && !payrollConcepts[calendarConceptCode] && !["JORNADA_ORDINARIA", "HED", "HEN", "HEDD", "HEND", "RECARGO_NOCTURNO", "DOM_FEST_DIURNO", "DOM_FEST_NOCTURNO", "BONIFICACION_SALARIAL", "BONIFICACION_NO_SALARIAL", "COMISION", "VACACIONES", "VACACIONES_DISFRUTADAS", "VACACIONES_COMPENSADAS", "LICENCIA_REMUNERADA", "LICENCIA_NO_REMUNERADA", "SLN"].includes(calendarConceptCode)) {
+        throw validationError(`Configura el concepto manual ${calendarConceptCode} y su clasificacion salarial antes de liquidar.`, 409, "CONCEPTO_MANUAL_NO_CONFIGURADO");
+      }
       const concept = payrollConcepts[calendarConceptCode] || payrollConceptFallback(calendarConceptCode);
       const payrollMinutes = adjustmentPayrollMinutes(adjustment);
       const segmentedType = segmentedAdjustmentType(adjustment);
@@ -6004,7 +6171,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       net: money(gross - deductions),
       employer_cost: gross,
       lines: allLines,
-      source_summary: { days_worked: daysWorked, contribution_worked_days: contributionWorkedDays, workdays: daysWorked, dias_soporte: supportDays, dias_pagados: paidBaseDays, justificacion_sin_marcaciones: sinMarcacionesJustificacion || null, overtime_hrs: money(Object.values(overtimeMap).reduce((sum, minutes) => sum + minutes, 0) / 60), topes_trabajo_suplementario: supplementaryLimits, adjustments: employeeAdjustments.length, ordinary_hours: money((ordinaryMinutes + correctedOrdinaryMinutes) / 60), period_key: periodKey, ibc: ibcSalud.base, ibc_sin_topes: salaryBaseForDeductions, ibc_subsistemas: { salud: ibcSalud.base, pension: ibcPension.base, arl: ibcArl.base }, ibc_reglas: { source: ibcRules.source, tope_smmlv: ibcRules.topMultiplier, tope: ibcRules.capsFloors.salud?.cap ?? null, piso: ibcRules.capsFloors.salud?.floor ?? null, aplicado: ibcSalud.applied || ibcPension.applied || ibcArl.applied }, worked_cotizable_remuneration: workedCotizableRemuneration, ibc_segments: payrollSegmentResult?.segments || [], ibc_segment_totals: payrollSegmentResult?.totals || null, salario_base_periodo: salaryBase, historial_salarial: salaryInfo.segments, calendario_laboral: calendarRestDays, devengos_salariales: legalSalaryEarnings, devengos_no_salariales: nonSalaryEarnings, auxilio_transporte: { aplica: qualifiesForTransportAllowance, valor_mensual: transportAllowanceMonthly, tope_smmlv: transportAllowanceThresholdSmmlv, dias: transportAllowanceDays, valor_periodo: transportAllowanceAmount }, base_prestaciones_sociales: socialBenefitsBase, base_vacaciones: vacationBase, dias_prestaciones_sociales: socialBenefitDays, dias_vacaciones_excluidos: vacationAdjustmentDays, fondo_solidaridad_pensional: { smmlv, percent: pensionSolidarityPercent } }
+      source_summary: { revision_dias: dayReview, dias_sin_justificar: dayReview.filter(day => day.status === "pendiente").length, days_worked: daysWorked, contribution_worked_days: contributionWorkedDays, workdays: daysWorked, dias_soporte: supportDays, dias_pagados: paidBaseDays, justificacion_sin_marcaciones: sinMarcacionesJustificacion || null, overtime_hrs: money(Object.values(overtimeMap).reduce((sum, minutes) => sum + minutes, 0) / 60), topes_trabajo_suplementario: supplementaryLimits, adjustments: employeeAdjustments.length, ordinary_hours: money((ordinaryMinutes + correctedOrdinaryMinutes) / 60), period_key: periodKey, ibc: ibcSalud.base, ibc_sin_topes: salaryBaseForDeductions, ibc_subsistemas: { salud: ibcSalud.base, pension: ibcPension.base, arl: ibcArl.base }, ibc_reglas: { source: ibcRules.source, tope_smmlv: ibcRules.topMultiplier, tope: ibcRules.capsFloors.salud?.cap ?? null, piso: ibcRules.capsFloors.salud?.floor ?? null, aplicado: ibcSalud.applied || ibcPension.applied || ibcArl.applied }, worked_cotizable_remuneration: workedCotizableRemuneration, ibc_segments: payrollSegmentResult?.segments || [], ibc_segment_totals: payrollSegmentResult?.totals || null, salario_base_periodo: salaryBase, historial_salarial: salaryInfo.segments, calendario_laboral: calendarRestDays, devengos_salariales: legalSalaryEarnings, devengos_no_salariales: nonSalaryEarnings, auxilio_transporte: { aplica: qualifiesForTransportAllowance, valor_mensual: transportAllowanceMonthly, tope_smmlv: transportAllowanceThresholdSmmlv, dias: transportAllowanceDays, valor_periodo: transportAllowanceAmount }, base_prestaciones_sociales: socialBenefitsBase, base_vacaciones: vacationBase, dias_prestaciones_sociales: socialBenefitDays, dias_vacaciones_excluidos: vacationAdjustmentDays, fondo_solidaridad_pensional: { smmlv, percent: pensionSolidarityPercent } }
     };
   });
 }
@@ -6039,6 +6206,7 @@ function payrollSupportIssues(rows = []) {
 }
 
 async function validatePayrollPeriod(tenantId, input = {}) {
+  assertPayrollPeriod(input);
   const { start, end } = periodFromRange(input);
   const periodType = input.period_type || input.tipo_periodo || "quincena";
   const periodKey = input.period_key || periodKeyFromRange({ start, end, type: periodType });
@@ -6061,11 +6229,13 @@ async function previewPayrollLiquidation(tenantId, input = {}) {
 }
 
 async function runPayrollLiquidation(tenantId, input = {}, user = {}) {
+  assertPayrollPeriod(input);
   const { start, end } = periodFromRange(input);
   const periodType = input.period_type || input.tipo_periodo || "quincena";
   const periodKey = input.period_key || periodKeyFromRange({ start, end, type: periodType });
   await assertPayrollPeriodOpen(tenantId, periodKey);
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), 7418)`;
     const recalculate = input.recalculate === true || input.recalculate === "true";
     if (recalculate) {
       await reversePayrollLibranzaMovements(tx, tenantId, periodKey);
@@ -6495,6 +6665,7 @@ async function listPayrollDocuments(tenantId, query = {}) {
 }
 
 async function createPayrollAdjustment(tenantId, input = {}, user = {}) {
+  if (String(input.adjustment_type || '').trim().toLowerCase() === 'revision_dia' || normalizeLaborCode(input.concept_code || '') === 'REVISION_DIA') throw validationError("Registra la justificacion desde la revision de dias del retiro.", 422, "REVISION_DIA_REQUIERE_FLUJO");
   const employeeId = numericId(input.employee_id);
   if (!employeeId) throw validationError("Empleado invalido.", 400, "EMPLEADO_INVALIDO");
   const periodKey = String(input.period_key || "").trim();
@@ -6620,6 +6791,17 @@ async function createPayrollAdjustment(tenantId, input = {}, user = {}) {
       code: "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL"
     });
     const employeeTenant = await tx.$queryRaw`SELECT id FROM "Employee" WHERE id = ${employeeId} AND tenant_id = ${tenantId} LIMIT 1`;
+    if (metadata.source === "liquidacion_trabajador" && metadata.request_id) {
+      const existing = await tx.$queryRaw`SELECT * FROM th_nomina_ajustes WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId}
+        AND metadata->>'source' = 'liquidacion_trabajador' AND metadata->>'request_id' = ${String(metadata.request_id)} LIMIT 1`;
+      if (existing[0]) {
+        const row = existing[0];
+        if (row.status !== "activo" || row.concept_code !== conceptCode || row.period_key !== periodKey || Number(row.amount) !== Number(input.amount) || row.metadata?.work_date !== metadata.work_date || row.description !== String(input.description || "").trim()) {
+          throw validationError("La solicitud ya fue utilizada con otros datos o fue anulada.", 409, "SOLICITUD_MANUAL_RETIRO_DUPLICADA");
+        }
+        return row;
+      }
+    }
     if (!employeeTenant[0]) throw validationError("Empleado no pertenece al tenant activo.", 404, "EMPLEADO_NO_ENCONTRADO");
     if (metadata.advance_obligation_id) {
       const duplicateAdvance = await tx.$queryRaw`
@@ -6811,8 +6993,9 @@ async function deletePayrollAdjustment(tenantId, id) {
   const adjustmentId = numericId(id);
   if (!adjustmentId) throw validationError("Ajuste invalido.", 400, "AJUSTE_NOMINA_INVALIDO");
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.$queryRaw`SELECT period_key FROM th_nomina_ajustes WHERE tenant_id = ${tenantId} AND id = ${adjustmentId} LIMIT 1`;
+    const current = await prisma.$queryRaw`SELECT period_key, adjustment_type FROM th_nomina_ajustes WHERE tenant_id = ${tenantId} AND id = ${adjustmentId} LIMIT 1`;
     if (!current[0]) throw validationError("Ajuste no encontrado.", 404, "AJUSTE_NOMINA_NO_ENCONTRADO");
+    if (current[0].adjustment_type === "revision_dia") throw validationError("Corrige la clasificacion desde la revision de dias para conservar su historial.", 409, "REVISION_DIA_REQUIERE_FLUJO");
     await assertPayrollPeriodOpen(tenantId, current[0].period_key);
     const rows = await prisma.$queryRaw`UPDATE th_nomina_ajustes SET status = 'anulado' WHERE tenant_id = ${tenantId} AND id = ${adjustmentId} RETURNING *`;
     if (!rows[0]) throw validationError("Ajuste no encontrado.", 404, "AJUSTE_NOMINA_NO_ENCONTRADO");
@@ -6820,207 +7003,9 @@ async function deletePayrollAdjustment(tenantId, id) {
   });
 }
 
-function pdfEscape(value) {
-  return String(value ?? "").replace(/[\\()]/g, "\\$&");
-}
-
 function simplePayrollPdf(document) {
-  const name = document.employee_name || document.source_summary?.employee_name || `Empleado ${document.employee_id}`;
-  const summary = document.source_summary || {};
-  const receiptLines = payrollReceiptLines(document.lines).filter((line) => Number(line.amount || 0) !== 0);
-  const positive = receiptLines.filter((line) => Number(line.amount) > 0);
-  const deductions = receiptLines.filter((line) => Number(line.amount) < 0);
-  const fmt = (value) => new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(Number(value || 0));
-  const shortDate = (value) => {
-    if (!value) return "-";
-    if (value instanceof Date) return value.toISOString().slice(0, 10);
-    const raw = String(value);
-    const isoMatch = raw.match(/\d{4}-\d{2}-\d{2}/);
-    if (isoMatch) return isoMatch[0];
-    const parsed = new Date(raw);
-    return Number.isNaN(parsed.getTime()) ? raw.slice(0, 10) : parsed.toISOString().slice(0, 10);
-  };
-  const maskedAccount = summary.bank_account_code ? `***${String(summary.bank_account_code).slice(-4)}` : "No registrada";
-  const paymentBenefit = (line) => line.salary_constitutive === false || line.legal_group === "auxilio" || line.metadata?.legal_group === "auxilio";
-  const shouldShowQuantity = (line) => {
-    const code = String(line.code || "").toUpperCase();
-    const amount = Number(line.amount || 0);
-    if (amount <= 0) return false;
-    if (code === "AUX_TRANSPORTE" || code.includes("AUXILIO_TRANSPORTE")) return false;
-    return Number(line.quantity || 0) > 0;
-  };
-  const content = [];
-  const clipText = (value, max = 34) => {
-    const text = String(value ?? "-");
-    return text.length > max ? `${text.slice(0, Math.max(0, max - 1))}.` : text;
-  };
-  const drawText = (text, x, y, size = 9, font = "F1") => content.push(`BT /${font} ${size} Tf ${x} ${y} Td (${pdfEscape(text)}) Tj ET`);
-  const drawLine = (x1, y1, x2, y2) => content.push(`${x1} ${y1} m ${x2} ${y2} l S`);
-  const drawRect = (x, y, w, h) => content.push(`${x} ${y} ${w} ${h} re S`);
-  const fillRect = (x, y, w, h, gray = 0.88) => content.push(`${gray} g ${x} ${y} ${w} ${h} re f 0 g`);
-  const rightText = (text, x, y, width, size = 9, font = "F1") => {
-    const approx = String(text).length * size * 0.48;
-    drawText(text, x + Math.max(0, width - approx), y, size, font);
-  };
-  const labelValue = (label, value, x, y, width = 220, labelWidth = 130, maxChars = 32) => {
-    drawText(label, x, y, 8.5, "F2");
-    drawText(clipText(value || "-", maxChars), x + labelWidth, y, 8.5);
-    drawLine(x + labelWidth, y - 3, x + width, y - 3);
-  };
-  const detailRow = (label, value, x, y, valueX, valueWidth, maxChars = 28) => {
-    drawText(label, x, y, 7.8, "F2");
-    drawText(clipText(value || "-", maxChars), valueX, y, 7.8);
-    drawLine(valueX, y - 3, valueX + valueWidth, y - 3);
-  };
-
-  drawRect(24, 522, 564, 245);
-  drawText("APEX OS", 32, 738, 12, "F2");
-  drawText("NIT: __________________", 32, 724, 9, "F2");
-  drawText("COMPROBANTE DE PAGO DE NOMINA", 390, 738, 10, "F2");
-  fillRect(32, 690, 548, 16, 0.9);
-  drawText("Datos del empleado", 40, 695, 8.5, "F2");
-  drawText("Datos de liquidacion", 330, 695, 8.5, "F2");
-  drawLine(318, 535, 318, 705);
-  [
-    ["Nomina", document.period_type === "mes" ? "Nomina mensual" : "Nomina quincenal", "Periodo de Liquidacion", `${shortDate(document.date_start)} a ${shortDate(document.date_end)}`],
-    ["Empleado", name, "Salario", `$ ${fmt(summary.salario_base_periodo || summary.salary_base || 0)}`],
-    ["Numero de Identificacion", document.employee_document || document.employee_code || String(document.employee_id), "Total", `$ ${fmt(summary.salario_base_periodo || summary.salary_base || 0)}`],
-    ["Fecha Ingreso", shortDate(summary.fecha_ingreso || summary.hire_date), "Metodo Retencion", summary.retention_method || "-"],
-    ["Cargo", summary.position || summary.cargo || "-", "% Retencion", String(summary.retention_percent || "0")],
-    ["Centro de costos", summary.cost_center_code || summary.cost_center || "-", "Cuenta Bancaria", maskedAccount],
-    ["Entidad Promotora de Salud", summary.eps_name || "-", "Codigo Empleado", document.employee_code || String(document.employee_id)],
-    ["Entidad Bancaria", summary.bank_entity_name || "-", "", ""],
-    ["Fondo Pensiones Obligatorias", summary.pension_name || "-", "", ""]
-  ].forEach(([leftLabel, leftValue, rightLabel, rightValue], index) => {
-    const rowY = 674 - index * 15;
-    detailRow(leftLabel, leftValue, 40, rowY, 178, 126, 24);
-    if (rightLabel) detailRow(rightLabel, rightValue, 330, rowY, 466, 108, 22);
-  });
-
-  drawRect(24, 310, 564, 203);
-  fillRect(318, 495, 160, 12, 0.72);
-  fillRect(482, 495, 82, 12, 0.72);
-  drawText("Devengado", 376, 498, 8.5, "F2");
-  drawText("Deducciones", 499, 498, 8.5, "F2");
-  fillRect(28, 480, 184, 12, 0.82);
-  fillRect(218, 480, 54, 12, 0.82);
-  fillRect(278, 480, 54, 12, 0.82);
-  fillRect(338, 480, 70, 12, 0.82);
-  fillRect(414, 480, 70, 12, 0.82);
-  fillRect(490, 480, 74, 12, 0.82);
-  drawText("Conceptos Liquidados", 80, 483, 8, "F2");
-  drawText("Cantidad", 226, 483, 8, "F2");
-  drawText("Unidad", 290, 483, 8, "F2");
-  drawText("Pagos", 360, 483, 8, "F2");
-  drawText("Beneficios", 430, 483, 8, "F2");
-  drawText("Descuentos", 502, 483, 8, "F2");
-  let y = 466;
-  const rowHeight = 10.8;
-  for (const line of receiptLines.slice(0, 11)) {
-    const amount = Number(line.amount || 0);
-    drawText(String(line.name || line.code).slice(0, 36), 30, y, 7.7);
-    if (shouldShowQuantity(line)) {
-      rightText(String(line.quantity || ""), 218, y, 54, 7.7);
-      drawText(line.unit || (String(line.code || "").includes("SALARIO") ? "DIA" : "HORA"), 286, y, 7.7);
-    }
-    if (amount > 0 && !paymentBenefit(line)) rightText(fmt(amount), 338, y, 70, 7.7);
-    if (amount > 0 && paymentBenefit(line)) rightText(fmt(amount), 414, y, 70, 7.7);
-    if (amount < 0) rightText(fmt(Math.abs(amount)), 490, y, 74, 7.7);
-    drawLine(28, y - 4, 564, y - 4);
-    y -= rowHeight;
-  }
-  const benefitTotal = positive.filter(paymentBenefit).reduce((sum, line) => sum + Number(line.amount || 0), 0);
-  const payTotal = positive.filter((line) => !paymentBenefit(line)).reduce((sum, line) => sum + Number(line.amount || 0), 0);
-  fillRect(28, 333, 536, 12, 0.92);
-  drawText("Totales", 280, 336, 8.5, "F2");
-  rightText(fmt(payTotal), 338, 336, 70, 8.5, "F2");
-  rightText(fmt(benefitTotal), 414, 336, 70, 8.5, "F2");
-  rightText(fmt(document.deductions), 490, 336, 74, 8.5, "F2");
-  drawLine(28, 329, 564, 329);
-  drawText("Total Devengado", 248, 321, 8.5, "F2");
-  rightText(fmt(document.gross), 338, 321, 146, 8.5, "F2");
-  drawText("Neto a pagar en cuenta nomina", 210, 313, 8.5, "F2");
-  rightText(fmt(document.net), 338, 313, 146, 8.5, "F2");
-
-  drawRect(24, 222, 564, 78);
-  fillRect(28, 282, 430, 12, 0.72);
-  drawText("Detalle Prestamos", 220, 285, 8.5, "F2");
-  fillRect(28, 266, 184, 12, 0.82);
-  fillRect(222, 266, 80, 12, 0.82);
-  fillRect(314, 266, 80, 12, 0.82);
-  fillRect(406, 266, 80, 12, 0.82);
-  drawText("Concepto", 95, 269, 8, "F2");
-  drawText("Valor Prestamo", 230, 269, 8, "F2");
-  drawText("Valor Cuota", 328, 269, 8, "F2");
-  drawText("Saldo Actual", 418, 269, 8, "F2");
-  const loanLines = receiptLines.filter((line) => String(line.source || "").toLowerCase().includes("libranza") || String(line.legal_group || "").toLowerCase().includes("libranza"));
-  if (loanLines.length) {
-    let loanY = 252;
-    for (const line of loanLines.slice(0, 3)) {
-      drawText(String(line.name || line.code).slice(0, 26), 30, loanY, 7.7);
-      rightText(fmt(line.metadata?.original_amount || 0), 222, loanY, 80, 7.7);
-      rightText(fmt(Math.abs(Number(line.amount || 0))), 314, loanY, 80, 7.7);
-      rightText(fmt(line.metadata?.balance_after ?? line.metadata?.balance_amount ?? 0), 406, loanY, 80, 7.7);
-      loanY -= 13;
-    }
-  } else {
-    drawText("Sin prestamos o libranzas registradas en el comprobante.", 30, 252, 8);
-  }
-
-  drawRect(24, 142, 564, 74);
-  fillRect(32, 198, 544, 12, 0.86);
-  drawText("Bases para calculo de seguridad social", 38, 201, 8.2, "F2");
-  fillRect(32, 184, 400, 10, 0.94);
-  fillRect(438, 184, 138, 10, 0.94);
-  drawText("Base", 38, 187, 7.4, "F2");
-  drawText("Valor", 492, 187, 7.4, "F2");
-  const ibc = Number(summary.ibc || 0);
-  [
-    ["Ingreso Base Cotizacion Salud Periodo", ibc],
-    ["Ingreso Base Cotizacion Salud Mes", ibc],
-    ["Ingreso Base Cotizacion Siguiente", 0],
-    ["Ingreso Base Cotizacion Pension Periodo", ibc],
-    ["Ingreso Base Cotizacion Pension Mes", ibc]
-  ].forEach(([label, value], index) => {
-    const rowY = 173 - index * 10.2;
-    drawText(label, 38, rowY, 7.2);
-    rightText(fmt(value), 456, rowY, 90, 7.2);
-    if (index < 4) drawLine(32, rowY - 3.2, 576, rowY - 3.2);
-  });
-
-  drawRect(24, 78, 564, 50);
-  fillRect(32, 111, 544, 12, 0.86);
-  drawText("Mensaje Empresarial", 38, 114, 8.2, "F2");
-  drawText("Documento generado por APEX OS. Sin QR.", 38, 99, 8);
-  drawText("Pagina 1 de 1", 270, 55, 10);
-  drawText("COLABORADOR", 32, 36, 8);
-  drawText("Firma empleado", 125, 36, 7.5);
-  drawText("Cedula o NIT", 32, 24, 7.5);
-  drawLine(125, 28, 270, 28);
-  drawText("LA EMPRESA", 330, 36, 8);
-  drawText("NIT", 330, 24, 7.5);
-  drawLine(410, 28, 560, 28);
-  drawText(`Fecha de elaboracion: ${new Date().toISOString().slice(0, 10)}`, 390, 12, 7.5);
-  const stream = content.join("\n");
-  const objects = [
-    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
-    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
-    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R /F2 6 0 R >> >> /Contents 5 0 R >> endobj",
-    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-    `5 0 obj << /Length ${Buffer.byteLength(stream)} >> stream\n${stream}\nendstream endobj`,
-    "6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj"
-  ];
-  let offset = "%PDF-1.4\n".length;
-  const xref = ["0000000000 65535 f "];
-  const body = objects.map((obj) => {
-    xref.push(String(offset).padStart(10, "0") + " 00000 n ");
-    offset += Buffer.byteLength(obj + "\n");
-    return obj;
-  }).join("\n") + "\n";
-  const header = "%PDF-1.4\n";
-  const xrefStart = Buffer.byteLength(header + body);
-  const trailer = `xref\n0 ${xref.length}\n${xref.join("\n")}\ntrailer << /Size ${xref.length} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
-  return Buffer.from(header + body + trailer);
+  const receiptLines = payrollReceiptLines(document.lines);
+  return require("./payrollReceiptPdf").renderPayrollReceipt({ ...document, lines: document.period_type === "retiro" ? document.lines : receiptLines });
 }
 
 async function getPayrollDocumentPdf(tenantId, id) {
@@ -7124,16 +7109,19 @@ async function previewEmployeeTerminationLiquidation(tenantId, input = {}) {
 }
 
 async function runEmployeeTerminationLiquidation(tenantId, input = {}, user = {}) {
-  const document = await buildEmployeeTerminationLiquidation(tenantId, input);
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
-    if (input.recalculate === true || input.recalculate === "true") {
-      await tx.$executeRaw`
-        DELETE FROM th_liquidaciones_trabajador
-        WHERE tenant_id = ${tenantId}
-          AND employee_id = ${document.employee_id}
-          AND termination_date = ${document.termination_date}::date
-      `;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), 7418)`;
+    const employeeId = numericId(input.employee_id);
+    const terminationDate = dateOnly(input.termination_date);
+    const previous = await tx.$queryRaw`SELECT * FROM th_liquidaciones_trabajador WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} AND termination_date = ${terminationDate}::date`;
+    if (previous.length && !input.recalculate) throw validationError("Ya existe una liquidacion. Usa recalcular para sustituirla.", 409, "LIQUIDACION_EXISTENTE");
+    if (previous.length) {
+      await reversePayrollLibranzaMovements(tx, tenantId, `retiro:${previous[0].id}`);
+      await reverseTerminationBenefits(tx, tenantId, previous[0].id);
     }
+    await tx.$queryRaw`SELECT id FROM th_libranza_empleados WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} ORDER BY id FOR UPDATE`;
+    const document = await buildEmployeeTerminationLiquidation(tenantId, input, tx);
+    if (document.source_summary?.dias_sin_justificar > 0) throw validationError("Hay dias pendientes de justificar. Revisa el salario pendiente antes de guardar la liquidacion.", 422, "DIAS_RETIRO_SIN_JUSTIFICAR", { days: document.source_summary.revision_dias.filter(day => day.status === "pendiente") });
     const rows = await tx.$queryRaw`
       INSERT INTO th_liquidaciones_trabajador (
         tenant_id, employee_id, termination_date, termination_reason, contract_type, status, gross, deductions, net, indemnization_amount, benefit_balance_amount, lines, source_summary, created_by
@@ -7147,19 +7135,10 @@ async function runEmployeeTerminationLiquidation(tenantId, input = {}, user = {}
       DO UPDATE SET termination_reason = EXCLUDED.termination_reason, contract_type = EXCLUDED.contract_type, gross = EXCLUDED.gross, deductions = EXCLUDED.deductions, net = EXCLUDED.net, indemnization_amount = EXCLUDED.indemnization_amount, benefit_balance_amount = EXCLUDED.benefit_balance_amount, lines = EXCLUDED.lines, source_summary = EXCLUDED.source_summary, updated_at = now()
       RETURNING *
     `;
-    for (const line of document.lines.filter((row) => TERMINATION_BENEFIT_CODES.has(String(row.code || "").toUpperCase()))) {
-      await tx.$executeRaw`
-        INSERT INTO th_prestaciones_saldos (
-          tenant_id, employee_id, concept_code, period_key, date_start, date_end, accrued_amount, paid_amount, balance_amount, source_document_type, source_document_id, metadata
-        )
-        VALUES (
-          ${tenantId}, ${document.employee_id}, ${line.code}, ${`retiro:${document.termination_date.toISOString().slice(0, 10)}`},
-          ${document.source_summary.fecha_ingreso}::date, ${document.termination_date}::date, ${Number(line.accrued_amount || line.amount || 0)}, ${Number(line.accrued_amount || line.amount || 0)}, 0, 'retiro', ${rows[0].id}, ${JSON.stringify({ paid_in_termination: true })}::jsonb
-        )
-        ON CONFLICT (tenant_id, employee_id, concept_code, period_key)
-        DO UPDATE SET accrued_amount = EXCLUDED.accrued_amount, paid_amount = EXCLUDED.paid_amount, balance_amount = 0, source_document_id = EXCLUDED.source_document_id, updated_at = now()
-      `;
-    }
+    await applyPayrollLibranzaMovements(tx, tenantId, { ...rows[0], id: null, period_key: `retiro:${rows[0].id}` });
+    const benefitPayments = await settleTerminationBenefits(tx, tenantId, { ...document, id: rows[0].id }, user?.id);
+    rows[0].source_summary = { ...rows[0].source_summary, pagos_prestaciones: benefitPayments };
+    await tx.$executeRaw`UPDATE th_liquidaciones_trabajador SET source_summary = ${JSON.stringify(rows[0].source_summary)}::jsonb WHERE tenant_id = ${tenantId} AND id = ${rows[0].id}`;
     if (input.mark_inactive === true || input.mark_inactive === "true") {
       const employee = await tx.employee.findFirst({ where: { tenant_id: tenantId, id: document.employee_id } });
       if (employee) {
@@ -7176,7 +7155,7 @@ async function runEmployeeTerminationLiquidation(tenantId, input = {}, user = {}
       }
     }
     return { ok: true, document: rows[0] };
-  }));
+  }, PAYROLL_BATCH_TRANSACTION_OPTIONS));
 }
 
 async function listEmployeeTerminationLiquidations(tenantId, query = {}) {
@@ -7209,7 +7188,9 @@ async function deleteEmployeeTerminationLiquidation(tenantId, id) {
   const documentId = numericId(id);
   if (!documentId) throw validationError("Liquidacion invalida.", 400, "LIQUIDACION_TRABAJADOR_INVALIDA");
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`DELETE FROM th_prestaciones_saldos WHERE tenant_id = ${tenantId} AND source_document_type = 'retiro' AND source_document_id = ${documentId}`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), 7418)`;
+    await reversePayrollLibranzaMovements(tx, tenantId, `retiro:${documentId}`);
+    await reverseTerminationBenefits(tx, tenantId, documentId);
     const rows = await tx.$queryRaw`DELETE FROM th_liquidaciones_trabajador WHERE tenant_id = ${tenantId} AND id = ${documentId} RETURNING *`;
     if (!rows[0]) throw validationError("Liquidacion no encontrada.", 404, "LIQUIDACION_TRABAJADOR_NO_ENCONTRADA");
     return { ok: true, deleted: rows[0] };
@@ -7221,14 +7202,26 @@ async function getEmployeeTerminationLiquidationPdf(tenantId, id) {
   if (!documentId) throw validationError("Documento invalido.", 400, "DOCUMENTO_RETIRO_INVALIDO");
   return prisma.runWithTenant(tenantId, async () => {
     const rows = await prisma.$queryRaw`
-      SELECT d.*, e.metadata->>'name' AS employee_name, e.code AS employee_code
+      SELECT d.*, e.metadata->>'name' AS employee_name, e.code AS employee_code,
+        COALESCE(NULLIF(e.metadata->>'document', ''), p.tax_id) AS employee_document,
+        e.salary_base AS employee_salary_base, e.position AS employee_position,
+        e.metadata->>'bank_entity_name' AS employee_bank_entity_name,
+        e.metadata->>'bank_account_code' AS employee_bank_account_code
       FROM th_liquidaciones_trabajador d
       LEFT JOIN "Employee" e ON e.id = d.employee_id AND e.tenant_id = d.tenant_id
+      LEFT JOIN "Party" p ON p.id = e.party_id AND p.tenant_id = e.tenant_id
       WHERE d.tenant_id = ${tenantId} AND d.id = ${documentId}
       LIMIT 1
     `;
     if (!rows[0]) throw validationError("Liquidacion no encontrada.", 404, "LIQUIDACION_TRABAJADOR_NO_ENCONTRADA");
-    return simplePayrollPdf({ ...rows[0], period_key: `retiro:${String(rows[0].termination_date).slice(0, 10)}`, period_type: "retiro", date_start: rows[0].source_summary?.fecha_ingreso || rows[0].termination_date, date_end: rows[0].termination_date });
+    const row = rows[0], summary = row.source_summary || {};
+    return simplePayrollPdf({ ...row, employee_document: summary.employee_document || row.employee_document,
+      period_key: `retiro:${new Date(row.termination_date).toISOString().slice(0, 10)}`, period_type: "retiro",
+      date_start: summary.fecha_ingreso || row.termination_date, date_end: row.termination_date,
+      source_summary: { ...summary, position: summary.position || row.employee_position,
+        bank_entity_name: summary.bank_entity_name || row.employee_bank_entity_name,
+        bank_account_code: summary.bank_account_code || row.employee_bank_account_code }
+    });
   });
 }
 
@@ -7865,7 +7858,12 @@ async function previewSocialBenefitProvisions(tenantId, input = {}) {
   // quincenas, sin depender de que exista un documento con el period_key exacto del mes).
   const fromKey = start.toISOString().slice(0, 10);
   const toKey = end.toISOString().slice(0, 10);
-  const payrollDocuments = await listPayrollDocuments(tenantId, { date_from: fromKey, date_to: toKey, limit: 2000 });
+  const candidateDocuments = await listPayrollDocuments(tenantId, { date_from: fromKey, date_to: toKey, limit: 2000 });
+  const settlements = await prisma.$queryRaw`SELECT employee_id, termination_date, source_summary->>'fecha_ingreso' AS contract_start
+    FROM th_liquidaciones_trabajador WHERE tenant_id = ${tenantId}`;
+  const payrollDocuments = candidateDocuments.filter(doc => !settlements.some(row => Number(row.employee_id) === Number(doc.employee_id)
+    && new Date(doc.date_start).toISOString().slice(0, 10) <= new Date(row.termination_date).toISOString().slice(0, 10)
+    && new Date(doc.date_end).toISOString().slice(0, 10) >= String(row.contract_start || "0001-01-01").slice(0, 10)));
   if (!payrollDocuments.length) throw validationError("No existen documentos de nomina para provisionar este periodo.", 409, "PROVISION_SIN_NOMINA");
   // Agrega por empleado+concepto para que, si el mes abarca varias quincenas, se sumen (y no se
   // sobrescriban al guardar el saldo, cuya clave unica incluye el period_key).
@@ -7909,14 +7907,18 @@ async function previewSocialBenefitProvisions(tenantId, input = {}) {
 }
 
 async function runSocialBenefitProvisions(tenantId, input = {}, user = {}) {
-  const document = await previewSocialBenefitProvisions(tenantId, input);
-  await assertPayrollPeriodOpen(tenantId, document.period_key);
+
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), 7418)`;
+    const document = await previewSocialBenefitProvisions(tenantId, input);
+    await assertPayrollPeriodOpen(tenantId, document.period_key);
     await tx.$executeRaw`
       DELETE FROM th_prestaciones_saldos
       WHERE tenant_id = ${tenantId}
         AND period_key = ${document.period_key}
-        AND source_document_type = 'provision'
+        AND source_document_type = 'provision' AND paid_amount = 0
+        AND metadata->'termination_settlement' IS NULL
+        AND NOT EXISTS (SELECT 1 FROM th_prestaciones_pagos_lineas p WHERE p.tenant_id = ${tenantId} AND p.benefit_balance_id = th_prestaciones_saldos.id)
     `;
     for (let index = 0; index < document.lines.length; index += PAYROLL_LINE_INSERT_CHUNK) {
       const chunk = document.lines.slice(index, index + PAYROLL_LINE_INSERT_CHUNK);
@@ -7930,7 +7932,8 @@ async function runSocialBenefitProvisions(tenantId, input = {}, user = {}) {
           ${JSON.stringify({ source: "provision_prestaciones_sociales", provisioned_by: user?.id || null, quantity: line.quantity, employee_name: line.employee_name })}::jsonb
         )`))}
         ON CONFLICT (tenant_id, employee_id, concept_code, period_key)
-        DO UPDATE SET accrued_amount = EXCLUDED.accrued_amount, paid_amount = 0, balance_amount = EXCLUDED.balance_amount, source_document_type = 'provision', source_document_id = EXCLUDED.source_document_id, metadata = EXCLUDED.metadata, updated_at = now()
+        DO UPDATE SET accrued_amount = EXCLUDED.accrued_amount, balance_amount = GREATEST(EXCLUDED.accrued_amount - th_prestaciones_saldos.paid_amount, 0), source_document_type = 'provision', source_document_id = EXCLUDED.source_document_id, metadata = th_prestaciones_saldos.metadata || EXCLUDED.metadata, updated_at = now()
+        WHERE th_prestaciones_saldos.metadata->'termination_settlement' IS NULL
       `;
     }
     return { ok: true, ...document, provisioned_lines: document.lines.length };
@@ -7964,9 +7967,9 @@ function socialBenefitPaymentInput(input = {}) {
   };
 }
 
-async function previewSocialBenefitPayments(tenantId, input = {}) {
+async function previewSocialBenefitPayments(tenantId, input = {}, db = prisma) {
   const data = socialBenefitPaymentInput(input);
-  const rows = await prisma.$queryRaw`
+  const rows = await db.$queryRaw`
     SELECT b.id AS benefit_balance_id, b.employee_id, b.concept_code, b.period_key AS source_period_key,
            b.accrued_amount, b.paid_amount, b.balance_amount, b.metadata,
            e.code AS employee_code, e.metadata->>'document' AS employee_document, e.metadata->>'name' AS employee_name,
@@ -8019,25 +8022,30 @@ async function previewSocialBenefitPayments(tenantId, input = {}) {
 }
 
 async function runSocialBenefitPayments(tenantId, input = {}, user = {}) {
-  const preview = await previewSocialBenefitPayments(tenantId, input);
-  if (!preview.lines.length) throw validationError("No hay saldos de prestaciones para pagar en el periodo.", 409, "PAGO_PRESTACION_SIN_SALDOS");
+  const data = socialBenefitPaymentInput(input);
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), 7418)`;
     if (input.recalculate) {
       const previous = await tx.$queryRaw`
         SELECT id FROM th_prestaciones_pagos_documentos
-        WHERE tenant_id = ${tenantId} AND payment_type = ${preview.payment_type} AND period_key = ${preview.period_key} AND status <> 'anulado'
+        WHERE tenant_id = ${tenantId} AND payment_type = ${data.paymentType} AND (period_key = ${data.periodKey} OR source_summary->>'base_period_key' = ${data.periodKey}) AND status <> 'anulado'
       `;
       for (const row of previous) await reverseSocialBenefitPaymentDocument(tx, tenantId, row.id);
     }
     const existing = await tx.$queryRaw`
       SELECT id FROM th_prestaciones_pagos_documentos
-      WHERE tenant_id = ${tenantId} AND payment_type = ${preview.payment_type} AND period_key = ${preview.period_key} AND status <> 'anulado'
+      WHERE tenant_id = ${tenantId} AND payment_type = ${data.paymentType} AND (period_key = ${data.periodKey} OR source_summary->>'base_period_key' = ${data.periodKey}) AND status <> 'anulado'
       LIMIT 1
     `;
     if (existing[0]) throw validationError("Ya existe un documento de pago de prestaciones para ese tipo y periodo. Anulalo o marca recalcular.", 409, "PAGO_PRESTACION_DUPLICADO");
+    const preview = await previewSocialBenefitPayments(tenantId, input, tx);
+    if (!preview.lines.length) throw validationError("No hay saldos de prestaciones para pagar en el periodo.", 409, "PAGO_PRESTACION_SIN_SALDOS");
+    const revisions = await tx.$queryRaw`SELECT id FROM th_prestaciones_pagos_documentos WHERE tenant_id = ${tenantId} AND payment_type = ${data.paymentType}
+      AND (period_key = ${data.periodKey} OR source_summary->>'base_period_key' = ${data.periodKey}) LIMIT 1`;
+    const paymentKey = revisions.length ? `${data.periodKey}:revision:${randomUUID()}` : data.periodKey;
     const docs = await tx.$queryRaw`
       INSERT INTO th_prestaciones_pagos_documentos (tenant_id, payment_type, period_key, date_start, date_end, payment_date, status, total_amount, source_summary, created_by)
-      VALUES (${tenantId}, ${preview.payment_type}, ${preview.period_key}, ${preview.date_start}::date, ${preview.date_end}::date, ${preview.payment_date}::date, 'draft', ${preview.total_amount}, ${JSON.stringify({ period_type: preview.period_type, line_count: preview.lines.length })}::jsonb, ${user?.id || null})
+      VALUES (${tenantId}, ${data.paymentType}, ${paymentKey}, ${preview.date_start}::date, ${preview.date_end}::date, ${preview.payment_date}::date, 'draft', ${preview.total_amount}, ${JSON.stringify({ base_period_key: data.periodKey, period_type: preview.period_type, line_count: preview.lines.length })}::jsonb, ${user?.id || null})
       RETURNING *
     `;
     const doc = docs[0];
@@ -8062,6 +8070,13 @@ async function runSocialBenefitPayments(tenantId, input = {}, user = {}) {
 }
 
 async function reverseSocialBenefitPaymentDocument(tx, tenantId, documentId) {
+  const protectedRows = await tx.$queryRaw`SELECT p.id FROM th_prestaciones_pagos_documentos p
+    WHERE p.tenant_id = ${tenantId} AND p.id = ${documentId} AND (
+      p.source_summary->>'termination_document_id' IS NOT NULL OR EXISTS (
+        SELECT 1 FROM th_prestaciones_pagos_lineas l JOIN th_liquidaciones_trabajador d ON d.tenant_id = l.tenant_id AND d.employee_id = l.employee_id
+        WHERE l.tenant_id = ${tenantId} AND l.document_id = p.id AND d.termination_date >= p.date_end
+      ))`;
+  if (protectedRows.length) throw validationError("El pago esta integrado en una liquidacion final. Revierte primero la liquidacion de retiro.", 409, "PAGO_INTEGRADO_RETIRO");
   const lines = await tx.$queryRaw`
     SELECT * FROM th_prestaciones_pagos_lineas
     WHERE tenant_id = ${tenantId} AND document_id = ${documentId}
@@ -8086,6 +8101,7 @@ async function deleteSocialBenefitPaymentDocument(tenantId, id) {
   const documentId = numericId(id);
   if (!documentId) throw validationError("Documento de pago de prestaciones invalido.", 400, "PAGO_PRESTACION_INVALIDO");
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), 7418)`;
     const doc = await tx.$queryRaw`SELECT * FROM th_prestaciones_pagos_documentos WHERE tenant_id = ${tenantId} AND id = ${documentId} LIMIT 1`;
     if (!doc[0]) throw validationError("Documento de pago de prestaciones no encontrado.", 404, "PAGO_PRESTACION_NO_ENCONTRADO");
     if (doc[0].status === "anulado") return { ok: true, deleted: doc[0] };
@@ -8155,6 +8171,7 @@ async function validatePayrollPeriodClosure(tenantId, input = {}, options = {}) 
 }
 
 async function closePayrollPeriod(tenantId, input = {}, user = {}) {
+  assertPayrollPeriod({ ...input, period_type: input.period_type || input.tipo_periodo || "mes" });
   const { start, end } = periodFromRange(input);
   const periodType = input.period_type || input.tipo_periodo || "mes";
   const periodKey = input.period_key || periodKeyFromRange({ start, end, type: periodType });
@@ -8217,6 +8234,7 @@ async function reopenPayrollPeriod(tenantId, input = {}, user = {}) {
 }
 
 async function recalculatePayrollPeriodClosure(tenantId, input = {}, user = {}) {
+  assertPayrollPeriod({ ...input, period_type: input.period_type || input.tipo_periodo || "mes" });
   const { start, end } = periodFromRange(input);
   const periodType = input.period_type || input.tipo_periodo || "mes";
   const periodKey = input.period_key || periodKeyFromRange({ start, end, type: periodType });
@@ -8251,7 +8269,15 @@ async function listPayroll(tenantId, query = {}) {
   });
 }
 
+const terminationManualAdjustments = require("./terminationManualAdjustments")({ db: prisma, conceptsFor: activePayrollConcepts, create: createPayrollAdjustment, remove: deletePayrollAdjustment, error: validationError });
+const terminationDayReviews = require("./terminationDayReviews")({ db: prisma, context: terminationManualAdjustments.context, build: buildEmployeeTerminationLiquidation, error: validationError });
+
 module.exports = {
+  listTerminationManualAdjustments: terminationManualAdjustments.list,
+  listTerminationDayReviews: terminationDayReviews.list,
+  saveTerminationDayReview: terminationDayReviews.save,
+  addTerminationManualAdjustment: terminationManualAdjustments.add,
+  cancelTerminationManualAdjustment: terminationManualAdjustments.cancel,
   __setRouteLockWaitMsForTests: setRouteLockWaitMsForTests,
   __setContentionLockWaitMsForTests: setContentionLockWaitMsForTests,
   __monthlyOrdinaryHoursForDate: monthlyOrdinaryHoursForDate,

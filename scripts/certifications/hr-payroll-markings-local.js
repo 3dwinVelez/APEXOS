@@ -40,13 +40,14 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
   await check('preview links three complete days without stored workdays and has no payroll/workday writes',async()=>{
     assert.equal(await db.processedWorkday.count({where:{tenant_id:own.tenant.id}}),0);
     const r=await preview();assert.equal(r.status,200,JSON.stringify(r.body));expected=r.body.documents.find(row=>row.employee_id===own.employee.id);
-    assert.equal(expected.days_worked,3);assert.equal(expected.ordinary_hours,24);assert.equal(expected.source_summary.time_punch_workdays,3);assert.ok(expected.lines.some(line=>line.code==='SALARIO_BASICO'&&line.amount>0));
+    assert.equal(expected.days_worked,3);assert.equal(expected.ordinary_hours,24);assert.equal(expected.source_summary.workdays,3);assert.ok(expected.lines.some(line=>line.code==='SALARIO_BASICO'&&line.amount>0));
     assert.equal(await db.processedWorkday.count({where:{tenant_id:own.tenant.id}}),0);assert.equal(await db.payroll.count({where:{tenant_id:own.tenant.id}}),0);
     assert.deepEqual((await preview()).body.documents,r.body.documents);
   });
   await check('period boundaries, incomplete day, RBAC and tenant isolation are enforced',async()=>{
-    assert.equal((await preview(token,{fecha_inicio:'2026-11-06',fecha_fin:'2026-11-07'})).body.documents[0].days_worked,1);
-    assert.equal((await preview(token,{fecha_inicio:'2026-11-07',fecha_fin:'2026-11-07'})).body.documents[0].days_worked,0);
+    assert.equal((await preview(token,{fecha_inicio:'2026-11-06',fecha_fin:'2026-11-07'})).status,400);
+    assert.equal((await preview(token,{fecha_inicio:'2026-11-07',fecha_fin:'2026-11-07'})).status,400);
+    const next=await preview(token,{fecha_inicio:'2026-11-16',fecha_fin:'2026-11-30',period_key:'quincena:2026-11-16:2026-11-30'});assert.equal(next.status,200);assert.equal(next.body.documents[0].days_worked,0);
     assert.equal((await preview(null)).status,401);assert.equal((await preview(deniedToken)).status,403);
     const other=await preview(foreignToken);assert.equal(other.status,200);assert.ok(other.body.documents.every(row=>row.employee_id!==own.employee.id&&row.days_worked===0));
   });
@@ -61,6 +62,37 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
       await page.waitForFunction(()=>document.body.innerText.includes('Vista de prueba sin guardar'));
       const cells=await page.evaluate(()=>[...document.querySelectorAll('tr')].find(row=>row.innerText.includes('QA Edwar own'))?.innerText);assert.ok(cells,cells);assert.match(cells,/\b3\b/);assert.match(cells,/\b24\b/);
       await page.screenshot({path:path.join(folder,'payroll-linked-trial.png'),fullPage:true});
+      const route='/talento-humano/nomina/liquidaciones';
+      async function clickRun(){await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(node=>node.textContent.trim()==='Liquidar nomina'&&!node.disabled));await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Liquidar nomina').click());}
+      await db.$executeRaw`INSERT INTO th_nomina_cierres_periodo (tenant_id,period_key,period_type,date_start,date_end,status) VALUES (${own.tenant.id},${input.period_key},'quincena','2026-11-01','2026-11-15','cerrado')`;
+      await clickRun();await page.waitForSelector('[data-payroll-feedback="error"]');
+      await page.waitForFunction(()=>document.activeElement?.hasAttribute('data-payroll-feedback'));
+      assert.match(await page.$eval('[data-payroll-feedback]',el=>el.innerText),/cerrado/i);
+      assert.equal(await page.$eval('[data-payroll-feedback]',el=>el.getAttribute('role')),'alert');
+      assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-payroll-feedback')),true);
+      assert.equal(await page.$eval('[data-payroll-feedback]',el=>{const r=el.getBoundingClientRect();return r.bottom>0&&r.top<innerHeight;}),true);
+      assert.equal(await db.payroll.count({where:{tenant_id:own.tenant.id}}),0);
+      await page.screenshot({path:path.join(folder,'payroll-feedback-error.png')});
+      await db.$executeRaw`DELETE FROM th_nomina_cierres_periodo WHERE tenant_id=${own.tenant.id} AND period_key=${input.period_key}`;
+      let release,ready;const gate=new Promise(resolve=>{release=resolve;}),locked=new Promise(resolve=>{ready=resolve;});
+      const lock=db.$transaction(async tx=>{await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${own.tenant.id}),7418)`;ready();await gate;},{timeout:30000});
+      await locked;try{await clickRun();await page.waitForSelector('[data-payroll-feedback="pending"]');assert.equal(await page.$eval('[data-payroll-feedback]',el=>el.getAttribute('aria-busy')),'true');await page.screenshot({path:path.join(folder,'payroll-feedback-pending.png')});}finally{release();await lock;}
+      await page.waitForSelector('[data-payroll-feedback="success"]');assert.match(await page.$eval('[data-payroll-feedback]',el=>el.innerText),/Nómina guardada/);
+      assert.equal(await db.payroll.count({where:{tenant_id:own.tenant.id}}),1);
+      assert.equal(await page.evaluate(()=>document.body.innerText.includes('Vista de prueba sin guardar')),false);
+      await page.screenshot({path:path.join(folder,'payroll-feedback-success.png')});
+      assert.equal((await call(route,token,'DELETE',{period_key:input.period_key})).status,200);
+      async function consult(){await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Consultar periodo').click());}
+      await consult();await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(node=>node.textContent.trim()==='Liquidar nomina'));
+      // Real POST persists; interrupt only subsequent document GETs, without fabricated HTTP responses.
+      let failReads=true;page.removeAllListeners('request');page.on('request',request=>{const url=new URL(request.url());if(url.hostname&&!['127.0.0.1','localhost'].includes(url.hostname))return void request.abort();if(failReads&&request.method()==='GET'&&request.url().includes('/nomina/liquidaciones?'))return void request.abort('failed');void request.continue();});
+      await clickRun();await page.waitForSelector('[data-payroll-feedback="warning"]');assert.match(await page.$eval('[data-payroll-feedback]',el=>el.innerText),/Guardado confirmado; falta actualizar la pantalla/);
+      assert.equal(await db.payroll.count({where:{tenant_id:own.tenant.id}}),1);await page.screenshot({path:path.join(folder,'payroll-feedback-saved-refresh-failure.png')});
+      failReads=false;await consult();await page.waitForFunction(()=>!document.querySelector('[data-payroll-feedback]')&&document.body.innerText.includes('Liquidaciones guardadas del periodo'));
+      await page.reload({waitUntil:'domcontentloaded'});await page.waitForSelector('input[type="date"]');
+      assert.equal(await db.payroll.count({where:{tenant_id:own.tenant.id}}),1);
+      assert.equal((await call(route,token,'DELETE',{period_key:input.period_key})).status,200);
+      console.log('PASS real closed-period error visible and focused at action; real pending transaction; saved success; interrupted refresh keeps confirmed save; reload persistence');
     }});
   });
   await check('definitive liquidation persists the same hours and repeated trial remains unchanged',async()=>{
@@ -77,7 +109,7 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
   await check('approved day correction replaces the raw day without duplicate pay',async()=>{
     const r=await call('/talento-humano/nomina/ajustes',token,'POST',{employee_id:own.employee.id,period_key:input.period_key,adjustment_type:'jornada_ordinaria',concept_code:'JORNADA_ORDINARIA',work_date:'2026-11-05',minutes:120,description:'QA approved correction'});
     assert.equal(r.status,200,JSON.stringify(r.body));
-    const row=(await preview()).body.documents[0];assert.equal(row.days_worked,3);assert.equal(row.ordinary_hours,18);assert.equal(row.source_summary.time_punch_workdays,2);
+    const row=(await preview()).body.documents[0];assert.equal(row.days_worked,3);assert.equal(row.ordinary_hours,18);assert.equal(row.source_summary.workdays,3);
   });
   result.status='passed';
 } catch(error) {result.status='failed';result.error=error.message;console.error(error.stack);process.exitCode=1;} finally {result.finished_at=new Date().toISOString();if(output)fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n');if(app)await app.close();await db.$disconnect();process.exit(process.exitCode||0);}})();

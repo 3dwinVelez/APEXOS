@@ -95,7 +95,6 @@ const latenessReasons = [
 
 // Marcaciones que exigen selfie. El almuerzo no la pide: es un corte interno
 // de la jornada, no una validacion de quien entro o quien salio.
-const selfieRequiredPunches = new Set(["entrada", "salida"]);
 
 const punchOrder = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
 const punchLabels: Record<string, { title: string; desc: string; color: string }> = {
@@ -419,6 +418,7 @@ export default function MobilePunchPage() {
   const [extraDetail, setExtraDetail] = useState("");
   const [extraEvidence, setExtraEvidence] = useState<CapturedFile | null>(null);
   const [identitySelfie, setIdentitySelfie] = useState<CapturedFile | null>(null);
+  const [selfieType, setSelfieType] = useState("");
   const [dayMileage, setDayMileage] = useState("");
   const [startMileage, setStartMileage] = useState("");
   const [gps, setGps] = useState<GpsFix | null>(null);
@@ -736,7 +736,6 @@ export default function MobilePunchPage() {
     return Math.max(0, minutesNow - expected - toleranceMinutes);
   })();
   const needsJustification = isArrivingLate || isClosingLate;
-  const needsSelfie = Boolean(nextType && selfieRequiredPunches.has(nextType));
   const pendingQueued = pendingSync.filter((item) => !isBlockedItem(item));
   const pendingBlocked = pendingSync.filter(isBlockedItem);
   const pendingWeightKb = Math.max(1, Math.round(offlineQueueWeight(pendingQueued) / 1024));
@@ -870,7 +869,7 @@ export default function MobilePunchPage() {
         notify(decision.userMessage, "error");
         return;
       }
-      if (selfieRequiredPunches.has(type) && !identitySelfie) {
+      if (!identitySelfie || selfieType !== type) {
         notify("Toma la selfie de validacion antes de marcar.", "error");
         return;
       }
@@ -927,11 +926,7 @@ export default function MobilePunchPage() {
           ...routeSyncMetadata(route)
         }
       };
-      // Sin previewUrl: es un blob: del navegador, no sobrevive a la cola ni
-      // significa nada en el servidor.
-      if (identitySelfie?.base64) {
-        payload.identity_photo = { base64: identitySelfie.base64, name: identitySelfie.name, type: identitySelfie.type, size: identitySelfie.size };
-      }
+      payload.identity_photo = { base64: identitySelfie.base64, name: identitySelfie.name, type: identitySelfie.type, size: identitySelfie.size };
       if (type === "entrada") {
         const arrivalDetail = extraDetail.trim();
         if (extraReason) payload.extra_reason = extraReason;
@@ -951,6 +946,7 @@ export default function MobilePunchPage() {
       setExtraEvidence(null);
       setIdentitySelfie(null);
       if (type === "entrada") setStartMileage("");
+      setSelfieType("");
       if (type === "salida") setDayMileage("");
       const queued = await enqueuePendingSync("/api/v1/hr/self/time-punches", payload, punchLabels[type].title);
       const savedQueue = readPendingSync();
@@ -1267,18 +1263,7 @@ export default function MobilePunchPage() {
             <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
               <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Marcando en horario ${route.id} - ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin horario seleccionado para este usuario/equipo"}
             </div>
-            {needsSelfie ? (
-              <div className="mt-3">
-                <PhotoCapture
-                  facing="user"
-                  label={nextType === "entrada" ? "Selfie de validacion de entrada" : "Selfie de validacion de cierre"}
-                  onChange={setIdentitySelfie}
-                  required
-                  value={identitySelfie}
-                />
-                <p className="mt-2 text-xs text-neutral-500">Debe verse tu rostro. El almuerzo y el retorno no piden foto.</p>
-              </div>
-            ) : null}
+            {nextType ? <div className="mt-3"><PhotoCapture key={nextType} facing="user" label={`Selfie de ${punchLabels[nextType]?.title.toLowerCase() || "validación"}`} required value={selfieType === nextType ? identitySelfie : null} onChange={photo => { setIdentitySelfie(photo); setSelfieType(nextType); }} /><p className="mt-2 text-xs text-neutral-500">Las cuatro marcaciones requieren una foto del rostro: entrada, almuerzo, retorno y salida.</p></div> : null}
             {needsJustification ? (
               <div className="mt-3 space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3">
                 <div>

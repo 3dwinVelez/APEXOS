@@ -3,6 +3,7 @@ const { requirePermission, requireAnyPermission, requirePhysicalDeleteGrant, has
 const schemas = require("./schema");
 const service = require("./service");
 const prisma = require("../../core/prisma");
+const banks = require("./banks").bankService(prisma);
 const { listUserCandidates } = require("./employeeUserLink");
 
 function requestContext(request) {
@@ -83,6 +84,10 @@ async function hrRoutes(fastify) {
   fastify.patch("/hr/schedules/:id", { schema: schemas.scheduleSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateSchedule(request.user?.tenant_id, request.params.id, request.body));
 
   fastify.get("/hr/employees", { preHandler: requirePermission("hr", "read") }, (request) => service.listEmployees(request.user?.tenant_id, request.query));
+  fastify.get("/talento-humano/bancos", { preHandler: requirePermission("hr", "read") }, request => banks.list(request.user.tenant_id));
+  const bankSchema = { body: { type: "object", required: ["code", "name"], additionalProperties: false, properties: { code: { type: "string", pattern: "^[0-9]{3}$" }, name: { type: "string", minLength: 1, maxLength: 120 }, swift: { type: "string", maxLength: 11 }, active: { type: "boolean" } } } };
+  fastify.post("/talento-humano/bancos", { schema: bankSchema, preHandler: requirePermission("hr", "write") }, request => banks.save(request.user.tenant_id, request.body));
+  fastify.patch("/talento-humano/bancos/:code", { schema: bankSchema, preHandler: requirePermission("hr", "write") }, request => banks.save(request.user.tenant_id, request.body, request.params.code));
   fastify.post("/hr/employees", { schema: schemas.employeeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createEmployee(request.user?.tenant_id, request.body));
   fastify.patch("/hr/employees/:id", { schema: schemas.employeePatchSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateEmployee(request.user?.tenant_id, request.params.id, request.body));
   fastify.get("/hr/employees/:id/salaries", { preHandler: requirePermission("hr", "read") }, (request) => service.listEmployeeSalaryHistory(request.user?.tenant_id, request.params.id, request.query));
@@ -268,6 +273,11 @@ async function hrRoutes(fastify) {
   fastify.post("/talento-humano/libranzas/empleados", { schema: schemas.employeeLibranzaSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.createEmployeeLibranza(request.user?.tenant_id, request.body || {}, request.user));
   fastify.patch("/talento-humano/libranzas/empleados/:id", { schema: schemas.employeeLibranzaPatchSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.updateEmployeeLibranza(request.user?.tenant_id, request.params.id, request.body || {}));
   fastify.get("/talento-humano/liquidacion-trabajador/saldos", { preHandler: requirePermission("payroll", "read") }, (request) => service.listEmployeeBenefitBalances(request.user?.tenant_id, request.query));
+  fastify.get("/talento-humano/liquidacion-trabajador/ajustes", { preHandler: requirePermission("payroll", "read") }, (request) => service.listTerminationManualAdjustments(request.user?.tenant_id, request.query));
+  fastify.get("/talento-humano/liquidacion-trabajador/revision-dias", { preHandler: requirePermission("payroll", "read") }, request => service.listTerminationDayReviews(request.user?.tenant_id, request.query));
+  fastify.post("/talento-humano/liquidacion-trabajador/revision-dias", { schema: {body:{type:'object',required:['employee_id','termination_date','work_date','classification','note','request_id'],properties:{employee_id:{type:'integer',minimum:1},termination_date:{type:'string',format:'date'},pending_start:{type:'string',format:'date'},work_date:{type:'string',format:'date'},classification:{type:'string',enum:['trabajado_sin_marcacion','induccion','descanso','permiso_remunerado','ausencia_no_remunerada']},note:{type:'string',minLength:5,maxLength:1000},request_id:{type:'string',format:'uuid'}}}},preHandler:requirePermission('payroll','write')},request=>service.saveTerminationDayReview(request.user?.tenant_id,request.body,request.user));
+  fastify.post("/talento-humano/liquidacion-trabajador/ajustes", { schema: schemas.terminationManualAdjustmentSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.addTerminationManualAdjustment(request.user?.tenant_id, request.body, request.user));
+  fastify.delete("/talento-humano/liquidacion-trabajador/ajustes/:id", { preHandler: requirePermission("payroll", "write") }, (request) => service.cancelTerminationManualAdjustment(request.user?.tenant_id, request.params.id, request.query));
   fastify.post("/talento-humano/liquidacion-trabajador/preview", { schema: schemas.employeeTerminationLiquidationSchema, preHandler: requirePermission("payroll", "read") }, (request) => service.previewEmployeeTerminationLiquidation(request.user?.tenant_id, request.body || {}));
   fastify.get("/talento-humano/liquidacion-trabajador/documentos", { preHandler: requirePermission("payroll", "read") }, (request) => service.listEmployeeTerminationLiquidations(request.user?.tenant_id, request.query));
   fastify.post("/talento-humano/liquidacion-trabajador/documentos", { schema: schemas.employeeTerminationLiquidationSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.runEmployeeTerminationLiquidation(request.user?.tenant_id, request.body || {}, request.user));

@@ -12,7 +12,9 @@ test("talent landing exposes novelties, employees and mallas navigation", () => 
   assert.match(source, /Maestro de empleados/);
   assert.match(source, /Entidades y afiliaciones/);
   assert.match(source, /Configuración laboral/);
-  assert.match(source, /\/dashboard\/talento-humano\/mallas/);
+  assert.match(source, /title: "Horarios y mallas"/);
+  assert.match(source, /\/dashboard\/talento-humano\/rutas/);
+  assert.doesNotMatch(source, /href: "\/dashboard\/talento-humano\/mallas"/);
 });
 
 test("mobile closing flow requires day mileage when the schedule has a vehicle", () => {
@@ -278,12 +280,19 @@ test("employee termination liquidation page supports severance balances and inde
   assert.match(source, /Liquidacion de trabajador/);
   assert.match(source, /sin_justa_causa/);
   assert.match(source, /obra_labor/);
-  assert.match(source, /Dias faltantes contrato/);
-  assert.match(source, /Saldos de prestaciones/);
+  assert.match(source, /Tipo contrato vigente/);
+  assert.match(source, /<dialog ref=\{detailDialog\}/);
+  assert.match(source, /libranza_authorizations: authorizations/);
+  assert.match(source, /<TerminationManualAdjustments employeeId=/);
+  const manual = read("components/hr/TerminationManualAdjustments.tsx");
+  assert.match(manual, /Bonificaciones y conceptos manuales/);
+  assert.match(manual, /Registrar concepto/);
+  assert.match(manual, /request_id: requestId.current/);
+  assert.doesNotMatch(source, /Saldos de prestaciones/);
   assert.match(source, /Indemnizacion/);
   assert.match(source, /\/api\/v1\/talento-humano\/liquidacion-trabajador\/preview/);
   assert.match(source, /\/api\/v1\/talento-humano\/liquidacion-trabajador\/documentos/);
-  assert.match(source, /\/api\/v1\/talento-humano\/liquidacion-trabajador\/saldos/);
+  assert.doesNotMatch(source, /\/api\/v1\/talento-humano\/liquidacion-trabajador\/saldos/);
   assert.match(source, /\/pdf/);
 });
 
@@ -348,7 +357,11 @@ test("social benefit provisions live outside payroll liquidation", () => {
   assert.match(source, /Provisionar/);
   assert.doesNotMatch(payroll, /provisiones y aportes/);
   assert.match(payroll, /periodRangeError/);
-  assert.match(payroll, /no puede ser menor que la inicial/);
+  // La pagina publicada conserva la validacion inline; desarrollo puede usar el
+  // validador compartido del arreglo independiente de periodos. Ambos deben bloquear fechas invertidas.
+  const rangeValidation = payroll.includes("payrollPeriodError(") ? read("lib/payroll-period.ts") : payroll;
+  assert.match(rangeValidation, /no puede ser menor que la inicial/);
+  if (payroll.includes("payrollPeriodError(")) assert.match(payroll, /payrollPeriodError\(periodType, startDate, endDate\)/);
   assert.match(payroll, /payrollReceiptLines/);
   assert.match(payroll, /SOCIAL_BENEFIT_LINE_CODES/);
   assert.doesNotMatch(payroll, /<th className="px-3 py-2">Origen<\/th>/);

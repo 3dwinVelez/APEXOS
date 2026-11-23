@@ -34,6 +34,7 @@ type PaymentPreview = {
 };
 
 type PaymentDocument = {
+  source_summary?: { termination_document_id?: number; included_in_termination_net?: boolean };
   id: number;
   payment_type: string;
   period_key: string;
@@ -235,7 +236,7 @@ export default function SocialBenefitPaymentsPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] text-sm">
             <thead><tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500"><th className="px-3 py-2">Documento</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2">Periodo</th><th className="px-3 py-2">Fecha pago</th><th className="px-3 py-2">Estado</th><th className="px-3 py-2 text-right">Total</th><th className="px-3 py-2 text-right">Acciones</th></tr></thead>
-            <tbody>{documents.map((doc) => <tr className="border-b border-line/70" key={doc.id}><td className="px-3 py-2 font-semibold">#{doc.id}</td><td className="px-3 py-2">{doc.payment_type}</td><td className="px-3 py-2">{doc.period_key}</td><td className="px-3 py-2">{String(doc.payment_date).slice(0, 10)}</td><td className="px-3 py-2">{doc.status}</td><td className="px-3 py-2 text-right">{money(doc.total_amount)}</td><td className="px-3 py-2 text-right">{doc.status !== "anulado" ? <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-xs font-semibold text-red-700" disabled={busy} onClick={() => void voidDocument(doc.id)} type="button"><RotateCcw size={14} /> Anular</button> : "--"}</td></tr>)}</tbody>
+            <tbody>{documents.map((doc) => <tr className="border-b border-line/70" key={doc.id}><td className="px-3 py-2 font-semibold">#{doc.id}</td><td className="px-3 py-2">{doc.payment_type}{doc.source_summary?.termination_document_id ? <p className="text-xs text-neutral-500">Incluido en liquidación #{doc.source_summary.termination_document_id}. No pagar nuevamente.</p> : null}</td><td className="px-3 py-2">{doc.period_key}</td><td className="px-3 py-2">{String(doc.payment_date).slice(0, 10)}</td><td className="px-3 py-2">{doc.status}</td><td className="px-3 py-2 text-right">{money(doc.total_amount)}</td><td className="px-3 py-2 text-right">{doc.source_summary?.termination_document_id ? "Reversar desde la liquidación final" : doc.status !== "anulado" ? <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-xs font-semibold text-red-700" disabled={busy} onClick={() => void voidDocument(doc.id)} type="button"><RotateCcw size={14} /> Anular</button> : "--"}</td></tr>)}</tbody>
           </table>
           {!documents.length ? <p className="p-4 text-sm text-neutral-500">Aún no hay documentos de pago.</p> : null}
         </div>
