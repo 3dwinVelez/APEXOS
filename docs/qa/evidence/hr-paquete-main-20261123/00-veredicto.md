@@ -367,3 +367,17 @@ en la empresa modelo; ninguna tocó datos de otros tenants.
 
 Ninguna contraseña de estas cuentas se versiona: los archivos de evidencia solo registran
 identificadores numéricos, hashes de blob y códigos de dominio.
+
+## Compuertas de la pata main, corridas y verbatimas
+
+Se corrieron en el worktree de gobernanza, sobre la punta de la auxiliar, contra el target remoto y no contra el baseline local:
+
+```
+ALCANCE DE PROMOCION VALIDO: hr-paquete-main-20261123 (63 rutas)
+APROBACION QA VALIDA: hr-paquete-main-20261123
+git: b3486793  origin/main: c53f857c
+```
+
+El manifiesto de alcance declara 63 rutas exactas (41 A y 22 M, 0 D) y `allowed_deletions` vacio;
+el de aprobacion exige y encuentra las cinco checaduras, la empresa modelo NYVORA en QA, la
+certificacion transversal y el plan de retroceso con el baseline productivo anterior.
