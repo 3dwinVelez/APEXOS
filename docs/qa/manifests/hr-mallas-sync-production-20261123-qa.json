@@ -81,10 +81,10 @@
     "procedure": "Stop further publications. Reconstruct only this release reviewed diff against the current target, preserving later changes. Certify the reversal and follow desarrollo -> develop -> main with independent authorization; no reset, force push or old-tree baseline. Keep the tenant-ownership protection unless separately reviewed. Production verification uses an isolated synthetic model tenant; no customer data."
   },
   "approval": {
-    "status": "pending",
+    "status": "approved",
     "approved_by": "Manuel (usuario)",
-    "approved_at": null,
-    "functional_scope_commit": null,
+    "approved_at": "2026-11-23T16:09:46.896Z",
+    "functional_scope_commit": "914d1721965d727a14c7e836039e2334678ca2de",
     "previous_functional_approval": {
       "commit": "6a393e673f9b4480e1fe004bec210cb3ce89f428",
       "statement": "Sí, probadas y aprobadas en QA"
@@ -102,6 +102,7 @@
         "statement": "Sí, usar Cliente Piloto QA",
         "scope": "Model company exception with synthetic data, permissions, isolation and persistence"
       }
-    ]
+    ],
+    "statement": "Sí, apruebo QA 914d1721 para producción"
   }
 }
