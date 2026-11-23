@@ -199,6 +199,14 @@
     {
       "status": "A",
       "file": "scripts/certifications/protected-regression-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-latency-single-statement-main-20261123/presupuesto-produccion-despues.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-latency-single-statement-main-20261123/triage-rechazos-produccion-despues.json"
     }
   ],
   "allowed_paths": [
@@ -241,7 +249,9 @@
     "package.json",
     "scripts/certifications/hr-auth-latency-differential.js",
     "scripts/certifications/hr-marking-blocked-workers.js",
-    "scripts/certifications/protected-regression-local.js"
+    "scripts/certifications/protected-regression-local.js",
+    "docs/qa/evidence/auth-latency-single-statement-main-20261123/presupuesto-produccion-despues.json",
+    "docs/qa/evidence/auth-latency-single-statement-main-20261123/triage-rechazos-produccion-despues.json"
   ],
   "allowed_deletions": [],
   "certified_functional_paths": [
@@ -308,12 +318,13 @@
     }
   ],
   "notas": {
-    "generacion": "40 rutas: las 25 del commit certificado c42c8d06 (replay puntual del corte a6a5d73e) mas 15 de gobernanza y medicion de esta pierna (documento certificador, 8 evidencias propias, las 2 diferenciales tomadas desde el candidato, los 2 certificadores que el contrato del destino exige porque main no los hospeda, y los 2 manifiestos).",
+    "generacion": "42 rutas despues de la declaracion de post-publicacion: las 40 originales (25 del commit certificado c42c8d06 mas 15 de gobernanza y medicion) y las 2 evidencias del DESPUES que se publicaron en 7de02a3b. Las dos son evidencia leida del ambiente desplegado; no son producto, no son migracion y no borran nada.",
     "migraciones": "Ninguna. No se toca apps/api/prisma/**, no hay paso que aplicar ni que revertir, y las 72 migraciones alineadas de QA y Produccion quedan intactas.",
     "equivalencia_con_develop": "Siete rutas de producto blob-identicas al corte a6a5d73e; package.json con delta de 2 lineas agregadas y 0 eliminadas sobre main; los cinco llamadores de validateAuthorization identicos entre el tip de main y la base certificada.",
     "medicion_en_la_worktree": "Las suites se corrieron DENTRO de la worktree auxiliar del candidato (a diferencia de la pierna del 2026-11-20, que midio en el arbol principal y puenteo por equivalencia de blobs). El arnés necesitaba dos correcciones de ambiente del puesto, no del check: junctions de node_modules por paquete (la primera corrida dio 7 rojos de Cannot find module 'fastify' que no eran del candidato) y los config/*.env ignorados. Nunca se copio node_modules: copiarlo borro 1173 archivos del repositorio el 2026-11-20.",
     "limite_de_la_regresion_protegida": "protected-regression-local.js usa cargadores con prisma falso en memoria y su guard solo comprueba que el host de DATABASE_URL sea local, no que haya base detras: la primera corrida dio 10/10 sobre un puerto apagado (54320). La corrida versionada se repito contra el PostgreSQL del compose (55432) y el documento declara la limitacion. La prueba de base real de esta pierna son las dos diferenciales contra los datos de QA y Produccion, no esa corrida.",
-    "ANTES_ancorado": "El ANTES de Produccion se tomo con el ambiente sirviendo 4be0dd5a3262 (medido por GET /health), que es el tip de main y no contiene el arreglo: a6a5d73e no es ancestro de origin/main. Ese ancla es la que el DESPUES tiene que mover."
+    "ANTES_ancorado": "El ANTES de Produccion se tomo con el ambiente sirviendo 4be0dd5a3262 (medido por GET /health), que es el tip de main y no contiene el arreglo: a6a5d73e no es ancestro de origin/main. Ese ancla es la que el DESPUES tiene que mover.",
+    "post_publicacion": "Declaracion expresa, hecha despues de empujar: el inventario aprobado enumeraba 40 rutas y el commit de evidencia 7de02a3b llevo 2 archivos mas (presupuesto-produccion-despues.json y triage-rechazos-produccion-despues.json), que este manifiesto ya anunciaba como evidencia_pendiente_de_despliegue en el documento de aprobacion pero no como entrada A. Se subsana el registro con la lista exacta en lugar de dejar la puerta en rojo o reescribir historia publicada. Medido con git diff --name-status 4be0dd5a..c92fc4c2: 42 rutas, 0 borrados, y las 2 nuevas son las unicas fuera del inventario original. El scope validator contra el tip actual de origin/main dira 'el destino cambio desde el baseline aprobado' porque el baseline declarado es 4be0dd5a, que es el tip que main tenia al momento de certificar; la verificacion valida es candidate vs ese baseline."
   },
   "approval": {
     "status": "approved",

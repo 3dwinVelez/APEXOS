@@ -231,10 +231,42 @@ Identidad servida a las 15:16:58Z: `/health` de Producción `commit 9cd7a0cf78d9
 servía `43e5510cfe2d`, movido por otra intervención; se verificó por ancestro que `43e5510cfe2d` contiene la
 pata `de7af667786a`, así que el arreglo sigue desplegado en QA.
 
+**Contabilidad de lo que quedó publicado en `main`, dicha con el inventario en la mano.** La promoción como
+tal es `9cd7a0cf` (40 rutas sobre `4be0dd5a`). Sobre ese merge viajaron dos commits más, y hay que nombrarlos
+porque el manifiesto original no los enumeraba:
+
+| Commit | Rutas | Qué es | Medición |
+| --- | --- | --- | --- |
+| `9cd7a0cf` | 40 | la promoción certificada (producto + expedientes) | net diff contra `4be0dd5a`, 0 borrados |
+| `7de02a3b` | 3 (`M` documento + `A` `presupuesto-produccion-despues.json` + `A` `triage-rechazos-produccion-despues.json`) | la evidencia del DESPUÉS | `git diff --name-only 9cd7a0cf..7de02a3b -- apps packages` = **vacío**: cero rutas de producto |
+| el que publica esta corrección | 2 (`M` documento + `M` manifiesto de alcance con la declaración de post-publicación) | retirar el sobre-claim, declarar el defecto de arnés por rama y cerrar el inventario | `git diff --name-status 7de02a3b..HEAD` desde el propio commit = esas dos rutas, ninguna de producto |
+
+Las dos evidencias de `7de02a3b` estaban anunciadas en el manifiesto de aprobación como
+`evidencia_pendiente_de_despliegue`, pero no como entrada `A` del inventario de alcance, así que el registro
+quedó incompleto en el momento de empujarlas. Se subsana aquí con la **declaración expresa de
+post-publicación** escrita en `docs/qa/manifests/auth-latency-single-statement-main-20261123-scope.json`
+(clave `notas.post_publicacion`), que pasa el inventario de 40 a **42 rutas** con esas dos entradas exactas.
+Revalidado con el manifiesto extendido: `qa:promotion:scope` → `ALCANCE DE PROMOCION VALIDO:
+auth-latency-single-statement-main-20261123 (42 rutas)` y `qa:approval:evidence` → `APROBACION QA VALIDA`.
+No se reescribió historia publicada ni se amplió el producto: las dos rutas declaradas son evidencia leída
+del ambiente. Queda también la coordenada que el dueño tiene que conocer para leer la puerta: el validador
+contra el tip *actual* de `origin/main` responde `el destino origin/main cambio desde el baseline aprobado`
+porque el `target_head` declarado es `4be0dd5a`, el tip que main tenía al certificar; la comparación válida
+de esta pierna es candidato contra ese baseline, y el delta posterior está tabulado arriba.
+
 ### 1. Presupuesto del monitor en Producción: el piso baja 37-54 %, pero la puerta sigue en rojo en `event-summaries`
 
 5 muestras por endpoint, la misma sonda, mismo tenant, mismo host
-(`apexos-api-prod-production.up.railway.app`), sobre el build nuevo:
+(`apexos-api-prod-production.up.railway.app`). La identidad del artefacto servido, porque las cinco corridas
+versionadas no cayeron todas sobre el mismo commit: `presupuesto-produccion-despues.json` (15:16:18Z) se corrió
+contra `9cd7a0cf78d9`, y las cuatro restantes —`gate-produccion-instrumento-corregido.json` (15:22:16Z) y
+`gate-produccion-corrida-a/b/c.json` (15:33:58Z, 15:34:45Z, 15:35:21Z)— contra `7de02a3b2896`. Es el mismo
+árbol de producto (`git diff --name-only 9cd7a0cf..7de02a3b -- apps packages` = vacío; la diferencia son solo
+los expedientes de QA), así que la serie es comparable. Ninguna corrida se hizo sobre el build del ANTES, que
+fue `4be0dd5a3262` hasta las 14:58Z; el reporte del instrumentador no estampa el commit servido —no existe ese
+campo—, y por eso la identidad se cita por el `/health` medido arriba. Los cuatro archivos de `desarrollo` sí
+declaran `env_file: config/production.env`; el de las 15:16:18Z salió de la copia que aún no lo imprimía, que
+es exactamente la razón por la que el destino hubo que re-verificarlo por host.
 
 | Lectura | p50 ANTES | p50 DESPUÉS | p95 ANTES | p95 DESPUÉS | Δ p95 | Bytes | Inline |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -244,7 +276,8 @@ pata `de7af667786a`, así que el arreglo sigue desplegado en QA.
 
 Los bytes servidos son idénticos en las tres lecturas: lo que cambió es el tiempo, no la carga. La frase
 que esta sección llevaba antes —«el gate pasa de rojo a verde en las tres rutas»— se retira: era cierta en
-esa corrida de las 15:16:18Z y no resiste las otras cuatro que se corrieron después sobre el mismo build.
+esa corrida de las 15:16:18Z y no resiste las otras cuatro (15:22:16Z a 15:35:21Z, todas sobre `7de02a3b2896`,
+cuyo árbol de producto es idéntico al de `9cd7a0cf78d9`).
 
 | Lectura | p95 ANTES | p95 de las 5 corridas DESPUÉS | mediana | Δ mediana | contra el tope de 3 000 ms |
 | --- | --- | --- | --- | --- | --- |
@@ -254,19 +287,29 @@ esa corrida de las 15:16:18Z y no resiste las otras cuatro que se corrieron desp
 
 Lectura honesta: el arreglo cumple lo que promete sobre el **piso común** (el que pagan todas las rutas
 autenticadas) y baja el tiempo 37-54 % en el pico real de marcación. Lo que queda por encima del presupuesto
-en `operations_map` y `event-summaries` ya no es el piso: es el costo propio de esas dos consultas, y por
-eso el pendiente #21/#23 se queda abierto con dueño (`apexos-performance`) en lugar de cerrarse con este
-documento. Dos rojos adicionales se explican por el enfriamiento: empujar esta evidencia a `main` vuelve a
-rodar Producción, y la corrida tomada justo después de `7de02a3b2896` midió en frío. Las corridas crudas se
-versionan en `desarrollo` bajo `docs/qa/evidence/hr-monitor-byte-budget-20261123/`
-(`gate-produccion-instrumento-corregido.json`, `gate-produccion-corrida-a/b/c.json`), y la corrida verde de
-las 15:16:18Z es el archivo `presupuesto-produccion-despues.json` de esta misma carpeta.
+es `event-summaries` (4 de 5 corridas) y, en dos de ellas, también `operations_map` (mediana 2 403 ms, con
+15:22Z y 15:33Z sobre el tope); el reporte de asistencia no falló ninguna vez. Por eso el pendiente #21/#23 se
+queda abierto con dueño (`apexos-performance`) en lugar de cerrarse con este documento. Dos rojos adicionales
+se explican por el enfriamiento: empujar esta evidencia a `main` vuelve a rodar Producción, y la corrida tomada
+justo después de `7de02a3b2896` midió en frío. Las corridas crudas se versionan en `desarrollo` bajo
+`docs/qa/evidence/hr-monitor-byte-budget-20261123/` (`gate-produccion-instrumento-corregido.json`,
+`gate-produccion-corrida-a/b/c.json`), y la corrida verde de las 15:16:18Z es el archivo
+`presupuesto-produccion-despues.json` de esta misma carpeta.
 
-Se versiona además la corrida intermedia, porque es verdad y porque enseña el piso frío: la primera
-medición posterior al despliegue (`--samples 3`, 15:13:47Z, minuto 15 de la rodada) dio
-p95 3 328 ms y 3 220 ms, es decir **aún en rojo** mientras el contenedor terminaba de templar piscina de
-conexiones. No se descartó ese dato para quedarse con el verde; el verde se obtuvo con el mismo número de
-muestras del ANTES y con el ambiente ya servido por completo.
+Hay una corrida que **no** se versionó y se declara en lugar de omitirse: la primera medición posterior al
+despliegue (`--samples 3`, 15:13:47Z, minuto 15 de la rodada) dio p95 3 328 ms y 3 220 ms, todavía en rojo
+mientras el contenedor templaba la piscina de conexiones. Su artefacto no existe en ninguna carpeta de
+evidencia (buscado: ninguna versión de `docs/qa/evidence/**` lleva `generated_at` de las 15:13Z) y el número
+queda como transcripción de la consola de la sesión, que un tercero no puede reproducir. El mecanismo que lo
+permite está en el propio instrumentador: por defecto escribe a una ruta fija,
+`docs/qa/evidence/hr-monitor-byte-budget-<ambiente>/presupuesto.json`, que se pisa corrida tras corrida; las
+cuatro que sí sobreviven se guardaron con `--output` explícito. Es un defecto de arnés de la misma familia que
+el del destino —un instrumento que no conserva lo que midió— y mientras no lleve marca temporal en el nombre,
+la tabla de medianas solo puede construirse con los archivos que quedan. Por eso la corrida de las 15:13:47Z
+está **excluida** de la mediana: la serie de cinco que respalda las cifras es 15:16:18Z, 15:22:16Z, 15:33:58Z,
+15:34:45Z y 15:35:21Z, todas versionadas y todas con `--samples 5`, el mismo número de muestras del ANTES.
+
+
 
 ### 2. Censo de rechazos (`triage-rechazos-produccion-despues.json`) → 527 → 527, y eso aún no prueba nada
 
