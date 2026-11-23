@@ -287,9 +287,9 @@
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.21.0",
+      "version": "2.22.0",
       "updated_at": "2026-11-23",
-      "sha256": "d77b9a34954c6ab0b081e3b203551ee611e1da19b31c6697f1cfb2ab7b21d79c",
+      "sha256": "66944bbe92ac44b636c284e03a5266b45d17faf6da1e57cadbcafeaca105bb23",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
