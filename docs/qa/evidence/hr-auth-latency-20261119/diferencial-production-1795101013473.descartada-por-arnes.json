@@ -1,0 +1,734 @@
+{
+  "evento": "hr_auth_latency_diferencial",
+  "ejecutado_en": "2026-11-19T15:10:13.471Z",
+  "rama": "desarrollo",
+  "commit": "1d3e2e28",
+  "ambiente": "production",
+  "project_ref": "jzbwzmkidfthknsohhnr",
+  "muestra_usuarios": 3,
+  "casos": 18,
+  "preservacion": {
+    "decisiones_revisadas": 18,
+    "divergencias": 15,
+    "lista": [
+      {
+        "caso": "3f2313 · vivo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 1142.8444,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "APEX_ADMIN",
+            "permisos": 1,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 295.9861,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "APEX_ADMIN",
+            "permisos": 1,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · sid inexistente",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "MIDE_Y_DEJA_PASAR",
+          "motivo": "SESSION_REVOKED",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 855.6015,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "APEX_ADMIN",
+            "permisos": 1,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 285.7673,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": "SESSION_REVOKED",
+            "role": "APEX_ADMIN",
+            "permisos": 1,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · sid nulo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 571.1005,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "APEX_ADMIN",
+            "permisos": 1,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 144.7596,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "APEX_ADMIN",
+            "permisos": 1,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · uv viejo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "MIDE_Y_DEJA_PASAR",
+          "motivo": "USER_VERSION_STALE",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 568.9485,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "APEX_ADMIN",
+            "permisos": 1,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 144.7186,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": "USER_VERSION_STALE",
+            "role": "APEX_ADMIN",
+            "permisos": 1,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · tv viejo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "MIDE_Y_DEJA_PASAR",
+          "motivo": "TENANT_VERSION_STALE",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 569.8506,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "APEX_ADMIN",
+            "permisos": 1,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 144.0304,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": "TENANT_VERSION_STALE",
+            "role": "APEX_ADMIN",
+            "permisos": 1,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · vivo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 570.4565,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 143.9339,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · sid inexistente",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "MIDE_Y_DEJA_PASAR",
+          "motivo": "SESSION_REVOKED",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 716.183,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 144.2993,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": "SESSION_REVOKED",
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · sid nulo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 569.8017,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 143.1557,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · uv viejo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "MIDE_Y_DEJA_PASAR",
+          "motivo": "USER_VERSION_STALE",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 567.7606,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 143.2544,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": "USER_VERSION_STALE",
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · tv viejo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "MIDE_Y_DEJA_PASAR",
+          "motivo": "TENANT_VERSION_STALE",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 569.5451,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 142.489,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": "TENANT_VERSION_STALE",
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · vivo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 569.5486,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 144.0956,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · sid inexistente",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "MIDE_Y_DEJA_PASAR",
+          "motivo": "SESSION_REVOKED",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 709.9406,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 144.2601,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": "SESSION_REVOKED",
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · sid nulo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 570.4479,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 143.0065,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · uv viejo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "MIDE_Y_DEJA_PASAR",
+          "motivo": "USER_VERSION_STALE",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 568.0498,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 143.3306,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": "USER_VERSION_STALE",
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      },
+      {
+        "caso": "3f2313 · tv viejo",
+        "antigua": {
+          "clase": "ACEPTA",
+          "motivo": "",
+          "code": null
+        },
+        "nueva": {
+          "clase": "MIDE_Y_DEJA_PASAR",
+          "motivo": "TENANT_VERSION_STALE",
+          "code": null
+        },
+        "detalle": {
+          "antigua": {
+            "ms": 568.8571,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": null,
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": null,
+            "tv": null,
+            "revoke_reason": null,
+            "lanz": false
+          },
+          "nueva": {
+            "ms": 142.831,
+            "tenant_ref": "3f2313a4153c",
+            "motivo": "TENANT_VERSION_STALE",
+            "role": "Supabase Marking 8",
+            "permisos": 2,
+            "uv": 1,
+            "tv": 1,
+            "revoke_reason": null,
+            "lanz": false
+          }
+        }
+      }
+    ]
+  },
+  "latencia_ms": {
+    "cinco_sentencias": {
+      "mediana": 569.8,
+      "min": 567.7,
+      "max": 1142.8
+    },
+    "una_sentencia": {
+      "mediana": 144.1,
+      "min": 142.5,
+      "max": 296
+    },
+    "factor": 0.25,
+    "presupuesto_factor": 0.6
+  },
+  "corridas": [
+    {
+      "caso": "3f2313 · vivo",
+      "antigua_ms": 1142.8,
+      "nueva_ms": 296,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · sid inexistente",
+      "antigua_ms": 855.6,
+      "nueva_ms": 285.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "3f2313 · sid nulo",
+      "antigua_ms": 571.1,
+      "nueva_ms": 144.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · uv viejo",
+      "antigua_ms": 568.9,
+      "nueva_ms": 144.7,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "3f2313 · tv viejo",
+      "antigua_ms": 569.9,
+      "nueva_ms": 144,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "antigua_ms": 569.8,
+      "nueva_ms": 144.5,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · vivo",
+      "antigua_ms": 570.5,
+      "nueva_ms": 143.9,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · sid inexistente",
+      "antigua_ms": 716.2,
+      "nueva_ms": 144.3,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "3f2313 · sid nulo",
+      "antigua_ms": 569.8,
+      "nueva_ms": 143.2,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · uv viejo",
+      "antigua_ms": 567.8,
+      "nueva_ms": 143.3,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "3f2313 · tv viejo",
+      "antigua_ms": 569.5,
+      "nueva_ms": 142.5,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "antigua_ms": 567.7,
+      "nueva_ms": 143.5,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · vivo",
+      "antigua_ms": 569.5,
+      "nueva_ms": 144.1,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · sid inexistente",
+      "antigua_ms": 709.9,
+      "nueva_ms": 144.3,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "3f2313 · sid nulo",
+      "antigua_ms": 570.4,
+      "nueva_ms": 143,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": null
+    },
+    {
+      "caso": "3f2313 · uv viejo",
+      "antigua_ms": 568,
+      "nueva_ms": 143.3,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "3f2313 · tv viejo",
+      "antigua_ms": 568.9,
+      "nueva_ms": 142.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "antigua_ms": 568.1,
+      "nueva_ms": 283.8,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    }
+  ],
+  "omitidos": [],
+  "veredicto": "ROJO",
+  "lectura": "ROJO: 15 divergencias, factor 0.25 (presupuesto <= 0.6)."
+}
