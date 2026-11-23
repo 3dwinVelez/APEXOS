@@ -1,3 +1,11 @@
+export function scheduleMonitorUsesOperationalSource(path: string, method = "GET") {
+  if (method.toUpperCase() !== "GET") return false;
+  const pathname = path.split("?")[0];
+  return pathname.startsWith("/api/v1/hr/monitor-evidence/") || pathname === "/api/v1/hr/operations-map"
+    || pathname === "/api/v1/hr/routes" || pathname === "/api/v1/hr/routes/event-summaries"
+    || pathname === "/api/v1/hr/employees" || pathname === "/api/v1/talento-humano/empleados";
+}
+
 export function localCalendarDate(value = new Date()) {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, "0");
