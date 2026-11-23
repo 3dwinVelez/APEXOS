@@ -38,6 +38,16 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
   const old=await call('/hr/routes',token,'POST',{date:oldDate,employees:[edwar.code],start_time:'08:00',end_time:'17:00',gps_required:false,tracking_mode:'punch_only'});assert.equal(old.status,200,JSON.stringify(old));const oldRoute=old.body.route||old.body;
   const marked=await call('/hr/time-punches',token,'POST',{employee_id:edwar.id,user_name:edwar.code,route_id:oldRoute.id,type:'entrada',punched_at:oldDate+'T13:00:00Z',idempotency_key:randomUUID()});assert.equal(marked.status,200,JSON.stringify(marked));
   const historic=await db.timePunch.findFirstOrThrow({where:{employee_id:edwar.id}});
+  await check('another tenant cannot update an existing schedule; the owner can still edit it and punch history remains unchanged',async()=>{
+    const saved=await db.timeRoute.findUnique({where:{id:oldRoute.id}});
+    const payload={date:oldDate,employees:['10005709843'],start_time:'08:00',end_time:'17:00',gps_required:false};
+    const denied=await call('/hr/routes/'+oldRoute.id,otherToken,'PATCH',payload);
+    assert.equal(denied.status,404);assert.equal(denied.body.code,'HORARIO_NO_ENCONTRADO');
+    assert.deepEqual(await db.timeRoute.findUnique({where:{id:oldRoute.id}}),saved);
+    const updated=await call('/hr/routes/'+oldRoute.id,token,'PATCH',{...payload,employees:[edwar.code],tolerance_minutes:22});assert.equal(updated.status,200);
+    const restored=await call('/hr/routes/'+oldRoute.id,token,'PATCH',{...payload,employees:[edwar.code],tolerance_minutes:saved.tolerance_minutes});assert.equal(restored.status,200);
+    assert.deepEqual(await db.timePunch.findUnique({where:{id:historic.id}}),historic);
+  });
   await check('browser finds the complete document in the master, assigns linked and unlinked employees and preserves existing route and punch history',async()=>{
     await require('./hr-employee-user-association-browser-local')({origin,token,pagePath:'/dashboard/talento-humano/rutas',artifactName:'hr-schedule-employee-source',exercise:async(page,folder)=>{try{
       page.setDefaultTimeout(60000);
