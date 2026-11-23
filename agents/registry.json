@@ -97,9 +97,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.77.0",
+      "version": "2.78.0",
       "updated_at": "2026-11-23",
-      "sha256": "06d5c62408b67e0519e03269bdc450b3c2d6d2822f62d20ce2ff5f75084b3151",
+      "sha256": "311233220f3c54be80d6e6fa0fc5a099be91b402d56cba806e83f8a311db4a48",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -161,7 +161,8 @@
         "pendiente-irrecuperable-con-cifra-y-brief-aparte",
         "censo-en-brief-con-poblacion-medida",
         "lo-que-se-afirma-del-instrumento-se-pasa-en-limpio",
-        "pendiente-con-dependencia-de-despliegue"
+        "pendiente-con-dependencia-de-despliegue",
+        "particion-de-residuo-con-tres-duenos"
       ]
     },
     {
@@ -246,9 +247,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.24.0",
-      "updated_at": "2026-11-19",
-      "sha256": "c8c6ddd8fdcb89416fbf2d98643816d12f39f0ade850e80ad23648a795544d2e",
+      "version": "2.25.0",
+      "updated_at": "2026-11-23",
+      "sha256": "9bac81684529376bd88575a8056d30cedfc994be9cba8463b94f21669afc9995",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -279,7 +280,8 @@
         "un-commit-funcional-por-candidato",
         "merge-publicado-tras-dos-verificaciones",
         "worktree-sin-node-modules-copiado",
-        "barrido-con-causa-identificada"
+        "barrido-con-causa-identificada",
+        "evidencia-de-corrida-sin-identidad-con-firma-del-manifiesto"
       ]
     },
     {
@@ -319,9 +321,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.98.0",
+      "version": "2.99.0",
       "updated_at": "2026-11-23",
-      "sha256": "ce4ef4bb810a16149dcbda136ab15074b8f9db4c105898b85d22d0168060d7c7",
+      "sha256": "e4df439d462d1ab84c759d5a48005788a0498c3e96eae38e43a206bdb0647f81",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -410,7 +412,8 @@
         "correccion-de-conteo-certificada-sin-cambiar-los-demas",
         "pierna-por-argumento-con-residuo-del-antes",
         "asercion-del-arnes-que-puede-fallar-demostrada-en-rojo",
-        "cero-de-campo-se-desambigua"
+        "cero-de-campo-se-desambigua",
+        "antes-y-despues-de-la-corrida-de-escritura"
       ]
     },
     {
@@ -463,9 +466,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.56.0",
+      "version": "2.57.0",
       "updated_at": "2026-11-23",
-      "sha256": "8b9812b8dd9cf9650782444d53d49223db5203dbae582a96c6785de77bdda023",
+      "sha256": "01ff6b8d4d05e1814a767016e5d90921738684d16598c699fbf33bb12b1f88d1",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -514,7 +517,8 @@
         "privilegio-retirado-en-el-almacen",
         "lente-vuelta-a-medir-antes-de-reusar-la-medicion",
         "vacio-declarado-convertido-en-instrumento-versionado",
-        "tres-estados-de-la-telemetria"
+        "tres-estados-de-la-telemetria",
+        "residuo-de-despliegue-cuantificado-en-campo"
       ]
     }
   ],
