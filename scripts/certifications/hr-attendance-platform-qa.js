@@ -7,7 +7,7 @@ const folder=path.resolve(arg('output-folder')||'.local/hr-attendance-prod/qa-pl
 const environment=(arg('environment')||'QA').toUpperCase();assert.ok(['QA','PRODUCTION'].includes(environment));
 if(environment==='PRODUCTION')assert.ok(session.controlled_model_fixture===true&&session.owner_id&&session.tenant_id);
 const api=environment==='QA'?'https://apexos-api-qa-production.up.railway.app':'https://apexos-api-prod-production.up.railway.app',web=environment==='QA'?'https://apexos-web-qa-production.up.railway.app':'https://apexos-web-prod-production.up.railway.app';
-const report={environment,company:'Cliente Piloto QA',commit:arg('expected-commit')||'43e5510cfe2d85a0282af6c8b8c8c7c0c53a1755',status:'running',started_at:new Date().toISOString(),checks:[],cleanup:[]};let browser,foreign,modelUser;const modelTenant=environment==='QA'?'c56bc5df-c807-4deb-83f8-fbb4751be613':session.tenant_id;
+const report={environment,company:'Cliente Piloto QA',commit:arg('expected-commit')||'43e5510cfe2d85a0282af6c8b8c8c7c0c53a1755',status:'running',started_at:new Date().toISOString(),checks:[],cleanup:[]};let browser,foreign,modelUser,modelRole;const modelTenant=environment==='QA'?'c56bc5df-c807-4deb-83f8-fbb4751be613':session.tenant_id;
 async function call(p,token=session.access_token,method='GET',body){const r=await fetch(api+'/api/v1'+p,{method,headers:{...(token?{authorization:'Bearer '+token}:{}),...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(60000)});return {status:r.status,body:await r.json()};}
 async function check(name,fn){await fn();report.checks.push(name);console.log('PASS '+name);}
 (async()=>{try{
@@ -29,9 +29,9 @@ async function check(name,fn){await fn();report.checks.push(name);console.log('P
   const write=await call('/hr/routes/'+functional.fixture.route_id,foreign.token,'PATCH',{date:new Date().toLocaleDateString('en-CA',{timeZone:'America/Bogota'}),employees:['CERT-FOREIGN-ONLY'],start_time:'08:00',end_time:'17:00',gps_required:false,status:'cancelled'});assert.equal(write.status,404);assert.equal(write.body.code,'HORARIO_NO_ENCONTRADO');
  });
  await check('authenticated QA browser keeps its session across navigation in administration, HR scheduling, monitoring and transport',async()=>{
-  const roles=await call('/admin/roles');assert.equal(roles.status,200);const employeeRole=roles.body.find(r=>r.name==='Empleado');assert.ok(employeeRole);
   const stamp=Date.now(),name='CERT-MASTER-'+stamp,document='99'+stamp+'9';
-  const created=await call('/admin/users',undefined,'POST',{name,email:'cert-master-'+stamp+'@example.invalid',password:'Cert!Aa9-'+randomUUID(),role_id:employeeRole.id,company:'Cliente Piloto QA',document,position:'operario',department:'CERTIFICACION',salary_base:2000000});assert.equal(created.status,201);modelUser=created.body;
+  const role=await call('/admin/roles',undefined,'POST',{name:'CERT-MASTER-ROLE-'+stamp,permissions:{dashboard:{access:true,view:true},talento_humano:{access:true,view:true}},hierarchy_level:10,role_type:'custom',scope:'company'});assert.equal(role.status,201);modelRole=role.body;
+  const created=await call('/admin/users',undefined,'POST',{name,email:'cert-master-'+stamp+'@example.invalid',password:'Cert!Aa9-'+randomUUID(),role_id:modelRole.id,company:'Cliente Piloto QA',document,position:'operario',department:'CERTIFICACION',salary_base:2000000});assert.equal(created.status,201);modelUser=created.body;
   const executablePath=['C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(p=>fs.existsSync(p));assert.ok(executablePath);
   browser=await require('puppeteer-core').launch({executablePath,headless:true});const page=await browser.newPage();page.setDefaultTimeout(60000);await page.setBypassServiceWorker(true);
   await page.evaluateOnNewDocument(({token,tenant,provider})=>{localStorage.setItem('token',token);localStorage.setItem('auth_provider',provider);localStorage.setItem('apexos_company_id',tenant);localStorage.setItem('apex_last_activity',String(Date.now()));},{token:session.access_token,tenant:modelTenant,provider:environment==='QA'?'supabase':'local'});
@@ -53,6 +53,7 @@ async function check(name,fn){await fn();report.checks.push(name);console.log('P
 }catch(error){report.status='failed';report.error=error.message;console.error(error.message);process.exitCode=1;}finally{
  if(browser)await browser.close();
  if(modelUser?.id){try{const r=await call('/admin/users/'+modelUser.id+'/status',undefined,'PATCH',{active:false});report.cleanup.push({type:'synthetic_master_user_deactivated',id:modelUser.id,status:r.status});if(r.status!==200){report.status='failed';process.exitCode=1;}}catch{report.status='failed';process.exitCode=1;}}
+ if(modelRole?.id){try{const r=await call('/admin/roles/'+modelRole.id+'/status',undefined,'PATCH',{active:false});report.cleanup.push({type:'synthetic_master_role_deactivated',id:modelRole.id,status:r.status});if(r.status!==200){report.status='failed';process.exitCode=1;}}catch{report.status='failed';process.exitCode=1;}}
  if(foreign?.token&&foreign?.user?.id){try{const r=await call('/admin/users/'+foreign.user.id+'/status',foreign.token,'PATCH',{active:false});report.cleanup.push({type:'synthetic_other_tenant_admin_deactivated',id:foreign.user.id,status:r.status});if(r.status!==200){report.status='failed';process.exitCode=1;}}catch{report.cleanup.push({type:'synthetic_other_tenant_admin_deactivated',status:'failed'});report.status='failed';process.exitCode=1;}}
  report.finished_at=new Date().toISOString();fs.writeFileSync(path.join(folder,'certification.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));}
 })();

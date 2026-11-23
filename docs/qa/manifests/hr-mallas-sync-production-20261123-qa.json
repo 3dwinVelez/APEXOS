@@ -8,7 +8,7 @@
   "execution": {
     "deployed_commit": "914d1721965d727a14c7e836039e2334678ca2de",
     "functional_finished_at": "2026-11-23T16:03:54.130Z",
-    "platform_finished_at": "2026-11-23T16:04:18.175Z"
+    "platform_finished_at": "2026-11-23T16:14:59.576Z"
   },
   "checks": {
     "functional": {
@@ -68,7 +68,7 @@
   },
   "local_candidate_certification": {
     "status": "passed",
-    "commit": "cc2145d102b81993b7e00479b7bf1cab785efba2",
+    "commit": "906082d0b665170de1f2b788ebe883ea0cbc92d2",
     "evidence": [
       "../evidence/hr-mallas-sync-production-20261123/local-candidate.json"
     ]
@@ -76,7 +76,7 @@
   "rollback_plan": {
     "status": "ready",
     "strategy": "controlled_revert",
-    "previous_main_commit": "a0fb7e05b65d84e619b80cb30790b27f3b940fb3",
+    "previous_main_commit": "790870a0e4392d4c8a1bd46b925ca9f4f89e487f",
     "trigger": "Any failed post-deployment functional, tenant-isolation, persistence or platform check rejects the release.",
     "procedure": "Stop further publications. Reconstruct only this release reviewed diff against the current target, preserving later changes. Certify the reversal and follow desarrollo -> develop -> main with independent authorization; no reset, force push or old-tree baseline. Keep the tenant-ownership protection unless separately reviewed. Production verification uses an isolated synthetic model tenant; no customer data."
   },

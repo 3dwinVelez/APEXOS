@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),{spawnSync}=require('node:
 const RELEASE_BRANCH='codex/release-hr-mallas-sync-20261123';
 const CHANGE_ID='hr-mallas-sync-production-20261123';
 const SOURCE='6a393e673f9b4480e1fe004bec210cb3ce89f428';
-const BASE='a0fb7e05b65d84e619b80cb30790b27f3b940fb3';
+const BASE='790870a0e4392d4c8a1bd46b925ca9f4f89e487f';
 function validateEnvelope(scope,qa,event){
   const assert=(ok,message)=>{if(!ok)throw Error(message);};
   assert(event?.pull_request?.head?.ref===RELEASE_BRANCH&&event?.pull_request?.base?.ref==='main','Unauthorized release route');
