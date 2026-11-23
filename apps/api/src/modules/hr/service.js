@@ -1558,6 +1558,8 @@ async function updateRoute(tenantId, id, input) {
   validateRouteInput(input);
   const kind = normalizeRouteKind(input.kind);
   return prisma.runWithTenant(tenantId, async () => {
+    const ownedRoute = await prisma.timeRoute.findFirst({ where: { id: Number(id), tenant_id: tenantId } });
+    if (!ownedRoute) throw validationError("Horario no encontrado.", 404, "HORARIO_NO_ENCONTRADO");
     const employees = await normalizeRouteEmployees(input.employees);
     if (kind !== "descanso") {
       await assertRouteAssignmentAvailable(tenantId, {
@@ -1581,7 +1583,7 @@ async function updateRoute(tenantId, id, input) {
         }, tx);
       }
       return tx.timeRoute.update({
-        where: { id: Number(id) },
+        where: { id: Number(id), tenant_id: tenantId },
         data: {
           date: startOfDay(input.date),
           vehicle_plate: input.vehicle_plate || "",
