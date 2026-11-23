@@ -1,0 +1,54 @@
+{
+  "environment": "QA",
+  "company": "Cliente Piloto QA",
+  "commit": "914d1721965d727a14c7e836039e2334678ca2de",
+  "status": "passed",
+  "started_at": "2026-11-23T16:14:32.537Z",
+  "checks": [
+    "QA session, canonical HR lists, schedule monitor, administration and adjacent transport remain available",
+    "a real synthetic account in another tenant cannot read or edit the controlled source employee or schedule",
+    "authenticated QA browser keeps its session across navigation in administration, HR scheduling, monitoring and transport"
+  ],
+  "cleanup": [
+    {
+      "type": "synthetic_master_user_deactivated",
+      "id": 815,
+      "status": 200
+    },
+    {
+      "type": "synthetic_master_role_deactivated",
+      "id": 1005,
+      "status": 200
+    },
+    {
+      "type": "synthetic_other_tenant_admin_deactivated",
+      "id": 814,
+      "status": 200
+    }
+  ],
+  "api_commit": "914d1721965d",
+  "navigation": [
+    {
+      "route": "/dashboard/administracion",
+      "title": "Administración APEX",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/talento-humano/rutas",
+      "title": "Horarios y mallas",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/talento-humano/mallas",
+      "title": "Horarios y mallas",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/transporte",
+      "title": "Transporte",
+      "status": 200
+    }
+  ],
+  "actual_provider_master_selection": true,
+  "finished_at": "2026-11-23T16:14:59.576Z"
+}

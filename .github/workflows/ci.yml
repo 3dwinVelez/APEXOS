@@ -20,6 +20,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -27,6 +29,8 @@ jobs:
       - run: npm ci
       - name: Validate mandatory branch flow
         run: npm run governance:ci
+      - name: Scoped release governance regression
+        run: node --test scripts/test/hr-attendance-release-governance.test.js scripts/test/validate-promotion-scope.test.js
 
   lint-typecheck:
     name: Lint & TypeCheck

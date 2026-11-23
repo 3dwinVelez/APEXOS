@@ -1,0 +1,81 @@
+{
+  "environment": "LOCAL",
+  "status": "passed",
+  "commit": "906082d0b665170de1f2b788ebe883ea0cbc92d2",
+  "baseline_change": "Preserved all 36 paths from the concurrent production marking evidence release; the only API change is the certified updateRoute tenant ownership guard.",
+  "mallas": {
+    "environment": "LOCAL",
+    "status": "passed",
+    "started_at": "2026-11-23T16:12:16.736Z",
+    "checks": [
+      "canonical master and operational alias return the same active identities, including employees without a user; authentication and tenants are isolated",
+      "another tenant cannot update an existing schedule; the owner can still edit it and punch history remains unchanged",
+      "browser finds the complete document in the master, assigns linked and unlinked employees and preserves existing route and punch history"
+    ],
+    "finished_at": "2026-11-23T16:13:07.940Z"
+  },
+  "mallas_isolation": {
+    "status": "passed",
+    "environment": "LOCAL",
+    "database": "apexos_cert_hr_assoc_1795450309426",
+    "source_database_modified": false,
+    "fixture_schema_hunks": [
+      "20261016123000_sedes_replace_origins: sections 1-2 only",
+      "20260919110000_time_route_kind_descanso",
+      "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+    ],
+    "exit_code": 0,
+    "unexpected_5xx": [],
+    "checked_at": "2026-11-23T16:13:08.034Z"
+  },
+  "support": {
+    "web_regression": {
+      "status": "passed",
+      "tests": 39
+    },
+    "governance": {
+      "status": "passed",
+      "tests": 17
+    },
+    "typecheck": {
+      "status": "passed",
+      "command": "tsc --noEmit --project apps/web/tsconfig.json"
+    },
+    "lint": {
+      "status": "passed",
+      "errors": 0,
+      "preexisting_warnings": 2
+    },
+    "production_marking_regression": {
+      "status": "passed",
+      "tests": 76,
+      "command": "node --test apps/api/test/hr-evidence-resilience.test.js apps/api/test/hr-mobile-identity.test.js apps/api/test/hr-administrative-punch-correction.test.js apps/api/test/platform-log-rejection-detail.test.js apps/api/test/telemetry-client-logs-public.test.js"
+    }
+  },
+  "sync": {
+    "environment": "LOCAL",
+    "status": "passed",
+    "started_at": "2026-11-23T16:13:47.930Z",
+    "checks": [
+      "self attendance is authenticated and tenant scoped",
+      "browser sees other-device entry by polling, lunch by focus and stale-click preflight without duplicate writes",
+      "final server sequence persists once and other tenants see none of it"
+    ],
+    "finished_at": "2026-11-23T16:14:42.486Z"
+  },
+  "sync_isolation": {
+    "status": "passed",
+    "environment": "LOCAL",
+    "database": "apexos_cert_hr_assoc_1795450408198",
+    "source_database_modified": false,
+    "fixture_schema_hunks": [
+      "20261016123000_sedes_replace_origins: sections 1-2 only",
+      "20260919110000_time_route_kind_descanso",
+      "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+    ],
+    "exit_code": 0,
+    "unexpected_5xx": [],
+    "checked_at": "2026-11-23T16:14:42.620Z"
+  },
+  "baseline_commit": "790870a0e4392d4c8a1bd46b925ca9f4f89e487f"
+}

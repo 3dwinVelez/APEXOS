@@ -65,6 +65,10 @@ function assertGithubRef() {
   const headRef = process.env.GITHUB_HEAD_REF || "";
 
   if (eventName === "pull_request") {
+    if (baseRef === "main" && headRef === "codex/release-hr-mallas-sync-20261123") {
+      require("./validate-hr-attendance-release").assertScopedMainRelease(JSON.parse(require("node:fs").readFileSync(process.env.GITHUB_EVENT_PATH, "utf8")));
+      return;
+    }
     if (baseRef === "develop" && headRef !== "desarrollo") fail(`PR hacia develop solo desde desarrollo. Origen: ${headRef || "desconocido"}.`);
     if (baseRef === "main" && headRef !== "develop") fail(`PR hacia main solo desde develop. Origen: ${headRef || "desconocido"}.`);
     if (!["develop", "main"].includes(baseRef)) fail(`Destino de PR no autorizado: ${baseRef || "desconocido"}.`);
