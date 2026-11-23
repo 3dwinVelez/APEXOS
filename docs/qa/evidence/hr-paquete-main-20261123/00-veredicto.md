@@ -381,3 +381,31 @@ git: b3486793  origin/main: c53f857c
 El manifiesto de alcance declara 63 rutas exactas (41 A y 22 M, 0 D) y `allowed_deletions` vacio;
 el de aprobacion exige y encuentra las cinco checaduras, la empresa modelo NYVORA en QA, la
 certificacion transversal y el plan de retroceso con el baseline productivo anterior.
+
+## El DESPUÉS en Producción, medido sobre el artefacto servido
+
+El push fue fast-forward de `c53f857c` a `336f28b0` y Railway desplegó los dos servicios sin
+intervención. Los sondeos, todos de lectura:
+
+```
+GET /health  intento 1 -> commit c53f857c1d99   (el deploy todavía no caía)
+GET /health  intento 2 -> commit 336f28b0a695   modules 19  status OK
+/dashboard/talento-humano[/bancos|/liquidacion-trabajador|/nomina|/empleados|/rutas|/marcacion] -> 200
+/dashboard/talento-humano/no-existe-xyz         -> 404   y 0 coincidencias del marcador
+GET  /api/v1/talento-humano/bancos                          -> 401
+POST /api/v1/talento-humano/bancos                          -> 400  (esquema antes que preHandler)
+GET  /api/v1/talento-humano/liquidacion-trabajador/revision-dias -> 401
+GET  /api/v1/talento-humano/nomina/ajustes                  -> 401
+GET  /api/v1/talento-humano/nomina/reportes/conceptos       -> 401
+GET  /api/v1/hr/routes                                      -> 401
+GET  /api/v1/talento-humano/no-existe                       -> 404
+```
+
+En los 6 983 109 bytes de chunks que descargó la sonda aparecen los literales exactos del paquete
+(`Maestro de bancos` 8, `Codigo nacional`, `Nombre del banco`, `Banco activo`, `Revisión del salario
+pendiente`, `Concepto manual`, `Registrar concepto`, `Seleccionar concepto`, `Ir al maestro de
+empleados`, `Cancelar edicion`, `Horarios con eventos`, `Asignar horario`, `selfie` 2). Dos términos
+quedaron retirados del marcador porque no existen en el fuente (`Horarios unificados`, `Periodicidad`):
+un control que no puede fallar no prueba nada, y fue el error que ya se corrigió dos veces en este
+frente. No se escribió nada en el tenant de clientes de Producción: la pata que certifica el flujo de
+negocio es la corrida de 26 piernas en QA sobre contenido blob-idéntico al que ahora sirve main.

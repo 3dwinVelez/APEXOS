@@ -155,10 +155,31 @@ sí es `54cabeb3`, que es el árbol donde corrieron las suites y la certificaci�
 `candidate_source.commit` es la punta que contiene la evidencia. Ninguna de esas rutas de documentación
 toca una línea de `apps/**`.
 
-Ambas corridas contra el **target remoto** y revalidadas en cada tip nuevo. El `DESPUÉS` en
-Producción —volver a correr el instrumento contra el commit servido tras el despliegue de Railway—
-se versiona después del push; mientras ese artefacto no exista, la promesa de que el paquete opera
-en Producción queda declarada abierta y no certificada.
+Ambas corridas contra el **target remoto** y revalidadas en cada tip nuevo.
+
+## El DESPUÉS en Producción
+
+Se empujó `336f28b0` sobre `c53f857c` (fast-forward de la cadena replay + docs, sin merge de rama y sin
+force) y Railway desplegó solo. La verificación es de **artefacto servido**, no de negocio:
+
+- `GET /health` pasó de `commit = c53f857c1d99` a `commit = 336f28b0a695` en el segundo sondeo; los dos
+  servicios (`apexos-api-prod`, `apexos-web-prod`) quedaron `Online`.
+- El bundle que sirve Producción trae los literales exactos del paquete: `Maestro de bancos` (8
+  apariciones), `Codigo nacional`, `Nombre del banco`, `Banco activo`, `Revisión del salario pendiente`,
+  `Concepto manual`, `Registrar concepto`, `Seleccionar concepto`, `Ir al maestro de empleados`,
+  `Cancelar edicion`, `Horarios con eventos`, `Asignar horario` y `selfie` (2). El control —una ruta
+  inventada— devolvió `404` y cero coincidencias, para que el verde no se compre con una página vacía.
+- La superficie nueva existe detrás de la autenticación: `GET /api/v1/talento-humano/bancos` `401`,
+  `GET .../liquidacion-trabajador/revision-dias` `401`, `GET /api/v1/talento-humano/nomina/ajustes` `401`,
+  mientras el control inventado da `404`. El `POST` al maestro sin cuerpo devolvió `400`: Fastify valida
+  el esquema antes del `preHandler`, el mismo orden que midió la corrida de campo.
+
+**Lo que esta pata no hace**: no se ejecutó ninguna escritura en el tenant de clientes de Producción. Las
+26 piernas corrieron en QA contra contenido blob-identico al que ahora sirve main, y esta sonda prueba el
+artefacto, no el flujo de negocio en la base real. Queda declarado, y las búsquedas con términos que no
+son literales del fuente (`Horarios unificados`, `Periodicidad`) se retiraron del marcador porque un
+control que no puede fallar no es evidencia. Detalle en
+`../evidence/hr-paquete-main-20261123/qa-despues-produccion.json`.
 
 ## Residuos en QA
 
