@@ -214,6 +214,10 @@
     {
       "status": "A",
       "file": "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-sesion-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-ladder-main-20261123/campo-despues-produccion-sobre-80681aa1.json"
     }
   ],
   "allowed_paths": [
@@ -259,7 +263,8 @@
     "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-ejecucion-produccion-20261123.json",
     "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-verificacion-produccion-20261123.json",
     "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-intento-tenant-erroneo-20261123.json",
-    "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-sesion-produccion-20261123.json"
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-sesion-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/campo-despues-produccion-sobre-80681aa1.json"
   ],
   "allowed_deletions": [],
   "certified_functional_paths": [
@@ -351,9 +356,10 @@
     }
   ],
   "notas": {
-    "generacion": "43 rutas despues de la declaracion de post-publicacion: las 36 originales (34 del commit certificado 2c2f6723 mas los 2 manifiestos de esta pata) y las 7 evidencias del DESPUES en Produccion que se publicaron despues del merge 790870a0. Las siete son evidencia leida del ambiente desplegado: no son producto, no son migracion y no borran nada.",
+    "generacion": "44 rutas despues de la declaracion de post-publicacion: las 36 originales (34 del commit certificado 2c2f6723 mas los 2 manifiestos de esta pata) y las 8 evidencias del DESPUES en Produccion que se publicaron despues del merge 790870a0. Las ocho son evidencia leida del ambiente desplegado: no son producto, no son migracion y no borran nada.",
     "residuo_declarado": "La cuenta de medicion 801 del tenant 'QA Empresa A RLS' queda activa y no puede retirarse por el producto: ese tenant tiene 0 modulos licenciados y el propio PATCH /admin/users/:id/status responde 403 MODULO_NO_HABILITADO. Medido y versionado en retiro-remanentes.json. Las demas cuentas efimeras (804, 805, 806, 807, 809) quedaron inactivas por el endpoint con login 401 despues.",
     "decision_pendiente_del_dueno": "hallazgo_autorizacion en campo-qa.json: el rol generico 'Empleado' de la empresa modelo trae hr:write, que es el permiso del canal administrativo donde vive la excepcion de escalera. La corrida lo mide y lo declara (status 200, pierna_asentada false) y no cambia conducta dentro de una promocion. Acotar la excepcion a rol administrativo (precedente BIOMETRIA_RESTABLECER_DENEGADO) o aceptar que hr:write la conserve lleva su propio brief.",
-    "post_publicacion": "Declaracion expresa, hecha despues de empujar, siguiendo el precedente a0fb7e05. El merge 790870a0 despliego el candidato 2c2f6723 y Produccion empezo a servir 790870a0e439 (medido por GET /health); el DESPUES solo podia existir despues de ese paso. El commit de evidencia llevo 7 archivos que el inventario aprobado no enumeraba como entrada A, aunque la aprobacion ya los anunciaba en evidencia_pendiente_de_despliegue: campo-despues-produccion.json (16/16 con ancla de commit servido), cierre-produccion-20261123.json (veredicto de la pata), rescate-escalera-antes/ejecucion/verificacion (las seis salidas del 21 y 22: 409 MARCACION_FUERA_DE_SECUENCIA antes, 400 KILOMETRAJE_REQUERIDO despues) y rescate-escalera-intento-tenant-erroneo/sesion (la tanda 404 desechada y la cuenta del andamio retirada por el endpoint). Ademas docs/qa/certifications/hr-marking-ladder-main-20261123.md gana su seccion DESPUES en Produccion sobre la misma ruta ya declarada A. Medido con git diff --name-status a0fb7e05..HEAD: 43 rutas, 33 A y 10 M, 0 borrados; las 7 nuevas son las unicas fuera del inventario original y todas caen bajo docs/qa/evidence/. El scope validator contra el tip actual de origin/main dira 'el destino cambio desde el baseline aprobado' porque el baseline declarado es a0fb7e05, el tip que main tenia al certificar: la verificacion valida es candidato vs ese baseline, no vs el tip que el propio merge movio."
+    "post_publicacion": "Declaracion expresa, hecha despues de empujar, siguiendo el precedente a0fb7e05. El merge 790870a0 despliego el candidato 2c2f6723 y Produccion empezo a servir 790870a0e439 (medido por GET /health); el DESPUES solo podia existir despues de ese paso. Los commits de evidencia llevaron 8 archivos que el inventario aprobado no enumeraba como entrada A, aunque la aprobacion ya los anunciaba en evidencia_pendiente_de_despliegue: campo-despues-produccion.json (16/16 con ancla de commit servido), campo-despues-produccion-sobre-80681aa1.json (el mismo DESPUES re-medido sobre el binario que Produccion sirve hoy), cierre-produccion-20261123.json (veredicto de la pata), rescate-escalera-antes/ejecucion/verificacion (las seis salidas del 21 y 22: 409 MARCACION_FUERA_DE_SECUENCIA antes, 400 KILOMETRAJE_REQUERIDO despues), rescate-escalera-intento-tenant-erroneo (la tanda 404 desechada, sin escrituras) y rescate-escalera-sesion (la cuenta del andamio retirada por el endpoint). Ademas docs/qa/certifications/hr-marking-ladder-main-20261123.md gana su seccion DESPUES en Produccion sobre la misma ruta ya declarada A. Medido con git diff --name-status a0fb7e05..790870a0: 36 rutas, exactamente el inventario aprobado, 0 borrados; las 8 rutas nuevas caen todas bajo docs/qa/evidence/ y entran despues del merge. El scope validator contra el tip actual de origin/main dira 'el destino cambio desde el baseline aprobado' porque el baseline declarado es a0fb7e05, el tip que main tenia al certificar: la verificacion valida es candidato vs ese baseline, no vs el tip que el propio merge y la otra pata movieron.",
+    "main_avanzo": "Otra intervencion promovio su pata a main mientras se publicaba esta contabilidad: 80681aa1 (merge: mallas con maestro unico y marcaciones sincronizadas entre dispositivos), que toma 790870a0 como ancestro y por tanto ya trae la escalera. No se reescribio historia ajena: la contabilidad propia se encadeno y luego se fundo con un merge. Verificado en el blob: apps/api/src/modules/hr/service.js de origin/main tiene 3 lineas con resolvePunchLadder y 1 con MOTIVO_CORRECCION_REQUERIDO. El DESPUES se volvio a medir sobre el binario que Produccion sirve hoy (campo-despues-produccion-sobre-80681aa1.json): 16/16 con health_ancla_el_commit_servido anclando 80681aa1d998, cuentas efimeras 257/258/259 retiradas por el endpoint con login 401 y peor escritura 3.453 ms sobre presupuesto de 20.000 ms."
   }
 }

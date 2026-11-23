@@ -136,11 +136,13 @@
       "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-verificacion-produccion-20261123.json",
       "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-intento-tenant-erroneo-20261123.json",
       "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-sesion-produccion-20261123.json",
-      "docs/qa/certifications/hr-marking-ladder-main-20261123.md"
+      "docs/qa/certifications/hr-marking-ladder-main-20261123.md",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/campo-despues-produccion-sobre-80681aa1.json"
     ],
     "despues_produccion": "hr-marking-ladder-field.js --espera=arreglo: 16/16, anclado por health_ancla_el_commit_servido. Rechazo legible 409 con details.expected_type, 422 MOTIVO_CORRECCION_REQUERIDO sin motivo, destrabe motivado 200 con novedad escalera:esperada:inicio_almuerzo, jornada cerrada sigue 409 JORNADA_COMPLETA, canal propio no conoce la bandera, tenant vecino 404, peor escritura 3.257 ms sobre presupuesto de 20.000 ms.",
     "seis_salidas": "El mismo payload que tropezaba con 409 MARCACION_FUERA_DE_SECUENCIA responde ahora 400 KILOMETRAJE_REQUERIDO: la compuerta que esta pata traia a Produccion esta pasada con dato real de cliente. Lo que queda delante es el odometro del dia, que ningun registro del sistema permite derivar (Vehicle.mileage en 0, RoutePreoperationalChecklist sin filas de esas placas en la ventana, TransportTripEvent/Event/RouteBlockEvent en 0 filas). No se invento ni hora ni kilometraje.",
-    "cuentas": "250/251/252/253/255/256 retiradas por PATCH /admin/users/:id/status con login 401 despues; 254, sonda que nunca obtuvo sesion, apagada por escritura directa y declarada.",
-    "pendientes_declarados": "1) las seis salidas del 21 y 22 esperan la lectura fisica del odometro por conductor (dueno: operacion); 2) las siete salidas del 23 descartadas por hora futura se recogen en su ventana con hr-marking-rescue-apply.js y la misma frontera de odometro; 3) hallazgo_autorizacion (rol Empleado con hr:write) sigue siendo decision del dueno con su propio brief."
+    "cuentas": "250/251/252/253/255/256 retiradas por PATCH /admin/users/:id/status con login 401 despues; 254, sonda que nunca obtuvo sesion, apagada por escritura directa y declarada; 257/258/259 de la re-medicion, tambien retiradas por el endpoint con login 401.",
+    "pendientes_declarados": "1) las seis salidas del 21 y 22 esperan la lectura fisica del odometro por conductor (dueno: operacion); 2) las siete salidas del 23 descartadas por hora futura se recogen en su ventana con hr-marking-rescue-apply.js y la misma frontera de odometro; 3) hallazgo_autorizacion (rol Empleado con hr:write) sigue siendo decision del dueno con su propio brief.",
+    "binario_servido_actual": "80681aa1d998, descendiente del merge 790870a0 por otra pata (mallas con maestro unico). Re-medido con hr-marking-ladder-field.js --espera=arreglo: 16/16, anclado por health_ancla_el_commit_servido. Artefacto docs/qa/evidence/hr-marca-ladder-main-20261123/campo-despues-produccion-sobre-80681aa1.json."
   }
 }
