@@ -1,0 +1,86 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-schedule-tenant-update-20261123",
+  "base_commits": {
+    "develop": "43e5510cfe2d85a0282af6c8b8c8c7c0c53a1755"
+  },
+  "target_head": "43e5510cfe2d85a0282af6c8b8c8c7c0c53a1755",
+  "certified_commit": "388412d6be23a5a494b615c1b0a195e73aad53c3",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "388412d6be23a5a494b615c1b0a195e73aad53c3",
+    "implementation_commit": "cd3a88e5cc8613970bd1f8db2bb9d7f2227c1fa7"
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "scripts/certifications/hr-schedule-employee-source-local.js"
+  ],
+  "change_intent": {
+    "summary": "Reject cross-tenant schedule updates before assignment validation and constrain the database update to the authenticated tenant.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "scripts/certifications/hr-schedule-employee-source-local.js",
+    "docs/qa/manifests/hr-schedule-tenant-update-20261123-preqa.json",
+    "docs/qa/manifests/hr-schedule-tenant-update-20261123-scope.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-schedule-employee-source-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-schedule-tenant-update-20261123-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-schedule-tenant-update-20261123-scope.json"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Cross-tenant schedule update rejected with zero writes; owner edit still succeeds",
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-tenant-update-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    },
+    {
+      "name": "Preserved employee identity and existing schedule and punch history",
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-tenant-update-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    },
+    {
+      "name": "Visible read failure, retained master list and retry recovery",
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-tenant-update-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    },
+    {
+      "name": "Authentication and tenant isolation",
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-tenant-update-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    }
+  ]
+}
