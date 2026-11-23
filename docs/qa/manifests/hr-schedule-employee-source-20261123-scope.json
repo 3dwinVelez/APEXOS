@@ -1,0 +1,128 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-schedule-employee-source-20261123",
+  "base_commits": {
+    "develop": "de7af667786a616f170e99652b8e1b32dbb6abf8"
+  },
+  "target_head": "de7af667786a616f170e99652b8e1b32dbb6abf8",
+  "certified_commit": "d765f6b2a10232c394ca49b088f1c528f9185c7f",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "d765f6b2a10232c394ca49b088f1c528f9185c7f",
+    "implementation_commit": "9ad1c155ecf4b72169d21f1189175bacd7040258"
+  },
+  "certified_functional_paths": [
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/test/hr-punch-mobile-evidence.test.mjs",
+    "apps/web/test/hr-route-write-fallback.test.mjs",
+    "apps/web/test/hr-schedule-employee-source.test.mjs",
+    "docs/qa/certifications/hr-schedule-employee-source-20261120.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-schedule-employee-source-local.js"
+  ],
+  "change_intent": {
+    "summary": "Use the canonical employee master for schedule assignment and prevent legacy employee fallback in Supabase browser sessions.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/test/hr-punch-mobile-evidence.test.mjs",
+    "apps/web/test/hr-route-write-fallback.test.mjs",
+    "apps/web/test/hr-schedule-employee-source.test.mjs",
+    "docs/qa/certifications/hr-schedule-employee-source-20261120.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-schedule-employee-source-local.js",
+    "docs/qa/manifests/hr-schedule-employee-source-20261123-preqa.json",
+    "docs/qa/manifests/hr-schedule-employee-source-20261123-scope.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrScheduleMonitor.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-punch-mobile-evidence.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-route-write-fallback.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-schedule-employee-source.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-schedule-employee-source-20261120.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-schedule-employee-source-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-schedule-employee-source-20261123-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-schedule-employee-source-20261123-scope.json"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Canonical active employee selection and assignment with or without a linked user",
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-employee-source-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    },
+    {
+      "name": "Preserved employee identity and existing schedule and punch history",
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-employee-source-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    },
+    {
+      "name": "Visible read failure, retained master list and retry recovery",
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-employee-source-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    },
+    {
+      "name": "Authentication and tenant isolation",
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-employee-source-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    }
+  ]
+}
