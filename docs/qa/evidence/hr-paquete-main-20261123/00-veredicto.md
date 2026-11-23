@@ -409,3 +409,16 @@ quedaron retirados del marcador porque no existen en el fuente (`Horarios unific
 un control que no puede fallar no prueba nada, y fue el error que ya se corrigió dos veces en este
 frente. No se escribió nada en el tenant de clientes de Producción: la pata que certifica el flujo de
 negocio es la corrida de 26 piernas en QA sobre contenido blob-idéntico al que ahora sirve main.
+
+## Re-sondeo al cierre de la intervención (2026-11-23, ya con la evidencia versionada)
+
+`GET https://apexos-api-prod-production.up.railway.app/health` → `200`, `commit = e68eed4c63f4`.
+
+Qué cambia este renglón respecto a la tabla de arriba, declarado como corrección hacia adelante y no
+como reescritura: la sonda del DESPUÉS se corrió con Producción sirviendo `336f28b0a695` y quedó
+versionada así. Después de esa medición se empujó un commit más a `main` (`e68eed4c`, cuatro rutas de
+`docs/qa`: la certificación, el dossier, el JSON del DESPUÉS y su manifiesto reescrito como delta) y el
+ambiente lo desplegó solo. El `commit` de la salud subió de `336f28b0a695` a `e68eed4c63f4`; el
+**código servido no cambió entre los dos commits**, porque el segundo no toca `apps/**` ni
+`packages/**`. La equivalencia blob de las 49 rutas de producto sigue midiendo contra `336f28b0`, que
+es el commit que carrya el replay, y ese sigue siendo el ancla correcta del DESPUÉS.
