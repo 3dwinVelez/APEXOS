@@ -1,0 +1,323 @@
+{
+  "change_id": "hr-marca-ladder-main-20261123",
+  "scope_schema_version": 2,
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "codex/qa-hr-marking-ladder-main-20261123",
+  "certified_commit": "2c2f672339a6465c07601f3425f6e8c3234c806d",
+  "base_commit": "a0fb7e05b65d84e619b80cb30790b27f3b940fb3",
+  "base_commits": {
+    "main": "a0fb7e05b65d84e619b80cb30790b27f3b940fb3"
+  },
+  "target_head": "a0fb7e05b65d84e619b80cb30790b27f3b940fb3",
+  "candidate_source": {
+    "branch": "develop",
+    "commit": "43e5510cfe2d85a0282af6c8b8c8c7c0c53a1755",
+    "certificado_en_develop": "c777dc13 (contenido) + la fusion PR #109 = 43e5510c, que es el commit que QA sirve y que el medidor de campo anclo por /health",
+    "origen_certificado_en_desarrollo": [
+      "4776b8fd"
+    ],
+    "replay_sobre_main": "Replay puntual de las rutas de corte del c777dc13 sobre el tip de main a0fb7e05, en su propia worktree auxiliar (codex/qa-hr-marking-ladder-main-20261123). No es merge de develop: origin/main..origin/develop es un diff de cientos de archivos y entre los dos destinos hay frentes ajenos a esta correccion (nomina, liquidacion, contratos, ajustes de retiro) que no tienen pata certificada para main y no viajan con este paquete.",
+    "como_se_midio_la_identidad_antes_de_hunkear": "git cherry-pick -n c777dc13 aplico sin conflictos. Ocho de las diez rutas de producto y prueba del candidato son blob-identicas a las que QA midio; las dos que no (apps/api/src/modules/hr/service.js y apps/api/src/modules/hr/schema.js) difieren por nomina, no por la escalera: la equivalencia se probo por region extrayendo el codigo (createPunch 461 lineas, resolvePunchLadder 17 lineas, las 14 lineas de escalera, los 2 campos del schema, el permiso en policy.js) y comparando hash de region. Las diez regiones salen IGUAL y 0 distintas en docs/qa/evidence/hr-marca-ladder-main-20261123/equivalencia-desarrollo-main.txt. Las 24 rutas restantes del commit certificado (pruebas, brief, documentos certificadores, evidencia versionada e instrumentos) son blob-identicas: el instrumento de campo lleva el sha256 32efc82762d8 estampado en el artefacto y verificado contra el blob commiteado.",
+    "arbol_medido_en_el_candidato": "2c2f6723 (hijo directo de a0fb7e05). La medicion de campo en QA esta anclada al arbol de develop que se replayeó; el manifiesto y su documento viajan dentro del mismo commit certificado, que no mueve producto despues de la medicion.",
+    "excluido_explicitamente": [
+      "apps/web/**",
+      "agents/**",
+      ".qoder/skills/**",
+      "apps/control-tower/**",
+      "apps/api/prisma/**",
+      "docs/qa/manifests/hr-marca-ladder-develop-20261123-scope.json y su -preqa.json (son el registro de la pierna a develop; su evidencia ya viaja dentro del documento certificador que si se promociona)"
+    ],
+    "motivo_de_la_exclusion": "El contexto vivo del equipo (agents/, .qoder/skills/) no existe en las ramas liberadas: su version actual vive solo en desarrollo, fuente de version del equipo. apps/control-tower/** reposa solo en desarrollo por regla de gobernanza. apps/api/prisma/** no se toca: esta pierna no tiene migracion y las 72 migraciones alineadas de QA y Produccion quedan intactas. apps/web/** no viaja a main en esta pata: la cola del operario y el boton de correccion ya se promocionan en su propio paquete y el medidor de campo de esta pata es de API.",
+    "excepcion_decontrato_de_destino": "Tres certificadores viajan a main aunque main no los tenia, porque sin ellos la evidencia queda huerfana: hr-marking-ladder-field.js es el instrumento que produjo campo-qa.json y hay que volver a correrlo igual para el DESPUES; hr-marking-evidence-resilience-local.js es el regression_certification.script que cita el manifiesto; hr-marking-rescue-apply.js es el escritor que destraba las seis salidas pendientes en cuanto main este desplegado. Ninguno es producto ni migracion. La sonda hr-marking-blocked-workers.js ya existia en main con el blob f276972ce0d1, idéntico al de desarrollo, develop y el candidato, y es la que genero antes-produccion-20261123.json.",
+    "diferencia_de_entorno_declarada": "apps/api/src/modules/hr/webPunchSelfie.js existe solo en origin/develop (2766b9a3, otra intervencion) y no esta en origin/main ni en el candidato. Es la puerta que exige selfie en la marcacion propia; la pierna del canal propio corre con la foto puesta en los dos intentos, asi que lo medido es 409 MARCACION_FUERA_DE_SECUENCIA y no 400 SELFIE_REQUERIDA: el resultado certificado no depende de esa puerta. Esa divergencia develop-vs-desarrollo se reporta al dueno."
+  },
+  "change_intent": {
+    "summary": "Llevar a Produccion la escalera de marcacion con correccion administrativa motivada, ya medida en el ambiente QA desplegado. El defecto esta vivo en Produccion: la sonda de solo lectura del 2026-11-23 contó 21 rechazos MARCACION_FUERA_DE_SECUENCIA en la ventana (15 por el canal propio y 6 por el administrativo) y 20 jornadas empezadas y nunca cerradas, y en el blob de service.js que main sirve hoy resolvePunchLadder aparece 0 veces. Sin este paso no se pueden escribir las seis salidas bloqueadas del 21 y el 22 de noviembre que el rescate dejo declaradas con su hora de horario asignado.",
+    "modules": [
+      "hr",
+      "admin",
+      "platform-logs",
+      "security",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/fabric/platformLogs.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/public-routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/security/fileSignature.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/security/policy.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-administrative-punch-correction.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-evidence-resilience.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-mobile-identity.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/platform-log-rejection-detail.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/telemetry-client-logs-public.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-19-marcacion-evidencia-resiliente.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-marking-evidence-resilience-20261123.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-marking-ladder-main-20261123.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/estado-post-rescate-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-antes-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-ejecucion-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-entrada-539-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-pendientes-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-verificacion-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/retirada-admin-temporal-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-ladder-main-20261123/antes-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-ladder-main-20261123/campo-qa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-ladder-main-20261123/equivalencia-desarrollo-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-ladder-main-20261123/foco-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-ladder-main-20261123/regresion-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-ladder-main-20261123/retiro-remanentes.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marca-ladder-main-20261123-approval.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marca-ladder-main-20261123-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-marking-evidence-resilience-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-marking-ladder-field.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-marking-rescue-apply.js"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/server.js",
+    "apps/api/src/fabric/platformLogs.js",
+    "apps/api/src/modules/admin/public-routes.js",
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/security/fileSignature.js",
+    "apps/api/src/security/policy.js",
+    "apps/api/test/hr-administrative-punch-correction.test.js",
+    "apps/api/test/hr-evidence-resilience.test.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/api/test/platform-log-rejection-detail.test.js",
+    "apps/api/test/telemetry-client-logs-public.test.js",
+    "docs/briefs/2026-11-19-marcacion-evidencia-resiliente.md",
+    "docs/qa/certifications/hr-marking-evidence-resilience-20261123.md",
+    "docs/qa/certifications/hr-marking-ladder-main-20261123.md",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/estado-post-rescate-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/local-certification.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-antes-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-ejecucion-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-entrada-539-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-pendientes-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-verificacion-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/retirada-admin-temporal-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/antes-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/equivalencia-desarrollo-main.txt",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/foco-candidato.txt",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/regresion-candidato.txt",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/retiro-remanentes.json",
+    "docs/qa/manifests/hr-marca-ladder-main-20261123-approval.json",
+    "docs/qa/manifests/hr-marca-ladder-main-20261123-scope.json",
+    "scripts/certifications/hr-marking-evidence-resilience-local.js",
+    "scripts/certifications/hr-marking-ladder-field.js",
+    "scripts/certifications/hr-marking-rescue-apply.js"
+  ],
+  "allowed_deletions": [],
+  "certified_functional_paths": [
+    "apps/api/server.js",
+    "apps/api/src/fabric/platformLogs.js",
+    "apps/api/src/modules/admin/public-routes.js",
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/security/fileSignature.js",
+    "apps/api/src/security/policy.js",
+    "apps/api/test/hr-administrative-punch-correction.test.js",
+    "apps/api/test/hr-evidence-resilience.test.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/api/test/platform-log-rejection-detail.test.js",
+    "apps/api/test/telemetry-client-logs-public.test.js",
+    "docs/briefs/2026-11-19-marcacion-evidencia-resiliente.md",
+    "docs/qa/certifications/hr-marking-evidence-resilience-20261123.md",
+    "docs/qa/certifications/hr-marking-ladder-main-20261123.md",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/estado-post-rescate-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/local-certification.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-antes-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-ejecucion-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-entrada-539-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-pendientes-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-verificacion-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/retirada-admin-temporal-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/antes-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/equivalencia-desarrollo-main.txt",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/foco-candidato.txt",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/regresion-candidato.txt",
+    "docs/qa/evidence/hr-marca-ladder-main-20261123/retiro-remanentes.json",
+    "scripts/certifications/hr-marking-evidence-resilience-local.js",
+    "scripts/certifications/hr-marking-ladder-field.js",
+    "scripts/certifications/hr-marking-rescue-apply.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Jornada escrita aunque la evidencia sea degradada o ilegible",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/local-certification.json",
+        "../certifications/hr-marking-ladder-main-20261123.md",
+        "../certifications/hr-marking-evidence-resilience-20261123.md"
+      ]
+    },
+    {
+      "name": "Escalera de marcacion con correccion administrativa motivada",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+        "../certifications/hr-marking-ladder-main-20261123.md",
+        "../evidence/hr-marca-evidence-resilience-20261119/rescate-ejecucion-produccion-20261123.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/rescate-pendientes-produccion-20261123.json"
+      ]
+    },
+    {
+      "name": "Rechazo legible sin filtrar cuerpo, imagen ni secreto",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marca-ladder-main-20261123/antes-produccion-20261123.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json",
+        "../evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+        "../certifications/hr-marking-ladder-main-20261123.md"
+      ]
+    },
+    {
+      "name": "Identidad movil y firma de archivo decididas por contenido",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marca-ladder-main-20261123/equivalencia-desarrollo-main.txt",
+        "../evidence/hr-marca-evidence-resilience-20261119/local-certification.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/rescate-entrada-539-produccion-20261123.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md"
+      ]
+    },
+    {
+      "name": "Autenticacion, RBAC y aislamiento de tenant inalterados",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/estado-post-rescate-produccion-20261123.json",
+        "../evidence/hr-marca-ladder-main-20261123/retiro-remanentes.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/retirada-admin-temporal-produccion-20261123.json"
+      ]
+    }
+  ],
+  "notas": {
+    "generacion": "36 rutas: las 34 del commit certificado 2c2f6723 mas los dos manifiestos de esta pata (el commit de gobernanza, hijo directo del certificado). Ninguna eliminacion.",
+    "residuo_declarado": "La cuenta de medicion 801 del tenant 'QA Empresa A RLS' queda activa y no puede retirarse por el producto: ese tenant tiene 0 modulos licenciados y el propio PATCH /admin/users/:id/status responde 403 MODULO_NO_HABILITADO. Medido y versionado en retiro-remanentes.json. Las demas cuentas efimeras (804, 805, 806, 807, 809) quedaron inactivas por el endpoint con login 401 despues.",
+    "decision_pendiente_del_dueno": "hallazgo_autorizacion en campo-qa.json: el rol generico 'Empleado' de la empresa modelo trae hr:write, que es el permiso del canal administrativo donde vive la excepcion de escalera. La corrida lo mide y lo declara (status 200, pierna_asentada false) y no cambia conducta dentro de una promocion. Acotar la excepcion a rol administrativo (precedente BIOMETRIA_RESTABLECER_DENEGADO) o aceptar que hr:write la conserve lleva su propio brief."
+  }
+}

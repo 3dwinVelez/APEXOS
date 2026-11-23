@@ -1,0 +1,88 @@
+regresiona cercana al arbol tocado, corrida dentro de la worktree auxiliar del candidato
+arbol_medido=11d6183659d949c61b46d171155aa9f3273f0b20 (estado de la worktree al correr)
+ancla=la rama se reconstruyo despues de la corrida (git reset --soft sobre el tip nuevo de main), por eso se ancla por arbol y no por sha de commit
+paridad=git diff --name-only 11d61836 <certified_commit> -- apps test scripts config package.json tsconfig.json next.config.js prisma responde vacio: el codigo probado es el del commit certificado (su sha esta en docs/qa/manifests/hr-marca-ladder-main-20261123-scope.json)
+fecha_utc=2026-11-23T16:02:23Z
+comando=NODE_PATH=<node_modules del arbol principal> node --test (13 archivos: marcacion, retiro de cuenta, sesion, autorizacion, contexto de tenant, RBAC)
+alcance=hr-deferred-marking-offline, hr-marking-concurrency, hr-marking-declared-employee, hr-marking-kilometraje-conflict, hr-marking-only-rbac, hr-punch-mobile-evidence, admin-user-status-regression, auth-session-hardening, authorization-observe, core-tenant-context-propagation, rbac-administrative-role, rbac-module-access, security-authorization-revocation
+declarado=authorization-status-codes NO se corre: necesita Redis y el puesto no lo tiene levantado; se dejo fuera en lugar de contar un rojo de ambiente como resultado del candidato
+
+ok 1 - desactivar usuario responde con el registro inactivo y revoca sesiones
+ok 2 - el cambio de estado no puede operar sobre un usuario de otro tenant
+ok 3 - la ruta publica el resultado exitoso del servicio sin convertirlo en 404
+ok 4 - reactivar un usuario inactivo opera sobre el mismo id que se desactivó
+ok 5 - el bloqueo de acceso de una cuenta inactiva no se pierde en un 404 al leerla
+ok 6 - inactivar desde el acceso responde con la fila escrita, no con un 404 posterior
+ok 7 - toda lectura de cuenta en administracion ve la inactiva y conserva su tenant
+ok 8 - un correo inexistente paga bcrypt y responde el mismo 401
+ok 9 - un usuario desactivado responde 401 uniforme, no 403 con pista
+ok 10 - el login valido devuelve token, refresh y sesion
+ok 11 - el refresh sano rota la sesion y devuelve un refresh nuevo
+ok 12 - reutilizar un refresh ya rotado se mide sin abrir sesion nueva ni expulsar
+ok 13 - un refresh de una sesion cerrada por logout se distingue del reuso
+ok 14 - con enforcement encendido el mismo refresh revocado responde 401
+ok 15 - observar cuenta una sesion revocada y no expulsa
+ok 16 - enforce rechaza la misma sesion revocada con 401
+ok 17 - con los flags apagados no expulsa pero la tasa queda medida
+ok 18 - una version de usuario vieja se mide y solo expulsa con enforce
+ok 19 - un usuario revocado se rechaza incluso en modo observar
+ok 20 - rotar la sesion revoca la anterior con un motivo distinguible
+ok 21 - runWithTenant propaga el tenant aunque el callback sea una funcion sincrona
+ok 22 - runWithTenant propaga el tenant con callback asincrono y tras un await
+ok 23 - fuera de runWithTenant el middleware no inventa un filtro de tenant
+ok 24 - el nucleo envuelve el callback del tenant en una funcion asincrona
+ok 25 - la marcacion diferida del dia anterior dentro de la ventana se acepta contra su propia ruta
+ok 26 - la marcacion diferida fuera de la ventana maxima se rechaza
+ok 27 - la marcacion con fecha futura se rechaza
+ok 28 - la regla del dia sigue bloqueando una ruta de otro dia marcada hoy
+ok 29 - la actividad con GPS declarado obligatorio y sin coordenadas se rechaza
+ok 30 - la correccion administrativa fuera del dia deja novedad de ajuste manual
+ok 31 - la marcacion propia del dia en curso no genera ajuste manual
+ok 32 - la migracion siembra el tipo de novedad de forma idempotente
+ok 33 - el contrato de marcacion sin senal queda versionado en el servicio
+ok 34 - self routes fuerza exclusivamente la fecha operativa actual
+ok 35 - self routes entrega un unico horario y conserva el de la jornada activa
+ok 36 - los endpoints self rechazan un horario alterno distinto al activo del dia
+ok 37 - createPunch usa lock por empleado, idempotencia y opciones de transaccion resistentes
+ok 38 - fix concurrencia: la marcacion espera el lock con deadline y rinde un 503 controlado
+ok 39 - fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante
+ok 40 - el contrato versiona idempotencia y evita reintentar validaciones permanentes
+ok 41 - el preoperacional reutiliza la transaccion de marcacion y no agota el pool
+ok 42 - la correccion administrativa con empleado valido marca a ese empleado y genera el ajuste
+ok 43 - un employee_id inexistente en el tenant falla explicitamente sin escribir nada
+ok 44 - un employee_id con formato invalido (UUID) falla explicitamente sin escribir nada
+ok 45 - el ambito self-service ignora un employee_id declarado y marca al usuario conectado
+ok 46 - la correccion administrativa sin employee_id conserva el respaldo sobre el propio usuario
+ok 47 - el servicio declara el rechazo explicito del empleado no resuelto
+ok 48 - profile and punches require an existing employee and never provision one
+ok 49 - FM-01: la salida vehicular sin renglon activo inserta kilometraje sin depender del indice
+ok 50 - FM-01: con renglon activo previo la salida actualiza el kilometraje en lugar de duplicar
+ok 51 - FM-01: un fallo real del escritura de kilometraje se propaga y no envenena la transaccion en silencio
+ok 52 - FM-01: el servicio resuelve kilometraje sin ON CONFLICT y sin tragar errores
+ok 53 - time_tracking usa la habilitacion M-17 del tenant
+ok 54 - el rol exclusivo puede usar endpoints self de lectura y escritura
+ok 55 - el rol exclusivo no obtiene acceso al modulo general hr
+ok 56 - las rutas self fuerzan identidad y las rutas generales conservan hr
+ok 57 - mobile identity photo is read from TimePunch metadata with either base64 spelling
+ok 58 - identity and overtime support are retained, deduplicated and unsafe content ignored
+ok 59 - summary counters include mobile photos for linked and unlinked marks
+ok 60 - single monitor keeps the mobile photo bytes and the batch stays an index without them
+ok 61 - legacy document supports are not discarded while identity remains photo-only
+ok 62 - acepta los nombres administrativos legitimos
+ok 63 - no acepta parecidos ni subcadenas
+ok 64 - el metadata tambien exige coincidencia exacta
+ok 65 - un rol ausente no es administrativo
+ok 66 - RBAC reconoce todos los identificadores vigentes de Inventario
+ok 67 - RBAC normaliza espacios y mayusculas en los modulos del tenant
+ok 68 - RBAC mantiene bloqueado Inventario cuando no esta habilitado
+ok 69 - RBAC reconoce los identificadores tecnicos usados por permisos y sincronizacion
+ok 70 - acepta una sesion y versiones vigentes
+ok 71 - revocacion selectiva no invalida otra sesion
+ok 72 - incrementar version revoca globalmente tokens anteriores
+ok 73 - el calculo local de decision tiene sobrecosto despreciable
+ok 74 - la lectura de autorizacion esta parametrizada y ignora el tenant declarado por el token
+# tests 74
+# pass 74
+# fail 0
+# cancelled 0
+# skipped 0

@@ -113,10 +113,14 @@ function minutesFromTime(value) {
   return hrPolicy.minutesFromTime(value);
 }
 
-function validationError(message, statusCode = 400, code = "VALIDATION_ERROR") {
+function validationError(message, statusCode = 400, code = "VALIDATION_ERROR", details) {
   const error = new Error(message);
   error.statusCode = statusCode;
   error.code = code;
+  // El detalle viaja hasta el cliente (`core/api-error.js` lo reenvia) y hasta el registro
+  // tecnico (`fabric/platformLogs` lo sanea con lista blanca). Sin el, un 409 del modulo era
+  // una frase suelta: identico en el log a cualquier otro 409.
+  if (details && typeof details === "object") error.details = details;
   return error;
 }
 
@@ -2888,11 +2892,25 @@ async function createPunch(tenantId, input, user, options = {}) {
       orderBy: { punched_at: "asc" }
     });
     const expectedType = nextPunchType(punchesToday);
-    if (!expectedType) {
-      throw validationError("La jornada ya esta completa para hoy.", 409, "JORNADA_COMPLETA");
-    }
-    if (type !== expectedType) {
-      throw validationError(`La siguiente marcacion permitida es ${expectedType}.`, 409, "MARCACION_FUERA_DE_SECUENCIA");
+    // La unica excepcion a la escalera es la correccion administrativa explicita (`hr:write`).
+    const correction = resolvePunchLadder({ ownScope, expectedType, type, input });
+    if (!correction) {
+      if (!expectedType) {
+        // `punch_type` en el detalle: es lo unico que le dice a quien mira el registro que el
+        // operario intento abrir una jornada que el servidor ya tenia cerrada (y no que la foto
+        // o el horario estaban mal), y es lo que necesita el cliente para dejar de reintentar.
+        throw validationError("La jornada ya esta completa para hoy.", 409, "JORNADA_COMPLETA", { punch_type: type });
+      }
+      if (type !== expectedType) {
+        // La escalera es lineal por diseno (control de asistencia), pero el rechazo no puede ser
+        // muda: `expected_type` es la marcacion que el servidor espera, y medido en produccion es
+        // la unica forma de que la pantalla le ofrezca al operario el boton correcto en vez de
+        // encolar una `salida` que va a rebotar todo el dia (39 rechazos / 14 operarios).
+        throw validationError(`La siguiente marcacion permitida es ${expectedType}.`, 409, "MARCACION_FUERA_DE_SECUENCIA", {
+          expected_type: expectedType,
+          punch_type: type
+        });
+      }
     }
     const routeVehicle = String(route?.vehicle_plate || input.vehicle_plate || "").trim();
     const mileagePrecision = Number(input.metadata?.mileage_precision ?? input.metadata?.kilometraje_precision ?? 1);
@@ -2996,6 +3014,16 @@ async function createPunch(tenantId, input, user, options = {}) {
           // Fuera de extra_minutes a proposito: la llegada tarde no se paga
           // como recargo y sumarla ahi inflaria la nomina.
           ...(lateMinutes > 0 ? { late_minutes: lateMinutes } : {}),
+          ...(correction ? {
+            // Quien corrijo, por que y que esperaba la escalera: la fila queda marcada como
+            // correccion administrativa y no como una marcacion del operario.
+            correccion_administrativa: {
+              motivo: correction.motivo,
+              salto: correction.salto,
+              por: user?.id || null,
+              en: new Date().toISOString()
+            }
+          } : {}),
           ...(startMileage != null ? {
             kilometraje_inicial: startMileage,
             start_mileage: {
@@ -3029,14 +3057,21 @@ async function createPunch(tenantId, input, user, options = {}) {
         detail: gpsUnavailable
       });
     }
-    if (!ownScope && startOfDay(punchedAt).toISOString().slice(0, 10) !== startOfDay().toISOString().slice(0, 10)) {
+    const otherDayPunch = startOfDay(punchedAt).toISOString().slice(0, 10) !== startOfDay().toISOString().slice(0, 10);
+    // Una correccion que salto la escalera es tan auditable como una de otro dia: sin novedad, el
+    // eslabon agregado a posteriori quedaba invisible para el supervisor y sin autor.
+    if (!ownScope && (otherDayPunch || correction)) {
       await recordManualAdjustmentNovelty(tx, {
         tenantId,
         employeeId: employee.id,
         routeId: route?.id || inputRouteId || null,
         moment: punchedAt,
         segment: `${type}:${timeString(punchedAt).slice(0, 5)}`,
-        detail: { reason: input.extra_reason, detail: input.extra_detail, userId: user?.id || null }
+        detail: {
+          reason: correction?.motivo || input.extra_reason,
+          detail: correction ? `escalera:${correction.salto}` : input.extra_detail,
+          userId: user?.id || null
+        }
       });
     }
     if (dayMileage != null) {
@@ -3252,7 +3287,10 @@ async function createOwnPunch(tenantId, user, input) {
   await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
   // Antes de crear nada: una marcacion de la app sin telefono registrado,
   // firma valida o selfie se rechaza aqui y no queda a medias.
-  const identity = mobileIdentity.verifyPunchIdentity({ employee, user, input });
+  // `await` obligatorio: la inspeccion de la selfie decodifica con sharp para decidir si el
+  // visor puede pintarla. Sin el await la promesa se colaba como metadata y la marcacion se
+  // guardaba sin identidad ni evidencia.
+  const identity = await mobileIdentity.verifyPunchIdentity({ employee, user, input });
   // El telefono acepta cualquier dedo inscrito en el: si quedo registrado para
   // dos empleados, cualquiera de los dos marca por el otro. Registros dobles
   // anteriores a esta regla se bloquean hasta que un administrador restablezca.
@@ -3744,6 +3782,30 @@ function nextPunchType(punches) {
   if (!last) return "entrada";
   const idx = order.indexOf(last);
   return idx >= 0 && idx < order.length - 1 ? order[idx + 1] : null;
+}
+
+// La escalera (entrada → inicio → fin → salida) la fija el servidor en los dos canales: es el
+// control de asistencia. La UNICA via fuera de ella es la correccion administrativa explicita,
+// que solo existe en `/hr/time-punches` porque el ambito lo determina el servidor (`ownScope`),
+// no el payload. Sin esa via, un eslabon perdido dejaba la jornada sin cierre todo el dia: medido
+// en produccion, 39 rechazos de escalera sobre 14 operarios y ningun boton para destrabarlos.
+// Es pura a proposito: levantar la app en un test deja el proceso colgado de la conexion a la base.
+function resolvePunchLadder({ ownScope, expectedType, type, input }) {
+  if (ownScope) return null;
+  const source = input && typeof input === "object" ? input : {};
+  const metadata = source.metadata && typeof source.metadata === "object" ? source.metadata : {};
+  const requested = source.correccion_administrativa ?? metadata.correccion_administrativa;
+  if (!requested) return null;
+  const motivo = String(source.motivo_correccion || metadata.motivo_correccion || "").trim();
+  if (!motivo) {
+    throw validationError("Una correccion administrativa de marcacion exige un motivo legible.", 422, "MOTIVO_CORRECCION_REQUERIDO", {
+      field: "motivo_correccion"
+    });
+  }
+  // `salto` nombra lo que la escalera esperaba: es lo que un supervisor lee despues en la novedad
+  // para saber si corrigio un hueco o re-emplazo una marcacion que estaba en orden.
+  const salto = !expectedType ? "jornada_completa" : type !== expectedType ? `esperada:${expectedType}` : "en_orden";
+  return { motivo: motivo.slice(0, 300), salto };
 }
 
 async function listAttendance(tenantId, query = {}) {
@@ -8193,6 +8255,9 @@ module.exports = {
   __setRouteLockWaitMsForTests: setRouteLockWaitMsForTests,
   __setContentionLockWaitMsForTests: setContentionLockWaitMsForTests,
   __monthlyOrdinaryHoursForDate: monthlyOrdinaryHoursForDate,
+  // Contrato de la escalera y de su unica excepcion administrativa. Se exporta para poder
+  // afirmarlo sin levantar la app: `build()` deja el proceso colgado de la conexion a la base.
+  __resolvePunchLadder: resolvePunchLadder,
   listSchedules,
   createSchedule,
   updateSchedule,

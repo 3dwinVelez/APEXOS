@@ -1,0 +1,35 @@
+Equivalencia por region entre lo medido en QA (origin/develop 43e5510cfe2d) y lo que se promociona (candidato)
+fecha_utc=2026-11-23T15:54:29.184Z
+metodo=git show <ref>:<ruta> + extraccion de la region + sha256[0:16] de la region. No se compara el archivo:
+un archivo puede divergir por nomina y que la region de la escalera sea identica, que es lo que aqui se prueba.
+
+IGUAL   service.js :: resolvePunchLadder
+   medido_en_QA=6f2b2a6727a8ef94 (17 lineas)  candidato=6f2b2a6727a8ef94 (17 lineas)
+IGUAL   service.js :: createPunch
+   medido_en_QA=116385a4d6692c51 (461 lineas)  candidato=116385a4d6692c51 (461 lineas)
+IGUAL   service.js :: lineas de escalera (correccion/motivo/salto/novedad)
+   medido_en_QA=2fe72803914e11d1 (14 lineas)  candidato=2fe72803914e11d1 (14 lineas)
+IGUAL   schema.js :: campos de la excepcion administrativa
+   medido_en_QA=2a7b65f982e1b811 (2 lineas)  candidato=2a7b65f982e1b811 (2 lineas)
+IGUAL   policy.js :: permiso que guarda la excepcion
+   medido_en_QA=d1f6f1a9426db769 (7 lineas)  candidato=d1f6f1a9426db769 (7 lineas)
+IGUAL   mobile-identity.js :: identidad movil
+   medido_en_QA=64ff5ea6fba22d82 (793 lineas)  candidato=64ff5ea6fba22d82 (793 lineas)
+IGUAL   fileSignature.js :: firma por contenido
+   medido_en_QA=b2436ac9a6a998e2 (189 lineas)  candidato=b2436ac9a6a998e2 (189 lineas)
+IGUAL   platformLogs.js :: rechazo legible
+   medido_en_QA=7cab2a14aadeac67 (151 lineas)  candidato=7cab2a14aadeac67 (151 lineas)
+IGUAL   public-routes.js :: telemetria publica
+   medido_en_QA=f487e8cf2f71f5cd (61 lineas)  candidato=f487e8cf2f71f5cd (61 lineas)
+IGUAL   server.js :: registro de plataforma
+   medido_en_QA=f42880bc4bc9321d (431 lineas)  candidato=f42880bc4bc9321d (431 lineas)
+
+regiones distintas: 0
+lectura: si todas las regiones de la escalera salen IGUAL, la medicion de campo en QA (16/16) es atribuible
+al binario que main va a servir en esa superficie, aunque el archivo completo no sea identico.
+
+Unica diferencia de entorno que la medicion de QA tiene y el candidato no:
+  apps/api/src/modules/hr/webPunchSelfie.js existe solo en origin/develop (2766b9a3, otra intervencion) y no esta
+  en origin/main ni en el candidato. Esa puerta exige selfie en la marcacion propia y en campo-qa.json corre con la
+  foto puesta en los dos intentos, asi que la respuesta medida en esa pierna es MARCACION_FUERA_DE_SECUENCIA (la
+  escalera), no SELFIE_REQUERIDA: el resultado que se certifica no depende de esa puerta y el candidato lo repite.
