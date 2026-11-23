@@ -120,6 +120,51 @@ function stripNames(value) {
   return out;
 }
 
+// El buzon publico acepta exactamente esta forma, y el instrumento tampoco confia en otra cosa:
+// un id con otra forma no llego del navegador, llego de un cuerpo manipulado.
+const UUID_CANONICO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+// Que telefono es de quien. Solo se aprende de filas que YA tienen usuario: un intento sin sesion
+// no puede atribuirse a si mismo, y una marca vista por primera vez en una fila anonima se queda
+// sin dueno hasta que ese navegador vuelva a entrar con sesion.
+function duenosPorDispositivo(rows) {
+  const mapa = new Map();
+  for (const row of rows || []) {
+    if (!row || !row.device_id || !Number.isInteger(row.user_id)) continue;
+    const clave = `${row.tenant_id}|${row.device_id}`;
+    if (!mapa.has(clave)) mapa.set(clave, row.user_id);
+  }
+  return mapa;
+}
+
+// El grupo huerfano, agrupado por el navegador que oprimio y con su dueno si ya se conoce. Sin
+// esto, los rechazos de `user_id null` eran una sola cifra informe-independiente; con esto el
+// supervisor ve que telefono persigue y a quien llamar.
+function intentosSinUsuarioPorDispositivo(rows, duenos, employeeByUser) {
+  const huerfanas = (rows || []).filter((row) => row.user_id === null && row.device_id);
+  const grupos = [];
+  for (const [clave, filas] of groupBy(huerfanas, (row) => `${row.tenant_id}|${row.device_id}`)) {
+    const [tenantId, deviceId] = clave.split("|");
+    const userId = duenos.get(clave) ?? null;
+    const empleado = userId !== null ? (employeeByUser.get(`${tenantId}|${userId}`) || null) : null;
+    grupos.push({
+      tenant_id: tenantId,
+      device_id: deviceId,
+      user_id: userId,
+      nombre: empleado && empleado.user ? empleado.user.name : null,
+      empleado_codigo: empleado ? empleado.code : null,
+      user_email: empleado && empleado.user ? empleado.user.email : null,
+      rechazos: filas.length,
+      intentos_de_marcacion: filas.filter(esIntentoDeMarcacionPropia).length,
+      rutas: [...new Set(filas.map((fila) => fila.route).filter(Boolean))],
+      navegadores: [...new Set(filas.map((fila) => fila.device))],
+      ultimo_rechazo: filas[0].at,
+      estado: empleado ? "ATRIBUIBLE_POR_DISPOSITIVO" : userId !== null ? "USUARIO_SIN_EMPLEADO" : "SIN_DUENO_AUN"
+    });
+  }
+  return grupos.sort((a, b) => b.rechazos - a.rechazos);
+}
+
 function deviceKey(userAgent = "") {
   const ua = String(userAgent);
   const os = /Windows/.test(ua) ? "Windows" : /Android/.test(ua) ? "Android" : /iPhone|iPad|iOS/.test(ua) ? "iOS" : /Mac OS X/.test(ua) ? "macOS" : "otro";
@@ -144,6 +189,9 @@ function normalize(row) {
     message: messageKey(value.message),
     detail: String(value.detail || "").replace(/req-[0-9a-z-]+/gi, "req-*").slice(0, 120),
     device: deviceKey(row.user_agent),
+    // La marca del navegador, si el reporte la traia. Se valida por forma, no por presencia: un
+    // valor inventado en el cuerpo de la peticion no puede adjudicarle una jornada a nadie.
+    device_id: value.metadata && UUID_CANONICO.test(String(value.metadata.device_id || "")) ? String(value.metadata.device_id) : null,
     request_id: value.request_id || null
   };
 }
@@ -501,6 +549,37 @@ async function main() {
     const ventanaOk = minutosDeHora("05:30:00") === 330 && minutosDeHora(null) === null
       && minutosDelDiaColombia("2026-11-18T10:30:00.000Z") === 5 * 60 + 30;
     informa(`${ventanaOk ? "ok  " : "FALLO"} minutos del dia en Colombia (la ventana de apertura compara horas locales, no UTC)`);
+    // La marca del navegador es lo unico que puede devolverle el dueno a un rechazo sin sesion. Se
+    // prueba por las cuatro vias: comparte marca y tenant -> adjudica; no comparte -> NO adjudica
+    // (rojo provocado); la marca no es UUID -> el cuerpo manipulado no existe; la marca se repite en
+    // otro tenant -> no cruza, porque un id de dispositivo ajeno tampoco puede dar una jornada.
+    const MARCA = "6f1c2d3e-4a5b-4c6d-9e7f-8a9b0c1d2e3f";
+    const OTRA = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
+    const fila = (user_id, device_id, tenant = "t1") => normalize({
+      tenant_id: tenant, user_id, timestamp: "2026-11-23T14:00:00.000Z",
+      user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Version/18.0 Safari/605.1.15",
+      new_value: { route: RUTA_DE_MARCACION, status_code: 409, code: "MARCACION_FUERA_DE_SECUENCIA", metadata: device_id ? { device_id } : {} }
+    });
+    const fichas = new Map([["t1|239", { id: 535, code: "OP-535", tenant_id: "t1", user_id: 239, user: { name: "Dos Nombres", email: "op@example.invalid" } }]]);
+    const filasConMarca = [fila(239, MARCA), fila(null, MARCA), fila(null, MARCA)];
+    const conDueno = intentosSinUsuarioPorDispositivo(filasConMarca, duenosPorDispositivo(filasConMarca), fichas);
+    const adjudicaOk = conDueno.length === 1 && conDueno[0].estado === "ATRIBUIBLE_POR_DISPOSITIVO"
+      && conDueno[0].user_id === 239 && conDueno[0].empleado_codigo === "OP-535"
+      && conDueno[0].rechazos === 2 && conDueno[0].intentos_de_marcacion === 2 && conDueno[0].rutas.join(",") === RUTA_DE_MARCACION;
+    informa(`${adjudicaOk ? "ok  " : "FALLO"} la marca compartida con una fila autenticada devuelve el dueno de la jornada: ${JSON.stringify(conDueno.map((g) => [g.estado, g.user_id, g.empleado_codigo, g.rechazos, g.intentos_de_marcacion]))}`);
+    const filasHuerfanas = [fila(null, OTRA), fila(null, OTRA)];
+    const huerfano = intentosSinUsuarioPorDispositivo(filasHuerfanas, duenosPorDispositivo(filasHuerfanas), fichas);
+    const noInventaOk = huerfano.length === 1 && huerfano[0].estado === "SIN_DUENO_AUN" && huerfano[0].user_id === null && huerfano[0].empleado_codigo === null && huerfano[0].rechazos === 2;
+    informa(`${noInventaOk ? "ok  " : "FALLO"} sin una fila autenticada que comparta la marca no se inventa dueno (rojo provocado): ${JSON.stringify(huerfano.map((g) => [g.estado, g.user_id, g.empleado_codigo]))}`);
+    const torcida = fila(null, "no-es-un-uuid");
+    const formaOk = torcida.device_id === null && intentosSinUsuarioPorDispositivo([torcida], duenosPorDispositivo([torcida]), fichas).length === 0;
+    informa(`${formaOk ? "ok  " : "FALLO"} una marca que no tiene forma de UUID se descarta: un cuerpo manipulado no puede adjudicar la jornada de otro`);
+    const filasCruzadas = [...filasConMarca, fila(null, MARCA, "t2"), fila(999, MARCA, "t2")];
+    const cruzados = intentosSinUsuarioPorDispositivo(filasCruzadas, duenosPorDispositivo(filasCruzadas), fichas);
+    const grupoT2 = cruzados.find((g) => g.tenant_id === "t2");
+    const aislamientoOk = cruzados.length === 2 && grupoT2 && grupoT2.empleado_codigo === null && grupoT2.user_id === 999
+      && grupoT2.estado === "USUARIO_SIN_EMPLEADO" && cruzados.find((g) => g.tenant_id === "t1").empleado_codigo === "OP-535";
+    informa(`${aislamientoOk ? "ok  " : "FALLO"} la misma marca en otro tenant no hereda la ficha del primero (la marca es por tenant): ${JSON.stringify(cruzados.map((g) => [g.tenant_id, g.estado, g.empleado_codigo]))}`);
     console.log(failed === 0 ? "SELFTEST PASADO" : `SELFTEST BLOQUEADO (${failed} fallo(s) impresos)`);
     process.exit(failed === 0 ? 0 : 1);
   }
@@ -600,6 +679,12 @@ async function main() {
         marcaciones_del_dia: punchesDelDia
       });
     }
+
+    // Los rechazos sin usuario no eran un solo bulto: cada navegador que perdio la sesion deja su
+    // marca, y si ese telefono volvio a entrar con sesion la marca devuelve el dueno de la jornada.
+    const duenosDeMarca = duenosPorDispositivo(rejected);
+    const intentosHuerfanos = intentosSinUsuarioPorDispositivo(rejected, duenosDeMarca, employeeByUser);
+    const filasSinUsuario = rejected.filter((row) => row.user_id === null);
 
     const delDia = await prisma.timePunch.groupBy({
       by: ["type"],
@@ -705,6 +790,13 @@ async function main() {
       causa_cruda_transporte: porCausaCruda,
       frontera_de_dia: { marcaciones: todas.length, con_date_distinto_del_dia_colombia: fronteraRota.length, por_dia: fronteraPorDia },
       trabajadores_afectados: porUsuario.sort((a, b) => b.rechazos - a.rechazos),
+      intentos_sin_usuario: {
+        filas: filasSinUsuario.length,
+        con_marca_de_dispositivo: filasSinUsuario.filter((row) => row.device_id).length,
+        dispositivos: intentosHuerfanos.length,
+        adjudicables: intentosHuerfanos.filter((g) => g.empleado_codigo).length,
+        grupos: intentosHuerfanos
+      },
       trabajadores_que_marcaron_en_ventana: trabajadoresVentana,
       jornadas_sin_registro: jornadasSinRegistro,
       jornadas_sin_cierre: jornadasSinCierre,
@@ -724,6 +816,10 @@ async function main() {
     const bloqueados = reporte.trabajadores_afectados.filter((row) => row.intentos_de_marcacion > 0 && !row.marcaciones_del_dia.some((punch) => punch.type === "entrada"));
     console.log(`\nSIN ENTRADA HOY Y CON RECHAZOS DE MARCACION (${bloqueados.length}):`);
     for (const row of bloqueados.slice(0, 25)) console.log(`  user ${String(row.user_id).padStart(6)}  ${String(row.user_email || "-").padEnd(34)}  rechazos ${String(row.rechazos).padStart(3)}  ${row.codigos.join(",")}  ${row.dispositivos.join(",")}`);
+
+    const adjudicados = intentosHuerfanos.filter((g) => g.empleado_codigo).length;
+    console.log(`\nINTENTOS SIN SESION, por navegador (${intentosHuerfanos.length} dispositivo(s); ${intentosHuerfanos.reduce((a, g) => a + g.rechazos, 0)} de ${filasSinUsuario.length} filas sin usuario traen marca; ${adjudicados} adjudicable(s)):`);
+    for (const g of intentosHuerfanos.slice(0, 15)) console.log(`  ${g.device_id.slice(0, 8)}  ${String(g.nombre || g.user_email || "-").padEnd(34)}  emp ${String(g.empleado_codigo || "-").padEnd(9)} ${String(g.estado).padEnd(26)} rechazos ${String(g.rechazos).padStart(3)}  intentos de marcacion ${g.intentos_de_marcacion}  ${g.navegadores.join(",")}  ultimo ${g.ultimo_rechazo}`);
 
     console.log("\nMARCACIONES ACEPTADAS HOY:", delDia.map((row) => `${row.type}=${row._count._all}`).join(" "));
     console.log(`DENOMINADOR  trabajadores que marcaron en la ventana: ${trabajadoresVentana}`);

@@ -5,6 +5,7 @@ import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 import { API_BASE_URL } from "./apiBaseUrl";
 import { scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleTrackingMode, scheduleMonitorUsesOperationalSource } from "./hrScheduleMonitor";
 import { validateServiceReferenceImport } from "./serviceReferenceImport";
+import { readInstallationId } from "./installationIdentity";
 
 const API_URL = API_BASE_URL;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
@@ -282,10 +283,15 @@ function reportClientFailure(path: string, status: number | null, detail: string
     detail: String(detail || "").slice(0, 1600)
   };
   // Sin sesion no hay tenant que atribuir y el correo del navegador tampoco es evidencia: el
-  // reporte anonimo lleva solo la ruta tecnica. La autenticada conserva su forma certificada.
+  // reporte anonimo lleva solo la ruta tecnica, mas el id del navegador. Ese id es lo unico que
+  // permite juntar, dias despues, un intento sin sesion con el empleado que luego marco
+  // autenticado desde el mismo telefono. Se omite cuando el navegador no lo deja persistir
+  // (modo privado, cotas): el esquema del buzon publico solo admite UUID canonico, nunca vacio.
+  const deviceId = readInstallationId();
+  const identidadDispositivo = deviceId ? { device_id: deviceId } : {};
   const anonymousPayload = {
     ...technical,
-    metadata: { href: window.location.pathname, provider: localStorage.getItem("auth_provider") || "local", failure_cause: cause }
+    metadata: { href: window.location.pathname, provider: localStorage.getItem("auth_provider") || "local", failure_cause: cause, ...identidadDispositivo }
   };
   const post = (endpoint: string, payload: unknown, withSession: boolean) => fetch(`${API_URL}${endpoint}`, {
     method: "POST",
@@ -306,7 +312,10 @@ function reportClientFailure(path: string, status: number | null, detail: string
       href: window.location.href,
       user_email: localStorage.getItem("user_email") || "",
       provider: localStorage.getItem("auth_provider") || "local",
-      failure_cause: cause
+      failure_cause: cause,
+      // La misma marca del lado autenticado: sin esta fila no hay nada con que cruzar el id, y el
+      // intento anonimo seguiria siendo un telefono sin dueno.
+      ...identidadDispositivo
     }
   };
   post(CLIENT_LOG_ENDPOINT, authenticatedPayload, true)

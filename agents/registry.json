@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.23.0",
-      "updated_at": "2026-11-20",
-      "sha256": "e3e91703f26d08c2d69add589474b534812b132457d2783f079104e0776c6cba",
+      "version": "2.24.0",
+      "updated_at": "2026-11-23",
+      "sha256": "d9ce117ced11cf124bd025e001255424dda02615d60c4153b9bedc7b3f7c4252",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -90,15 +90,16 @@
         "ingesta-publica-con-buzon-honesto",
         "exencion-de-evidencia-con-contrato",
         "congestion-prisma-503-con-retry-after",
-        "cuenta-inactiva-sigue-siendo-administrable"
+        "cuenta-inactiva-sigue-siendo-administrable",
+        "clave-publica-en-esquema-con-forma"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.76.0",
-      "updated_at": "2026-11-20",
-      "sha256": "96902108ae1c91c937c236983f1abe8ebd74b9d1d3f01a162396687e5b5c041b",
+      "version": "2.77.0",
+      "updated_at": "2026-11-23",
+      "sha256": "06d5c62408b67e0519e03269bdc450b3c2d6d2822f62d20ce2ff5f75084b3151",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -159,7 +160,8 @@
         "pendiente-con-inventario-barrido",
         "pendiente-irrecuperable-con-cifra-y-brief-aparte",
         "censo-en-brief-con-poblacion-medida",
-        "lo-que-se-afirma-del-instrumento-se-pasa-en-limpio"
+        "lo-que-se-afirma-del-instrumento-se-pasa-en-limpio",
+        "pendiente-con-dependencia-de-despliegue"
       ]
     },
     {
@@ -192,9 +194,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.39.0",
-      "updated_at": "2026-11-20",
-      "sha256": "52ed47adac03559b693d107c4872de63eded3673676365af4ffee757b7e32452",
+      "version": "2.40.0",
+      "updated_at": "2026-11-23",
+      "sha256": "5b8742e6c7014c2e359d41832fa6fd5eed8b8900bbc52ba3adf5279f9e2644e8",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -237,7 +239,8 @@
         "pregunta-del-usuario-en-el-sitio-del-dato",
         "contrato-multilineo-sobre-crlf",
         "lint-de-ci-como-compuerta-local",
-        "route-api-mismo-contrato-de-pantalla"
+        "route-api-mismo-contrato-de-pantalla",
+        "marca-durable-sobrevive-al-cierre"
       ]
     },
     {
@@ -316,9 +319,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.97.0",
-      "updated_at": "2026-11-20",
-      "sha256": "a1e0ae035b97796f202b160ba455e42af2a00d7ba42f6b8e351b36f60fbd958c",
+      "version": "2.98.0",
+      "updated_at": "2026-11-23",
+      "sha256": "ce4ef4bb810a16149dcbda136ab15074b8f9db4c105898b85d22d0168060d7c7",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -406,15 +409,16 @@
         "salida-del-arnes-atada-a-lo-impreso",
         "correccion-de-conteo-certificada-sin-cambiar-los-demas",
         "pierna-por-argumento-con-residuo-del-antes",
-        "asercion-del-arnes-que-puede-fallar-demostrada-en-rojo"
+        "asercion-del-arnes-que-puede-fallar-demostrada-en-rojo",
+        "cero-de-campo-se-desambigua"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.35.0",
-      "updated_at": "2026-11-20",
-      "sha256": "bb6402be28ed8c9cf5b0ea77dd74196b335ae0cf9766c9c8ce619d0a61cac5d7",
+      "version": "2.36.0",
+      "updated_at": "2026-11-23",
+      "sha256": "80db53ff7e04231238aa69064bde59ef67f3f4f7aa8427f9c232943f8749490d",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -452,15 +456,16 @@
         "boca-anonima-sin-tenant-en-el-cuerpo",
         "exencion-angosta-con-negativos",
         "detalle-proveedor-no-va-en-el-cuerpo",
-        "ampliar-lectura-conserva-tenant-y-login"
+        "ampliar-lectura-conserva-tenant-y-login",
+        "identificador-declarado-no-es-identidad"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.55.0",
-      "updated_at": "2026-11-20",
-      "sha256": "20d91220b677b4666652c989ad3651b6059d2477b1b4e20023bc4300b55caa3f",
+      "version": "2.56.0",
+      "updated_at": "2026-11-23",
+      "sha256": "8b9812b8dd9cf9650782444d53d49223db5203dbae582a96c6785de77bdda023",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -508,7 +513,8 @@
         "premisa-re-medida-antes-de-autorizar",
         "privilegio-retirado-en-el-almacen",
         "lente-vuelta-a-medir-antes-de-reusar-la-medicion",
-        "vacio-declarado-convertido-en-instrumento-versionado"
+        "vacio-declarado-convertido-en-instrumento-versionado",
+        "tres-estados-de-la-telemetria"
       ]
     }
   ],

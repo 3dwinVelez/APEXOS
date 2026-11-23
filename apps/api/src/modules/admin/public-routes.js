@@ -28,7 +28,15 @@ const reportSchema = {
           // El navegador clasifica la causa (request_rejected | timeout | offline | unknown) antes
           // de reportar. Sin esta clave, el payload anonimo -el unico que queda cuando no hay
           // sesion, justo cuando la plataforma esta caida- rebotaba con 400 de esquema.
-          failure_cause: { type: "string", maxLength: 40 }
+          failure_cause: { type: "string", maxLength: 40 },
+          // Identificador del navegador, no de la persona: es lo unico que hace atribuible un
+          // intento registrado sin sesion, cruzandolo con la primera fila autenticada que traiga
+          // el mismo. UUID canonico y nada mas -la forma ya acota el largo-: es entrada publica, y
+          // un id debil o adjudicable permitiria endosarle a otro dispositivo los rechazos propios.
+          device_id: {
+            type: "string",
+            pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          }
         }
       }
     }
