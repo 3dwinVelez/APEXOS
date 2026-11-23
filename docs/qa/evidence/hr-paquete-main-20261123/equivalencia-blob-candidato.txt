@@ -1,0 +1,145 @@
+Equivalencia de blobs del candidato promovido a main — cuarta reconstruccion
+===========================================================================
+
+Este archivo es la unica autoridad sobre QUE arbol se esta afirmando cada verde.
+Metodo en todos los casos: `git rev-parse <ref>:<ruta>` (hash de blob), comparacion
+byte a byte, falla-cerrada. Una ruta ausente en cualquiera de los dos arboles, o un
+hash vacio, se registra DIFIERE; nunca IGUAL. Nunca se compara por fecha de commit ni
+por asunto del mensaje.
+
+1. Identidad de lo que se promociona
+------------------------------------
+  destino            : origin/main = c53f857c1d996aceaf9fcda4649cbcd9ed7dccab (medido con
+                       git fetch origin main y git rev-parse en el momento del corte)
+  candidato          : 54cabeb34b7270df46d17b43d8096d2337b7ff7c (hijo DIRECTO del tip
+                       anterior: la promocion es fast-forward, no mergea, no reescribe, no
+                       revierte)
+  base de contenido  : origin/develop = 914d1721965d727a14c7e836039e2334678ca2de
+                       (que es, ademas, el commit que el ambiente QA sirve hoy)
+  inventario neto    : 49 rutas = 27 A + 22 M + 0 D
+                       (51 rutas del paquete menos 2: apps/web/lib/hrAttendanceState.ts y
+                        apps/web/test/hr-attendance-state.test.mjs ya estaban en main byte a
+                        byte, el frente hermano las trajo; reescribirlas no cambia un boton)
+
+2. Cadena de reconstrucciones: que quedo invalidado y por que esta medido
+-------------------------------------------------------------------------
+  2c10deaa  sobre 7de02a3b  INVALIDADA. main avance a a0fb7e05 (dos documentos de evidencia)
+                              y despues absorbio el PR #109 (790870a0). Empujar este arbol
+                              revertia en produccion el arreglo de la foto rechazada: medido
+                              con el marcador exclusivo del #109 (MOTIVO_CORRECCION_REQUERIDO)
+                              el candidato daba 0 ocurrencias donde main daba 1.
+  0625e1a2  sobre 790870a0  INVALIDADA. misma causa, segunda variante: el destino avanzo a
+                              mitad de la intervencion y la compuerta de alcance lo freno.
+  a4832a6a  sobre 790870a0  SUPERADA. main avance otra vez (790870a0 -> c53f857c) con el
+                              frente "mallas con maestro unico y marcaciones sincronizadas
+                              entre dispositivos", que toco 3 rutas del paquete. En
+                              hr/service.js ese avance anadio el guard de ambito del tenant
+                              (3 lineas: ownedRoute + HORARIO_NO_ENCONTRADO + where con
+                              tenant_id), que este candidato NO tenia porque declaraba el
+                              PR #110 excluido. Empujarlo habria revertido el guard en
+                              produccion.
+  54cabeb3  sobre c53f857c  VIGENTE. Las 49 rutas se tomaron del tip actual de develop, que
+                              es la unica version que tiene paquete Y guard. Con eso el #110
+                              deja de estar excluido y viaja dentro de este frente.
+
+3. Control anti-reversion sobre el avance propio del destino
+------------------------------------------------------------
+  Ventana medida     : 790870a0..origin/main (el avance que este frente NO hizo)
+  Rutas tocadas por  : 34 rutas; de ellas 3 coinciden con el inventario del paquete
+    el avance        :   apps/api/src/modules/hr/service.js
+                         apps/web/app/dashboard/talento-humano/marcacion/page.tsx
+                         apps/web/app/dashboard/talento-humano/rutas/page.tsx
+  Predicado          : para cada ruta, las lineas que el avance anadio (git diff -U0,
+                       columna "+" sin el signo, truncadas y unicas) deben estar presentes,
+                       linea por linea, en el blob del candidato.
+  Resultado          : 122 lineas propias del destino -> 0 perdidas
+    service.js              3 lineas -> 0 perdidas
+    marcacion/page.tsx    104 lineas -> 0 perdidas
+    rutas/page.tsx         15 lineas -> 0 perdidas
+  Lectura honesta    : en las dos pantallas el candidato SI reemplaza contenido HR previo
+    (la compuerta de selfie pasa de dos momentos a los cuatro pasos, y el catalogo de
+    horarios pasa a "Horarios y mallas"), pero ese contenido es del paquete que se
+    promociona y NO del avance del frente hermano: ninguna de esas lineas entra en la
+    ventana del avance, por eso el control las ve conservadas y no como reversion.
+
+4. Paridad con el arbol que QA sirvio en la corrida de campo
+------------------------------------------------------------
+  Candidato 54cabeb3 vs build servido 914d1721965d (= origin/develop): 46/49 rutas
+    byte a byte identicas. Las 3 divergentes son las podas declaradas en la seccion 5,
+    ninguna es logica de negocio servida.
+  Las 10 rutas ancla del instrumento (bancos, selfie web, periodo de nomina, recibo PDF,
+    prestaciones de retiro, revision de dias, rutas/horarios, service, schema y la
+    pantalla bancos): 10/10 identicas. La lista EXCLUIDOS_DECLARADOS del arnes quedo
+    VACIA, asi que ese verde ya no puede comprar una exclusion: cualquier divergencia en
+    una ruta ancla deja la corrida en rojo.
+
+5. Lo que se pudo a mano y no viaja (declarado, no oculto)
+-----------------------------------------------------------
+  a) apps/web/lib/moduleFunctions.ts
+     El tip de develop publica la entrada "fn-contab-pyg-ampliado" (Ver PYG ampliado),
+     del frente de contabilidad. En main esa pantalla existe (apps/web/app/dashboard/
+     contabilidad/pyg/ampliado/page.tsx y lib/pyg-expanded.ts estan en main) pero NO esta
+     registrada en el centro de comandos: se abre desde su pantalla padre. Se retira la
+     linea. Diff resultante vs main: 3 lineas anadidas y 2 modificadas, todas HR
+     (fn-hr-bancos nueva; fn-hr-rutas y fn-hr-mapa renombradas). 0 ids de entrada
+     production perdidos, 1 agregado.
+  b) apps/web/test/command-palette-module-functions.test.mjs
+     Se toma la version de main y se le aplican SOLO las cuatro aserciones HR. Con la
+     poda (a) hay que conservar la guarda NESTED_VIEWS que main anadio (el tip de develop
+     la borra porque alli la entrada si existe) y retirar las 3 aserciones que verificaban
+     la entrada ajena. Diff vs main: -3 / +4, todas HR. Suite: 10/10.
+  c) scripts/certifications/hr-punch-mobile-evidence-local.js
+     La navegabilidad del centro de comandos certifica la tupla
+     ['Ver PYG ampliado','fn-contab-pyg-ampliado',...] y, con la poda (a), esa tupla
+     apunta a una entrada que este arbol no registra: la pierna seria roja por una razon
+     que no es del negocio. Se retira la tupla y el titulo de la pierna queda
+     "command palette finds bank master and opens its real page". Diff vs develop: 2/2
+     lineas. Cobertura de PYG ampliado sigue viva en main por sus propias suites
+     (pyg-expanded-chrome / -link / -route.test.mjs), que no se tocan.
+  Tambien queda fuera de este frente, y se declara con su dueno y su manifiesto: las rutas
+  no HR del PR #108, comercio M-30, la torre de control (reposa solo en desarrollo por
+  regla de gobernanza) y las otras 1 015 rutas de frentes ajenos que el diff bruto
+  origin/main..origin/develop arrastraria (1 064 rutas en total) si esto fuera un merge de
+  rama. No es un merge de rama: es el replay de las 49 rutas inventariadas.
+
+6. Suites corridas sobre EL ARBOL QUE SE PROMOCIONA
+----------------------------------------------------
+  Sustrato: worktree de solo git y compuertas, SIN node_modules (regla 40: copiarlo o
+  enlazarlo ya borro 1 173 archivos del repositorio el 2026-11-20). Solo se corren las
+  suites que no dependen de dependencias; son pruebas de fuente que leen el arbol.
+  Total: 45 pruebas, 45 pasan, 0 fallan.
+    command-palette-module-functions.test.mjs   10/10
+    module-portfolio.test.mjs                    6/6
+    hr-attendance-state.test.mjs                 4/4
+    hr-unified-schedules.test.mjs                3/3
+    hr-marking-lateness-selfie.test.mjs          8/8
+    hr-workday-novelties-ui.test.mjs            14/14
+
+7. Certificacion de campo que respalda el verde
+------------------------------------------------
+  corrida citable        : 20261123171846, candidato 54cabeb3 contra el build servido
+                           914d1721965d. APROBADO 26/26, 0 rojas, 0 NO_APLICABLE.
+                           paridad_blobs_hr = 10/10 con lista de excluidos vacia.
+                           instrumento sha256
+                           fc73dc533b0997df2655c270db170fa8b6eeec9da3b18c3004a3fa1d3223dbba.
+                           Artefacto: qa-campo-escritura.json
+  selftest del arnes     : 26 piernas, cada una con verde=true y distingue_rojo=true
+  corrida superada por   : qa-campo-escritura-25piernas-165957.json (20261123165957, candidato
+    un control              54cabeb3, MISMO arbol promovido, APROBADO 25/25). Se supera no por
+                           identidad del arbol sino por su control de retiro de mallas: leia el
+                           listado despues de matar la propia sesion, asi que un 401 producia el
+                           "no visible" y la casilla no podia fallar. El censo SQL demostro 20
+                           mallas de este frente con status active. La pierna nueva
+                           mallas_retiradas_por_estado retira por PATCH /hr/routes/:id
+                           status=inactive y relee el estado con la sesion viva; la misma corrida
+                           repone las mallas de las corridas anteriores (20 -> 0 activas).
+  corrida anterior       : 20261123163936 sobre a4832a6a, APROBADO 25/25. Se conserva en
+    citable (superada)      qa-campo-escritura-anclada-a4832a6a.json. Mide el mismo
+                           contrato contra el mismo binario servido; queda superada porque
+                           el arbol promovido ya no es a4832a6a.
+  primera corrida        : qa-campo-escritura-anclada-build107.json (build #107, mismo
+    anclada                contrato con otros identificadores)
+  corrida no citable     : qa-campo-lectura.json (BLOQUEADO 3/25). No refuta nada: el modo
+                           lectura no puede autenticarse porque el producto crea las cuentas
+                           con las que se mide, y comparaba un candidato viejo contra un
+                           build que ya habia absorbido el #109.

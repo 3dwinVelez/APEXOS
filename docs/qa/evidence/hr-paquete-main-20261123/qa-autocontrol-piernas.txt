@@ -1,0 +1,32 @@
+# Autocontrol del instrumento de campo: cada pierna debe poder fallar
+# Comando: node scripts/certifications/hr-paquete-main-qa.js --selftest
+# Arbol: 54cabeb34b7270df46d17b43d8096d2337b7ff7c   Instrumento sha256: fc73dc533b0997df2655c270db170fa8b6eeec9da3b18c3004a3fa1d3223dbba
+# Fecha UTC: 2026-11-23T17:35:15Z   Node: v22.23.1
+# Sustrato: worktree de solo git/compuertas (regla 40), el selftest no toca red ni base de datos.
+OK    ancla_build verde=true distingue_rojo=true
+OK    paridad_blobs_hr verde=true distingue_rojo=true
+OK    bancos_por_defecto verde=true distingue_rojo=true
+OK    banco_efimero_alta_lectura verde=true distingue_rojo=true
+OK    banco_rechaza_codigo_corto verde=true distingue_rojo=true
+OK    banco_rechaza_swift_invalido verde=true distingue_rojo=true
+OK    banco_duplicado_409 verde=true distingue_rojo=true
+OK    escritura_banco_preserva_otras_configuraciones verde=true distingue_rojo=true
+OK    cuenta_pago_empleado_resuelve_banco verde=true distingue_rojo=true
+OK    cuenta_pago_rechaza_banco_inactivo verde=true distingue_rojo=true
+OK    cuenta_pago_rechaza_cuenta_sin_banco verde=true distingue_rojo=true
+OK    liquidacion_preview_sin_persistir verde=true distingue_rojo=true
+OK    revision_dias_lee_y_valida_clasificacion verde=true distingue_rojo=true
+OK    nomina_cierres_lee_y_valida verde=true distingue_rojo=true
+OK    mallas_unificadas_ambas_lecturas verde=true distingue_rojo=true
+OK    contencion_sin_P2028 verde=true distingue_rojo=true
+OK    mallas_retiradas_por_estado verde=true distingue_rojo=true
+OK    marcacion_sin_horario_responde_200_vacio verde=true distingue_rojo=true
+OK    punch_sin_selfie_400 verde=true distingue_rojo=true
+OK    punch_selfie_no_imagen_400 verde=true distingue_rojo=true
+OK    punch_horario_ajeno_403 verde=true distingue_rojo=true
+OK    punch_con_selfie_valida verde=true distingue_rojo=true
+OK    punch_idempotente_reenvio verde=true distingue_rojo=true
+OK    rbac_contraste_roles_sobre_nomina verde=true distingue_rojo=true
+OK    aislamiento_tenant_lectura verde=true distingue_rojo=true
+OK    liquidacion_completa_con_recibo_pdf verde=true distingue_rojo=true
+SELFTEST APROBADO: 26 piernas, cada una cumple solo cuando lo observado coincide con lo declarado y falla ante la observacion contraria.

@@ -1,0 +1,295 @@
+{
+  "certificacion": "hr-paquete-main-qa",
+  "version": 1,
+  "rol_evidencia": "field_measurement_qa",
+  "ambiente": "QA",
+  "empresa_modelo": "NYVORA",
+  "generado_en": "2026-11-23T15:29:29.532Z",
+  "api_host": "apexos-api-qa-production.up.railway.app",
+  "project_ref": "jbirkghkekuifgfsgquq",
+  "script_sha256": "6e25666bd4868fe5ce1cf7324ab634a793da3a40597843e3f3efd00c3d308562",
+  "candidato_ref": "2c10deaa01537c9fb3fb5654da469d9f828f2ad8",
+  "escribe_en_qa": false,
+  "piernas": [
+    {
+      "id": "ancla_build",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "GET /health -> 200, commit servido 43e5510cfe2d, resoluble en el arbol local: true"
+    },
+    {
+      "id": "paridad_blobs_hr",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "cumple": false,
+      "detalle": "8/10 rutas HR del arbol servido son byte a byte las del candidato 2c10deaa01537c9fb3fb5654da469d9f828f2ad8 | divergen: apps/api/src/modules/hr/service.js (568756c8 vs ae070b26); apps/api/src/modules/hr/schema.js (455e766e vs 82e59c6b)"
+    },
+    {
+      "id": "bancos_por_defecto",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "cumple": false,
+      "detalle": "GET /talento-humano/bancos -> 401 TOKEN_INVALIDO Token invalido (0 filas; defaults 001/007/051 presentes: false)"
+    },
+    {
+      "id": "banco_efimero_alta_lectura",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "corrida con --escribe-en-qa=NO: pierna de alta no ejecutada"
+    },
+    {
+      "id": "banco_duplicado_409",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "sin banco efimero que duplicar"
+    },
+    {
+      "id": "banco_rechaza_codigo_corto",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST code \"12\" -> 400 FST_ERR_VALIDATION body/code must match pattern \"^[0-9]{3}$\" y el maestro no conserva la fila (rechazo en schema, sin escritura)"
+    },
+    {
+      "id": "banco_rechaza_swift_invalido",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST swift \"AB12CD34\" (digitos dentro del bloque de letras) -> 401 TOKEN_INVALIDO Token invalido (el patron exige 6 letras + 2 alfanumericos)"
+    },
+    {
+      "id": "escritura_banco_preserva_otras_configuraciones",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "claves de Tenant.config distintas de hr_banks, antes y despues de tocar el maestro, byte a byte iguales: true (2 claves -> 2 claves) | corrida de solo lectura, no hubo escritura que preservar"
+    },
+    {
+      "id": "cuenta_pago_empleado_resuelve_banco",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "corrida de solo lectura"
+    },
+    {
+      "id": "cuenta_pago_rechaza_banco_inactivo",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "corrida de solo lectura"
+    },
+    {
+      "id": "cuenta_pago_rechaza_cuenta_sin_banco",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "corrida de solo lectura o sin ficha libre"
+    },
+    {
+      "id": "liquidacion_preview_sin_persistir",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "sin id de empleado efimero resuelto por /hr/self"
+    },
+    {
+      "id": "revision_dias_lee_y_valida_clasificacion",
+      "esperado": "NO_APLICABLE",
+      "observado": "FALLO",
+      "cumple": false,
+      "detalle": "GET revision-dias del empleado (sin id) con retiro (sin fecha) -> 0 (0 dias del tramo y 0 clasificaciones del catalogo: ); POST classification \"teletrabajo\" -> 400 FST_ERR_VALIDATION body/classification must be equal to one of the allowed values; POST nota de 3 caracteres -> 400 FST_ERR_VALIDATION body/note must NOT have fewer than 5 characters"
+    },
+    {
+      "id": "nomina_cierres_lee_y_valida",
+      "esperado": "NO_APLICABLE",
+      "observado": "FALLO",
+      "cumple": false,
+      "detalle": "GET cierres -> 401 TOKEN_INVALIDO Token invalido (0 periodos) y configuracion de nomina del tenant: periodicidad \"(sin campo)\" leida de /configuracion-laboral/nomina (401); POST validar 2026-10-01..2026-10-15 -> 401 TOKEN_INVALIDO Token invalido en 94 ms; POST validar 2026-10-01..2026-10-31 -> 401 TOKEN_INVALIDO Token invalido (la regla de periodicidad se aplica con codigo de dominio, no con un crash)"
+    },
+    {
+      "id": "liquidacion_completa_con_recibo_pdf",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "corrida de solo lectura"
+    },
+    {
+      "id": "mallas_unificadas_ambas_lecturas",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "corrida de solo lectura o sin empleado efimero"
+    },
+    {
+      "id": "contencion_sin_P2028",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "sin malla efimera que contendir"
+    },
+    {
+      "id": "marcacion_sin_horario_responde_200_vacio",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "sin ficha sin horario creada"
+    },
+    {
+      "id": "punch_sin_selfie_400",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "cumple": false,
+      "detalle": "POST /hr/self/time-punches sin identity_photo -> 401 TOKEN_INVALIDO Token invalido (code TOKEN_INVALIDO): la compuerta dura sigue en pie en el ambiente"
+    },
+    {
+      "id": "punch_selfie_no_imagen_400",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "cumple": false,
+      "detalle": "PDF -> 401 TOKEN_INVALIDO Token invalido; SVG -> 401 TOKEN_INVALIDO Token invalido; 2.5 MB -> 401 TOKEN_INVALIDO Token invalido (contenido duro rechazado en los tres casos; el tercero puede caer en el limite de cuerpo antes del contenido)"
+    },
+    {
+      "id": "punch_horario_ajeno_403",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "cumple": false,
+      "detalle": "POST con route_id 1 desde la ficha que no tiene ese horario asignado -> 401 TOKEN_INVALIDO Token invalido (code TOKEN_INVALIDO: la compuerta de horario vive antes que la foto)"
+    },
+    {
+      "id": "punch_con_selfie_valida",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "sin horario propio que marcar o corrida de solo lectura"
+    },
+    {
+      "id": "punch_idempotente_reenvio",
+      "esperado": "NO_APLICABLE",
+      "observado": "NO_APLICABLE",
+      "cumple": true,
+      "detalle": "sin marcacion valida que reenviar"
+    },
+    {
+      "id": "rbac_contraste_roles_sobre_nomina",
+      "esperado": "NO_APLICABLE",
+      "observado": "FALLO",
+      "cumple": false,
+      "detalle": "POST /talento-humano/nomina/cierres/validar con el mismo tramo 2026-10-01..2026-10-15: rol \"Empleado marcaciones\" -> 0 (403 esperado) y rol \"Administrador de empresa\" -> 0 (pasa el permiso y responde con codigo de dominio); control: ese mismo token si lee sus propios horarios (0), o sea el bloqueo es del permiso de nomina y no del ambiente"
+    },
+    {
+      "id": "aislamiento_tenant_lectura",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "cumple": false,
+      "detalle": "lectura del empleado 425 (code QA-DEL-x-0924072703) de la empresa vecina NYVORA QA ISOLATION CONTROL con la sesion de NYVORA -> 401 TOKEN_INVALIDO Token invalido; listado propio 0 filas y filas fuera del alcance del tenant: 0"
+    }
+  ],
+  "despliegue": {
+    "status": 200,
+    "commit_servido": "43e5510cfe2d",
+    "modulos": 19,
+    "version": "2.0"
+  },
+  "tenant": {
+    "id": "1d162ffd-bd27-4855-8141-b015388265fc",
+    "nombre": "NYVORA",
+    "modulos_activos": 37
+  },
+  "roles_de_medicion": [
+    {
+      "nombre": "Administrador de empresa",
+      "modulos": []
+    },
+    {
+      "nombre": "Empleado marcaciones",
+      "modulos": []
+    }
+  ],
+  "sesiones_obtenidas": [],
+  "empleado_operario_id": null,
+  "empleado_sin_horario_id": null,
+  "tramo_de_retiro_medido": {
+    "ingreso": null,
+    "retiro": "",
+    "dia_revisado": ""
+  },
+  "ventana_de_malla": {
+    "fecha": "2026-11-23",
+    "start_time": "10:24",
+    "end_time": "12:09",
+    "hora_local_bogota": "10:29"
+  },
+  "verificacion_de_reposicion": {
+    "malla_cert_visible_despues_del_retiro": false,
+    "rutas_leg_igualmente_ciegas": false,
+    "detalle": "sin malla que verificar"
+  },
+  "reposicion_de_qa": [],
+  "residuos_declarados": [],
+  "resumen": {
+    "total": 25,
+    "verdes": 3,
+    "rojas": 9,
+    "no_aplicables": 13
+  },
+  "veredicto": "BLOQUEADO",
+  "piernas_rojas": [
+    {
+      "id": "paridad_blobs_hr",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "detalle": "8/10 rutas HR del arbol servido son byte a byte las del candidato 2c10deaa01537c9fb3fb5654da469d9f828f2ad8 | divergen: apps/api/src/modules/hr/service.js (568756c8 vs ae070b26); apps/api/src/modules/hr/schema.js (455e766e vs 82e59c6b)"
+    },
+    {
+      "id": "bancos_por_defecto",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "detalle": "GET /talento-humano/bancos -> 401 TOKEN_INVALIDO Token invalido (0 filas; defaults 001/007/051 presentes: false)"
+    },
+    {
+      "id": "revision_dias_lee_y_valida_clasificacion",
+      "esperado": "NO_APLICABLE",
+      "observado": "FALLO",
+      "detalle": "GET revision-dias del empleado (sin id) con retiro (sin fecha) -> 0 (0 dias del tramo y 0 clasificaciones del catalogo: ); POST classification \"teletrabajo\" -> 400 FST_ERR_VALIDATION body/classification must be equal to one of the allowed values; POST nota de 3 caracteres -> 400 FST_ERR_VALIDATION body/note must NOT have fewer than 5 characters"
+    },
+    {
+      "id": "nomina_cierres_lee_y_valida",
+      "esperado": "NO_APLICABLE",
+      "observado": "FALLO",
+      "detalle": "GET cierres -> 401 TOKEN_INVALIDO Token invalido (0 periodos) y configuracion de nomina del tenant: periodicidad \"(sin campo)\" leida de /configuracion-laboral/nomina (401); POST validar 2026-10-01..2026-10-15 -> 401 TOKEN_INVALIDO Token invalido en 94 ms; POST validar 2026-10-01..2026-10-31 -> 401 TOKEN_INVALIDO Token invalido (la regla de periodicidad se aplica con codigo de dominio, no con un crash)"
+    },
+    {
+      "id": "punch_sin_selfie_400",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "detalle": "POST /hr/self/time-punches sin identity_photo -> 401 TOKEN_INVALIDO Token invalido (code TOKEN_INVALIDO): la compuerta dura sigue en pie en el ambiente"
+    },
+    {
+      "id": "punch_selfie_no_imagen_400",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "detalle": "PDF -> 401 TOKEN_INVALIDO Token invalido; SVG -> 401 TOKEN_INVALIDO Token invalido; 2.5 MB -> 401 TOKEN_INVALIDO Token invalido (contenido duro rechazado en los tres casos; el tercero puede caer en el limite de cuerpo antes del contenido)"
+    },
+    {
+      "id": "punch_horario_ajeno_403",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "detalle": "POST con route_id 1 desde la ficha que no tiene ese horario asignado -> 401 TOKEN_INVALIDO Token invalido (code TOKEN_INVALIDO: la compuerta de horario vive antes que la foto)"
+    },
+    {
+      "id": "rbac_contraste_roles_sobre_nomina",
+      "esperado": "NO_APLICABLE",
+      "observado": "FALLO",
+      "detalle": "POST /talento-humano/nomina/cierres/validar con el mismo tramo 2026-10-01..2026-10-15: rol \"Empleado marcaciones\" -> 0 (403 esperado) y rol \"Administrador de empresa\" -> 0 (pasa el permiso y responde con codigo de dominio); control: ese mismo token si lee sus propios horarios (0), o sea el bloqueo es del permiso de nomina y no del ambiente"
+    },
+    {
+      "id": "aislamiento_tenant_lectura",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "detalle": "lectura del empleado 425 (code QA-DEL-x-0924072703) de la empresa vecina NYVORA QA ISOLATION CONTROL con la sesion de NYVORA -> 401 TOKEN_INVALIDO Token invalido; listado propio 0 filas y filas fuera del alcance del tenant: 0"
+    }
+  ]
+}
