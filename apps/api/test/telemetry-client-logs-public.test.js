@@ -153,3 +153,31 @@ test("la ingesta publica no hereda el limite de 25 MB de la API", async () => {
   });
   assert.equal(response.statusCode, 413);
 });
+
+test("el reporte anonimo conserva la causa clasificada y el codigo del rechazo", async () => {
+  // Sin esta clave en el contrato, Fastify la REMUEVE en silencio (`removeAdditional`) y el buzon
+  // perdia la unica clasificacion que hace el navegador sin sesion: request_rejected vs timeout vs
+  // offline. Y sin `code`, los 4xx reportados quedaban indistinguibles entre si.
+  resetCalls();
+  process.env.APEXOS_TELEMETRY_TENANT_ID = INBOX_TENANT;
+  try {
+    const app = await build();
+    const response = await post(app, {
+      module: "talento-humano",
+      route: "/api/v1/hr/self/time-punches",
+      method: "POST",
+      status_code: 409,
+      code: "MARCACION_FUERA_DE_SECUENCIA",
+      message: "El servidor rechazo la marcacion",
+      detail: "No se pudo guardar: La siguiente marcacion permitida es fin_almuerzo.",
+      metadata: { href: "/dashboard/talento-humano/marcacion", provider: "local", failure_cause: "request_rejected" }
+    });
+    assert.equal(response.statusCode, 202);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].input.code, "MARCACION_FUERA_DE_SECUENCIA");
+    assert.equal(calls[0].input.metadata.failure_cause, "request_rejected");
+    assert.equal(calls[0].input.metadata.provider, "local");
+  } finally {
+    delete process.env.APEXOS_TELEMETRY_TENANT_ID;
+  }
+});

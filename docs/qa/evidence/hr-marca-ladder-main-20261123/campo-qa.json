@@ -1,0 +1,423 @@
+{
+  "certification": "hr-marking-ladder-field",
+  "version": 1,
+  "ambiente": "QA",
+  "instruccion": "Escalera de marcacion con correccion administrativa motivada, medida sobre el binario desplegado",
+  "generado_en": "2026-11-23T15:48:25.880Z",
+  "env_file": "config/qa.env",
+  "api_host": "apexos-api-qa-production.up.railway.app",
+  "script_sha256": "32efc82762d82c1d2d054915c2d0c72e2a3e0c1104a17d2a801a5826ab19d49e",
+  "dia_operativo": "2026-11-23",
+  "run": "8905847",
+  "compromiso_del_arreglo": {
+    "fix_de_referencia": "c777dc13528f6e8cd502d83effd68325a92f6486",
+    "servidor_lee": "git merge-base --is-ancestor"
+  },
+  "cheques": [
+    {
+      "name": "health_ancla_el_commit_servido",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "43e5510cfe2d",
+        "ancla": "arreglo"
+      }
+    },
+    {
+      "name": "sesion_efimera_en_la_empresa_modelo",
+      "ok": true,
+      "detail": {
+        "user_id": 805,
+        "login": 200
+      }
+    },
+    {
+      "name": "sesion_efimera_en_tenant_vecino",
+      "ok": true,
+      "detail": {
+        "user_id": 806,
+        "login": 200
+      }
+    },
+    {
+      "name": "empleado_efimero_sin_jornada",
+      "ok": true,
+      "detail": {
+        "employee_id": 663,
+        "lectura": 200,
+        "filas_antes": 9
+      }
+    },
+    {
+      "name": "entrada_administrativa_abre_la_jornada",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": "",
+        "asentada": true,
+        "ciego": false,
+        "ms": 783
+      }
+    },
+    {
+      "name": "rechazo_de_escalera_es_legible",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_FUERA_DE_SECUENCIA",
+        "details": {
+          "expected_type": "inicio_almuerzo",
+          "punch_type": "salida"
+        },
+        "fallos": [],
+        "ancla": "arreglo",
+        "esperado": "arreglo"
+      }
+    },
+    {
+      "name": "correccion_sin_motivo_se_niega",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "MOTIVO_CORRECCION_REQUERIDO",
+        "field": "motivo_correccion"
+      }
+    },
+    {
+      "name": "correccion_motivada_destraba_la_jornada",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": "",
+        "asentada": true,
+        "motivo_lectura": "",
+        "tipos": [
+          "entrada",
+          "salida"
+        ],
+        "ms": 711
+      }
+    },
+    {
+      "name": "la_correccion_deja_novedad_auditable",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "filas": 1,
+        "saltos": [
+          "escalera:esperada:inicio_almuerzo"
+        ]
+      }
+    },
+    {
+      "name": "jornada_cerrada_sigue_bloqueada",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "JORNADA_COMPLETA",
+        "details": {
+          "punch_type": "salida"
+        }
+      }
+    },
+    {
+      "name": "otro_tenant_no_escribe_la_jornada",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "code": "EMPLEADO_NO_ENCONTRADO",
+        "tipos_antes": [
+          "entrada",
+          "salida"
+        ],
+        "tipos_despues": [
+          "entrada",
+          "salida"
+        ]
+      }
+    },
+    {
+      "name": "dia_sin_datos_responde_200",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "filas": 0
+      }
+    },
+    {
+      "name": "toda_escritura_dentro_del_presupuesto",
+      "ok": true,
+      "detail": {
+        "peor": {
+          "ruta": "/api/v1/auth/login",
+          "method": "POST",
+          "status": 200,
+          "ms": 878
+        },
+        "presupuesto_ms": 20000
+      }
+    },
+    {
+      "name": "canal_propio_no_forja_la_correccion",
+      "ok": true,
+      "detail": {
+        "apertura": 200,
+        "sin_bandera": {
+          "status": 409,
+          "code": "MARCACION_FUERA_DE_SECUENCIA"
+        },
+        "con_bandera": {
+          "status": 409,
+          "code": "MARCACION_FUERA_DE_SECUENCIA"
+        },
+        "asentada": false
+      }
+    },
+    {
+      "name": "el_canal_propio_sigue_vivo_para_el_mismo_operario",
+      "ok": true,
+      "detail": {
+        "apertura": 200,
+        "tipos": [
+          "entrada"
+        ]
+      }
+    },
+    {
+      "name": "cuentas_efimeras_retiradas_por_el_endpoint",
+      "ok": true,
+      "detail": {
+        "retiro": [
+          {
+            "user_id": 807,
+            "status": 200,
+            "code": "CERTL8905847O",
+            "login_tras_retiro": 401
+          },
+          {
+            "user_id": 806,
+            "status": 200,
+            "code": null,
+            "login_tras_retiro": 401
+          },
+          {
+            "user_id": 805,
+            "status": 200,
+            "code": null,
+            "login_tras_retiro": 401
+          }
+        ]
+      }
+    }
+  ],
+  "tiempos": [
+    {
+      "ruta": "/health",
+      "method": "GET",
+      "status": 200,
+      "ms": 558
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 878
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 845
+    },
+    {
+      "ruta": "/api/v1/hr/attendance?date=2026-11-23&limit=500",
+      "method": "GET",
+      "status": 200,
+      "ms": 510
+    },
+    {
+      "ruta": "/api/v1/hr/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 783
+    },
+    {
+      "ruta": "/api/v1/hr/attendance?date=2026-11-23&limit=500",
+      "method": "GET",
+      "status": 200,
+      "ms": 312
+    },
+    {
+      "ruta": "/api/v1/hr/time-punches",
+      "method": "POST",
+      "status": 409,
+      "ms": 592
+    },
+    {
+      "ruta": "/api/v1/hr/time-punches",
+      "method": "POST",
+      "status": 422,
+      "ms": 596
+    },
+    {
+      "ruta": "/api/v1/hr/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 711
+    },
+    {
+      "ruta": "/api/v1/hr/attendance?date=2026-11-23&limit=500",
+      "method": "GET",
+      "status": 200,
+      "ms": 312
+    },
+    {
+      "ruta": "/api/v1/hr/novelties?date=2026-11-23&type=AJUSTE_MANUAL_MARCACION&limit=500",
+      "method": "GET",
+      "status": 200,
+      "ms": 302
+    },
+    {
+      "ruta": "/api/v1/hr/time-punches",
+      "method": "POST",
+      "status": 409,
+      "ms": 600
+    },
+    {
+      "ruta": "/api/v1/hr/time-punches",
+      "method": "POST",
+      "status": 404,
+      "ms": 479
+    },
+    {
+      "ruta": "/api/v1/hr/attendance?date=2026-11-23&limit=500",
+      "method": "GET",
+      "status": 200,
+      "ms": 313
+    },
+    {
+      "ruta": "/api/v1/hr/attendance?date=2020-01-01&limit=10",
+      "method": "GET",
+      "status": 200,
+      "ms": 309
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 833
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 1289
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 409,
+      "ms": 950
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 409,
+      "ms": 813
+    },
+    {
+      "ruta": "/api/v1/hr/attendance?date=2026-11-23&limit=500",
+      "method": "GET",
+      "status": 200,
+      "ms": 337
+    },
+    {
+      "ruta": "/api/v1/hr/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 762
+    },
+    {
+      "ruta": "/api/v1/hr/attendance?date=2026-11-23&limit=500",
+      "method": "GET",
+      "status": 200,
+      "ms": 347
+    },
+    {
+      "ruta": "/api/v1/admin/users/807/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 1115
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 401,
+      "ms": 416
+    },
+    {
+      "ruta": "/api/v1/admin/users/806/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 986
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 401,
+      "ms": 402
+    },
+    {
+      "ruta": "/api/v1/admin/users/805/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 1000
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 401,
+      "ms": 409
+    }
+  ],
+  "ids": {
+    "usuarios": [
+      805,
+      806,
+      807
+    ],
+    "empleados": [
+      663,
+      664
+    ]
+  },
+  "presupuesto_ms": 20000,
+  "despliegue": {
+    "status": 200,
+    "commit_servido": "43e5510cfe2d",
+    "codigo_servido_contiene_el_fix": "arreglo"
+  },
+  "tenant": {
+    "id": "1d162ffd-bd27-4855-8141-b015388265fc",
+    "licencia_admin": 37
+  },
+  "tenant_vecino": {
+    "id": "e95cb55b-8126-414b-95dc-e349e0f72605",
+    "modulos_licenciados": 27
+  },
+  "hallazgo_autorizacion": {
+    "descripcion": "El rol generico de la empresa modelo trae hr:write, que es el permiso del canal administrativo donde vive la excepcion de escalera.",
+    "rol": "Empleado",
+    "endpoint": "/api/v1/hr/time-punches",
+    "status": 200,
+    "code": null,
+    "pierna_asentada": false,
+    "decision_pendiente": "acotar la excepcion a rol administrativo (precedente: BIOMETRIA_RESTABLECER_DENEGADO) o aceptar que hr:write la conserve"
+  },
+  "veredicto": {
+    "total": 16,
+    "pasaron": 16,
+    "fallaron": 0,
+    "estado": "APROBADO"
+  }
+}
