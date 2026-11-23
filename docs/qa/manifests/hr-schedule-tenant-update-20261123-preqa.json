@@ -1,0 +1,108 @@
+{
+  "change_id": "hr-schedule-tenant-update-20261123",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "43e5510cfe2d85a0282af6c8b8c8c7c0c53a1755",
+  "commit": "388412d6be23a5a494b615c1b0a195e73aad53c3",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-tenant-update-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-tenant-update-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-tenant-update-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-tenant-update-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-schedule-tenant-update-20261123-preqa.json",
+        "../certifications/hr-schedule-employee-source-20261120.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-schedule-employee-source-local.js",
+    "evidence": [
+      "hr-schedule-tenant-update-20261123-preqa.json",
+      "../certifications/hr-schedule-employee-source-20261120.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-schedule-employee-source-local.js",
+    "evidence": [
+      "hr-schedule-tenant-update-20261123-preqa.json",
+      "../certifications/hr-schedule-employee-source-20261120.md"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario: desplega a qa",
+    "approved_at": "2026-11-23T15:48:11.855Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "functional_commit": "388412d6be23a5a494b615c1b0a195e73aad53c3",
+    "certification": {
+      "environment": "LOCAL",
+      "status": "passed",
+      "started_at": "2026-11-23T15:46:01.366Z",
+      "checks": [
+        "canonical master and operational alias return the same active identities, including employees without a user; authentication and tenants are isolated",
+        "another tenant cannot update an existing schedule; the owner can still edit it and punch history remains unchanged",
+        "browser finds the complete document in the master, assigns linked and unlinked employees and preserves existing route and punch history"
+      ],
+      "finished_at": "2026-11-23T15:47:09.029Z"
+    },
+    "unit_regression": {
+      "passed": 49,
+      "failed": 0
+    },
+    "typecheck": "passed: exact candidate schedule page, API client and monitor dependencies",
+    "lint": "passed: zero errors; two existing navigation warnings in api.ts",
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1795448742607",
+      "source_database_modified": false,
+      "fixture_schema_hunks": [
+        "20261016123000_sedes_replace_origins: sections 1-2 only",
+        "20260919110000_time_route_kind_descanso",
+        "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+      ],
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-23T15:47:09.111Z"
+    },
+    "source": "Operational TimePunch API. No database migrations; no production changes.",
+    "employee_cases": "Complete document search, assignment and reload, same canonical identities, history preservation, actual interrupted read recovery; Supabase client provider branch with real local API token."
+  }
+}
