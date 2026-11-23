@@ -151,8 +151,13 @@ de código ocurrió en `main` y se deja inventariado aquí porque es el alcance 
   → veredicto `OK_CON_ADVERTENCIAS`, 11 agentes `in-sync`, ruteo: `equipo-apexos`, `apexos-brief`,
   `apexos-git-guardian`, `apexos-qa`. Advertencia: rutas sin agente asignado `.qoder/skills` (usa
   `equipo-apexos`).
-- **Agentes consultados**: los cuatro del ruteo (lecturas obligatorias ejecutadas antes de editar).
-- **Documentación a actualizar**: `docs/briefs/2026-11-23-hr-paquete-main.md`,
+- **Preflight de cierre** (tras `agents:sync`, con las 12 rutas del alcance ya en el árbol y los cuatro
+  `SKILL.md` editados): veredicto `OK` con el mismo comando. Los cuatro agentes figuran `local-ahead`
+  frente a `origin/desarrollo` (`0b1287a9`): `apexos-brief` 2.82.0, `apexos-git-guardian` 2.28.0,
+  `apexos-qa` 2.103.0, `equipo-apexos` 2.60.0; los siete restantes `in-sync`. El preflight se revalidó
+  tras el fetch y antes del commit, que es cuando el inventario se firma (regla 42 de
+  `apexos-git-guardian`).
+- **Agentes consultados**: los cuatro del ruteo (lecturas obligatorias ejecutadas antes de editar).- **Documentación a actualizar**: `docs/briefs/2026-11-23-hr-paquete-main.md`,
   `docs/qa/certifications/hr-paquete-main-20261123.md`, `docs/qa/evidence/hr-paquete-main-20261123/**`,
   `docs/qa/manifests/hr-paquete-main-20261123-{scope,approval}.json`.
 - **Agentes a actualizar**: `apexos-qa` 2.102.0 → 2.103.0 (control 115); `equipo-apexos` 2.59.0 →
@@ -165,7 +170,13 @@ de código ocurrió en `main` y se deja inventariado aquí porque es el alcance 
   `agents:coverage` → pruebas de la sección 5 → commit con rutas explícitas → push.
 - **Publicación obligatoria**: `git push origin desarrollo`. No cubre `develop`, `main`, force push,
   merges, migraciones remotas ni infraestructura.
-- [x] Preflight sin `INTEGRAR_REMOTO` ni `CONFLICTO`
-- [ ] Cobertura de contexto en verde (`agents:coverage`)
-- [ ] Sin secretos, credenciales ni artefactos locales en el diff
-- [ ] Documentación y agentes actualizados en el mismo commit
+- [x] Preflight sin `INTEGRAR_REMOTO` ni `CONFLICTO` (apertura `OK_CON_ADVERTENCIAS`, cierre `OK`)
+- [x] Cobertura de contexto en verde (`agents:coverage -- --paths` con las 12 rutas del alcance)
+- [x] Sin secretos, credenciales ni artefactos locales en el diff (barrido de identidades y binarios:
+  0 correos, 0 `data:image`/`base64`/`Bearer`/`eyJ` en las 11 evidencias y los 2 manifiestos; los 15
+  valores de la clave `nombre` son la empresa modelo y catálogos de rol, no personas. Las únicas
+  coincidencias de binario viven en el instrumento y son fixtures sintéticos de unos pocos bytes, y la
+  contraseña del andamio se genera con `crypto.randomBytes` en cada corrida: no hay credencial escrita)
+- [x] Documentación y agentes actualizados en el mismo commit (el scratch local
+  `.railway-tmp-cand`, directorio vacío que la corrida de Railway dejó atrás, se retiró con `rmdir` y no
+  entra en el árbol versionado)
