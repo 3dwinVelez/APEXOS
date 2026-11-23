@@ -1,5 +1,9 @@
 # Politica obligatoria de aprobacion de cambios
 
+## Excepcion puntual autorizada: mallas y sincronizacion, 2026-11-23
+
+Para `hr-mallas-sync-production-20261123`, el usuario autorizo aislar exclusivamente los cambios revisados de `develop` sobre el `main` vigente mediante `codex/release-hr-mallas-sync-20261123`, y usar `Cliente Piloto QA` como empresa modelo en lugar de NYVORA. La verificacion productiva usa un tenant sintetico separado de los clientes. Esta excepcion no autoriza otras ramas, modulos, migraciones ni eliminaciones, y conserva la aprobacion funcional, la certificacion completa, el inventario exacto, el aislamiento, la persistencia y la reversa controlada. El validador puntual exige el destino y los commits declarados; un avance de `main` obliga a reconstruir y certificar el candidato.
+
 Todo cambio sigue exclusivamente `desarrollo -> develop -> main`. La aprobacion de pruebas automatizadas permite integrar en `develop`, pero nunca basta para promover a `main`.
 
 ## Compuertas separadas por destino

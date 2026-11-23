@@ -1,0 +1,107 @@
+{
+  "change_id": "hr-mallas-sync-production-20261123",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "914d1721965d727a14c7e836039e2334678ca2de",
+  "reviewed_source_commit": "6a393e673f9b4480e1fe004bec210cb3ce89f428",
+  "execution": {
+    "deployed_commit": "914d1721965d727a14c7e836039e2334678ca2de",
+    "functional_finished_at": "2026-11-23T16:03:54.130Z",
+    "platform_finished_at": "2026-11-23T16:04:18.175Z"
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-mallas-sync-production-20261123/qa-functional.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-mallas-sync-production-20261123/qa-functional.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-mallas-sync-production-20261123/local-candidate.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-mallas-sync-production-20261123/qa-platform.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-mallas-sync-production-20261123/qa-platform.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-attendance-scoped-qa.js",
+    "evidence": [
+      "../evidence/hr-mallas-sync-production-20261123/qa-functional.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-attendance-platform-qa.js",
+    "evidence": [
+      "../evidence/hr-mallas-sync-production-20261123/qa-platform.json"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "Cliente Piloto QA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-attendance-scoped-qa.js",
+    "evidence": [
+      "../evidence/hr-mallas-sync-production-20261123/qa-functional.json",
+      "../evidence/hr-mallas-sync-production-20261123/qa-platform.json"
+    ]
+  },
+  "local_candidate_certification": {
+    "status": "passed",
+    "commit": "cc2145d102b81993b7e00479b7bf1cab785efba2",
+    "evidence": [
+      "../evidence/hr-mallas-sync-production-20261123/local-candidate.json"
+    ]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "a0fb7e05b65d84e619b80cb30790b27f3b940fb3",
+    "trigger": "Any failed post-deployment functional, tenant-isolation, persistence or platform check rejects the release.",
+    "procedure": "Stop further publications. Reconstruct only this release reviewed diff against the current target, preserving later changes. Certify the reversal and follow desarrollo -> develop -> main with independent authorization; no reset, force push or old-tree baseline. Keep the tenant-ownership protection unless separately reviewed. Production verification uses an isolated synthetic model tenant; no customer data."
+  },
+  "approval": {
+    "status": "pending",
+    "approved_by": "Manuel (usuario)",
+    "approved_at": null,
+    "functional_scope_commit": null,
+    "previous_functional_approval": {
+      "commit": "6a393e673f9b4480e1fe004bec210cb3ce89f428",
+      "statement": "Sí, probadas y aprobadas en QA"
+    },
+    "authorization_flags": {
+      "scoped_main_release": true,
+      "model_company_override": true
+    },
+    "authorizations": [
+      {
+        "statement": "Sí, autorizo la excepción puntual",
+        "scope": "codex/release-hr-mallas-sync-20261123 and punctual main governance exception"
+      },
+      {
+        "statement": "Sí, usar Cliente Piloto QA",
+        "scope": "Model company exception with synthetic data, permissions, isolation and persistence"
+      }
+    ]
+  }
+}

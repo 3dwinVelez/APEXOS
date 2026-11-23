@@ -1,0 +1,178 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-mallas-sync-production-20261123",
+  "base_commits": {
+    "main": "a0fb7e05b65d84e619b80cb30790b27f3b940fb3"
+  },
+  "target_head": "a0fb7e05b65d84e619b80cb30790b27f3b940fb3",
+  "certified_commit": "cc2145d102b81993b7e00479b7bf1cab785efba2",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "codex/release-hr-mallas-sync-20261123",
+  "candidate_source": {
+    "branch": "develop",
+    "reviewed_source_commit": "6a393e673f9b4480e1fe004bec210cb3ce89f428",
+    "qa_commit": "914d1721965d727a14c7e836039e2334678ca2de",
+    "reconstruction": "Reviewed hunks on current main; preserve all later production changes"
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/hrAttendanceState.ts",
+    "apps/web/lib/hrScheduleMonitor.ts"
+  ],
+  "change_intent": {
+    "summary": "Canonical employee master for scheduling and cross-device attendance state, with tenant ownership protection and the explicitly authorized punctual release governance exception.",
+    "modules": [
+      "hr",
+      "git-governance"
+    ]
+  },
+  "allowed_paths": [
+    ".github/workflows/ci.yml",
+    "apps/api/src/modules/hr/service.js",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/hrAttendanceState.ts",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/test/hr-attendance-state.test.mjs",
+    "apps/web/test/hr-schedule-employee-source.test.mjs",
+    "docs/CHANGE_APPROVAL_QA_POLICY.md",
+    "docs/qa/certifications/hr-mallas-sync-production-20261123.md",
+    "docs/qa/evidence/hr-mallas-sync-production-20261123/local-candidate.json",
+    "docs/qa/evidence/hr-mallas-sync-production-20261123/qa-functional.json",
+    "docs/qa/evidence/hr-mallas-sync-production-20261123/qa-platform.json",
+    "docs/qa/manifests/hr-mallas-sync-production-20261123-qa.json",
+    "docs/qa/manifests/hr-mallas-sync-production-20261123-scope.json",
+    "scripts/certifications/hr-attendance-platform-qa.js",
+    "scripts/certifications/hr-attendance-production-verify.js",
+    "scripts/certifications/hr-attendance-scoped-qa.js",
+    "scripts/git-governance-guard.js",
+    "scripts/test/hr-attendance-release-governance.test.js",
+    "scripts/validate-change-approval-evidence.js",
+    "scripts/validate-hr-attendance-release.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": ".github/workflows/ci.yml"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/hrAttendanceState.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrScheduleMonitor.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-attendance-state.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-schedule-employee-source.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "docs/CHANGE_APPROVAL_QA_POLICY.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-mallas-sync-production-20261123.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-mallas-sync-production-20261123/local-candidate.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-mallas-sync-production-20261123/qa-functional.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-mallas-sync-production-20261123/qa-platform.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-mallas-sync-production-20261123-qa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-mallas-sync-production-20261123-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-attendance-platform-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-attendance-production-verify.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-attendance-scoped-qa.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/git-governance-guard.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/hr-attendance-release-governance.test.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/validate-change-approval-evidence.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/validate-hr-attendance-release.js"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Canonical master, complete document lookup, read-error retention and retry, schedule persistence and historical records",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-mallas-sync-production-20261123/qa-functional.json",
+        "../evidence/hr-mallas-sync-production-20261123/local-candidate.json"
+      ]
+    },
+    {
+      "name": "Cross-device attendance, duplicate prevention and offline recovery",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-mallas-sync-production-20261123/qa-functional.json",
+        "../evidence/hr-mallas-sync-production-20261123/local-candidate.json"
+      ]
+    },
+    {
+      "name": "Authentication, RBAC, tenant isolation, administration and adjacent transport navigation",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-mallas-sync-production-20261123/qa-platform.json"
+      ]
+    }
+  ]
+}

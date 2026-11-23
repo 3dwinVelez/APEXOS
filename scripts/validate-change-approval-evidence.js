@@ -54,7 +54,11 @@ for (const item of regressionEvidence) {
   if (!fs.existsSync(evidencePath)) errors.push(`evidencia de regresion transversal inexistente: ${evidencePath}`);
 }
 if (manifest.model_company_certification?.status !== "passed") errors.push("model_company_certification.status debe ser passed");
-if (String(manifest.model_company_certification?.company || "").toUpperCase() !== "NYVORA") errors.push("model_company_certification.company debe ser NYVORA");
+const scopedHrCompanyOverride = manifest.change_id === "hr-mallas-sync-production-20261123"
+  && manifest.approval?.authorization_flags?.scoped_main_release === true
+  && manifest.approval?.authorization_flags?.model_company_override === true;
+const requiredModelCompany = scopedHrCompanyOverride ? "CLIENTE PILOTO QA" : "NYVORA";
+if (String(manifest.model_company_certification?.company || "").toUpperCase() !== requiredModelCompany) errors.push(`model_company_certification.company debe ser ${requiredModelCompany}`);
 if (manifest.model_company_certification?.environment !== "QA") errors.push("model_company_certification.environment debe ser QA");
 const modelScript = path.resolve(path.dirname(absoluteManifest), String(manifest.model_company_certification?.script || ""));
 if (!manifest.model_company_certification?.script || !fs.existsSync(modelScript)) errors.push("model_company_certification.script debe apuntar a un script versionado existente");

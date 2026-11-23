@@ -1,0 +1,76 @@
+{
+  "environment": "LOCAL",
+  "status": "passed",
+  "commit": "cc2145d102b81993b7e00479b7bf1cab785efba2",
+  "runtime_matches_previous_candidate": "bcfc9f613f36624cea2d89855ee27640f21afec7",
+  "baseline_change": "Only two production certification documents advanced; retained verbatim. Runtime files are unchanged.",
+  "mallas": {
+    "environment": "LOCAL",
+    "status": "passed",
+    "started_at": "2026-11-23T16:05:09.608Z",
+    "checks": [
+      "canonical master and operational alias return the same active identities, including employees without a user; authentication and tenants are isolated",
+      "another tenant cannot update an existing schedule; the owner can still edit it and punch history remains unchanged",
+      "browser finds the complete document in the master, assigns linked and unlinked employees and preserves existing route and punch history"
+    ],
+    "finished_at": "2026-11-23T16:05:45.125Z"
+  },
+  "mallas_isolation": {
+    "status": "passed",
+    "environment": "LOCAL",
+    "database": "apexos_cert_hr_assoc_1795449894054",
+    "source_database_modified": false,
+    "fixture_schema_hunks": [
+      "20261016123000_sedes_replace_origins: sections 1-2 only",
+      "20260919110000_time_route_kind_descanso",
+      "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+    ],
+    "exit_code": 0,
+    "unexpected_5xx": [],
+    "checked_at": "2026-11-23T16:05:45.206Z"
+  },
+  "support": {
+    "web_regression": {
+      "status": "passed",
+      "tests": 39
+    },
+    "governance": {
+      "status": "passed",
+      "tests": 17
+    },
+    "typecheck": {
+      "status": "passed",
+      "command": "tsc --noEmit --project apps/web/tsconfig.json"
+    },
+    "lint": {
+      "status": "passed",
+      "errors": 0,
+      "preexisting_warnings": 2
+    }
+  },
+  "sync": {
+    "environment": "LOCAL",
+    "status": "passed",
+    "started_at": "2026-11-23T16:06:41.248Z",
+    "checks": [
+      "self attendance is authenticated and tenant scoped",
+      "browser sees other-device entry by polling, lunch by focus and stale-click preflight without duplicate writes",
+      "final server sequence persists once and other tenants see none of it"
+    ],
+    "finished_at": "2026-11-23T16:07:36.094Z"
+  },
+  "sync_isolation": {
+    "status": "passed",
+    "environment": "LOCAL",
+    "database": "apexos_cert_hr_assoc_1795449986971",
+    "source_database_modified": false,
+    "fixture_schema_hunks": [
+      "20261016123000_sedes_replace_origins: sections 1-2 only",
+      "20260919110000_time_route_kind_descanso",
+      "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+    ],
+    "exit_code": 0,
+    "unexpected_5xx": [],
+    "checked_at": "2026-11-23T16:07:36.157Z"
+  }
+}
