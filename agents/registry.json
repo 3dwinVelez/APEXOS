@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-20",
+  "generated_at": "2026-11-23",
   "canonical_root": ".qoder/skills",
   "mirror_root": "agents",
   "semver_policy": {
@@ -96,9 +96,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.75.2",
+      "version": "2.76.0",
       "updated_at": "2026-11-20",
-      "sha256": "bd62d38a51c4f3ee24c92e6a35347909fb3199b2771cbe88f45242394a9c1d85",
+      "sha256": "96902108ae1c91c937c236983f1abe8ebd74b9d1d3f01a162396687e5b5c041b",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -158,7 +158,8 @@
         "manifiesto-una-sola-fuente-de-filas",
         "pendiente-con-inventario-barrido",
         "pendiente-irrecuperable-con-cifra-y-brief-aparte",
-        "censo-en-brief-con-poblacion-medida"
+        "censo-en-brief-con-poblacion-medida",
+        "lo-que-se-afirma-del-instrumento-se-pasa-en-limpio"
       ]
     },
     {
@@ -315,9 +316,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.96.0",
+      "version": "2.97.0",
       "updated_at": "2026-11-20",
-      "sha256": "52830087bb3465131e0075cc3f4ddfedf269ae7cc959e66d00a8b5f2488abe84",
+      "sha256": "a1e0ae035b97796f202b160ba455e42af2a00d7ba42f6b8e351b36f60fbd958c",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -403,7 +404,9 @@
         "control-negro-contra-el-mismo-ambiente",
         "interruptor-certificado-en-los-dos-sentidos",
         "salida-del-arnes-atada-a-lo-impreso",
-        "correccion-de-conteo-certificada-sin-cambiar-los-demas"
+        "correccion-de-conteo-certificada-sin-cambiar-los-demas",
+        "pierna-por-argumento-con-residuo-del-antes",
+        "asercion-del-arnes-que-puede-fallar-demostrada-en-rojo"
       ]
     },
     {
@@ -455,9 +458,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.54.0",
+      "version": "2.55.0",
       "updated_at": "2026-11-20",
-      "sha256": "23f1d8a760862449bb2ad28754d9f7bf9c9a87e91077b566b0fe4e8b437ee6cf",
+      "sha256": "20d91220b677b4666652c989ad3651b6059d2477b1b4e20023bc4300b55caa3f",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -504,7 +507,8 @@
         "recurso-de-prueba-se-construye-y-defectos-se-separan",
         "premisa-re-medida-antes-de-autorizar",
         "privilegio-retirado-en-el-almacen",
-        "lente-vuelta-a-medir-antes-de-reusar-la-medicion"
+        "lente-vuelta-a-medir-antes-de-reusar-la-medicion",
+        "vacio-declarado-convertido-en-instrumento-versionado"
       ]
     }
   ],

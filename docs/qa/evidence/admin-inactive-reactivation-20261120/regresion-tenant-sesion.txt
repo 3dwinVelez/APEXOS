@@ -1,0 +1,183 @@
+(node:8524) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+TAP version 13
+# (node:15764) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: un correo inexistente paga bcrypt y responde el mismo 401
+ok 1 - un correo inexistente paga bcrypt y responde el mismo 401
+  ---
+  duration_ms: 969.4205
+  type: 'test'
+  ...
+# Subtest: un usuario desactivado responde 401 uniforme, no 403 con pista
+ok 2 - un usuario desactivado responde 401 uniforme, no 403 con pista
+  ---
+  duration_ms: 392.8306
+  type: 'test'
+  ...
+# {"event":"authorization_version_mismatch","mode":"observe","reason":"SESSION_REVOKED","user_id":7,"session_id":"session-vieja","observed_total":1,"session_revoke_reason":"refresh_rotated"}
+# {"event":"refresh_token_reused","mode":"observe","reason":"REFRESH_TOKEN_REUSED","user_id":7,"session_id":"session-vieja","observed_total":2,"session_revoke_reason":"refresh_rotated"}
+# {"event":"authorization_version_mismatch","mode":"observe","reason":"SESSION_REVOKED","user_id":7,"session_id":"session-logout","observed_total":1,"session_revoke_reason":"logout"}
+# {"event":"refresh_session_revoked","mode":"observe","reason":"REFRESH_SESSION_REVOKED","user_id":7,"session_id":"session-logout","observed_total":2,"session_revoke_reason":"logout"}
+# {"event":"authorization_version_mismatch","mode":"enforce","reason":"SESSION_REVOKED","user_id":7,"session_id":"session-logout","observed_total":1,"session_revoke_reason":"logout"}
+# Subtest: el login valido devuelve token, refresh y sesion
+ok 3 - el login valido devuelve token, refresh y sesion
+  ---
+  duration_ms: 351.7607
+  type: 'test'
+  ...
+# Subtest: el refresh sano rota la sesion y devuelve un refresh nuevo
+ok 4 - el refresh sano rota la sesion y devuelve un refresh nuevo
+  ---
+  duration_ms: 7.4409
+  type: 'test'
+  ...
+# Subtest: reutilizar un refresh ya rotado se mide sin abrir sesion nueva ni expulsar
+ok 5 - reutilizar un refresh ya rotado se mide sin abrir sesion nueva ni expulsar
+  ---
+  duration_ms: 3.5352
+  type: 'test'
+  ...
+# Subtest: un refresh de una sesion cerrada por logout se distingue del reuso
+ok 6 - un refresh de una sesion cerrada por logout se distingue del reuso
+  ---
+  duration_ms: 2.5018
+  type: 'test'
+  ...
+# Subtest: con enforcement encendido el mismo refresh revocado responde 401
+ok 7 - con enforcement encendido el mismo refresh revocado responde 401
+  ---
+  duration_ms: 2.6326
+  type: 'test'
+  ...
+# (node:9448) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: runWithTenant propaga el tenant aunque el callback sea una funcion sincrona
+ok 8 - runWithTenant propaga el tenant aunque el callback sea una funcion sincrona
+  ---
+  duration_ms: 223.5515
+  type: 'test'
+  ...
+# Subtest: runWithTenant propaga el tenant con callback asincrono y tras un await
+ok 9 - runWithTenant propaga el tenant con callback asincrono y tras un await
+  ---
+  duration_ms: 113.3621
+  type: 'test'
+  ...
+# Subtest: fuera de runWithTenant el middleware no inventa un filtro de tenant
+ok 10 - fuera de runWithTenant el middleware no inventa un filtro de tenant
+  ---
+  duration_ms: 49.5816
+  type: 'test'
+  ...
+# Subtest: el nucleo envuelve el callback del tenant en una funcion asincrona
+ok 11 - el nucleo envuelve el callback del tenant en una funcion asincrona
+  ---
+  duration_ms: 1.0488
+  type: 'test'
+  ...
+# (node:13484) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: todo modelo con columna tenant_id queda dentro del filtro
+ok 12 - todo modelo con columna tenant_id queda dentro del filtro
+  ---
+  duration_ms: 9.1275
+  type: 'test'
+  ...
+# Subtest: los modelos que estaban fuera ahora estan cubiertos
+ok 13 - los modelos que estaban fuera ahora estan cubiertos
+  ---
+  duration_ms: 0.4471
+  type: 'test'
+  ...
+# Subtest: ningun modelo global tiene columna de empresa ni se solapa con el filtro
+ok 14 - ningun modelo global tiene columna de empresa ni se solapa con el filtro
+  ---
+  duration_ms: 0.542
+  type: 'test'
+  ...
+# Subtest: ApexReportRun sale del filtro porque no tiene columna de empresa
+ok 15 - ApexReportRun sale del filtro porque no tiene columna de empresa
+  ---
+  duration_ms: 0.3428
+  type: 'test'
+  ...
+# Subtest: el middleware filtra un modelo de tesoreria que antes quedaba fuera
+ok 16 - el middleware filtra un modelo de tesoreria que antes quedaba fuera
+  ---
+  duration_ms: 83.3785
+  type: 'test'
+  ...
+# Subtest: el middleware filtra gestion comercial y pyg, y estampa la empresa al crear
+ok 17 - el middleware filtra gestion comercial y pyg, y estampa la empresa al crear
+  ---
+  duration_ms: 126.9048
+  type: 'test'
+  ...
+# Subtest: un modelo global no recibe un filtro de columna inexistente
+ok 18 - un modelo global no recibe un filtro de columna inexistente
+  ---
+  duration_ms: 50.5735
+  type: 'test'
+  ...
+# Subtest: sin contexto de empresa el middleware no inventa el filtro
+ok 19 - sin contexto de empresa el middleware no inventa el filtro
+  ---
+  duration_ms: 49.5782
+  type: 'test'
+  ...
+# (node:17284) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: consume promesas diferidas dentro del contexto de empresa aunque el consumidor espere afuera
+ok 20 - consume promesas diferidas dentro del contexto de empresa aunque el consumidor espere afuera
+  ---
+  duration_ms: 2.0484
+  type: 'test'
+  ...
+# Subtest: promesas diferidas concurrentes no comparten el contexto de empresa
+ok 21 - promesas diferidas concurrentes no comparten el contexto de empresa
+  ---
+  duration_ms: 8.6166
+  type: 'test'
+  ...
+# (node:12124) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: acepta una sesion y versiones vigentes
+ok 22 - acepta una sesion y versiones vigentes
+  ---
+  duration_ms: 0.9783
+  type: 'test'
+  ...
+# Subtest: revocacion selectiva no invalida otra sesion
+ok 23 - revocacion selectiva no invalida otra sesion
+  ---
+  duration_ms: 0.1656
+  type: 'test'
+  ...
+# Subtest: incrementar version revoca globalmente tokens anteriores
+ok 24 - incrementar version revoca globalmente tokens anteriores
+  ---
+  duration_ms: 0.1271
+  type: 'test'
+  ...
+# Subtest: el calculo local de decision tiene sobrecosto despreciable
+ok 25 - el calculo local de decision tiene sobrecosto despreciable
+  ---
+  duration_ms: 128.9858
+  type: 'test'
+  ...
+# Subtest: la lectura de autorizacion esta parametrizada y ignora el tenant declarado por el token
+ok 26 - la lectura de autorizacion esta parametrizada y ignora el tenant declarado por el token
+  ---
+  duration_ms: 1.8183
+  type: 'test'
+  ...
+1..26
+# tests 26
+# suites 0
+# pass 26
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2062.0461

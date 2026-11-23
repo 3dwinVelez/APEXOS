@@ -1,0 +1,138 @@
+LECTURA DE LA EVIDENCIA - reactivacion de cuenta inactiva en Administracion
+2026-11-20
+
+EL DEFECTO
+
+Prisma aplica un alcance global de borrado logico (apps/api/src/core/prisma.js) a toda lectura de
+User: inyecta active:true en el where. En apps/api/src/modules/admin/service.js nueve lecturas de
+entrada pedian la cuenta sin exceptuar ese filtro. Al desactivar una cuenta desde Administracion,
+la misma pantalla perdia de vista al usuario: el boton que revierte el estado, el bloqueo de acceso,
+la edicion de datos y el adjunto de documentos respondian 404 NO_ENCONTRADO sobre una fila que si
+existe y que el listado todavia muestra como inactiva. El arreglo agrega __includeInactive: true a
+esas lecturas. El filtro de tenant_id se conserva en cada una.
+
+Los dos instrumentos miden el mismo defecto desde dos alturas distintas: el contrato unitario pone
+el foco en la lectura que se quedo ciega y la pata HTTP, en el boton que el dueño aprieta.
+
+EL CONTRATO UNITARIO - apps/api/test/admin-user-status-regression.test.js (siete casos, node --test)
+
+El archivo ya vivia en develop con tres contratos (desactivar responde la fila inactiva, el cambio de
+estado no puede operar sobre otro tenant y la ruta no convierte un exito en 404, agregados en
+0d5caa7f). Este paquete le suma los cuatro que estaban ciegos:
+
+  4 reactivar opera sobre el mismo id que se desactivo
+  5 el bloqueo de acceso de una cuenta inactiva no se pierde en un 404 al leerla
+  6 inactivar desde el acceso responde con la fila escrita
+  7 toda lectura de cuenta en administracion ve la inactiva y conserva su tenant_id
+
+El doble control de color esta en rojo-base-desarrollo.txt y contrato-candidato.txt:
+
+  desarrollo con el service.js de antes ....... 7 pruebas, 3 pasan, 4 fallan. Firma:
+                                              "Inactive record filtered", disparada por el
+                                              stub que solo deja leer sin __includeInactive.
+  desarrollo con el service.js del candidato .. 7/7 verdes, exit 0.
+
+El antes y el despues del contrato, con las firmas de falla textuales, quedan versionados en
+contrato-unitario-local.json.
+
+EL FLUJO REAL POR HTTP - scripts/certifications/admin-inactive-reactivation-http-local.js
+
+Quince chequeos sobre Fastify + Prisma + PostgreSQL local. No hay mocks: el arnes levanta una base
+efimera, levanta el servidor y camina el flujo con app.inject, que es la ruta de autenticacion,
+licencia de modulo, RBAC y auditoria con la que trabaja el cliente.
+
+   1 base_efimera_alineada_al_esquema_desplegado
+   2 health_ancla_el_commit_evaluado
+   3 empresa_administradora_con_sesion_local
+   4 el_modulo_admin_esta_habilitado
+   5 crear_cuenta_objetivo
+   6 desactivar_responde_la_fila_inactiva
+   7 reactivar_el_mismo_id_no_es_404
+   8 segundo_ciclo_desactivar_reactivar
+   9 inactivar_de_nuevo_para_poner_la_prueba_del_adjunto
+  10 adjuntar_documento_a_cuenta_inactiva_no_es_404
+  11 reactivar_despues_del_adjunto
+  12 empresa_vecina_con_sesion_propia
+  13 otro_tenant_no_reactiva_ni_en_contra_de_soft_delete
+  14 el_estado_escrito_es_el_que_lee_la_base
+  15 la_auditoria_deja_las_vueltas
+
+  certificacion-http-local.json ............ 15/15 verdes, exit 0. Pasos en pasos-verde.txt.
+  certificacion-rojo-base-http-local.json .. 8/15, siete rojos, exit 1, todos con
+                                             {"error":"No encontrado","code":"NO_ENCONTRADO"}.
+                                             Pasos en pasos-rojo.txt.
+
+El rojo se produce cambiando una sola cosa: el archivo apps/api/src/modules/admin/service.js del
+arbol de trabajo por el blob que esta en el tip de develop (23820f8eb4e3). Test, middleware,
+esquema, licencia y base quedan identicos al verde. Las dos corridas declaran en `arbol` el blob
+commiteado y el blob efectivamente servido: el verde dice arbol_de_trabajo_igual_a_cabeza=true con
+3f12886496a0 (el del candidato); el rojo dice false y registra 23820f8eb4e3 como medido. Sin ese
+par de campos la evidencia roja no se autocaracteriza, y un rojo mal etiquetado se puede leer como
+verde del candidato.
+
+Cuatro cosas que solo se ven corriendo el flujo completo:
+
+- La excepcion de borrado logico no abre la frontera del tenant: el chequeo 13 crea una empresa
+  vecina con sesion propia, le deja la cuenta objetivo inactiva y mide que el vecino obtiene 404.
+- Los siete rojos del rojo salen de NO_ENCONTRADO en las rutas de estado y de documento, que es la
+  firma exacta del reporte del dueño. El verde no introduce ninguno nuevo: el contrato de estado
+  sigue devolviendo la fila escrita y la auditoria deja los ocho movimientos.
+- El chequeo 14 cierra el circulo entre lo que responde el API y lo que guarda la base. Si se
+  escribiera un estado y se leyera otro, el verde se cae ahi.
+- La cuenta se reactiva (chequeo 11) antes de leer el listado (chequeo 14), para que el estado
+  objetivo sea visible en la misma pantalla donde vive el defecto.
+
+LOS HALLAZGOS DE AMBIENTE QUE SALIO DEL PASO (no son del negocio, pero hay que tenerlos)
+
+1. Con `prisma db push`, AuthorizationSession.id queda text: schema.prisma no declara @db.Uuid,
+   mientras la migracion versionada 20260727042000_authorization_versions la crea uuid y
+   src/security/authorizationState.js la cruza con cast(... as uuid). Toda peticion autenticada
+   moria en 42883 antes de decidir nada, y el sintoma se parece a un fallo de autorizacion. El arnes
+   alinea esa columna y lo declara como chequeo propio (1) para que se note que es preparacion.
+2. Desde cero, `prisma migrate deploy` no completa: la primera migracion historica
+   20260602_accounting_inventory_purchases_payroll asume las tablas Item y Place y revienta en
+   42P01. No se modifico la migracion historica para este paquete.
+3. El alta por POST /auth/register no sirve para un arnes local: su gancho contable escribe contra
+   public.companies, tabla del esquema Supabase que no existe en el de Prisma. La empresa del arnes
+   se fija por Prisma y TODO lo demas vuelve a pasar por HTTP, incluido el login real.
+4. La base efimera se descarta al terminar (pg_terminate_backend + DROP DATABASE); los logs de
+   pasos conservan el nombre para poder repetir la corrida.
+
+REGRESION
+
+Ejecutadas sobre el arbol del candidato, en la rama auxiliar:
+
+  regresion-admin.txt .......... 38/38
+  regresion-tenant-sesion.txt .. 26/26
+
+QUE NO CUBRE ESTA PATA (la compuerta sigue pidiendo las otras dos)
+
+- No toca Supabase Auth: certifica la ruta del API contra PostgreSQL local, que es donde vive el
+  defecto de lectura. Que la cuenta vuelva a poder adjuntarle documentos sigue necesitando el viaje
+  a Supabase en campo.
+- No abre el navegador: la pantalla de Administracion leyendo el estado reactivado se mide en QA.
+- No ejecuta migraciones remotas ni mide latencias. La pata QA/Produccion se toma con
+  scripts/certifications/admin-user-login-sync.js contra el ambiente desplegado, mas una
+  reactivacion real en campo.
+
+PUENTE ENTRE LA MEDICION Y EL CANDIDATO
+
+Las patas HTTP corrieron en el arbol de trabajo de desarrollo (commit 9d550425), porque ahi vive
+node_modules; la rama auxiliar no lo tiene a proposito: los enlaces absolutos @apex-os/* de una
+copia de node_modules fueron los que ya vaciaron apps/ en un worktree. El puente es la igualdad de
+blobs, no la confianza: las dos corridas declaran blob_servicio 3f12886496a0 y blob_contrato
+125d45ef4ad6, y esos son exactamente los blobs del commit certificado en la rama auxiliar
+codex/qa-admin-inactive-reactivation-20261120, construida sobre el tip de develop 81cd253a. Antes
+de cada corrida el arnes ancla el commit servido contra /health (chequeo 2) y descarta la base.
+
+COMO REPETIR LA MEDICION
+
+  DATABASE_URL="postgresql://apex:apex_dev_password@localhost:55432/apexos" \
+    node scripts/certifications/admin-inactive-reactivation-http-local.js \
+    --output=docs/qa/evidence/admin-inactive-reactivation-20261120/certificacion-http-local.json \
+    --expected-commit=9d550425
+
+  node --test --test-force-exit apps/api/test/admin-user-status-regression.test.js
+
+El comando del rojo es el mismo con apps/api/src/modules/admin/service.js sustituido por el blob
+23820f8eb4e3a128fa8d7b94d611d4f3a1c38f74 y la salida apuntando a certificacion-rojo-base-http-local.json.

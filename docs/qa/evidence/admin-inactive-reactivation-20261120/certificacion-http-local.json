@@ -1,0 +1,137 @@
+{
+  "certification": "admin-inactive-reactivation-http-local",
+  "version": 1,
+  "certification_role": "local_e2e_support",
+  "environment": "LOCAL",
+  "status": "passed",
+  "fecha": "2026-11-21T01:45:15.622Z",
+  "arbol": {
+    "rama": "desarrollo",
+    "commit": "9d5504256388a36db5ad25b289097789a84d43e5",
+    "candidato_declarado": "desarrollo@9d550425 (blobs identicos al candidato de la rama auxiliar)",
+    "blob_servicio": "3f12886496a09fc212b1a22102b25c60340a8b37",
+    "blob_contrato": "125d45ef4ad61793b554833be2ff4051f9b395a3",
+    "blob_servicio_medido": "3f12886496a09fc212b1a22102b25c60340a8b37",
+    "blob_contrato_medido": "125d45ef4ad61793b554833be2ff4051f9b395a3",
+    "arbol_de_trabajo_igual_a_cabeza": true
+  },
+  "base_de_datos": {
+    "host": "localhost",
+    "puerto": "55432",
+    "nombre": "apex_admin_inactive_cert_5470696f308 (descartada)"
+  },
+  "cheques": [
+    {
+      "chequeo": "base_efimera_alineada_al_esquema_desplegado",
+      "etapa": "preparacion",
+      "resultado": "OK",
+      "detalle": "apex_admin_inactive_cert_5470696f308: prisma db push + ALTER de apps/api/prisma/migrations/20260727042000_authorization_versions/migration.sql (AuthorizationSession.id = uuid)"
+    },
+    {
+      "chequeo": "health_ancla_el_commit_evaluado",
+      "etapa": "arranque",
+      "esperado": "200 con commit == HEAD del arbol",
+      "resultado": "OK",
+      "detalle": "{\"commit\":\"9d5504256388\"}"
+    },
+    {
+      "chequeo": "empresa_administradora_con_sesion_local",
+      "etapa": "inventario",
+      "esperado": "tenant con licencia crown, login por HTTP y token",
+      "resultado": "OK",
+      "detalle": "{\"tenant\":\"4e710714-2924-4d78-bd67-70b3a7e34039\",\"user\":1,\"rol\":\"APEX_ADMIN\"}"
+    },
+    {
+      "chequeo": "el_modulo_admin_esta_habilitado",
+      "etapa": "inventario",
+      "esperado": "GET /admin/roles responde 200 (el filtro de modulo no rechaza)",
+      "resultado": "OK",
+      "detalle": "{\"roles\":17,\"role_id\":15}"
+    },
+    {
+      "chequeo": "crear_cuenta_objetivo",
+      "etapa": "flujo",
+      "esperado": "201 con active=true",
+      "resultado": "OK",
+      "detalle": "{\"user_id\":2,\"role_id\":15}"
+    },
+    {
+      "chequeo": "desactivar_responde_la_fila_inactiva",
+      "etapa": "flujo",
+      "esperado": "200 con active=false",
+      "resultado": "OK",
+      "detalle": "{\"activo\":false}"
+    },
+    {
+      "chequeo": "reactivar_el_mismo_id_no_es_404",
+      "etapa": "flujo",
+      "esperado": "200 con active=true (aqui caia el corte)",
+      "resultado": "OK",
+      "detalle": "{\"user_id\":2,\"activo\":true}"
+    },
+    {
+      "chequeo": "segundo_ciclo_desactivar_reactivar",
+      "etapa": "flujo",
+      "esperado": "idempotencia: dos vueltas seguidas responden 200",
+      "resultado": "OK",
+      "detalle": "{\"ciclos\":2}"
+    },
+    {
+      "chequeo": "inactivar_de_nuevo_para_poner_la_prueba_del_adjunto",
+      "etapa": "flujo",
+      "esperado": "200 con active=false",
+      "resultado": "OK",
+      "detalle": "{\"activo\":false}"
+    },
+    {
+      "chequeo": "adjuntar_documento_a_cuenta_inactiva_no_es_404",
+      "etapa": "flujo",
+      "esperado": "201 pese a la soft-delete global",
+      "resultado": "OK",
+      "detalle": "{\"documento\":\"cert-5470696f308.pdf\"}"
+    },
+    {
+      "chequeo": "reactivar_despues_del_adjunto",
+      "etapa": "flujo",
+      "esperado": "200 con active=true: la cuenta vuelve a la pantalla",
+      "resultado": "OK",
+      "detalle": "{\"activo\":true}"
+    },
+    {
+      "chequeo": "empresa_vecina_con_sesion_propia",
+      "etapa": "aislamiento",
+      "esperado": "hace falta un vecino para medir la frontera",
+      "resultado": "OK",
+      "detalle": "{\"tenant\":\"eb499283-ce3d-47ea-91a6-36cf29798fa0\"}"
+    },
+    {
+      "chequeo": "otro_tenant_no_reactiva_ni_en_contra_de_soft_delete",
+      "etapa": "aislamiento",
+      "esperado": "404: la excepcion inactiva no abre la frontera",
+      "resultado": "OK",
+      "detalle": "{\"estado\":404}"
+    },
+    {
+      "chequeo": "el_estado_escrito_es_el_que_lee_la_base",
+      "etapa": "persistencia",
+      "esperado": "active=true en el listado y en la fila",
+      "resultado": "OK",
+      "detalle": "{\"user_id\":2,\"listado\":true,\"columna\":true}"
+    },
+    {
+      "chequeo": "la_auditoria_deja_las_vueltas",
+      "etapa": "persistencia",
+      "esperado": "al menos 4 registros activated/deactivated",
+      "resultado": "OK",
+      "detalle": "{\"movimientos\":8}"
+    }
+  ],
+  "total": 15,
+  "ok": 15,
+  "fallos": [],
+  "limitaciones": [
+    "No toca Supabase Auth: certifica la ruta del API contra PostgreSQL local, que es donde vive el defecto de lectura.",
+    "No sustituye la medicion en navegador ni la pata QA/Produccion despues del despliegue.",
+    "No ejecuta migraciones remotas."
+  ]
+}

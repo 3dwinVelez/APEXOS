@@ -1,0 +1,133 @@
+LECTURA DE LA PATA MAIN - reactivacion de cuenta inactiva (2026-11-20 / 2026-11-21 CO)
+=======================================================================================
+
+Instruccion que autoriza: «procede explicitamente con la promocion completa autorizado de mi
+parte». Flujo: desarrollo -> develop -> main, con sus compuertas. Nada de esto salta una
+compuerta: las dos puertas de main se corrieron y se pegaron abajo, literales.
+
+1. QUE LLEGO A MAIN
+   - Replay funcional 4c376b87 (14 rutas) sobre origin/main 9d13cae0: las nueve lecturas ciegas
+     de apps/api/src/modules/admin/service.js con __includeInactive, su contrato de dos sentidos
+     y los once artefactos de evidencia de la pata develop.
+   - Gobernanza 710e74c8 (5 rutas): manifiesto de alcance v2, manifiesto de aprobacion QA, las
+     dos mediciones de campo y la equivalencia de blobs.
+   - Merge --no-ff 90d08cc7147a773496ac75a7c2d1fd6a9b1461c6. Diff neto contra 9d13cae0: 19 rutas,
+     exactamente el inventario del manifiesto. Cero borraciones, cero migraciones.
+
+2. LAS DOS COMPUERTAS, LITERALES
+   $ node scripts/validate-promotion-scope.js docs/qa/manifests/admin-inactive-reactivation-main-20261120-scope.json HEAD origin/main
+   ALCANCE DE PROMOCION VALIDO: admin-inactive-reactivation-main-20261120 (19 rutas)
+
+   $ node scripts/validate-change-approval-evidence.js docs/qa/manifests/admin-inactive-reactivation-main-20261120-approval.json
+   APROBACION QA VALIDA: admin-inactive-reactivation-main-20261120
+
+   Las dos se corrieron dos veces: sobre el candidato (710e74c8) y sobre el arbol ya fusionado
+   (90d08cc7), para que el verde describa lo que se publica y no lo que se penso publicar.
+
+3. IDENTIDAD DEL BINARIO (por que el verde de QA aplica a Produccion)
+   equivalencia-blob-main-desarrollo.txt sobre las 19 rutas: 13 IGUAL al arbol que develop
+   certifico, 6 propias de esta pata, 0 DISTINTAS. En particular
+   apps/api/src/modules/admin/service.js = 3f12886496a0 en main y en origin/develop, y el test
+   = 125d45ef4ad6 en ambos. La base de main (23820f8eb4e3) era el mismo blob que la base de
+   develop antes del corte (81cd253a), o sea que el hunkeo aplicado es literalmente el evaluado.
+
+4. EL ANTES, EN PRODUCCION, ANTES DE PROMOCIONAR (campo-antes-produccion.json)
+   API servido 9d13cae01fee. Cuenta de medicion 247 (cert.inactiva.7193408@internal.apexos.local),
+   cuenta objetivo 248 (cert.reactivacion.7193408@internal.apexos.local, employee_id 553), ambas
+   del tenant NYVORA 9a6ffc43-9aec-4b1b-8943-f098a4046b97.
+     FALLO reactivar_el_mismo_id_no_es_404 :: PATCH active=true -> 404 "NO_ENCONTRADO"
+     FALLO estado_final_declarado_inactiva  :: PATCH active=false -> 404 (la lectura ya esta ciega)
+   veredicto.cumple = true con pierna_declarada = "defecto". El rojo es el resultado esperado de
+   esa pierna; la cuenta 248 quedo atascada inactiva a proposito, como control de contraste.
+   Los tres estados que registro el arnes: 200 (desactivar, todavia legible), 404 (reactivar),
+   404 (volver a desactivar, ya ilegible).
+
+5. EL DESPUES, EN PRODUCCION, DESPLEGADO (campo-despues-produccion.json)
+   $ node scripts/certifications/admin-inactive-reactivation-field.js --env-file=config/production.env \
+       --espera=arreglo --fix-commit=4c376b876f192e0c67847565798c820cb7941370 --cuenta=efimera \
+       --usuario=cert.reactivacion.7193408@internal.apexos.local --etiqueta=despues-produccion \
+       --output=docs/qa/evidence/admin-inactive-reactivation-20261120/campo-despues-produccion.json
+   14/14 verdes, salida 0. Commit servido 90d08cc7147a con codigo_servido_contiene_el_fix="arreglo"
+   (git merge-base --is-ancestor 4c376b87 90d08cc7). La prueba no es un id nuevo: es la fila 248,
+   la misma que nadie podia tocar una hora antes.
+     OK desactivar_responde_200_con_la_fila_inactiva :: PATCH active=false -> 200 activo=false
+     OK reactivar_el_mismo_id_no_es_404              :: PATCH active=true  -> 200 activo=true
+     OK segundo_ciclo_desactivar / segundo_ciclo_reactivar
+     OK adjuntar_documento_a_cuenta_activa_por_http  :: POST .../documents -> 201
+     OK el_listado_y_la_fila_coinciden_con_lo_escrito:: listado true / columna true
+     OK la_auditoria_deja_las_vueltas_en_el_ambiente :: 5 movimientos de activacion/desactivacion
+   La traza de auditoria de la propia respuesta cuenta la historia: 02:13:42 deactivated (actor
+   247, la corrida ANTES), 02:26:09 deactivated y 02:26:17 activated (actor 249, esta corrida).
+
+   Anclaje con --fix-commit explicito, y por que: el valor por defecto del arnes es b3187c5b, que
+   vive en desarrollo y NO es ancestro de main. Sin el argumento, la compuerta del arnes habria
+   dictaminado "el codigo servido anuncia defecto" y habria bloqueado la pierna. Medido y dicho
+   antes de correr: git merge-base --is-ancestor b3187c5b 90d08cc7 falla, el del replay pasa.
+
+6. AUTOBOPA DEL INSTRUMENTO (--selftest, cinco casos, tres rojos por construccion)
+   $ node scripts/certifications/admin-inactive-reactivation-field.js --selftest
+   OK   defecto_esperado_y_observado_y_servido -> cumple=true
+   OK   defecto_esperado_pero_el_arbol_servido_ya_tiene_el_fix -> cumple=false
+   OK   arreglo_esperado_pero_la_peticion_sigue_en_404 -> cumple=false
+   OK   arreglo_esperado_observado_y_servido -> cumple=true
+   OK   ancla_desconocida_nunca_cumple -> cumple=false
+   SELFTEST APROBADO: la pierna solo cumple cuando peticion y codigo servido coinciden con lo declarado.
+   Los tres `cumple=false` son los casos que deben fallar: declarar "defecto" mientras el codigo
+   servido ya trae el arreglo, declarar "arreglo" mientras la peticion sigue en 404, y no poder anclar
+   el commit servido. Sin esta compuerta, la pierna ANTES podia haber medido el arbol ya arreglado y
+   dar verde igual -que es exactamente el error que la Fase 3 pago en campo.
+
+7. QA (campo-qa.json), para el orden del expediente
+   Sobre el API desplegado desde la fusion de develop (commit servido 06baf9c89360): 14/14 verdes,
+   salida 0. Modo alta nueva: cuenta de medicion cert.inactiva.7251719@internal.apexos.local
+   (retirada al cerrar, verificado en la columna) y objetivo user_id 771
+   (cert.reactivacion.7251719@internal.apexos.local), con los dos ciclos completos, el adjunto,
+   la paridad listado/columna y los cuatro movimientos de auditoria.
+
+8. LO QUE QUEDA DECLARADO (censo leido en el almacen, no recordado) Y LO QUE SE CERRO
+   Cuentas efimeras sinteticas de la empresa modelo, ninguna con clave versionada (la genera el
+   arnes con entropia y la olvida):
+     Produccion, tenant NYVORA 9a6ffc43-9aec-4b1b-8943-f098a4046b97: 247, 248 y 249, las tres
+       active=false al cerrar (ademas de 160, 217 y 218 de certificaciones antiguas, inactivas).
+     QA, tenant NYVORA 1d162ffd-bd27-4855-8141-b015388265fc: 766, 767, 768, 769, 770, 771 y 772.
+
+   EL RESIDUO QUE LA PROPIA INTERVENCION DEJO ABIERTO, Y QUE QUEDO CERRADO. Las dos primeras patas
+   del certificador de campo corrieron antes de que el arnes incluyera el control
+   `la_cuenta_de_medicion_queda_retirada`, y al leer el almacen se encontro que sus cuentas objetivo
+   -766 y 768- seguian `active=true` y, lo que pesa mas, con su fila de `AuthorizationSession`
+   `revoked_at: null` y vencimiento el 21 de diciembre. O sea: dos cuentas habilitadas con sesion
+   vigente en la empresa modelo, sin credencial conocida (la clave aleatoria murio con la corrida)
+   pero con token vivo. Se retiraron por el canal del API, no con un UPDATE: la revocacion de
+   sesiones vive en el endpoint, y escribir `active=false` por debajo habria dejado justo el agujero
+   que este corte cierra. Medido despues del retiro (retiro-cuentas-cert-qa.json, salida 0):
+     usuario 766 -> PATCH active=false 200, active=false en la columna, sesion c054f482 revocada a
+       las 02:34:33Z con revoke_reason "user_deactivated"
+     usuario 768 -> PATCH active=false 200, active=false, sesion c3a6e930 revocada "user_deactivated"
+     cuenta de retiro 772 -> se retiro a si misma por el mismo endpoint, fila active=false y su
+       unica sesion 59e6e831 revocada
+   Corrio contra el API de QA servido desde 06baf9c89360, con el blob de servicio 3f12886496a0 (el
+   mismo que ahora promociona esta pata), y su veredicto exige las tres cosas: filas inactivas,
+   CERO sesiones sin revocar y la cuenta de retiro retirada. Es ademas un control de que el arreglo
+   opera sobre filas que nacieron antes de el: 766 y 768 fueron creadas por lectura/escritura
+   directa, no por el servicio, y el endpoint las trato igual que a las demas.
+
+   LO QUE NO SE PUDO CERRAR AQUI (y por que no es olvido):
+   - Un adjunto de prueba quedado en la empresa modelo: `addUserDocument` no abre fila en una tabla
+     de documentos, escribe en el jsonb `metadata.documents` del operario vinculado
+     (`apps/api/src/modules/admin/service.js:1528-1541`), y a 248 lo leyo esta corrida: `Employee`
+     553 guarda `doc-1795227998369`, tipo `arl`, archivo `cert-7946056.pdf`, `storage_path` = `certificaciones/7946056.pdf`, `file_url` vacio,
+     `file_size` 0 y `status` pending. Es la huella del control
+     `adjuntar_documento_a_cuenta_activa_por_http`: no hay objeto en Storage ni binario en la base,
+     solo el indice que creo el arnes. Borrarlo a mano sería editar el jsonb de un operario por
+     debajo del API, otra vez sin el canal que revisa; queda declarado con su id para quien lo quiera
+     retirar por pantalla.
+   - Las 249 filas de Produccion no se tocaron salvo las cuatro cuentas anteriores y el adjunto:
+     ningun dato de cliente (IMPORTADORA SCJ SAS) se leo ni se escribio en esta intervencion.
+
+9. LO QUE NO TOCA ESTE CORTE
+   - El residuo de jerga del proveedor en apps/web/app/api/** (19 renglones, 17 visibles al cliente).
+   - Las 24 ventanas de confirmacion repartidas en 14 pantallas.
+   - La pata HR (evidencia en Storage) y la de facturas recibidas/apex-control no viajaron: la
+     segunda necesita dos migraciones remotas que requieren autorizacion expresa y separada.
+   - Ramas auxiliares publicadas para trazabilidad: codex/qa-admin-inactive-reactivation-20261120
+     (develop) y codex/qa-admin-inactive-reactivation-main-20261120 (main). Ninguna se borra.
