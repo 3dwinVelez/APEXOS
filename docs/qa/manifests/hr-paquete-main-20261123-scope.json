@@ -1,0 +1,413 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-paquete-main-20261123",
+  "base_commits": {
+    "main": "c53f857c1d996aceaf9fcda4649cbcd9ed7dccab"
+  },
+  "certified_commit": "54cabeb34b7270df46d17b43d8096d2337b7ff7c",
+  "candidate_source": {
+    "commit": "f88adc8c8f7aac75102d9fd94e0045deaf7c5d43",
+    "branch": "codex/qa-hr-paquete-main-20261123"
+  },
+  "target_branch": "main",
+  "source_branch": "develop",
+  "change_intent": {
+    "summary": "Paquete acumulado de Talento Humano (maestro de bancos, liquidacion de retiro completa, periodo y cierre de nomina, horarios unificados con retiro por estado y contencion sin P2028, aterrizaje por tarjetas, marcacion web con selfie) replayado puntualmente sobre el tip actual de main, con su evidencia de campo en QA",
+    "modules": [
+      "talento-humano-bancos",
+      "talento-humano-liquidacion-retiro",
+      "talento-humano-nomina",
+      "talento-humano-horarios-unificados",
+      "talento-humano-aterrizaje",
+      "talento-humano-marcacion-selfie",
+      "qa-evidencia"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/banks.js",
+    "apps/api/src/modules/hr/dayReview.js",
+    "apps/api/src/modules/hr/payrollPeriod.js",
+    "apps/api/src/modules/hr/payrollReceiptPdf.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/terminationBenefitPayments.js",
+    "apps/api/src/modules/hr/terminationBenefits.js",
+    "apps/api/src/modules/hr/terminationDayReviews.js",
+    "apps/api/src/modules/hr/terminationDeductions.js",
+    "apps/api/src/modules/hr/terminationManualAdjustments.js",
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-banks.test.js",
+    "apps/api/test/hr-day-review.test.js",
+    "apps/api/test/hr-payroll-period.test.js",
+    "apps/api/test/hr-payroll-receipt-pdf.test.js",
+    "apps/api/test/hr-termination-benefits.test.js",
+    "apps/api/test/hr-termination-deductions.test.js",
+    "apps/api/test/hr-termination-manual-adjustments.test.js",
+    "apps/api/test/hr-web-punch-selfie.test.js",
+    "apps/api/test/hr-workday-novelties-contract.test.js",
+    "apps/web/app/dashboard/talento-humano/bancos/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/components/brain/AiExperienceLayer.tsx",
+    "apps/web/components/hr/TerminationDayReviews.tsx",
+    "apps/web/components/hr/TerminationManualAdjustments.tsx",
+    "apps/web/components/shell/MobileNav.tsx",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/lib/payroll-period.ts",
+    "apps/web/test/command-palette-module-functions.test.mjs",
+    "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+    "apps/web/test/hr-route-write-fallback.test.mjs",
+    "apps/web/test/hr-unified-schedules.test.mjs",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "docs/qa/certifications/hr-paquete-main-20261123.md",
+    "docs/qa/evidence/hr-paquete-main-20261123/00-veredicto.md",
+    "docs/qa/evidence/hr-paquete-main-20261123/equivalencia-blob-candidato.txt",
+    "docs/qa/evidence/hr-paquete-main-20261123/qa-autocontrol-piernas.txt",
+    "docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura-25piernas-165957.json",
+    "docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura-anclada-a4832a6a.json",
+    "docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura-anclada-build107.json",
+    "docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura.json",
+    "docs/qa/evidence/hr-paquete-main-20261123/qa-campo-lectura.json",
+    "docs/qa/evidence/hr-paquete-main-20261123/qa-reposicion-huerfanos.txt",
+    "docs/qa/evidence/hr-paquete-main-20261123/suites-arbol-candidato.txt",
+    "docs/qa/manifests/hr-paquete-main-20261123-approval.json",
+    "docs/qa/manifests/hr-paquete-main-20261123-scope.json",
+    "scripts/certifications/hr-cross-device-sync-local.js",
+    "scripts/certifications/hr-employee-banks-local.js",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-landing-hub-local.js",
+    "scripts/certifications/hr-paquete-main-qa.js",
+    "scripts/certifications/hr-payroll-markings-local.js",
+    "scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "scripts/certifications/hr-termination-complete-local.js",
+    "scripts/certifications/hr-termination-day-review-local.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/banks.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/dayReview.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/payrollPeriod.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/payrollReceiptPdf.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/terminationBenefitPayments.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/terminationBenefits.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/terminationDayReviews.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/terminationDeductions.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/terminationManualAdjustments.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/webPunchSelfie.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-banks.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-day-review.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-period.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-receipt-pdf.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-termination-benefits.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-termination-deductions.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-termination-manual-adjustments.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-web-punch-selfie.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-workday-novelties-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/bancos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/brain/AiExperienceLayer.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/TerminationDayReviews.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/TerminationManualAdjustments.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/MobileNav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/payroll-period.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/command-palette-module-functions.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-route-write-fallback.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-unified-schedules.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-paquete-main-20261123.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/00-veredicto.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/equivalencia-blob-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/qa-autocontrol-piernas.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura-25piernas-165957.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura-anclada-a4832a6a.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura-anclada-build107.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/qa-campo-lectura.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/qa-reposicion-huerfanos.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/suites-arbol-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-paquete-main-20261123-approval.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-paquete-main-20261123-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-cross-device-sync-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-employee-banks-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-landing-hub-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-paquete-main-qa.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-payroll-markings-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-punch-mobile-evidence-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-termination-complete-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-termination-day-review-local.js"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Marcacion web con selfie y compuerta de horario",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura.json",
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/qa-autocontrol-piernas.txt",
+        "../../../docs/qa/certifications/hr-paquete-main-20261123.md"
+      ]
+    },
+    {
+      "name": "Maestro de bancos sin quebrar otras claves de configuracion del tenant",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura.json",
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/qa-reposicion-huerfanos.txt",
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/equivalencia-blob-candidato.txt"
+      ]
+    },
+    {
+      "name": "Horarios unificados: lectura coincidente, contencion sin P2028 y retiro real por estado",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura.json",
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/qa-autocontrol-piernas.txt",
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/00-veredicto.md"
+      ]
+    },
+    {
+      "name": "Liquidacion de retiro completa con recibo PDF y revision de dias",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura.json",
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/qa-reposicion-huerfanos.txt",
+        "../../../docs/qa/certifications/hr-paquete-main-20261123.md"
+      ]
+    },
+    {
+      "name": "Aislamiento multi-tenant y RBAC de nomina",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/qa-campo-escritura.json",
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/suites-arbol-candidato.txt",
+        "../../../docs/qa/certifications/hr-paquete-main-20261123.md"
+      ]
+    },
+    {
+      "name": "El avance propio de main (maestro unico de mallas) no se revierte",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/equivalencia-blob-candidato.txt",
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/suites-arbol-candidato.txt",
+        "../../../docs/qa/evidence/hr-paquete-main-20261123/00-veredicto.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-23T14:30:00-05:00",
+    "authorization": "El propietario autorizo expresamente la direccion develop -> main del paquete HR acumulado completo y la promocion ahora, con la forma de push desde la rama auxiliar",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "El guard de gobernanza de main sigue siendo la version antigua y rechaza en CI cualquier PR cuyo head no sea develop; el push es fast-forward del replay puntual sobre el tip actual, no un merge de rama"
+    },
+    "limits": "La autorizacion cubre este transporte de contenido a main. No cubre force push, reescritura de historia, borrado de ramas, migraciones remotas, ni cambios de infraestructura o secretos"
+  }
+}

@@ -145,8 +145,15 @@ tiene una sola `D`.
 
 ## Compuertas
 
-- `npm run qa:promotion:scope -- docs/qa/manifests/hr-paquete-main-20261123-scope.json <candidato> origin/main`
+- `npm run qa:promotion:scope -- docs/qa/manifests/hr-paquete-main-20261123-scope.json HEAD origin/main`
 - `npm run qa:approval:evidence -- docs/qa/manifests/hr-paquete-main-20261123-approval.json`
+
+El manifiesto de alcance declara **63 rutas exactas**: las 49 de código del paquete más la evidencia,
+el instrumento, esta certificación y los dos manifiestos. Por eso el tip que se empuja no es
+`54cabeb3` sino una cadena `docs(qa)` de hijos directos sobre él: el `certified_commit` del manifiesto
+sí es `54cabeb3`, que es el árbol donde corrieron las suites y la certificación de campo, y el
+`candidate_source.commit` es la punta que contiene la evidencia. Ninguna de esas rutas de documentación
+toca una línea de `apps/**`.
 
 Ambas corridas contra el **target remoto** y revalidadas en cada tip nuevo. El `DESPUÉS` en
 Producción —volver a correr el instrumento contra el commit servido tras el despliegue de Railway—
