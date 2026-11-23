@@ -1,0 +1,101 @@
+{
+  "change_id": "auth-latency-single-statement-20261119",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "promotion_branch": "codex/qa-auth-latency-single-statement-20261119",
+  "commit": "a6a5d73eb08ebdcb2a72e05c717077043b0f1332",
+  "target_head": "06baf9c89360a55ee7f46f196704693f45aa90ec",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-auth-latency-20261119/diferencial-qa-1795441669327.json",
+        "../evidence/hr-auth-latency-20261119/diferencial-production-1795441688976.json",
+        "../evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt",
+        "../certifications/auth-latency-single-statement-20261119.md"
+      ],
+      "detalle": "Flujo real contra las dos bases de la nube, no contra mocks: el instrumento hr-auth-latency-differential.js corre la decision de autorizacion de las mismas 18 situaciones con las cinco sentencias y con la sentencia unica, sobre el arbol del candidato (rama y commit declarados en cada JSON) y con guarda de project_ref que aborta sin conectar si el DATABASE_URL no es el del ambiente declarado. QA: mediana 446 ms contra 1 690 ms, factor 0,26. Produccion: mediana 133 ms contra 527 ms, factor 0,25. Presupuesto de factor <= 0,60. Las rutas de administracion, RBAC y aislamiento de tenant que ejercitan las 18 situaciones quedan cubiertas por el mismo camino porque la decision es una sola para todo endpoint autenticado."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-auth-latency-20261119/00-veredicto.md",
+        "../evidence/hr-auth-latency-20261119/diferencial-qa-1795100959367.descartada-por-arnes.json",
+        "../evidence/hr-auth-latency-20261119/diferencial-qa-1795101173303.descartada-cobertura-vacia.json",
+        "../evidence/hr-auth-latency-20261119/diferencial-production-1795101412324.descartada-clasificacion-arnes.json"
+      ],
+      "detalle": "Pata de contraste del instrumento: seis corridas se descartaron a si mismas y quedan versionadas (dos por arnes, una por cobertura vacia, una por falta de gate de cobertura y dos por clasificacion del arnes), lo que demuestra que el chequeo puede fallar y no solo imprimir verde. La pata de producto: los 18 casos de cada ambiente incluyen 3 rechazos que siguen rechazando por el mismo codigo con una sentencia que con cinco (USER_REVOKED, TENANT_REVOKED, AUTHORIZATION_STATE_MISSING y SESSION_REVOKED), 0 divergencias entre las dos decisiones y 0 anomalias 401 inesperadas; la decision de una sentencia no abre ni cierra permiso."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt",
+        "../certifications/auth-latency-single-statement-20261119.md",
+        "../../briefs/2026-11-19-piso-de-latencia-autenticacion.md"
+      ],
+      "detalle": "El paquete deja versionado scripts/certifications/hr-auth-latency-differential.js con sus dos entradas de package.json (certify:hr-auth-latency:qa y :production, 2 lineas agregadas y 0 eliminadas del destino), su guarda de project_ref, su lectura de veredicto y las limitaciones declaradas. La documentacion de diseño y anti-patrones queda alineada con la sentencia unica. El arbol de las corridas se declara y se verifica por diff vacio contra 61b41fd1, no por afirmacion."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt",
+        "../evidence/auth-latency-single-statement-20261119/regresion-protegida-local.json"
+      ],
+      "detalle": "Sobre el arbol del candidato: foco de autenticacion 18/18 (security-authorization-revocation, auth-session-hardening, authorization-observe), suite completa del API 1 213 pruebas con 1 209 verdes, 1 roja y 3 saltadas, y regresion protegida local 10 suites en verde sobre PostgreSQL 16 del compose infra (contabilidad, caja menor, compras, inventario y RBAC de acceso por modulo). El unico rojo esta atribuido: falla identico en el baseline limpio 06baf9c8 sin este replay, mismo trio de archivos, mismo numero de caso."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-latency-single-statement-20261119/regresion-protegida-local.json",
+        "../evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt",
+        "../evidence/hr-auth-latency-20261119/diferencial-production-1795441688976.json"
+      ],
+      "detalle": "El cambio es del camino comun, asi que la pata de plataformas se mide por el camino que atraviesa y no por un modulo: autenticacion JWT, decision de RBAC/ABAC, aislamiento multi-tenant por tenant_id dentro de la unica sentencia, modos observe/enforce y bitacora. Las 10 suites de la regresion protegida levantan rutas de contabilidad, caja menor, compras e inventario contra base real y cubren el acceso por modulo; los 18 casos del diferencial cubren en la nube las cuatro familias de rechazo sin abrir ninguna frontera (0 divergencias, 0 anomalias 401)."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-auth-latency-differential.js",
+    "evidence": [
+      "../evidence/hr-auth-latency-20261119/diferencial-qa-1795441669327.json",
+      "../evidence/hr-auth-latency-20261119/diferencial-production-1795441688976.json",
+      "../evidence/hr-auth-latency-20261119/00-veredicto.md",
+      "../certifications/auth-latency-single-statement-20261119.md"
+    ],
+    "controls": 36,
+    "passed": 36,
+    "failed": 0,
+    "substrate": "Fastify + Prisma + PostgreSQL sobre Supabase QA (jbirkghkekuifgfsgquq) y Supabase Produccion (jzbwzmkidfthknsohhnr), 18 situaciones de autorizacion en cada ambiente, corrida desde la worktree de la rama auxiliar"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/protected-regression-local.js",
+    "evidence": [
+      "../evidence/auth-latency-single-statement-20261119/regresion-protegida-local.json",
+      "../evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt"
+    ],
+    "basis": "protected-regression-local.js corre como procesos hijos las 10 suites versionadas del alcance protegido (saldos iniciales y numeracion contable, contrato de rutas contables, maestros y comprobantes de caja menor con reversion, reportes de caja menor, flujo de proveedores, factura de compra, ajustes de inventario, transferencias entre tenants y RBAC por modulo) contra PostgreSQL local del compose infra: 10/10 en verde sobre el arbol del candidato. La suite completa del API (1 213 pruebas) se corrio con node --test sobre apps/api/test/ y su salida cruda, con el rojo atribuido y las tres saltadas nombradas, queda versionada en suite-api-candidato.txt."
+  },
+  "validation_summary": {
+    "certified_application_commit": "a6a5d73eb08ebdcb2a72e05c717077043b0f1332",
+    "baseline_preserved": "06baf9c89360a55ee7f46f196704693f45aa90ec",
+    "origen_en_desarrollo": "19df3ca2 (17 de las 25 rutas son su blob exacto)",
+    "migraciones": "ninguna: la pierna no toca apps/api/prisma/** ni anade migracion",
+    "flujo_certificado": "Toda peticion autenticada decide su autorizacion en una sola sentencia parametrizada, en QA y en Produccion, con las mismas decisiones y el mismo codigo de rechazo que las cinco sentencias, y con el piso de latencia dentro del presupuesto",
+    "evidencia_pendiente": "Queda la pata de ambiente desplegado: el build publicado en QA aun no lleva este codigo, asi que certify:hr-monitor-budget:qa y el conteo en campo de los rechazos de transporte (la firma 'el backend no respondio' que el dueno pidio eliminar) se remiden despues del despliegue con la misma sonda que genero el hallazgo. qa_status queda pending hasta esa medicion, que es la que autoriza develop -> main.",
+    "evidence_policy": "La evidencia cruda viaja revisada en docs/qa/evidence/hr-auth-latency-20261119 y docs/qa/evidence/auth-latency-single-statement-20261119. Los JSON del diferencial publican solo codigos, clases, marcas de tiempo y duraciones: 0 correos, 0 nombres, 0 cadenas de conexion y 0 tokens (verificado antes de commitear). Las seis corridas descartadas del arnes se conservan en lugar de borrarlas, porque son la prueba de que el instrumento puede fallar."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-23T08:10:00-05:00",
+    "instruction": "Despliega el arreglo de una sola sentencia en Produccion y QA para que dejen de caer los 321 rechazos de transporte",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo completo desarrollo -> develop -> main con sus compuertas y sus despliegues para este arreglo. No otorga force push, reescritura de historia compartida, borrado de ramas, cambios de infraestructura o secretos, ni migraciones remotas."
+  }
+}

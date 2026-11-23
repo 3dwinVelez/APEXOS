@@ -1,0 +1,212 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "auth-latency-single-statement-20261119",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-auth-latency-single-statement-20261119",
+  "certified_commit": "a6a5d73eb08ebdcb2a72e05c717077043b0f1332",
+  "base_commit": "06baf9c89360a55ee7f46f196704693f45aa90ec",
+  "base_commits": {
+    "develop": "06baf9c89360a55ee7f46f196704693f45aa90ec"
+  },
+  "target_head": "06baf9c89360a55ee7f46f196704693f45aa90ec",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "a6a5d73eb08ebdcb2a72e05c717077043b0f1332",
+    "origen_certificado_en_desarrollo": [
+      "19df3ca2"
+    ],
+    "arbol_medido_en_la_rama_auxiliar": "61b41fd1",
+    "replay_sobre_develop": "Replay puntual de las 25 rutas certificadas en desarrollo (19df3ca2) sobre el tip de develop 06baf9c8, en su propia worktree auxiliar (codex/qa-auth-latency-single-statement-20261119). No es un merge de desarrollo: desarrollo..develop trae el resto de los frentes abiertos (comercio, torre de control, buzon) que no tienen pata certificada para este destino y no viajan con este paquete.",
+    "recalculos_de_baseline": [
+      "5ff1440f (primera medicion de la pierna)",
+      "fd407e81 (PR #96, maestros bancarios y cuenta de pago del empleado)",
+      "06baf9c8 (PR #106, reactivacion de cuenta inactiva: destino vigente con el que se certifica)"
+    ],
+    "motivo_del_recalculo": "La gobernanza pide medir el candidato contra el tip del destino, no contra el baseline de la primera lectura. Cada vez que develop avanzo, la pierna se reconstruyo como hijo directo del tip vigente y se volvieron a correr el foco, la suite del API, la regresion protegida local y los dos diferenciales en la nube. Las corridas de los baselines anteriores quedan versionadas y declaradas superadas, no borradas.",
+    "excluido_explicitamente": [
+      "agents/**",
+      ".qoder/skills/**",
+      "apps/control-tower/**",
+      "apps/api/prisma/**"
+    ],
+    "motivo_de_la_exclusion": "El contexto vivo del equipo (agents/, .qoder/skills/) no existe en las ramas de integracion: su version actual vive solo en desarrollo, que es la fuente de version del equipo. Medido: git ls-tree -r origin/develop devuelve 0 rutas bajo agents/ y 0 bajo .qoder/. apps/control-tower/** reposa solo en desarrollo por regla de gobernanza. apps/api/prisma/** no se toca: esta pierna no tiene migracion.",
+    "como_se_lee_que_no_es_un_merge": "El commit certificado a6a5d73e vive en la rama auxiliar y su padre es el tip de develop 06baf9c8. Trae el mismo contenido de 19df3ca2 verificado por igualdad de blob en 17 de sus 25 rutas, mas la evidencia generada sobre el arbol del destino. candidate_source.branch dice de donde viene el trabajo (desarrollo); origen_certificado_en_desarrollo lista el sha original."
+  },
+  "change_intent": {
+    "summary": "El piso de latencia de toda peticion autenticada baja a una sola sentencia. La decision de autorizacion (apps/api/src/security/authorizationState.js) pagaba cinco viajes al pooler -usuario, rol, permisos, tenant, sesion- porque Prisma parte cada include en un viaje propio: el costo era por viaje, no por trabajo. El cambio los unifica en una sentencia parametrizada y deja intacta la decision. Es un arreglo del camino comun, no del modulo HR: por eso la regresion cubre contabilidad, caja menor, compras, inventario y RBAC, no solo Talento Humano. El motivo operativo es el hallazgo medido en Produccion: 321 rechazos de transporte en seis dias con firma 'el backend no respondio', sobre un piso de 2,2 a 3,5 segundos por peticion autenticada. No toca Prisma ni el esquema, no hay migraciones, no toca la capa de alertas del cliente ya publicada.",
+    "modules": [
+      "api-seguridad-autorizacion",
+      "api-autenticacion-sesion",
+      "certification-harness",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/security/authorizationState.js" },
+    { "status": "M", "file": "apps/api/test/auth-session-hardening.test.js" },
+    { "status": "M", "file": "apps/api/test/authorization-observe.test.js" },
+    { "status": "M", "file": "apps/api/test/security-authorization-revocation.test.js" },
+    { "status": "M", "file": "docs/AUTHORIZATION_REVOCATION_DESIGN.md" },
+    { "status": "M", "file": "docs/PERFORMANCE_ANTI_PATTERNS.md" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "docs/briefs/2026-11-19-piso-de-latencia-autenticacion.md" },
+    { "status": "A", "file": "docs/qa/certifications/auth-latency-single-statement-20261119.md" },
+    { "status": "A", "file": "docs/qa/evidence/auth-latency-single-statement-20261119/regresion-protegida-local.json" },
+    { "status": "A", "file": "docs/qa/evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/00-veredicto.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101013473.descartada-por-arnes.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101133595.descartada-sin-gate-de-cobertura.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101412324.descartada-clasificacion-arnes.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101527356.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795104568970.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795441688976.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795100959367.descartada-por-arnes.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101173303.descartada-cobertura-vacia.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101386852.descartada-clasificacion-arnes.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101503295.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795104551670.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795441669327.json" },
+    { "status": "A", "file": "scripts/certifications/hr-auth-latency-differential.js" },
+    { "status": "A", "file": "docs/qa/manifests/auth-latency-single-statement-20261119-scope.json" },
+    { "status": "A", "file": "docs/qa/manifests/auth-latency-single-statement-20261119-preqa.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/security/authorizationState.js",
+    "apps/api/test/auth-session-hardening.test.js",
+    "apps/api/test/authorization-observe.test.js",
+    "apps/api/test/security-authorization-revocation.test.js",
+    "docs/AUTHORIZATION_REVOCATION_DESIGN.md",
+    "docs/PERFORMANCE_ANTI_PATTERNS.md",
+    "package.json",
+    "docs/briefs/2026-11-19-piso-de-latencia-autenticacion.md",
+    "docs/qa/certifications/auth-latency-single-statement-20261119.md",
+    "docs/qa/evidence/auth-latency-single-statement-20261119/regresion-protegida-local.json",
+    "docs/qa/evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt",
+    "docs/qa/evidence/hr-auth-latency-20261119/00-veredicto.md",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101013473.descartada-por-arnes.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101133595.descartada-sin-gate-de-cobertura.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101412324.descartada-clasificacion-arnes.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101527356.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795104568970.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795441688976.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795100959367.descartada-por-arnes.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101173303.descartada-cobertura-vacia.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101386852.descartada-clasificacion-arnes.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101503295.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795104551670.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795441669327.json",
+    "scripts/certifications/hr-auth-latency-differential.js",
+    "docs/qa/manifests/auth-latency-single-statement-20261119-scope.json",
+    "docs/qa/manifests/auth-latency-single-statement-20261119-preqa.json"
+  ],
+  "allowed_deletions": [],
+  "certified_functional_paths": [
+    "apps/api/src/security/authorizationState.js",
+    "apps/api/test/auth-session-hardening.test.js",
+    "apps/api/test/authorization-observe.test.js",
+    "apps/api/test/security-authorization-revocation.test.js",
+    "docs/AUTHORIZATION_REVOCATION_DESIGN.md",
+    "docs/PERFORMANCE_ANTI_PATTERNS.md",
+    "package.json",
+    "docs/briefs/2026-11-19-piso-de-latencia-autenticacion.md",
+    "docs/qa/certifications/auth-latency-single-statement-20261119.md",
+    "docs/qa/evidence/auth-latency-single-statement-20261119/regresion-protegida-local.json",
+    "docs/qa/evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt",
+    "docs/qa/evidence/hr-auth-latency-20261119/00-veredicto.md",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101013473.descartada-por-arnes.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101133595.descartada-sin-gate-de-cobertura.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101412324.descartada-clasificacion-arnes.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795101527356.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795104568970.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795441688976.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795100959367.descartada-por-arnes.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101173303.descartada-cobertura-vacia.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101386852.descartada-clasificacion-arnes.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795101503295.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795104551670.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795441669327.json",
+    "scripts/certifications/hr-auth-latency-differential.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "una_sentencia_decide_lo_mismo_que_cinco_en_los_dos_ambientes_de_la_nube",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-auth-latency-20261119/diferencial-qa-1795441669327.json",
+        "../evidence/hr-auth-latency-20261119/diferencial-production-1795441688976.json"
+      ]
+    },
+    {
+      "name": "los_rechazos_de_revocacion_siguen_rechazando_por_el_mismo_codigo_user_tenant_y_session",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-auth-latency-20261119/diferencial-qa-1795441669327.json",
+        "../evidence/hr-auth-latency-20261119/diferencial-production-1795441688976.json",
+        "../evidence/hr-auth-latency-20261119/00-veredicto.md"
+      ]
+    },
+    {
+      "name": "el_piso_de_latencia_baja_dentro_del_presupuesto_de_factor_en_qa_y_produccion",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-auth-latency-20261119/diferencial-qa-1795441669327.json",
+        "../evidence/hr-auth-latency-20261119/diferencial-production-1795441688976.json",
+        "../certifications/auth-latency-single-statement-20261119.md"
+      ]
+    },
+    {
+      "name": "los_modos_observe_y_enforce_del_estado_de_autorizacion_no_cambian_de_comportamiento",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt",
+        "../certifications/auth-latency-single-statement-20261119.md"
+      ]
+    },
+    {
+      "name": "el_camino_comun_autenticado_no_regrite_fuera_de_talento_humano",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt",
+        "../evidence/auth-latency-single-statement-20261119/regresion-protegida-local.json"
+      ]
+    },
+    {
+      "name": "el_instrumento_es_capaz_de_fallar: seis corridas se descartaron a si mismas por arnes, cobertura vacia y clasificacion, y quedan versionadas",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-auth-latency-20261119/00-veredicto.md",
+        "../evidence/hr-auth-latency-20261119/diferencial-qa-1795100959367.descartada-por-arnes.json",
+        "../evidence/hr-auth-latency-20261119/diferencial-qa-1795101173303.descartada-cobertura-vacia.json",
+        "../evidence/hr-auth-latency-20261119/diferencial-production-1795101412324.descartada-clasificacion-arnes.json"
+      ]
+    },
+    {
+      "name": "el_replay_no_reescribe_logica: 17 de las 25 rutas son el blob exacto de desarrollo 19df3ca2 y el delta de package.json es 2 lineas agregadas y 0 eliminadas",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt",
+        "../certifications/auth-latency-single-statement-20261119.md"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario exacto del diff origin/develop 06baf9c8..tip del candidato: 27 rutas (7 M, 20 A, 0 D), cero eliminaciones. certified_commit a6a5d73e trae las 25 rutas funcionales y de evidencia; el tip agrega unicamente los dos manifiestos de esta pierna, que la compuerta trata como gobernanza.",
+    "equivalencia_con_desarrollo": "apps/api/src/security/authorizationState.js, sus tres pruebas de contrato, scripts/certifications/hr-auth-latency-differential.js, los dos documentos de docs/ y el brief son byte a byte el blob de 19df3ca2. Las 8 rutas distintas restantes son package.json (delta minimo sobre el destino) y la documentacion y evidencia generadas sobre el arbol de develop; ninguna es logica de producto.",
+    "medicion": "Foco de autenticacion 18/18 (2 227 ms). Suite completa del API: 1 213 pruebas, 1 209 pasan, 1 falla, 3 saltadas. Regresion protegida local: 10 suites en verde sobre PostgreSQL 16 del compose infra (127.0.0.1:55432). Diferencial en la nube desde el arbol del candidato: QA mediana 446 ms contra 1 690 ms (factor 0,26) y Produccion 133 ms contra 527 ms (factor 0,25), 18 casos en cada ambiente, 0 divergencias, 0 anomalias 401, presupuesto de factor <= 0,60. Detalle y comandos exactos en ../evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt.",
+    "arbol_de_las_corridas": "Los instrumentos se corrieron con HEAD = 61b41fd1 en la worktree auxiliar; el commit certificado se reconto una sola vez para meter la evidencia dentro de su propio diff. La igualdad se verifica con git diff 61b41fd1..a6a5d73e -- apps/api scripts package.json docs/AUTHORIZATION_REVOCATION_DESIGN.md docs/PERFORMANCE_ANTI_PATTERNS.md docs/briefs, que devuelve vacio. No se re-cito ninguna corrida de un baseline anterior como si fuera de este.",
+    "atribucion_del_unico_rojo": "hr-marking-concurrency.test.js falla identico en el baseline limpio 06baf9c8 (worktree aparte, sin este replay): mismo trio de archivos, 26/27 en los dos arboles, mismo numero de caso. Es deuda declarada de concurrencia de Talento Humano en develop; corregirla aqui seria alcance de otro modulo dentro de una promocion puntual.",
+    "pendiente_de_compuerta": "Esta pierna no mide el build publicado. La compuerta certify:hr-monitor-budget:qa mide el artefacto desplegado, y el conteo en campo de los rechazos de transporte (los 321 eventos con firma 'el backend no respondio' en Produccion) se remide despues del despliegue con la misma sonda que genero el hallazgo. Esa medicion, no esta, es la que autoriza develop -> main."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-23T08:10:00-05:00",
+    "instruction": "Despliega el arreglo de una sola sentencia en Produccion y QA para que dejen de caer los 321 rechazos de transporte",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorization_basis": "La instruccion del propietario autoriza llevar el arreglo a QA y a Produccion, es decir las dos promociones desarrollo -> develop y develop -> main con sus despliegues. No otorga force push, reescritura de historia compartida, borrado de ramas, cambios de infraestructura o secretos, ni migraciones remotas: esta pierna no trae migracion y las pendientes de la intervencion siguen esperando autorizacion independiente."
+  }
+}
