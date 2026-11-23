@@ -1,0 +1,47 @@
+{
+  "environment": "QA",
+  "company": "Cliente Piloto QA",
+  "commit": "914d1721965d727a14c7e836039e2334678ca2de",
+  "reviewed_source_commit": "6a393e673f9b4480e1fe004bec210cb3ce89f428",
+  "status": "passed",
+  "started_at": "2026-11-23T16:03:03.007Z",
+  "checks": [
+    "authenticated canonical employee master agrees with operational alias; unauthorized role is rejected",
+    "live QA browser finds full document, assigns its existing employee, reopens and reloads the persisted schedule",
+    "live browser preserves the master on interrupted read and recovers by retry without legacy data",
+    "QA browser synchronizes independent entry/lunch/return and prevents a stale-click duplicate; offline close persists after recovery and reload"
+  ],
+  "cleanup": [
+    {
+      "type": "route_cancelled",
+      "id": 417,
+      "status": 200
+    },
+    {
+      "type": "user_deactivated",
+      "id": 810,
+      "status": 200
+    },
+    {
+      "type": "user_deactivated",
+      "id": 811,
+      "status": 200
+    },
+    {
+      "type": "role_deactivated",
+      "id": 1001,
+      "status": 200
+    },
+    {
+      "type": "role_deactivated",
+      "id": 1002,
+      "status": 200
+    }
+  ],
+  "api_commit": "914d1721965d",
+  "fixture": {
+    "employee_id": 665,
+    "route_id": 417
+  },
+  "finished_at": "2026-11-23T16:03:54.130Z"
+}
