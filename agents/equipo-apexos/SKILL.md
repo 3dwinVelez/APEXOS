@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.57.0
+version: 2.58.0
 updated_at: 2026-11-23
 contract: 2
 ---
@@ -188,6 +188,12 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 68. **Una intervención de telemetría se cierra con tres estados nombrados por separado: código en `desarrollo`, contrato aceptado por el servidor y dato llegando al buzón.** Solo el tercero autoriza a decir «cerrado en campo». El orquestador declara cuál de los tres tiene cada clave nueva y deja el «después» pendiente con su condición (desplegar), sin redondearlo con el verde de las suites. Por qué: el 2026-11-23 la marca del dispositivo quedó implementada, con contrato de API y con instrumento de triage, y aun así Producción no puede adjudicar ninguno de sus 114 intentos sin usuario: la marca no nace hasta que el cliente desplegado la mande. Venderlo como cierre fingiría una medición que el ambiente todavía no puede dar.
 
 69. **Un «bloqueado por la promoción» se cuantifica en campo o no se reporta como bloqueado.** Cuando el residuo de una corrida depende de desplegar, el veredicto mide qué población real queda ilegible sin ese despliegue —filas, rutas y porcentaje de la ventana— y la cita junto con la clase de defecto que el ambiente sigue sirviendo; si esa medición no existe, lo que se entrega es una opinión y no un pendiente. Por qué: el 2026-11-23 el triage de tres días arrojó **490 de 524 rechazos (93,5 %) sin código** repartidos en nueve rutas del cliente, más nueve rechazos `400` de formato de archivo de un solo operario; sin la cifra, la promoción #6 se leía como mejora de trazabilidad y no como la única vía para nombrar lo que le está pasando a la operación.
+
+70. **Cuando el plan se escribió sobre una premisa que la medición refuta, el orquestador entrega la refutación con sus dueños y no el código que el plan pedía.** El 2026-11-23 el pedido fue «cierra los pendientes» de la Fase F, que traía cuatro archivos. La medición de solo lectura sobre los dos almacenes de marcación mostró que la mochila de 194 MB que justificaba dos de ellos pertenece a otra tabla: el respaldo del reporte lee `time_punches`, que tiene 0 filas en los últimos 30 días en las dos nubes. Tres decisiones del cierre, y las tres se reportan como tales:
+    - **Se entrega lo que sí estaba vivo** (retirar el `<Image>` muerto del mapa con su guard y su sonda de artefacto) **y se cancela por escrito lo que no**, con la fila refutada visible en el brief y su inventario encojido. Un «cancelado por medición» con cifras es trabajo; borrar la fila del plan en silencio es perder la información.
+    - **Se rechaza el alcance que asoma de paso**, aunque sea barato: destrabar `/api/v1/hr/monitor-evidence/` del cercado y agrandar la rama REST implicaba reescribir `hr-punch-mobile-evidence.test.mjs`, una guard ya certificada. Se declara como tarea propia con su riesgo, no se hace «de paso» dentro del cierre.
+    - **El hallazgo nuevo se reparte por capas antes de despachar**: contrato del silencio degradado (frontend + backend), quién debió escribir esa tabla y quién la retira (db-nube), y el control positivo que exige la simulación de caída (qa). Ninguna de las cuatro entra en esta intervención sin alcance aprobado.
+    - **Y el incidente del árbol se integra, no se oculta**: entre el primer y el segundo preflight, una sesión paralela movió el tip y se llevó puesto un cambio propio del árbol de trabajo; el veredicto lo nombra con el hash nuevo y reetiqueta la fila como «ya publicada fuera de este commit». Por qué: el orquestador es el único que ve los cuatro dominios a la vez, y su tentación es entregar el plan completo; aquí el plan completo habría sumado código muerto sobre dato muerto y habría ocultado que el reporte degradado miente por omisión.
 
 ## Checklist de intervención
 

@@ -1,0 +1,1068 @@
+(node:12232) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+TAP version 13
+# (node:4140) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: los tres codigos de concurrencia comparten el mensaje amable y ninguno anuncia caida
+ok 1 - los tres codigos de concurrencia comparten el mensaje amable y ninguno anuncia caida
+  ---
+  duration_ms: 2.3454
+  type: 'test'
+  ...
+# Subtest: la marcacion del operario muestra el mensaje del servidor y no inventa una caida
+ok 2 - la marcacion del operario muestra el mensaje del servidor y no inventa una caida
+  ---
+  duration_ms: 0.7644
+  type: 'test'
+  ...
+# Subtest: la pantalla de nomina muestra el mensaje amable del ajuste dentro del propio formulario
+ok 3 - la pantalla de nomina muestra el mensaje amable del ajuste dentro del propio formulario
+  ---
+  duration_ms: 0.5796
+  type: 'test'
+  ...
+# Subtest: el 503 de concurrencia no se descarta: la cola fuera de linea lo conserva para reintentar
+ok 4 - el 503 de concurrencia no se descarta: la cola fuera de linea lo conserva para reintentar
+  ---
+  duration_ms: 0.5831
+  type: 'test'
+  ...
+# (node:8700) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la ficha del empleado muestra el telefono registrado para marcar
+ok 5 - la ficha del empleado muestra el telefono registrado para marcar
+  ---
+  duration_ms: 1.7857
+  type: 'test'
+  ...
+# Subtest: restablecer se arma con dos clics en el panel y usa la ruta del API
+ok 6 - restablecer se arma con dos clics en el panel y usa la ruta del API
+  ---
+  duration_ms: 0.5943
+  type: 'test'
+  ...
+# Subtest: el panel se remonta al cambiar de empleado y no hereda el disparador armado
+ok 7 - el panel se remonta al cambiar de empleado y no hereda el disparador armado
+  ---
+  duration_ms: 0.5354
+  type: 'test'
+  ...
+# Subtest: el panel solo aparece sobre un empleado existente
+ok 8 - el panel solo aparece sobre un empleado existente
+  ---
+  duration_ms: 0.2584
+  type: 'test'
+  ...
+# (node:13260) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la portada usa el patron de hub por tarjetas de los demas modulos
+ok 9 - la portada usa el patron de hub por tarjetas de los demas modulos
+  ---
+  duration_ms: 1.7096
+  type: 'test'
+  ...
+# Subtest: la portada expone como acceso cada pantalla del modulo, incluida nomina
+ok 10 - la portada expone como acceso cada pantalla del modulo, incluida nomina
+  ---
+  duration_ms: 1.1355
+  type: 'test'
+  ...
+# Subtest: mallas conserva acceso a planeacion, marcaciones, monitor y reportes
+ok 11 - mallas conserva acceso a planeacion, marcaciones, monitor y reportes
+  ---
+  duration_ms: 0.7306
+  type: 'test'
+  ...
+# Subtest: la portada no mezcla vehiculos ni depende de consultas operativas
+ok 12 - la portada no mezcla vehiculos ni depende de consultas operativas
+  ---
+  duration_ms: 0.9192
+  type: 'test'
+  ...
+# Subtest: los paneles respetan el fondo tematico sin degradados blancos forzados
+ok 13 - los paneles respetan el fondo tematico sin degradados blancos forzados
+  ---
+  duration_ms: 0.7178
+  type: 'test'
+  ...
+# (node:11468) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: el panel de la marca ya no pinta binarios incrustados de metadata.evidence
+ok 14 - el panel de la marca ya no pinta binarios incrustados de metadata.evidence
+  ---
+  duration_ms: 5.6676
+  type: 'test'
+  ...
+# Subtest: el detector de binarios incrustados puede fallar
+ok 15 - el detector de binarios incrustados puede fallar
+  ---
+  duration_ms: 0.3799
+  type: 'test'
+  ...
+# Subtest: la evidencia sigue llegando por referencia, no por payload
+ok 16 - la evidencia sigue llegando por referencia, no por payload
+  ---
+  duration_ms: 0.8506
+  type: 'test'
+  ...
+# Subtest: retirar el binario no huerfano el import de Image
+ok 17 - retirar el binario no huerfano el import de Image
+  ---
+  duration_ms: 1.662
+  type: 'test'
+  ...
+# (node:14020) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:14020) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<repo>/apps/web/lib/hrMarkingCorrection.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\apps\\web\\package.json.
+# Subtest: la escalera incompleta ofrece los huecos en el orden en que debian ocurrir
+ok 18 - la escalera incompleta ofrece los huecos en el orden en que debian ocurrir
+  ---
+  duration_ms: 4.0469
+  type: 'test'
+  ...
+# Subtest: el horario define la entrada y la salida, y el almuerzo se escribe a mano
+ok 19 - el horario define la entrada y la salida, y el almuerzo se escribe a mano
+  ---
+  duration_ms: 0.5224
+  type: 'test'
+  ...
+# Subtest: la hora corregida viaja con su desplazamiento, no con el del servidor
+ok 20 - la hora corregida viaja con su desplazamiento, no con el del servidor
+  ---
+  duration_ms: 1.9622
+  type: 'test'
+  ...
+# Subtest: una hora mal formada no produce instante
+ok 21 - una hora mal formada no produce instante
+  ---
+  duration_ms: 0.6521
+  type: 'test'
+  ...
+# Subtest: la validacion exige ficha resuelta, hora presente y motivo legible
+ok 22 - la validacion exige ficha resuelta, hora presente y motivo legible
+  ---
+  duration_ms: 1.3902
+  type: 'test'
+  ...
+# Subtest: la hora dentro de la tolerancia del futuro relativo se acepta
+ok 23 - la hora dentro de la tolerancia del futuro relativo se acepta
+  ---
+  duration_ms: 0.4299
+  type: 'test'
+  ...
+# Subtest: el cuerpo declara la correccion, el destino y nunca un horario
+ok 24 - el cuerpo declara la correccion, el destino y nunca un horario
+  ---
+  duration_ms: 0.4309
+  type: 'test'
+  ...
+# Subtest: el motivo se recorta al maximo que admite el servidor
+ok 25 - el motivo se recorta al maximo que admite el servidor
+  ---
+  duration_ms: 0.5393
+  type: 'test'
+  ...
+# Subtest: los cuatro tipos de la escalera tienen nombre en la pantalla
+ok 26 - los cuatro tipos de la escalera tienen nombre en la pantalla
+  ---
+  duration_ms: 1.0645
+  type: 'test'
+  ...
+# Subtest: la pantalla monta la correccion sobre el permiso hr:write y el endpoint administrativo
+ok 27 - la pantalla monta la correccion sobre el permiso hr:write y el endpoint administrativo
+  ---
+  duration_ms: 8.617
+  type: 'test'
+  ...
+# Subtest: cada boton que nace de la escalera lleva su key
+ok 28 - cada boton que nace de la escalera lleva su key
+  ---
+  duration_ms: 2.4171
+  type: 'test'
+  ...
+# (node:18368) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la llegada tarde se sustenta con motivo, texto y foto, igual que la extension
+ok 29 - la llegada tarde se sustenta con motivo, texto y foto, igual que la extension
+  ---
+  duration_ms: 2.4443
+  type: 'test'
+  ...
+# Subtest: la tolerancia del horario es la que decide si hay que justificar
+ok 30 - la tolerancia del horario es la que decide si hay que justificar
+  ---
+  duration_ms: 0.6753
+  type: 'test'
+  ...
+# Subtest: entrada y cierre exigen selfie; el almuerzo no lleva foto
+ok 31 - entrada y cierre exigen selfie; el almuerzo no lleva foto
+  ---
+  duration_ms: 1.1488
+  type: 'test'
+  ...
+# Subtest: la camara frontal es lo que hace que la selfie sea selfie
+ok 32 - la camara frontal es lo que hace que la selfie sea selfie
+  ---
+  duration_ms: 1.7311
+  type: 'test'
+  ...
+# Subtest: la selfie sale del localStorage a IndexedDB como las demas evidencias
+ok 33 - la selfie sale del localStorage a IndexedDB como las demas evidencias
+  ---
+  duration_ms: 0.4913
+  type: 'test'
+  ...
+# Subtest: abrir jornada con vehiculo pide kilometraje inicial
+ok 34 - abrir jornada con vehiculo pide kilometraje inicial
+  ---
+  duration_ms: 1.0288
+  type: 'test'
+  ...
+# Subtest: el reporte muestra la justificacion de la llegada tarde, no solo la de extension
+ok 35 - el reporte muestra la justificacion de la llegada tarde, no solo la de extension
+  ---
+  duration_ms: 1.6822
+  type: 'test'
+  ...
+# Subtest: el monitor nombra el retardo aparte de los minutos extra
+ok 36 - el monitor nombra el retardo aparte de los minutos extra
+  ---
+  duration_ms: 1.6135
+  type: 'test'
+  ...
+# (node:12608) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: el login redirige el perfil exclusivo directamente a marcaciones
+ok 37 - el login redirige el perfil exclusivo directamente a marcaciones
+  ---
+  duration_ms: 3.9122
+  type: 'test'
+  ...
+# Subtest: el guard bloquea cualquier ruta distinta a la pantalla de marcacion
+ok 38 - el guard bloquea cualquier ruta distinta a la pantalla de marcacion
+  ---
+  duration_ms: 0.7738
+  type: 'test'
+  ...
+# Subtest: el chrome exclusivo no renderiza sidebar, navegacion movil ni IA
+ok 39 - el chrome exclusivo no renderiza sidebar, navegacion movil ni IA
+  ---
+  duration_ms: 7.8827
+  type: 'test'
+  ...
+# Subtest: la pantalla usa exclusivamente endpoints autocontenidos self
+ok 40 - la pantalla usa exclusivamente endpoints autocontenidos self
+  ---
+  duration_ms: 1.8001
+  type: 'test'
+  ...
+# Subtest: la pantalla limita horarios al dia de Bogota y usa marcaciones idempotentes
+ok 41 - la pantalla limita horarios al dia de Bogota y usa marcaciones idempotentes
+  ---
+  duration_ms: 1.6401
+  type: 'test'
+  ...
+# Subtest: el perfil exclusivo se conserva al crear roles y usuarios Supabase
+ok 42 - el perfil exclusivo se conserva al crear roles y usuarios Supabase
+  ---
+  duration_ms: 3.9033
+  type: 'test'
+  ...
+# (node:12604) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la ficha se lee sola, antes que las otras lecturas y sin alerta global
+ok 43 - la ficha se lee sola, antes que las otras lecturas y sin alerta global
+  ---
+  duration_ms: 7.9018
+  type: 'test'
+  ...
+# Subtest: sin ficha no se lanzan las lecturas que dependen de ella
+ok 44 - sin ficha no se lanzan las lecturas que dependen de ella
+  ---
+  duration_ms: 1.5831
+  type: 'test'
+  ...
+# Subtest: el panel unico reemplaza la ventana de marcado y dice que no es una falla
+ok 45 - el panel unico reemplaza la ventana de marcado y dice que no es una falla
+  ---
+  duration_ms: 2.7807
+  type: 'test'
+  ...
+# Subtest: el modo respaldo nunca bloquea: sin conexion se sigue marcando
+ok 46 - el modo respaldo nunca bloquea: sin conexion se sigue marcando
+  ---
+  duration_ms: 2.8512
+  type: 'test'
+  ...
+# (node:8516) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la evidencia de una marcacion incluye el soporte extra y la selfie
+ok 47 - la evidencia de una marcacion incluye el soporte extra y la selfie
+  ---
+  duration_ms: 1.8009
+  type: 'test'
+  ...
+# Subtest: cada evidencia se carga con su propia fuente
+ok 48 - cada evidencia se carga con su propia fuente
+  ---
+  duration_ms: 0.5749
+  type: 'test'
+  ...
+# Subtest: el monitor trae los bytes por evento y no en un lote bloqueante
+ok 49 - el monitor trae los bytes por evento y no en un lote bloqueante
+  ---
+  duration_ms: 1.1934
+  type: 'test'
+  ...
+# Subtest: las marcaciones verificadas llevan la insignia de identidad
+ok 50 - las marcaciones verificadas llevan la insignia de identidad
+  ---
+  duration_ms: 6.4959
+  type: 'test'
+  ...
+# (node:4376) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la pantalla de horarios carga completa y conserva sus marcadores clave
+ok 51 - la pantalla de horarios carga completa y conserva sus marcadores clave
+  ---
+  duration_ms: 4.4096
+  type: 'test'
+  ...
+# Subtest: el monitor del horario se abre como ventana emergente accesible
+ok 52 - el monitor del horario se abre como ventana emergente accesible
+  ---
+  duration_ms: 1.0431
+  type: 'test'
+  ...
+# Subtest: la ventana emergente gobierna foco y cierre con Escape
+ok 53 - la ventana emergente gobierna foco y cierre con Escape
+  ---
+  duration_ms: 0.5661
+  type: 'test'
+  ...
+# Subtest: permite validar marcaciones y actividades por usuario
+ok 54 - permite validar marcaciones y actividades por usuario
+  ---
+  duration_ms: 0.818
+  type: 'test'
+  ...
+# Subtest: acota la linea de tiempo por persona y por tipo de evento
+ok 55 - acota la linea de tiempo por persona y por tipo de evento
+  ---
+  duration_ms: 1.6687
+  type: 'test'
+  ...
+# Subtest: resetea filtros al abrir el monitor y explica los vacios del filtro
+ok 56 - resetea filtros al abrir el monitor y explica los vacios del filtro
+  ---
+  duration_ms: 0.9922
+  type: 'test'
+  ...
+# Subtest: el borrado completo exige el permiso especial y muestra el impacto con vista previa
+ok 57 - el borrado completo exige el permiso especial y muestra el impacto con vista previa
+  ---
+  duration_ms: 2.666
+  type: 'test'
+  ...
+# Subtest: confirmar el borrado envia motivo, confirmacion y reconocimiento de traza al servidor
+ok 58 - confirmar el borrado envia motivo, confirmacion y reconocimiento de traza al servidor
+  ---
+  duration_ms: 0.8995
+  type: 'test'
+  ...
+# (node:15308) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la marcacion movil emite refresh inmediato para monitores abiertos
+ok 59 - la marcacion movil emite refresh inmediato para monitores abiertos
+  ---
+  duration_ms: 3.3111
+  type: 'test'
+  ...
+# Subtest: el monitor de horarios escucha refresh local y el respaldo baja de 30 segundos
+ok 60 - el monitor de horarios escucha refresh local y el respaldo baja de 30 segundos
+  ---
+  duration_ms: 2.0268
+  type: 'test'
+  ...
+# Subtest: la carga de horarios reintenta respuestas vacias transitorias y conserva el ultimo estado valido
+ok 61 - la carga de horarios reintenta respuestas vacias transitorias y conserva el ultimo estado valido
+  ---
+  duration_ms: 3.6146
+  type: 'test'
+  ...
+# Subtest: el listado de horarios carga al montar sin esperar catalogos secundarios
+ok 62 - el listado de horarios carga al montar sin esperar catalogos secundarios
+  ---
+  duration_ms: 3.0125
+  type: 'test'
+  ...
+# Subtest: el monitor solicita estado operativo fresco y conserva evidencia resumida
+ok 63 - el monitor solicita estado operativo fresco y conserva evidencia resumida
+  ---
+  duration_ms: 5.3793
+  type: 'test'
+  ...
+# (node:7660) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: el monitor registra cuando fue la ultima lectura valida y si el ultimo intento fallo
+ok 64 - el monitor registra cuando fue la ultima lectura valida y si el ultimo intento fallo
+  ---
+  duration_ms: 2.045
+  type: 'test'
+  ...
+# Subtest: ninguna de las dos lecturas del monitor vuelve a terminar muda
+ok 65 - ninguna de las dos lecturas del monitor vuelve a terminar muda
+  ---
+  duration_ms: 1.859
+  type: 'test'
+  ...
+# Subtest: el aviso de lectura no reciente llega a la pantalla
+ok 66 - el aviso de lectura no reciente llega a la pantalla
+  ---
+  duration_ms: 2.5382
+  type: 'test'
+  ...
+# Subtest: el vacio deja de afirmar que no hay eventos cuando la lectura fallo o aun no llega
+ok 67 - el vacio deja de afirmar que no hay eventos cuando la lectura fallo o aun no llega
+  ---
+  duration_ms: 0.603
+  type: 'test'
+  ...
+# Subtest: el reintento sigue siendo automatico y el aviso lo dice
+ok 68 - el reintento sigue siendo automatico y el aviso lo dice
+  ---
+  duration_ms: 0.3828
+  type: 'test'
+  ...
+# Subtest: un contador sin lectura se conserva nulo y solo el cero afirmado se pinta como cero
+ok 69 - un contador sin lectura se conserva nulo y solo el cero afirmado se pinta como cero
+  ---
+  duration_ms: 0.6022
+  type: 'test'
+  ...
+# Subtest: la etiqueta del contador separa el sin lectura del numero
+ok 70 - la etiqueta del contador separa el sin lectura del numero
+  ---
+  duration_ms: 3.8547
+  type: 'test'
+  ...
+# (node:15608) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:15608) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<repo>/apps/web/lib/hrOfflineMarking.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\apps\\web\\package.json.
+# Subtest: B: sin senal se puede marcar aunque el GPS sea obligatorio y queda novedad
+ok 71 - B: sin senal se puede marcar aunque el GPS sea obligatorio y queda novedad
+  ---
+  duration_ms: 5.8905
+  type: 'test'
+  ...
+# Subtest: B: el permiso denegado es decision del usuario y sigue bloqueando la marcacion
+ok 72 - B: el permiso denegado es decision del usuario y sigue bloqueando la marcacion
+  ---
+  duration_ms: 0.6554
+  type: 'test'
+  ...
+# Subtest: B: timeout, posicion no disponible y equipo sin GPS permiten marcar con novedad
+ok 73 - B: timeout, posicion no disponible y equipo sin GPS permiten marcar con novedad
+  ---
+  duration_ms: 2.1394
+  type: 'test'
+  ...
+# Subtest: B: con fix disponible o con horario sin GPS no se declara novedad
+ok 74 - B: con fix disponible o con horario sin GPS no se declara novedad
+  ---
+  duration_ms: 0.6215
+  type: 'test'
+  ...
+# Subtest: B: el metadata de GPS inactivo coincide con gpsUnavailableFromInput del backend
+ok 75 - B: el metadata de GPS inactivo coincide con gpsUnavailableFromInput del backend
+  ---
+  duration_ms: 1.6466
+  type: 'test'
+  ...
+# Subtest: B: gpsFailureCause lee la causa estable y tambien un GeolocationPositionError crudo
+ok 76 - B: gpsFailureCause lee la causa estable y tambien un GeolocationPositionError crudo
+  ---
+  duration_ms: 0.8188
+  type: 'test'
+  ...
+# Subtest: B: lib/gps propaga la causa estable sin cambiar la firma que ya consumia la pantalla
+ok 77 - B: lib/gps propaga la causa estable sin cambiar la firma que ya consumia la pantalla
+  ---
+  duration_ms: 1.3105
+  type: 'test'
+  ...
+# Subtest: A: el snapshot solo sirve como horario vigente si se tomo el dia de hoy
+ok 78 - A: el snapshot solo sirve como horario vigente si se tomo el dia de hoy
+  ---
+  duration_ms: 0.6
+  type: 'test'
+  ...
+# Subtest: A: un snapshot de otro dia no se usa como horario y se avisa sin inventar jornada
+ok 79 - A: un snapshot de otro dia no se usa como horario y se avisa sin inventar jornada
+  ---
+  duration_ms: 1.1144
+  type: 'test'
+  ...
+# Subtest: A: con respuesta viva manda la API y no el snapshot
+ok 80 - A: con respuesta viva manda la API y no el snapshot
+  ---
+  duration_ms: 25.0231
+  type: 'test'
+  ...
+# Subtest: A: el snapshot se reescribe solo con rutas frescas y conserva el resto del dia anterior
+ok 81 - A: el snapshot se reescribe solo con rutas frescas y conserva el resto del dia anterior
+  ---
+  duration_ms: 0.8236
+  type: 'test'
+  ...
+# Subtest: A: la pantalla persiste el snapshot y entra en modo degradado en el arranque en frio
+ok 82 - A: la pantalla persiste el snapshot y entra en modo degradado en el arranque en frio
+  ---
+  duration_ms: 0.7482
+  type: 'test'
+  ...
+# Subtest: C: la degradacion por cuota sacrifica primero la foto inline mas pesada
+ok 83 - C: la degradacion por cuota sacrifica primero la foto inline mas pesada
+  ---
+  duration_ms: 40.8104
+  type: 'test'
+  ...
+# Subtest: C: degradeUntilPersisted se detiene en cuanto la cola cabe y no pierde el registro nuevo
+ok 84 - C: degradeUntilPersisted se detiene en cuanto la cola cabe y no pierde el registro nuevo
+  ---
+  duration_ms: 1.076
+  type: 'test'
+  ...
+# Subtest: C: cuando ni quitando fotos cabe, se descartan los antiguos y se reporta el fracaso
+ok 85 - C: cuando ni quitando fotos cabe, se descartan los antiguos y se reporta el fracaso
+  ---
+  duration_ms: 0.593
+  type: 'test'
+  ...
+# Subtest: C: si nada cabe, degradeUntilPersisted lo dice en vez de lanzar
+ok 86 - C: si nada cabe, degradeUntilPersisted lo dice en vez de lanzar
+  ---
+  duration_ms: 0.2848
+  type: 'test'
+  ...
+# Subtest: C: writePendingSync envuelve setItem en try/catch y degrada sin lanzar
+ok 87 - C: writePendingSync envuelve setItem en try/catch y degrada sin lanzar
+  ---
+  duration_ms: 0.4898
+  type: 'test'
+  ...
+# Subtest: C: inlineEvidenceBytes mide solo el base64 y payloadByteLength el serializado completo
+ok 88 - C: inlineEvidenceBytes mide solo el base64 y payloadByteLength el serializado completo
+  ---
+  duration_ms: 3.2816
+  type: 'test'
+  ...
+# Subtest: C: la referencia de evidencia ida y vuelta
+ok 89 - C: la referencia de evidencia ida y vuelta
+  ---
+  duration_ms: 0.3848
+  type: 'test'
+  ...
+# Subtest: C: las evidencias viajan por IndexedDB y la cola conserva solo la referencia
+ok 90 - C: las evidencias viajan por IndexedDB y la cola conserva solo la referencia
+  ---
+  duration_ms: 0.55
+  type: 'test'
+  ...
+# Subtest: C: el almacen de evidencias guarda, recupera, borra y poda en IndexedDB
+ok 91 - C: el almacen de evidencias guarda, recupera, borra y poda en IndexedDB
+  ---
+  duration_ms: 150.3379
+  type: 'test'
+  ...
+# Subtest: C: un fallo permanente queda bloqueado y visible con el motivo real de la API
+ok 92 - C: un fallo permanente queda bloqueado y visible con el motivo real de la API
+  ---
+  duration_ms: 0.8003
+  type: 'test'
+  ...
+# Subtest: C: classifySyncFailure separa el 4xx permanente del reintentable y conserva el motivo
+ok 93 - C: classifySyncFailure separa el 4xx permanente del reintentable y conserva el motivo
+  ---
+  duration_ms: 1.2712
+  type: 'test'
+  ...
+# Subtest: C: la regla de fallo permanente del modulo es la misma que fija la pantalla
+ok 94 - C: la regla de fallo permanente del modulo es la misma que fija la pantalla
+  ---
+  duration_ms: 1.0609
+  type: 'test'
+  ...
+# Subtest: C: el banner tiene tono: error rosa role=alert, exito verde y pendiente ambar role=status
+ok 95 - C: el banner tiene tono: error rosa role=alert, exito verde y pendiente ambar role=status
+  ---
+  duration_ms: 0.4518
+  type: 'test'
+  ...
+# Subtest: B: la marcacion encola el instante real del clic, no el del flush
+ok 96 - B: la marcacion encola el instante real del clic, no el del flush
+  ---
+  duration_ms: 1.4574
+  type: 'test'
+  ...
+# Subtest: B: la marcacion decide con la causa GPS y encola el metadata de novedad
+ok 97 - B: la marcacion decide con la causa GPS y encola el metadata de novedad
+  ---
+  duration_ms: 0.7932
+  type: 'test'
+  ...
+# Subtest: B: la actividad declara occurred_at del clic para que la regla del dia la respete
+ok 98 - B: la actividad declara occurred_at del clic para que la regla del dia la respete
+  ---
+  duration_ms: 0.5024
+  type: 'test'
+  ...
+# Subtest: B: sin senal no se quema el timeout de red en cada intento de sincronizacion
+ok 99 - B: sin senal no se quema el timeout de red en cada intento de sincronizacion
+  ---
+  duration_ms: 0.3416
+  type: 'test'
+  ...
+# Subtest: D: las escrituras self-service de HR tampoco caen al respaldo Supabase
+ok 100 - D: las escrituras self-service de HR tampoco caen al respaldo Supabase
+  ---
+  duration_ms: 3.5456
+  type: 'test'
+  ...
+# Subtest: la pantalla conserva los contratos de marcacion ya certificados
+ok 101 - la pantalla conserva los contratos de marcacion ya certificados
+  ---
+  duration_ms: 1.3045
+  type: 'test'
+  ...
+# Subtest: el tipo que espera el servidor se lee del detalle y, si no hay, de la frase
+ok 102 - el tipo que espera el servidor se lee del detalle y, si no hay, de la frase
+  ---
+  duration_ms: 2.1378
+  type: 'test'
+  ...
+# Subtest: un 409 de secuencia cierra la fila diciendo cual marcacion sigue
+ok 103 - un 409 de secuencia cierra la fila diciendo cual marcacion sigue
+  ---
+  duration_ms: 1.1971
+  type: 'test'
+  ...
+# Subtest: un rechazo de horario no promete autocorreccion
+ok 104 - un rechazo de horario no promete autocorreccion
+  ---
+  duration_ms: 0.5059
+  type: 'test'
+  ...
+# Subtest: la jornada completa no inventa un tipo que marcar
+ok 105 - la jornada completa no inventa un tipo que marcar
+  ---
+  duration_ms: 0.3534
+  type: 'test'
+  ...
+# Subtest: un 403 no se disfraza de rechazo de negocio corregible por el operario
+ok 106 - un 403 no se disfraza de rechazo de negocio corregible por el operario
+  ---
+  duration_ms: 0.2895
+  type: 'test'
+  ...
+# Subtest: el self-heal libera el item bloqueado sin la foto que lo bloque
+ok 107 - el self-heal libera el item bloqueado sin la foto que lo bloque
+  ---
+  duration_ms: 0.9569
+  type: 'test'
+  ...
+# Subtest: C: el reenvio sin foto declara el codigo de evidencia del servidor, no VALIDACION
+ok 108 - C: el reenvio sin foto declara el codigo de evidencia del servidor, no VALIDACION
+  ---
+  duration_ms: 0.3704
+  type: 'test'
+  ...
+# (node:6216) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:6216) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<repo>/apps/web/lib/hrScheduleMonitor.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\apps\\web\\package.json.
+# Subtest: monitor uses TimePunch operational endpoints and never a legacy table after failure
+ok 109 - monitor uses TimePunch operational endpoints and never a legacy table after failure
+  ---
+  duration_ms: 2.7423
+  type: 'test'
+  ...
+# Subtest: web normalizes mobile photos through the same reader and keeps legacy supports
+ok 110 - web normalizes mobile photos through the same reader and keeps legacy supports
+  ---
+  duration_ms: 13.7178
+  type: 'test'
+  ...
+# (node:8048) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:8048) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<repo>/apps/web/lib/punchPunctuality.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\apps\\web\\package.json.
+# Subtest: la puntualidad de marcacion replica las alertas criticas del monitor de rutas
+ok 111 - la puntualidad de marcacion replica las alertas criticas del monitor de rutas
+  ---
+  duration_ms: 9.4654
+  type: 'test'
+  ...
+# Subtest: la hora de marcacion se deriva del reloj de Bogota cuando solo existe punched_at
+ok 112 - la hora de marcacion se deriva del reloj de Bogota cuando solo existe punched_at
+  ---
+  duration_ms: 80.327
+  type: 'test'
+  ...
+# Subtest: el reporte de talento humano refleja las alertas por marcacion en tabla, detalle y excel
+ok 113 - el reporte de talento humano refleja las alertas por marcacion en tabla, detalle y excel
+  ---
+  duration_ms: 5.601
+  type: 'test'
+  ...
+# Subtest: el monitor de rutas y el reporte comparten la misma fuente de puntualidad
+ok 114 - el monitor de rutas y el reporte comparten la misma fuente de puntualidad
+  ---
+  duration_ms: 1.7648
+  type: 'test'
+  ...
+# (node:14564) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: las marcaciones ya no tienen evidencias fijas en cero
+ok 115 - las marcaciones ya no tienen evidencias fijas en cero
+  ---
+  duration_ms: 1.8681
+  type: 'test'
+  ...
+# Subtest: lee la selfie en las dos formas en que puede estar guardada
+ok 116 - lee la selfie en las dos formas en que puede estar guardada
+  ---
+  duration_ms: 0.5596
+  type: 'test'
+  ...
+# Subtest: cuenta selfie y soporte de horas extra, también cuando el listado solo los anuncia
+ok 117 - cuenta selfie y soporte de horas extra, también cuando el listado solo los anuncia
+  ---
+  duration_ms: 0.5338
+  type: 'test'
+  ...
+# Subtest: muestra la selfie y la insignia de identidad verificada
+ok 118 - muestra la selfie y la insignia de identidad verificada
+  ---
+  duration_ms: 1.8472
+  type: 'test'
+  ...
+# (node:14340) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:14340) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<repo>/apps/web/lib/reportExports.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\apps\\web\\package.json.
+# Subtest: el reporte genera un XLSX real, ordenado y filtrable
+ok 119 - el reporte genera un XLSX real, ordenado y filtrable
+  ---
+  duration_ms: 474.4152
+  type: 'test'
+  ...
+# Subtest: la pantalla aplica rango al origen, filtros inteligentes y descarga xlsx
+ok 120 - la pantalla aplica rango al origen, filtros inteligentes y descarga xlsx
+  ---
+  duration_ms: 4.6814
+  type: 'test'
+  ...
+# (node:17912) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: las escrituras de horarios nunca caen al respaldo Supabase
+ok 121 - las escrituras de horarios nunca caen al respaldo Supabase
+  ---
+  duration_ms: 13.7239
+  type: 'test'
+  ...
+# Subtest: apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK
+ok 122 - apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK
+  ---
+  duration_ms: 4.0185
+  type: 'test'
+  ...
+# Subtest: la lectura del monitor conserva su respaldo: solo se bloquean metodos distintos de GET
+ok 123 - la lectura del monitor conserva su respaldo: solo se bloquean metodos distintos de GET
+  ---
+  duration_ms: 5.5843
+  type: 'test'
+  ...
+# Subtest: el respaldo preventivo tambien consulta el guard cuando no hay API configurada
+ok 124 - el respaldo preventivo tambien consulta el guard cuando no hay API configurada
+  ---
+  duration_ms: 2.8902
+  type: 'test'
+  ...
+# Subtest: el banner de horarios no pinta un error como si fuera exito
+ok 125 - el banner de horarios no pinta un error como si fuera exito
+  ---
+  duration_ms: 2.3705
+  type: 'test'
+  ...
+# Subtest: el formulario de horarios bloquea la medianoche antes de enviar la solicitud
+ok 126 - el formulario de horarios bloquea la medianoche antes de enviar la solicitud
+  ---
+  duration_ms: 1.735
+  type: 'test'
+  ...
+# Subtest: el formulario prevalida contra el servidor antes de escribir y detalla el conflicto
+ok 127 - el formulario prevalida contra el servidor antes de escribir y detalla el conflicto
+  ---
+  duration_ms: 28.032
+  type: 'test'
+  ...
+# Subtest: el selector de personas avisa quien ya tiene malla en la fecha elegida
+ok 128 - el selector de personas avisa quien ya tiene malla en la fecha elegida
+  ---
+  duration_ms: 1.5241
+  type: 'test'
+  ...
+# Subtest: el cliente conserva los detalles estructurados del error para pintar el conflicto
+ok 129 - el cliente conserva los detalles estructurados del error para pintar el conflicto
+  ---
+  duration_ms: 3.7215
+  type: 'test'
+  ...
+# (node:10460) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: el mensaje amable distingue leer de guardar y ya no anuncia backend caido
+ok 130 - el mensaje amable distingue leer de guardar y ya no anuncia backend caido
+  ---
+  duration_ms: 2.8403
+  type: 'test'
+  ...
+# Subtest: el conflicto de edicion simultanea se explica y da la instruccion correcta
+ok 131 - el conflicto de edicion simultanea se explica y da la instruccion correcta
+  ---
+  duration_ms: 0.4592
+  type: 'test'
+  ...
+# Subtest: las tres escrituras concurrentes de Talento Humano comparten el mensaje amable
+ok 132 - las tres escrituras concurrentes de Talento Humano comparten el mensaje amable
+  ---
+  duration_ms: 0.8163
+  type: 'test'
+  ...
+# Subtest: la referencia de soporte llega al mensaje y el detalle tecnico deja de imprimirse crudo
+ok 133 - la referencia de soporte llega al mensaje y el detalle tecnico deja de imprimirse crudo
+  ---
+  duration_ms: 0.5023
+  type: 'test'
+  ...
+# Subtest: el 5xx conserva status y retryable y ademas expone code al llamador
+ok 134 - el 5xx conserva status y retryable y ademas expone code al llamador
+  ---
+  duration_ms: 0.6563
+  type: 'test'
+  ...
+# Subtest: el aviso global se silencia solo cuando el llamador ya muestra el estado, sin perder la captura
+ok 135 - el aviso global se silencia solo cuando el llamador ya muestra el estado, sin perder la captura
+  ---
+  duration_ms: 0.5616
+  type: 'test'
+  ...
+# Subtest: guardar una malla reintenta el conflicto de concurrencia con limite fijo
+ok 136 - guardar una malla reintenta el conflicto de concurrencia con limite fijo
+  ---
+  duration_ms: 0.4159
+  type: 'test'
+  ...
+# Subtest: el guardado de mallas usa el reintento, silencia el toast tecnico y muestra el estado dentro del modal
+ok 137 - el guardado de mallas usa el reintento, silencia el toast tecnico y muestra el estado dentro del modal
+  ---
+  duration_ms: 0.6365
+  type: 'test'
+  ...
+# Subtest: el reintento le dice al operario que no repita el registro
+ok 138 - el reintento le dice al operario que no repita el registro
+  ---
+  duration_ms: 0.9449
+  type: 'test'
+  ...
+# (node:17208) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:17208) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<repo>/apps/web/lib/hrScheduleMonitor.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\apps\\web\\package.json.
+# Subtest: usa la fecha calendario local cuando UTC ya avanzo al dia siguiente
+ok 139 - usa la fecha calendario local cuando UTC ya avanzo al dia siguiente
+  ---
+  duration_ms: 4.3253
+  type: 'test'
+  ...
+# Subtest: consulta el monitor con la fecha del horario seleccionado
+ok 140 - consulta el monitor con la fecha del horario seleccionado
+  ---
+  duration_ms: 0.6885
+  type: 'test'
+  ...
+# Subtest: normaliza evidencia de marcaciones para el monitor de horarios
+ok 141 - normaliza evidencia de marcaciones para el monitor de horarios
+  ---
+  duration_ms: 10.8036
+  type: 'test'
+  ...
+# Subtest: resume la evidencia sin transportar la foto hasta que el administrador la solicite
+ok 142 - resume la evidencia sin transportar la foto hasta que el administrador la solicite
+  ---
+  duration_ms: 4.6758
+  type: 'test'
+  ...
+# Subtest: mantiene GPS por defecto y permite horarios solo con marcacion
+ok 143 - mantiene GPS por defecto y permite horarios solo con marcacion
+  ---
+  duration_ms: 0.7786
+  type: 'test'
+  ...
+# Subtest: bloquea en el formulario el horario que cruza medianoche reportado en QA
+ok 144 - bloquea en el formulario el horario que cruza medianoche reportado en QA
+  ---
+  duration_ms: 0.813
+  type: 'test'
+  ...
+# Subtest: bloquea horas iguales porque la jornada debe terminar despues de empezar
+ok 145 - bloquea horas iguales porque la jornada debe terminar despues de empezar
+  ---
+  duration_ms: 0.3709
+  type: 'test'
+  ...
+# Subtest: acepta la jornada del mismo dia y los limites del reloj
+ok 146 - acepta la jornada del mismo dia y los limites del reloj
+  ---
+  duration_ms: 7.8239
+  type: 'test'
+  ...
+# Subtest: normaliza HH:mm:ss para que editar un horario no deje pasar horas iguales
+ok 147 - normaliza HH:mm:ss para que editar un horario no deje pasar horas iguales
+  ---
+  duration_ms: 11.9406
+  type: 'test'
+  ...
+# Subtest: pide horas validas cuando el campo viene vacio o mal formado
+ok 148 - pide horas validas cuando el campo viene vacio o mal formado
+  ---
+  duration_ms: 7.323
+  type: 'test'
+  ...
+# Subtest: avisa cuando la lista de horarios toca el tope del listado
+ok 149 - avisa cuando la lista de horarios toca el tope del listado
+  ---
+  duration_ms: 1.2853
+  type: 'test'
+  ...
+# Subtest: propaga la senal de truncamiento del resumen de eventos
+ok 150 - propaga la senal de truncamiento del resumen de eventos
+  ---
+  duration_ms: 0.3422
+  type: 'test'
+  ...
+# Subtest: hace visible el truncamiento del mapa con las colecciones recortadas
+ok 151 - hace visible el truncamiento del mapa con las colecciones recortadas
+  ---
+  duration_ms: 0.3012
+  type: 'test'
+  ...
+# Subtest: combina los tres avisos de truncamiento sin duplicar
+ok 152 - combina los tres avisos de truncamiento sin duplicar
+  ---
+  duration_ms: 0.2035
+  type: 'test'
+  ...
+# (node:16820) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: talent landing exposes novelties, employees and mallas navigation
+ok 153 - talent landing exposes novelties, employees and mallas navigation
+  ---
+  duration_ms: 26.2922
+  type: 'test'
+  ...
+# Subtest: mobile closing flow requires day mileage when the schedule has a vehicle
+ok 154 - mobile closing flow requires day mileage when the schedule has a vehicle
+  ---
+  duration_ms: 1.8686
+  type: 'test'
+  ...
+# Subtest: new talent pages consume talento humano API aliases
+ok 155 - new talent pages consume talento humano API aliases
+  ---
+  duration_ms: 5.2676
+  type: 'test'
+  ...
+# Subtest: talent modal and drawer surfaces escape dashboard layout
+ok 156 - talent modal and drawer surfaces escape dashboard layout
+  ---
+  duration_ms: 3.3735
+  type: 'test'
+  ...
+# Subtest: employee master exposes personal, labor and affiliation editing
+ok 157 - employee master exposes personal, labor and affiliation editing
+  ---
+  duration_ms: 3.1685
+  type: 'test'
+  ...
+# Subtest: labor entities page exposes entity CRUD while employee affiliations live in employee master
+ok 158 - labor entities page exposes entity CRUD while employee affiliations live in employee master
+  ---
+  duration_ms: 2.6776
+  type: 'test'
+  ...
+# Subtest: labor configuration page edits night range, overtime limits and surcharge concepts
+ok 159 - labor configuration page edits night range, overtime limits and surcharge concepts
+  ---
+  duration_ms: 4.852
+  type: 'test'
+  ...
+# Subtest: payroll page supports preview, real liquidation, adjustments and pdf vouchers
+ok 160 - payroll page supports preview, real liquidation, adjustments and pdf vouchers
+  ---
+  duration_ms: 3.2909
+  type: 'test'
+  ...
+# Subtest: libranzas page manages concepts, employee balances and recurrent deductions
+ok 161 - libranzas page manages concepts, employee balances and recurrent deductions
+  ---
+  duration_ms: 1.8457
+  type: 'test'
+  ...
+# Subtest: employee termination liquidation page supports severance balances and indemnization
+ok 162 - employee termination liquidation page supports severance balances and indemnization
+  ---
+  duration_ms: 2.8974
+  type: 'test'
+  ...
+# Subtest: social contributions page supports payroll contributions by entity
+ok 163 - social contributions page supports payroll contributions by entity
+  ---
+  duration_ms: 3.9479
+  type: 'test'
+  ...
+# Subtest: social benefit provisions live outside payroll liquidation
+ok 164 - social benefit provisions live outside payroll liquidation
+  ---
+  duration_ms: 4.0106
+  type: 'test'
+  ...
+# Subtest: social benefit payments page pays provisioned balances
+ok 165 - social benefit payments page pays provisioned balances
+  ---
+  duration_ms: 1.2435
+  type: 'test'
+  ...
+# Subtest: reports page exports payroll auxiliary without previewing heavy rows
+ok 166 - reports page exports payroll auxiliary without previewing heavy rows
+  ---
+  duration_ms: 1.6386
+  type: 'test'
+  ...
+1..166
+# tests 166
+# suites 0
+# pass 166
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5323.3545
