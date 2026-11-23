@@ -1,0 +1,240 @@
+{
+  "evento": "hr_auth_latency_diferencial",
+  "ejecutado_en": "2026-11-23T14:43:54.393Z",
+  "rama": "codex/qa-auth-latency-single-statement-main-20261123",
+  "commit": "c42c8d06",
+  "ambiente": "qa",
+  "project_ref": "jbirkghkekuifgfsgquq",
+  "muestra_usuarios": 3,
+  "casos": 18,
+  "preservacion": {
+    "decisiones_revisadas": 18,
+    "divergencias": 0,
+    "lista": [],
+    "anomalías_401": 0,
+    "lista_anomalias": []
+  },
+  "latencia_ms": {
+    "cinco_sentencias": {
+      "mediana": 1472.2,
+      "min": 1087.7,
+      "max": 1551.3
+    },
+    "una_sentencia": {
+      "mediana": 389.2,
+      "min": 386,
+      "max": 400.3
+    },
+    "factor": 0.26,
+    "presupuesto_factor": 0.6
+  },
+  "cobertura": {
+    "ACEPTA": 6,
+    "MIDE_Y_DEJA_PASAR": 9,
+    "RECHAZA": 3,
+    "RECHAZA_INTERNO": 0
+  },
+  "corridas": [
+    {
+      "caso": "f5bfb2 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1532.6,
+      "nueva_ms": 400.3,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1477.8,
+      "nueva_ms": 392.9,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "f5bfb2 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1091.5,
+      "nueva_ms": 390.2,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1479.9,
+      "nueva_ms": 390.2,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "f5bfb2 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1472.8,
+      "nueva_ms": 388.8,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "RECHAZA",
+      "antigua_ms": 1170.5,
+      "nueva_ms": 395.3,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1465.1,
+      "nueva_ms": 386.9,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1475.5,
+      "nueva_ms": 389.1,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "f5bfb2 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1165.7,
+      "nueva_ms": 389.2,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1477.6,
+      "nueva_ms": 389.6,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "f5bfb2 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1470.7,
+      "nueva_ms": 386,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "RECHAZA",
+      "antigua_ms": 1091.6,
+      "nueva_ms": 393.5,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · vivo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1471.3,
+      "nueva_ms": 388.7,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · sid inexistente",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1472.2,
+      "nueva_ms": 388.5,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "SESSION_REVOKED"
+    },
+    {
+      "caso": "f5bfb2 · sid nulo",
+      "clase": "ACEPTA",
+      "antigua_ms": 1087.7,
+      "nueva_ms": 389,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · uv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1474.8,
+      "nueva_ms": 386.5,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "USER_VERSION_STALE"
+    },
+    {
+      "caso": "f5bfb2 · tv viejo",
+      "clase": "MIDE_Y_DEJA_PASAR",
+      "antigua_ms": 1551.3,
+      "nueva_ms": 387.1,
+      "antigua_lanza": false,
+      "nueva_lanza": false,
+      "code_antigua": null,
+      "code_nueva": null,
+      "motivo": "TENANT_VERSION_STALE"
+    },
+    {
+      "caso": "usuario inactivo",
+      "clase": "RECHAZA",
+      "antigua_ms": 1093.5,
+      "nueva_ms": 392,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "code_antigua": "USER_REVOKED",
+      "code_nueva": "USER_REVOKED",
+      "motivo": null
+    }
+  ],
+  "omitidos": [],
+  "veredicto": "VERDE",
+  "lectura": "Una sentencia decide igual que cinco en 18 casos y mediana 389 ms vs 1472 ms."
+}

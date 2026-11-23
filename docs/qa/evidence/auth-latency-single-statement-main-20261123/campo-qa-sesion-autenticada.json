@@ -1,0 +1,195 @@
+{
+  "certification": "admin-inactive-reactivation-field",
+  "version": 1,
+  "role": "field_measurement",
+  "ambiente": "QA",
+  "etiqueta": "qa-sesion-desplegada",
+  "instrucion": "",
+  "generado_en": "2026-11-23T14:24:08.679Z",
+  "env_file": "config/qa.env",
+  "api_host": "apexos-api-qa-production.up.railway.app",
+  "script_sha256": "67d01f7fdd19bf0c7f06af1f6f9b5403a4213aafb0831bfa8068df6babcc9fbe",
+  "compromiso_del_arreglo": {
+    "fix_de_referencia": "a6a5d73eb08ebdcb2a72e05c717077043b0f1332",
+    "servidor_lee": "git merge-base --is-ancestor"
+  },
+  "despliegue": {
+    "status": 200,
+    "commit_servido": "de7af667786a",
+    "codigo_servido_contiene_el_fix": "arreglo"
+  },
+  "tenant": {
+    "id": "1d162ffd-bd27-4855-8141-b015388265fc",
+    "nombre": "NYVORA",
+    "licencia_admin": [
+      "admin"
+    ]
+  },
+  "rol_de_la_cuenta_de_medicion": {
+    "id": 618,
+    "nombre": "APEX_ADMIN",
+    "modulos": []
+  },
+  "objetivo": {
+    "modo": "alta_nueva",
+    "email": "cert.reactivacion.3849419@internal.apexos.local",
+    "user_id": 778,
+    "status": 201
+  },
+  "estados_por_peticion": [
+    {
+      "accion": "active=false",
+      "status": 200,
+      "activo_leido": false,
+      "codigo": "EMP-1795443854240"
+    },
+    {
+      "accion": "active=true",
+      "status": 200,
+      "activo_leido": true,
+      "codigo": "EMP-1795443854240"
+    },
+    {
+      "accion": "active=false",
+      "status": 200,
+      "activo_leido": false,
+      "codigo": "EMP-1795443854240"
+    },
+    {
+      "accion": "active=true",
+      "status": 200,
+      "activo_leido": true,
+      "codigo": "EMP-1795443854240"
+    },
+    {
+      "accion": "active=false",
+      "status": 200,
+      "activo_leido": false,
+      "codigo": "EMP-1795443854240"
+    }
+  ],
+  "veredicto": {
+    "propiedad": {
+      "status": 200,
+      "cuerpo": {
+        "id": 778,
+        "name": "CERT REACTIVACION 3849419",
+        "nombre": "CERT REACTIVACION 3849419",
+        "email": "cert.reactivacion.3849419@internal.apexos.local",
+        "username": "cert.reactivacion.3849419@internal.apexos.local",
+        "role_id": 631,
+        "role_name": "Empleado",
+        "role_nombre": "Empleado",
+        "active": true,
+        "activo": true,
+        "employee_id": 639,
+        "code": "EMP-1795443854240",
+        "id_interno": "EMP-1795443854240",
+        "document": "913849419",
+        "documento": "913849419",
+        "company": "NYVORA",
+        "empresa": "NYVORA",
+        "position": "empleado",
+        "department": "Operacion",
+        "salary_base": 0,
+        "salario_base": 0,
+        "labor_status": "activo",
+        "estado_laboral": "activo",
+        "first_names": "CERT REACTIVACION",
+        "last_names": "3849419",
+        "document_type": "CC",
+        "document_issue_date": "",
+        "document_issue_place": "",
+        "birth_date": "",
+        "gender": "",
+        "phone": "",
+        "address": "",
+        "city": "",
+        "state_region": "",
+        "country": "Colombia",
+        "user_status": "activo",
+        "access_email": "cert.reactivacion.3849419@internal.apexos.local",
+        "profile_kind": "empleado",
+        "user_kind": "empleado",
+        "additional_roles": "",
+        "operational_profile": "",
+        "site": "",
+        "area": "Operacion",
+        "manager": "",
+        "special_permissions": "",
+        "require_password_change": false,
+        "mfa_status": "futuro",
+        "last_access": "",
+        "session_status": "sin_sesion",
+        "engagement_type": "empleado",
+        "hire_date": "2026-11-23",
+        "end_date": "",
+        "contract_type": "indefinite",
+        "cost_center": "",
+        "workday": "",
+        "base_shift": "",
+        "transport_allowance": "",
+        "arl_risk": "",
+        "eps": "",
+        "pension_fund": "",
+        "compensation_fund": "",
+        "bank": "",
+        "bank_account_type": "",
+        "bank_account_number": "",
+        "labor_notes": "",
+        "operational_classification": "administrativo",
+        "can_punch_time": false,
+        "can_receive_services": false,
+        "can_be_assigned_routes": false,
+        "can_manage_inventory": false,
+        "can_approve_documents": false,
+        "can_authorize_exceptions": false,
+        "driver_license": "",
+        "license_category": "",
+        "license_expires_at": "",
+        "operational_restrictions": "",
+        "base_site": "",
+        "operation_zone": "",
+        "documents": [],
+        "user_audit_trail": [
+          {
+            "at": "2026-11-23T14:24:14.134Z",
+            "action": "created",
+            "module": "administracion"
+          },
+          {
+            "at": "2026-11-23T14:24:15.461Z",
+            "action": "deactivated",
+            "module": "administracion",
+            "actor_id": 777
+          },
+          {
+            "at": "2026-11-23T14:24:16.433Z",
+            "action": "activated",
+            "module": "administracion",
+            "actor_id": 777
+          }
+        ]
+      }
+    },
+    "peticion_devolvio": "arreglo",
+    "codigo_servido_anuncia": "arreglo",
+    "pierna_declarada": "arreglo",
+    "cumple": true,
+    "motivos_no_cumple": [],
+    "status": "passed",
+    "nota": "Un rojo en el control de la propiedad es el resultado esperado de la pierna ANTES; el verde de la pierna se lee en veredicto.cumple, nunca en el conteo de controles."
+  },
+  "total": 14,
+  "ok": 14,
+  "fallos": [],
+  "cuenta_de_medicion": {
+    "correo": "cert.inactiva.3849419@internal.apexos.local",
+    "modo": "efimera",
+    "clave_versionada": false
+  },
+  "limitaciones": [
+    "No toca el aislamiento entre tenants: eso lo cubre la certificacion local de 15 controles con dos empresas propias.",
+    "No se versiona la contrasena de la cuenta cert.inactiva.3849419@internal.apexos.local; queda solo el correo para reproducir la consulta."
+  ]
+}

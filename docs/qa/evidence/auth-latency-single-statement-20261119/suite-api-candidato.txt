@@ -1,0 +1,167 @@
+Evidencia de la pierna desarrollo -> develop del piso de autenticacion
+Candidato: codex/qa-auth-latency-single-statement-20261119 (aplicacion 61b41fd1)
+Baseline del destino: origin/develop 06baf9c8 (merge PR #106, reactivacion de cuenta inactiva)
+Commit certificado en desarrollo: 19df3ca2
+Fecha: 2026-11-23 (puesto de trabajo, worktree aislado, node_modules por junction al arbol certificado)
+
+Arbol de las corridas: los instrumentos declaran commit 61b41fd1, que es el HEAD del worktree
+auxiliar en el momento de medir. El commit certificado final solo re agrupo para meter esta
+evidencia dentro de su propio commit; las rutas de producto no cambian un byte entre los dos
+arboles y se comprueba con:
+  git diff 61b41fd1..<certificado> -- apps/api scripts package.json     (vacío)
+
+-----------------------------------------------------------------
+1) FOCO DE AUTENTICACION EN EL ARBOL DEL CANDIDATO
+-----------------------------------------------------------------
+$ cd apps/api && DISABLE_REDIS=true node --test --test-force-exit \
+    test/security-authorization-revocation.test.js \
+    test/auth-session-hardening.test.js \
+    test/authorization-observe.test.js
+
+1..18
+# tests 18
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2227.4721
+
+Los 18 casos cubren: la decision de una sentencia con las condiciones de verdad del revoke
+(usuario, tenant, sesion), el modo observe y el modo enforce, y el rechazo explicito cuando el
+estado de autorizacion falta.
+
+-----------------------------------------------------------------
+2) SUITE COMPLETA DEL API EN EL CANDIDATO (con .env del puesto presente)
+-----------------------------------------------------------------
+$ cd apps/api && DISABLE_REDIS=true node --test --test-force-exit "test/*.test.js"
+
+# tests 1213
+# suites 0
+# pass 1209
+# fail 1
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 61183.5099
+
+not ok 387 - fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante
+  (apps/api/test/hr-marking-concurrency.test.js)
+
+Las tres saltadas, preexistentes en el destino y ajenas a este cambio:
+  ok 205 - el decorador real responde 403 al usuario Supabase sin empresa y 401 al token basura # SKIP
+  ok 275 - cotizacion, cancelacion con motivo, pedido, visita y 360 en base local # SKIP
+  ok 302 - commitments y visits estan montadas en /api/v1 y bloquean acceso anonimo # SKIP
+
+Nota de conteo: develop trae 1 213 pruebas, desarrollo 1 278, porque el destino aun no contiene
+modulos de desarrollo (buzon, facturas recibidas, comercio, torre). Un conteo menor no es
+regresion: es un arbol menor.
+
+-----------------------------------------------------------------
+3) ATRIBUCION DEL UNICO ROJO: REPRODUCCION EN EL BASELINE LIMPIO DE develop
+-----------------------------------------------------------------
+Worktree aparte en 06baf9c8 (origin/develop vigente), SIN este replay, mismo node_modules enlazado.
+
+$ cd apps/api && DISABLE_REDIS=true node --test --test-force-exit \
+    test/accounting-routes-contract.test.js \
+    test/hr-marking-concurrency.test.js \
+    test/transport-tms-foundation.test.js
+
+  (baseline 06baf9c8)  # tests 27 / # pass 26 / # fail 1 / # skipped 0
+  not ok 7 - fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante
+
+  (candidato 61b41fd1) # tests 27 / # pass 26 / # fail 1 / # skipped 0
+  not ok 7 - fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante
+
+Idéntico con y sin el replay, inclusive el numero de caso. Es deuda propia de develop (contrato
+de concurrencia de Talento Humano), no la produce esta pierna y no se corrige dentro de una
+promocion puntual porque seria alcance de otro modulo.
+
+-----------------------------------------------------------------
+4) LOS DOS ROJOS QUE ERAN DEL WORKTREE (causa de ambiente, corregida en el ambiente)
+-----------------------------------------------------------------
+Primera corrida de un worktree nuevo, antes de copiar el .env del puesto:
+
+  not ok - all accounting UI routes are registered under /api/v1
+    error: 'Faltan variables de entorno requeridas: DATABASE_URL, JWT_SECRET'
+  not ok - las rutas TMS se registran y exigen autenticacion
+
+Con el .env presente (ignorado por el patron *.env, nunca se commitea), los dos quedan verdes en
+candidato y en baseline, como se ve en la seccion 3. No se toco un solo check.
+
+-----------------------------------------------------------------
+5) CERTIFICACION DIFERENCIAL EJECUTADA DESDE EL ARBOL DEL CANDIDATO
+-----------------------------------------------------------------
+$ npm run certify:hr-auth-latency:qa
+Una sentencia decide igual que cinco en 18 casos y mediana 446 ms vs 1690 ms.
+   18 casos - divergencias 0 - anomalias 401 0 - factor 0.26 (presupuesto <= 0.60)
+   cobertura: 6 ACEPTA / 9 MIDE_Y_DEJA_PASAR / 3 RECHAZA / 0 RECHAZA_INTERNO
+   project_ref jbirkghkekuifgfsgquq (guard: aborta sin conectar si el ref no coincide)
+   evidencia -> docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795441669327.json
+
+$ npm run certify:hr-auth-latency:production
+Una sentencia decide igual que cinco en 18 casos y mediana 133 ms vs 527 ms.
+   18 casos - divergencias 0 - anomalias 401 0 - factor 0.25 (presupuesto <= 0.60)
+   cobertura: 6 ACEPTA / 9 MIDE_Y_DEJA_PASAR / 3 RECHAZA / 0 RECHAZA_INTERNO
+   project_ref jzbwzmkidfthknsohhnr
+   evidencia -> docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795441688976.json
+
+Ambas corridas publican rama = codex/qa-auth-latency-single-statement-20261119, o sea que el
+codigo medido es el del candidato. Las corridas anteriores a este recálculo (515 ms en QA y
+139 ms en Producción, factor 0.27 y 0.25) quedan versionadas y se declaran superadas por el
+cambio de baseline, no invalidadas: midieron el mismo blob de authorizationState.js.
+
+-----------------------------------------------------------------
+6) REGRESION PROTEGIDA LOCAL (soporte, no sustituye la pata de navegador)
+-----------------------------------------------------------------
+$ DATABASE_URL=postgresql://apex:***@127.0.0.1:55432/apexos \
+    node scripts/certifications/protected-regression-local.js \
+    --output=docs/qa/evidence/auth-latency-single-statement-20261119/regresion-protegida-local.json
+
+status: passed | commit: 61b41fd1 | db: 127.0.0.1:55432 (postgres 16 del compose infra, levanto
+a la primera corrida de esta pierna; en el intento anterior estaba el daemon apagado y el guard
+bloqueo con "DATABASE_URL no configurada")
+
+10 suites, 10 passed, 0 fallidas, 0 ausentes:
+  accounting_opening_balances_and_numbering        35/0
+  accounting_routes_contract                       passed (4 953 ms)
+  petty_cash_masters_and_numbering_GM_APC_LCM      35/0
+  petty_cash_vouchers_and_reversal                 54/0
+  petty_cash_reports                               35/0
+  purchases_supplier_and_transaction_flow           3/0
+  purchases_invoice_transaction                     2/0
+  inventory_adjustments_and_accounting              5/0
+  inventory_transfer_tenancy                        3/0
+  rbac_module_access                                4/0
+
+Por que importa en esta pierna: la decision de autorizacion es una sola sentencia para TODO
+endpoint autenticado, asi que el riesgo no es del modulo HR sino del camino comun. Estas 10
+suites son rutas de contabilidad, caja menor, compras, inventario y RBAC que atraviesan ese
+camino contra una base real, no contra mocks.
+
+-----------------------------------------------------------------
+7) IDENTIDAD DE BLOB DEL REPLAY (17 de 22 rutas)
+-----------------------------------------------------------------
+$ por cada ruta del diff 61b41fd1^..61b41fd1, comparar su blob con git rev-parse 19df3ca2:<ruta>
+
+rutas comparadas: 22
+blob IDENTICO al commit certificado de desarrollo: 17
+blob DISTINTO deliberado: 5
+  package.json                                                     -> delta minimo sobre el destino
+  docs/qa/certifications/auth-latency-single-statement-20261119.md -> redactada por pierna (cada destino declara su propio baseline)
+  docs/qa/evidence/auth-latency-single-statement-20261119/suite-api-candidato.txt -> corrida de este arbol
+  docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795104551670.json -> no existe en desarrollo
+  docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795104568970.json -> no existe en desarrollo
+
+El producto (authorizationState.js), sus tres pruebas de contrato y el instrumento versionado son
+byte a byte lo que ya se certifico en desarrollo. No se re-escribio logica para que cupiera en
+develop.
+
+-----------------------------------------------------------------
+8) DEPENDENCIAS DEL CANDIDATO
+-----------------------------------------------------------------
+package-lock.json y apps/api/package.json DISTINTOS entre develop y desarrollo (desarrollo agrega
+dependencias de buzon/imap y el workspace de la torre). Lo que importa a la ruta probada esta igual:
+@prisma/client 5.22.0 y prisma 5.22.0 en los dos locks. El junction de node_modules es un
+superconjunto de paquetes para el codigo del candidato; ninguna de las 18 pruebas del foco importa
+los paquetes extra.
