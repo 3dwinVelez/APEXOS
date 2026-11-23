@@ -1,0 +1,34 @@
+{
+  "intervenido_en": "2026-11-23T16:17:05.383Z",
+  "ambiente": "produccion",
+  "manifiesto": {
+    "ruta_fuera_del_repositorio": "C:/Users/mq1/AppData/Local/Temp/rescate-escalera-20261123.json",
+    "filas": 6,
+    "sha256": "5c91f9e1c6499b75"
+  },
+  "cuenta": {
+    "user_id": 256,
+    "rol": "APEX_ADMIN",
+    "empresa": "IMPORTADORA SCJ SAS",
+    "tenant": "67a5dcb8",
+    "login_status": 200
+  },
+  "alta_de_cuenta": "escritura directa en la tabla de la aplicacion con bcrypt: el alta por el servicio admin.createUser no cabe bajo el pooler (seccion 15 del brief). Ninguna marcacion se escribio por debajo del API.",
+  "intento_previo_descartado": "rescate-escalera-intento-tenant-erroneo-20261123.json: la primera tanda creo su admin en la empresa modelo NYVORA y las seis jornadas son de otra empresa, así que el API respondio 404 EMPLEADO_NO_ENCONTRADO y no se escribio nada. Tambien dejaba una cuenta colgada (253) porque el correo del andamio llevaba mayusculas y el login normaliza a minusculas (apps/api/src/modules/auth/service.js:125); se retiro por el endpoint con login 401 verificado.",
+  "cuenta_de_sonda": "user 254 (correo con mayusculas, sin sesion posible): queda inactiva por escritura directa y declarada aqui; no tuvo session ni escribio dato laboral.",
+  "aseo_de_cuenta_previa": {
+    "explicacion": "cuenta efimera de la tanda anterior retirada por el endpoint tras normalizarle el correo.",
+    "registros": []
+  },
+  "codigos_de_salida": {
+    "ejecucion": 1,
+    "verificacion": 1
+  },
+  "retiro_por_el_endpoint": {
+    "user_id": 256,
+    "retiro_status": 200,
+    "login_tras_retiro": 401
+  },
+  "sin_nombres": true,
+  "escrituras_por_debajo_del_api": 0
+}

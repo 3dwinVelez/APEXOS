@@ -123,5 +123,24 @@
     "que_falta": "La corrida DESPUES en Produccion, que solo puede existir despues de que Railway sirva el commit promocionado, y la escritura de las seis salidas bloqueadas del 21 y 22 de noviembre con su verificacion.",
     "como_se_corre": "node scripts/certifications/hr-marking-ladder-field.js --env-file=config/production.env --espera=arreglo --fix-commit=2c2f672339a6465c07601f3425f6e8c3234c806d --output=docs/qa/evidence/hr-marca-ladder-main-20261123/campo-despues-produccion.json",
     "control_de_contraste": "La pierna de escrituras usa el presupuesto de 20.000 ms y ancla por /health el commit servido: si Railway todavia sirve 7de02a3b el veredicto de la pata queda en defecto y la corrida no puede declararse DESPUES. Las seis salidas se escriben con hr-marking-rescue-apply.js contra el endpoint del producto, a la hora del horario asignado de cada trabajador, y su evidencia se versiona en la misma carpeta."
+  },
+  "estado_post_despliegue": {
+    "estado": "publicado_y_medido",
+    "merge": "790870a0 (padres a0fb7e05 + 06e94091), commit certificado 2c2f6723",
+    "binario_servido": "GET /health de Produccion responde commit 790870a0e439; en su blob apps/api/src/modules/hr/service.js resolvePunchLadder aparece 4 veces (antes: 0)",
+    "artefactos": [
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/campo-despues-produccion.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/cierre-produccion-20261123.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-antes-produccion-20261123.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-ejecucion-produccion-20261123.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-verificacion-produccion-20261123.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-intento-tenant-erroneo-20261123.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-sesion-produccion-20261123.json",
+      "docs/qa/certifications/hr-marking-ladder-main-20261123.md"
+    ],
+    "despues_produccion": "hr-marking-ladder-field.js --espera=arreglo: 16/16, anclado por health_ancla_el_commit_servido. Rechazo legible 409 con details.expected_type, 422 MOTIVO_CORRECCION_REQUERIDO sin motivo, destrabe motivado 200 con novedad escalera:esperada:inicio_almuerzo, jornada cerrada sigue 409 JORNADA_COMPLETA, canal propio no conoce la bandera, tenant vecino 404, peor escritura 3.257 ms sobre presupuesto de 20.000 ms.",
+    "seis_salidas": "El mismo payload que tropezaba con 409 MARCACION_FUERA_DE_SECUENCIA responde ahora 400 KILOMETRAJE_REQUERIDO: la compuerta que esta pata traia a Produccion esta pasada con dato real de cliente. Lo que queda delante es el odometro del dia, que ningun registro del sistema permite derivar (Vehicle.mileage en 0, RoutePreoperationalChecklist sin filas de esas placas en la ventana, TransportTripEvent/Event/RouteBlockEvent en 0 filas). No se invento ni hora ni kilometraje.",
+    "cuentas": "250/251/252/253/255/256 retiradas por PATCH /admin/users/:id/status con login 401 despues; 254, sonda que nunca obtuvo sesion, apagada por escritura directa y declarada.",
+    "pendientes_declarados": "1) las seis salidas del 21 y 22 esperan la lectura fisica del odometro por conductor (dueno: operacion); 2) las siete salidas del 23 descartadas por hora futura se recogen en su ventana con hr-marking-rescue-apply.js y la misma frontera de odometro; 3) hallazgo_autorizacion (rol Empleado con hr:write) sigue siendo decision del dueno con su propio brief."
   }
 }

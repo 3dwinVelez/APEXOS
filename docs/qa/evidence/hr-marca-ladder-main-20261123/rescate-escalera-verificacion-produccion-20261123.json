@@ -1,0 +1,123 @@
+{
+  "generado_en": "2026-11-23T16:16:50.790Z",
+  "manifiesto_sha256": "5c91f9e1c6499b75",
+  "ambiente_archivo": "config/production.env",
+  "base_url": "https://apexos-api-prod-production.up.railway.app",
+  "es_produccion": true,
+  "modo": "verificar",
+  "filas_seleccionadas": 6,
+  "escrituras": 0,
+  "resultados": [],
+  "verificacion": [
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-21",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "inicio_almuerzo",
+        "entrada"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": true,
+      "lectura_ciega": false,
+      "lectura_sin_filas": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 18
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-21",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": true,
+      "lectura_ciega": false,
+      "lectura_sin_filas": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 18
+    },
+    {
+      "empleado_id": 515,
+      "dia": "2026-11-21",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": true,
+      "lectura_ciega": false,
+      "lectura_sin_filas": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 18
+    },
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-22",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada",
+        "inicio_almuerzo"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": true,
+      "lectura_ciega": false,
+      "lectura_sin_filas": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 13
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-22",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": true,
+      "lectura_ciega": false,
+      "lectura_sin_filas": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 13
+    },
+    {
+      "empleado_id": 547,
+      "dia": "2026-11-22",
+      "tipo": "salida",
+      "tipos_lectos": [
+        "entrada"
+      ],
+      "pierna_asentada": false,
+      "pierna_a_otra_hora": false,
+      "id_marca": null,
+      "hora_leida": null,
+      "pierna_no_visibilizada": true,
+      "lectura_ciega": false,
+      "lectura_sin_filas": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 13
+    }
+  ]
+}
