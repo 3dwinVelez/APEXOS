@@ -1,0 +1,76 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-paquete-main-20261123",
+  "base_commits": {
+    "main": "336f28b0a695e6817df1270cc0d0456ac002fe72"
+  },
+  "certified_commit": "54cabeb34b7270df46d17b43d8096d2337b7ff7c",
+  "candidate_source": {
+    "branch": "codex/qa-hr-paquete-main-20261123",
+    "commit": "punta con la evidencia del despues, hija de 336f28b0"
+  },
+  "target_branch": "main",
+  "source_branch": "develop",
+  "change_intent": {
+    "summary": "Evidencia del DESPUES en Produccion del paquete HR ya promovido: sonda de artefacto servido (health, chunks y endpoints sin credenciales) sobre el tip 336f28b0, sin escrituras y sin esquema",
+    "modules": [
+      "qa-evidencia",
+      "talento-humano-pata-produccion"
+    ]
+  },
+  "allowed_paths": [
+    "docs/qa/certifications/hr-paquete-main-20261123.md",
+    "docs/qa/evidence/hr-paquete-main-20261123/00-veredicto.md",
+    "docs/qa/evidence/hr-paquete-main-20261123/qa-despues-produccion.json",
+    "docs/qa/manifests/hr-paquete-main-20261123-scope.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "docs/qa/certifications/hr-paquete-main-20261123.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/00-veredicto.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-paquete-main-20261123/qa-despues-produccion.json"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/manifests/hr-paquete-main-20261123-scope.json"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "El artefacto servido en Produccion es el contenido que QA certifico pierna por pierna",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-paquete-main-20261123/qa-despues-produccion.json",
+        "../evidence/hr-paquete-main-20261123/qa-campo-escritura.json",
+        "../evidence/hr-paquete-main-20261123/equivalencia-blob-candidato.txt"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-23T14:30:00-05:00",
+    "authorization": "El propietario autorizo expresamente la direccion develop -> main del paquete HR acumulado completo y la promocion ahora, con la forma de push desde la rama auxiliar",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "El guard de gobernanza de main sigue siendo la version antigua y rechaza en CI cualquier PR cuyo head no sea develop; el push es fast-forward del replay puntual sobre el tip actual, no un merge de rama"
+    },
+    "limits": "La autorizacion cubre este transporte de contenido a main. No cubre force push, reescritura de historia, borrado de ramas, migraciones remotas, ni cambios de infraestructura o secretos"
+  },
+  "despues_en_produccion": "las tres rutas nuevas son la evidencia del artefacto servido en main; el replay de las 49 rutas de codigo y las 14 de evidencia anterior quedaron validadas contra el baseline c53f857c con 63 rutas exactas, salida verbatim en docs/qa/evidence/hr-paquete-main-20261123/00-veredicto.md",
+  "promocion_certificada_previamente": {
+    "baseline": "c53f857c1d996aceaf9fcda4649cbcd9ed7dccab",
+    "candidato": "336f28b0a695e6817df1270cc0d0456ac002fe72",
+    "rutas": 63,
+    "compuerta": "ALCANCE DE PROMOCION VALIDO: hr-paquete-main-20261123 (63 rutas)",
+    "nota": "el inventario de las 63 rutas (49 de codigo y 14 de evidencia e instrumentos) se corrio y valid contra ese baseline; su salida verbatim vive en docs/qa/evidence/hr-paquete-main-20261123/00-veredicto.md y en la version de este manifiesto etiquetada por el commit 336f28b0"
+  }
+}

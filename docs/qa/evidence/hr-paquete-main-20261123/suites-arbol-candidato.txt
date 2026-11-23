@@ -1,0 +1,13 @@
+# Suites de arbol corridas en el candidato 54cabeb3 (base origin/main c53f857c)
+# Fecha: 2026-11-23T17:04:30Z  Node: v22.23.1
+# Sustrato: worktree de solo git/compuertas, SIN node_modules (regla 40). Solo se corren las suites que no dependen de dependencias.
+# Total: 45 pruebas, 45 pasan, 0 fallan.
+command-palette-module-functions.test.mjs: # tests 10 # pass 10 # fail 0 
+module-portfolio.test.mjs: # tests 6 # pass 6 # fail 0 
+hr-attendance-state.test.mjs: # tests 4 # pass 4 # fail 0 
+hr-unified-schedules.test.mjs: # tests 3 # pass 3 # fail 0 
+hr-marking-lateness-selfie.test.mjs: # tests 8 # pass 8 # fail 0 
+hr-workday-novelties-ui.test.mjs: # tests 14 # pass 14 # fail 0 
+# Las dos primeras suites (catalogo de modulos y portafolio) corren contra el arbol de main con el hunkeo a mano declarado en equivalencia-blob-candidato.txt: verifican que la entrada HR del catalogo existe en Produccion, que la guarda NESTED_VIEWS que main agrego sigue en pie y que ninguna fila ajena al frente viajo con ella.
+# hr-attendance-state.test.mjs es la suite del frente hermano que main absorbio en c53f857c: se incluye aqui porque el candidato la toma byte a byte de main (no la reescribe) y porque es la evidencia de que la fundicion no la rompio.
+# Las seis suites se corrieron DESPUES de aplicar las 49 rutas y ANTES de commitear el replay, sobre el mismo arbol que se promociona en 54cabeb34b7270df46d17b43d8096d2337b7ff7c.

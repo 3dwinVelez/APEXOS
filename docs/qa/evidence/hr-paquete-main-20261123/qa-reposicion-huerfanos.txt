@@ -1,0 +1,137 @@
+# Reposicion de residuos de la certificacion HR en QA — 2026-11-23
+
+## Lo que se encontro
+
+El arnes `scripts/certifications/hr-paquete-main-qa.js` retira sus cuentas por endpoint
+(`PATCH /admin/users/:id status active=false`), nunca por `UPDATE`. Al comparar las corridas
+de esta intervencion, los registros de retiro marcaban:
+
+    corrida 20261123152121 (build 107)  jefe 788 -> 200 | operario 789 -> 401 | sin_horario 790 -> 401
+    corrida 20261123162441 (build #110) jefe 819 -> 200 | operario 820 -> 401 | sin_horario 821 -> 401
+    corrida 20261123162931              jefe ... -> 200 | operario 826 -> 200 | sin_horario 827 -> 200
+
+Causa medida en el arnes: el retiro se hacia con la sesion del administrador efmero y el administrador
+encabezaba la lista. Al desactivarse a si mismo su token moria, y las dos fichas de marcacion
+siguientes recibian `401`. El campo con el que el arnes lo anunciaba (`activo_servido`) era ademas
+inverso a su nombre: vale `true` cuando la ficha **ya no** aparece en el listado, o sea cuando si se
+retiro. Las dos primeras filas de la tabla son, por lo tanto, fichas que quedaron ACTIVAS en QA.
+El veredicto publicado decia "retiradas por endpoint" sin ser cierto para esas cuatro fichas.
+
+## El segundo hallazgo: el retiro de mallas tampoco era cierto
+
+Al hacer el censo SQL de este archivo se midio algo que el veredicto publicado afirmaba al reves.
+La casilla `malla_cert_visible_despues_del_retiro = false` parecia decir "la malla ya no esta"; con
+`SELECT status FROM "TimeRoute"` estaban **20 mallas activas** de las diez corridas anteriores:
+
+    10 de la pierna unificada   (405 407 409 411 418 420 422 424 426 428)  status = active
+    10 ganadoras de contencion  (406 408 410 412 419 421 423 425 427 429)  status = active
+
+Tres causas, las tres del instrumento y no del producto:
+
+1. El arnes hacia `DELETE /talento-humano/mallas/:id` y ese endpoint esta detras del permiso
+   `delete_physical_records` (`apps/api/src/modules/hr/routes.js:108`, `requirePhysicalDeleteGrant`),
+   que la cuenta efmera no tiene: responde **400** de esquema. El retiro nunca ocurrio.
+2. El control se leia **despues** de matar la sesion del administrador que lo ejecuta. Un `401`
+   vacia la lista, `filasDe()` devuelve `[]` y la casilla queda `false`. Era un verde que se
+   satisfece con que la lectura falle: no podia fallar.
+3. Y aunque la lectura funcionara, mediria la causa equivocada: `listRoutes`
+   (`apps/api/src/modules/hr/service.js:778`) oculta la malla cuando la ficha asignada queda
+   inactiva, no cuando la malla se retira. Desaparecer del listado no es estar retirada.
+
+El retiro real por endpoint es `PATCH /hr/routes/:id` con `status=inactive`
+(`apps/api/src/modules/hr/service.js:1600`, `status: input.status || "active"`), que es el idioma
+que el propio producto usa para desactivar un horario y el mismo que ya se usaba con el maestro de
+bancos. La confirmacion es el estado que la lectura del almacen devuelve, con la sesion viva, y
+exigiendo haber visto la fila `active` antes de parchearla.
+
+## Lo que se reparo en el instrumento
+
+1. Orden de retiro: operario, sin_horario, lector y el administrador al final (`cuentas` en el arnes).
+2. El campo se renombro `retirado_confirmado` y sigue midiendo la relectura del listado, no el 2xx.
+3. El banco efmero se retira de verdad: antes la lista de retiros anunciaba el `PATCH` del banco nuevo
+   con la nota "ya se ejercicio en la pierna de cuenta de pago" sin ejecutarlo; ahora se hace el
+   `PATCH active=false` y se relee el maestro, con `retirado_confirmado`, antes de matar la sesion.
+4. El censo de residuos del veredicto se calcula (`[jefe, operario, sinHorario, lectora].filter(...)`),
+   no se escribe fijo en "4 fichas".
+5. El banco libre se busca barriendo `915..999` contra el maestro (no contra una lista fija de seis),
+   y la pierna de paridad clasifica cada divergencia: declarada o `SIN DECLARAR`.
+6. Con el candidato fundido sobre el tip actual de main, `EXCLUIDOS_DECLARADOS` queda **vacio**: la
+   paridad 10/10 ya no puede comprar una exclusion.
+7. Pierna nueva `mallas_retiradas_por_estado` (la veintiseis): retira la malla de la corrida y la
+   ganadora de la contienda por `PATCH .../hr/routes/:id status=inactive`, relee el estado con la
+   sesion viva y declara el `DELETE` fisico como lo que es (`400`, falta el permiso). El `--selftest`
+   la recorre y exige que distinga: 26 piernas con `verde=true distingue_rojo=true`.
+8. Reposicion de corridas anteriores dentro de la propia corrida: barre el listado, toma las filas
+   cuya nota lleva la marca `CERT QA`/`CERT CONC` con un `RUN_ID` distinto y las retira por el mismo
+   endpoint. Se reportan los conteos SQL antes y despues, no la buena intencion.
+
+## Como quedo
+
+Retiros efectivamente ejecutados y releidos, por corrida:
+
+    corrida 20261123163936 (candidato a4832a6a, build servido 914d1721965d)
+      banco 921 -> 200 retirado_confirmado=true | banco 922 -> creado y retirado en la misma corrida
+      operario 831 -> 200 true | sin_horario 832 -> 200 true | jefe 830 -> 200 true (ultimo)
+      malla 426 -> DELETE 400: la pierna de retiro aun no existia, la fila quedo ACTIVE
+
+    corrida 20261123165957 (candidato 54cabeb3, build servido 914d1721965d)
+      banco 923 -> 200 retirado_confirmado=true | banco 924 -> 200 retirado_confirmado=true
+      operario 834 -> 200 true | sin_horario 835 -> 200 true | jefe 833 -> 200 true (ultimo)
+      malla 428 -> DELETE 400 y el control viejo dio "no visible": la fila quedo ACTIVE.
+        Esta corrida esta superada por ese control, no por el arbol (es el mismo candidato).
+
+    corrida 20261123171846 (candidato 54cabeb3, build servido 914d1721965d, arnes fc73dc53...)
+      — corrida citable, APROBADO 26/26 —
+      malla 430 (unificada) y 431 (ganadora de contencion) -> PATCH 200, releidas active->inactive,
+        DELETE fisico 400 declarado
+      banco 925 -> 200 retirado_confirmado=true | banco 926 -> 200 retirado_confirmado=true
+      operario 837 -> 200 true | sin_horario 838 -> 200 true | jefe 836 -> 200 true (ultimo)
+      documento de liquidacion id 11 -> DELETE 200 (fisico), con su recibo PDF de 6 296 bytes servido
+        antes del retiro; `th_liquidaciones_trabajador` no conserva ninguna fila de ficha QA-PQ
+      reposicion de corridas anteriores: 20 mallas encontradas activas, retiro por endpoint,
+        conteo SQL 20 -> 0
+
+Las cuatro fichas huerfanas de las dos primeras corridas (789, 790, 820, 821) se retiraron con una
+pasada puntual por el mismo endpoint, con una sesion de administrador que la corrida crea y desecha
+(cero credenciales versionadas, cero `UPDATE`).
+
+## Censo final de residuos (SQL directo contra la base de QA)
+
+    fichas con code LIKE 'QA-PQ-%' en NYVORA        : 33  (11 corridas x 3 fichas)
+    de esas, con usuario activo                     :  0
+    bancos del maestro con nombre 'CERT QA ...'     : 18  (907 908 909 911 912 913 915 916 917 918
+                                                           919 920 921 922 923 924 925 926)
+    bancos CERT activos                              :  0
+    mallas con marca de esta intervencion            : 22  (11 CERT QA + 11 CERT CONC)
+    mallas de la intervencion con status active      :  0  (antes de la reposicion: 20)
+    filas de revision-dia de este frente             : 279 en 9 fichas (31 por corrida justificada)
+    marcaciones con idempotency_key 'qa-paquete-2026*': 9 filas, 9 llaves distintas
+    documentos de liquidacion de fichas QA-PQ        :  0  (el DELETE de este recurso si es fisico)
+    defaults 001/007/051                             : NO viven en Tenant.config.hr_banks (el maestro
+                                                      solo guarda lo propio de la empresa: 18 filas,
+                                                      ninguna de ellas un default); vienen por codigo
+                                                      y la API los sirve — pierna bancos_por_defecto
+    claves de Tenant.config distintas de hr_banks     : byte a byte iguales antes y despues (2 -> 2)
+
+Una fila de `th_nomina_ajustes` con `adjustment_type='revision_dia'` pertenece a la ficha 554
+(`Edwar lopez`), que no es de este frente: no se toco. Las fichas `647`, `650`, `670`, `673`, `676`,
+`679`, `684`, `687` y `690` llevan las 31 clases de sus respectivas corridas.
+
+Por que el censo es SQL y no ORM: la primera pasada con `prisma.employee.findMany` devolvio **0**
+fichas `QA-PQ-*`, un verde que era falso en el otro sentido (anunciaba ausencia donde habia 30
+filas). El cliente Prisma de este producto inyecta `active: true` en la lectura de fichas, asi que
+las retirees nunca aparecen por esa via. El censo citable es `SELECT ... FROM "Employee"` con el
+join a `"User"`, que es lo que esta arriba. El mismo error de lectura por via filtrada esta detras
+del control de mallas: hay que preguntar al almacen, no a un listado que filtra por otras razones.
+
+## Lo que NO es de este frente
+
+El mismo censo de `users` mostro cuentas de certificaciones de otras intervenciones que siguen activas
+en QA: `qa.monitor.admin.*` / `qa.monitor.employee.*` (20261119052614, 20261119055257), `qa.silence.*`
+(20261119043459, 20261119044718), `qa.rescue.admin.20261120043011` y las fixtures
+`sesion-con-empresa.*@certificacion.qa`. No se tocan: son residuos de instrumentos ajenos, con dueno y
+manifiesto propios, y desactivarlos desde este frente seria modificar datos de otro alcance. Se
+reportan para que su dueno los cierre con su propio arnes.
+
+Ninguna contrasena de estas cuentas se versiona: los archivos de evidencia solo registran
+identificadores numericos, hashes de blob y codigos de dominio.

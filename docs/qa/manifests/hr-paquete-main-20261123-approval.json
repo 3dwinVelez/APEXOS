@@ -1,0 +1,121 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-paquete-main-20261123",
+  "commit": "54cabeb34b7270df46d17b43d8096d2337b7ff7c",
+  "tree_evaluated": "punta de codex/qa-hr-paquete-main-20261123 medida al generar este manifiesto: f88adc8c8f7aac75102d9fd94e0045deaf7c5d43 (replay puntual 54cabeb3 + evidencia de campo + el instrumento). Este par de manifiestos entra en un commit docs(qa) inmediato, hijo de esa punta, que no toca ninguna de las 49 rutas de codigo. El sha evaluado en QA es 54cabeb3, hijo directo del baseline c53f857c.",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-23T14:30:00-05:00",
+    "scope": "promotion_to_main",
+    "instruction": "Sí: promover ahora, con la forma de push desde la rama auxiliar (APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DEVELOP_A_MAIN git push origin codex/qa-hr-paquete-main-20261123:main)",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "El guard de gobernanza de main (scripts/git-governance-guard.js:69) sigue siendo la version antigua y pondria rojo el check governance:ci de cualquier PR cuyo head no sea develop. La pata es transporte del mismo contenido que QA certifico 26/26: 10 de las 10 rutas HR ancla de la corrida son blob-identicas a las del candidato, con la lista de exclusiones del arnes vacia."
+    },
+    "authorization_basis": "El encargo del propietario es analizar la divergencia HR de develop, alinearla con main de manera controlada y sin afectar los cambios en camino. De esa lectura salieron la direccion develop -> main, el alcance de paquete acumulado completo y la instruccion de certificar en QA antes de pedir el push.",
+    "limits": "La autorizacion cubre este transporte de contenido a main. No cubre force push, reescritura de historia compartida, borrado de ramas, otras migraciones remotas, cambios de infraestructura ni secretos. No salta compuertas: se exigen y se corren el manifiesto v2, qa:promotion:scope contra origin/main, qa:approval:evidence y la certificacion E2E contra el ambiente desplegado.",
+    "declared_gaps": [
+      "La pata de despliegue del candidato suelto en QA sigue bloqueada (el entorno sirve el tip de develop y el arnes lo declara como bloqueado_despliegue QA 404); la paridad se probo por blob contra el bundle servido, no por despliegue del candidato.",
+      "El DESPUES en Produccion no existe todavia: se versiona tras el push y el redeploy de Railway.",
+      "El paquete no existe en desarrollo; la deuda de retrointegracion la cierra el propietario del frente, no esta promocion.",
+      "main conserva la compuerta dura de selfie en entrada y salida; la excepcion de evidencia degradada vive solo en desarrollo."
+    ]
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-paquete-main-20261123/qa-campo-escritura.json",
+        "../evidence/hr-paquete-main-20261123/qa-autocontrol-piernas.txt",
+        "../certifications/hr-paquete-main-20261123.md"
+      ],
+      "notes": "Corrida 20261123171846 contra apexos-api-qa-production.up.railway.app con la empresa modelo NYVORA y las tres cuentas efimeras que el propio producto creo (836/837/838): 26 piernas, 26 verdes, 0 rojas, 0 NO_APLICABLE. El ancla devolvio commit servido 914d1721965d y la pierna paridad_blobs_hr comparo hash contra hash las 10 rutas HR que gobiernan lo medido con el candidato, sin exclusiones declaradas."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-paquete-main-20261123/qa-campo-lectura.json",
+        "../evidence/hr-paquete-main-20261123/qa-campo-escritura.json",
+        "../evidence/hr-paquete-main-20261123/00-veredicto.md",
+        "../certifications/hr-paquete-main-20261123.md"
+      ],
+      "notes": "El antes se midio con el mismo arnes: BLOQUEADO con 9 rojas y 13 NO_APLICABLE sobre el candidato 2c10deaa. El despues cierra 26/26 con los rechazos observados donde se esperan: banco con codigo corto y SWIFT invalido 400, banco duplicado 409, marcacion sin selfie 400, evidencia que no es imagen 400 (PDF y SVG), horario ajeno 403, cierre de nomina 403 con el rol de marcaciones y 409 con el de administrador mientras el control de contraste del operario sigue en 200, DELETE fisico de malla 400 por la guarda delete_physical_records y lectura de una cuenta retiradas 401/404."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-paquete-main-20261123/suites-arbol-candidato.txt",
+        "../evidence/hr-paquete-main-20261123/qa-autocontrol-piernas.txt",
+        "../evidence/hr-paquete-main-20261123/qa-campo-escritura.json"
+      ],
+      "notes": "Seis suites del arbol del candidato, 45 pruebas, 45 pasan: catalogo de modulos y portafolio (verifican que la entrada HR existe en Produccion y que ninguna fila ajena viajo), contratos de horarios y novedad de jornada, marcacion con selfie y la suite del frente hermano de mallas que main absorbio en c53f857c. El autocontrol del instrumento, aparte: 26 piernas con verde=true y distingue_rojo=true."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-paquete-main-20261123/equivalencia-blob-candidato.txt",
+        "../evidence/hr-paquete-main-20261123/suites-arbol-candidato.txt",
+        "../evidence/hr-paquete-main-20261123/qa-reposicion-huerfanos.txt",
+        "../certifications/hr-paquete-main-20261123.md"
+      ],
+      "notes": "Identidad del replay medida ruta por ruta con guarda falla-cerrada: 49/49 aplicadas, 46/49 blob-identicos al build que QA sirve (las 3 restantes son podas declaradas de filas ajenas), 122 lineas propias del destino conservadas sin perdida y 0 de 15 marcadores de capacidad que se revertirian. El avance de main en el maestro unico de mallas queda dentro del candidato, no debajo."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-paquete-main-20261123/equivalencia-blob-candidato.txt",
+        "../evidence/hr-paquete-main-20261123/qa-reposicion-huerfanos.txt",
+        "../certifications/hr-paquete-main-20261123.md"
+      ],
+      "notes": "El paquete no toca el modelo Prisma ni anade migracion: el delta de apps/api/prisma/** es cero y el inventario no incluye ninguna ruta de esquema. El maestro de bancos persiste en Tenant.config.hr_banks con jsonb_set, y la pierna escritura_banco_preserva_otras_configuraciones mide que las demas claves del tenant siguen byte a byte. El censo SQL de residuos y su reposicion se hizo con lectura directa, sin escribir esquema."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-paquete-main-qa.js",
+    "script_sha256": "fc73dc533b0997df2655c270db170fa8b6eeec9da3b18c3004a3fa1d3223dbba",
+    "evidence": [
+      "../evidence/hr-paquete-main-20261123/qa-campo-escritura.json",
+      "../evidence/hr-paquete-main-20261123/qa-autocontrol-piernas.txt",
+      "../certifications/hr-paquete-main-20261123.md"
+    ],
+    "legs": 26,
+    "passed": 26,
+    "failed": 0,
+    "substrate": "ambiente QA desplegado: API servida commit 914d1721965d (project ref jbirkghkekuifgfsgquq), corrida 2026-11-23T17:18:42Z con --env-file=config/qa.env --escribe-en-qa=SI"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-paquete-main-qa.js",
+    "evidence": [
+      "../evidence/hr-paquete-main-20261123/qa-autocontrol-piernas.txt",
+      "../evidence/hr-paquete-main-20261123/suites-arbol-candidato.txt",
+      "../evidence/hr-paquete-main-20261123/equivalencia-blob-candidato.txt"
+    ],
+    "basis": "El modo --selftest del mismo arnes exige que cada pierna pueda fallar ante la observacion contraria; fue el control que derribó dos verdes que no podian fallar (el retiro de fichas por orden de sesion y el retiro de mallas con sesion muerta). La regresion transversal del arbol se midio con seis suites del propio candidato, 45/45, incluido el frente hermano de mallas que main ya traia. Se ejecutaron en el worktree de gobernanza, sin node_modules por la regla 40: las suites que si dependen de dependencias se puentearon por equivalencia de blobs con el arbol donde corrieron, declarada ruta por ruta."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-paquete-main-qa.js",
+    "evidence": [
+      "../evidence/hr-paquete-main-20261123/qa-campo-escritura.json",
+      "../evidence/hr-paquete-main-20261123/qa-reposicion-huerfanos.txt",
+      "../certifications/hr-paquete-main-20261123.md"
+    ],
+    "notes": "Corrida 20261123171846 sobre la empresa modelo real NYVORA (tenant 1d162ffd-bd27-4855-8141-b015388265fc, 37 modulos activos). Cuentas y fichas efimeras creadas por el propio producto y retiradas por endpoint, no por UPDATE. La pierna aislamiento_tenant_lectura midio 34 filas propias y 0 ajenas, y la lectura del vecino devolvio 404. Los residuos de las corridas anteriores de este frente quedaron repuestos y contados por SQL antes y despues: 33 fichas con 0 usuarios activos, 18 bancos con 0 activos, 22 mallas con 0 activas (20 estaban activas antes de reponer), 0 documentos de liquidacion de ficha QA-PQ."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "c53f857c1d996aceaf9fcda4649cbcd9ed7dccab",
+    "trigger": "Si en Produccion vuelve a fallar la marcacion con selfie de un operario con horario vigente, si el maestro de bancos borra o pisa otra clave de Tenant.config, si una escritura concurrente de malla vuelve a devolver P2028 o timeout en vez de 409, si la liquidacion de retiro deja de servir el recibo PDF o si una lectura de Talento Humano cruza tenants.",
+    "notes": "Revert controlado del commit de docs y del replay sobre main (git revert, sin reescribir historia compartida) y redeploy de apexos-web-prod y apexos-api-prod. No hay migraciones de esquema en este paquete, asi que al revertir no queda dato huerfano: el maestro de bancos y las revisiones de dias viven en filas y claves que el paquete no creo, y los residuos de certificacion se retiran por endpoint. El baseline de rollback es exactamente el tip actual de main medido, no un arbol viejo."
+  }
+}
