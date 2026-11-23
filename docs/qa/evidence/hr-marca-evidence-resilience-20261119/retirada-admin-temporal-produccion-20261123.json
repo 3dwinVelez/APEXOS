@@ -1,0 +1,17 @@
+{
+  "intervenido_en": "2026-11-23T13:50:05.137Z",
+  "ambiente": "produccion",
+  "cuenta": {
+    "id": 245,
+    "rol_id": 158,
+    "descripcion": "Administrador de empresa (andamio del rescate 2026-11-20, reutilizado el 2026-11-23)"
+  },
+  "patch_status": 200,
+  "patch_codigo": "RP-20261120173907",
+  "login_posterior_status": 401,
+  "visible_en_lectura_estandar": false,
+  "active_en_almacen_autoritativo": false,
+  "sesiones_sin_revocar": 0,
+  "escrituras_por_debajo_del_api": 0,
+  "notas": "La reactivacion del 2026-11-23 se hizo por escritura directa (el alta del servicio admin.createUser no cabe bajo el pooler, seccion 15 del brief). El retiro y la revocacion de sesiones si van por el endpoint."
+}

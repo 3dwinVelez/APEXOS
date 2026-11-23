@@ -1,0 +1,44 @@
+{
+  "generado_en": "2026-11-23T13:48:44.017Z",
+  "manifiesto_sha256": "c9fbdcf8fa045f78",
+  "ambiente_archivo": "config/production.env",
+  "base_url": "https://apexos-api-prod-production.up.railway.app",
+  "es_produccion": true,
+  "modo": "aplicar",
+  "filas_seleccionadas": 1,
+  "escrituras": 1,
+  "resultados": [
+    {
+      "empleado_id": 539,
+      "dia": "2026-11-23",
+      "tipo": "entrada",
+      "punched_at": "2026-11-23T13:45:46.402Z",
+      "fuente": "intento_real_en_log",
+      "estado": 200,
+      "ok": true,
+      "code": null,
+      "message": "",
+      "replay": false
+    }
+  ],
+  "verificacion": [
+    {
+      "empleado_id": 539,
+      "dia": "2026-11-23",
+      "tipo": "entrada",
+      "tipos_lectos": [
+        "entrada"
+      ],
+      "pierna_asentada": true,
+      "pierna_a_otra_hora": false,
+      "id_marca": 2620,
+      "hora_leida": "2026-11-23T13:45:46.402Z",
+      "pierna_no_visibilizada": false,
+      "lectura_ciega": false,
+      "lectura_sin_filas": false,
+      "jornada_abierta": true,
+      "lectura_estado": 200,
+      "filas_leidas": 14
+    }
+  ]
+}

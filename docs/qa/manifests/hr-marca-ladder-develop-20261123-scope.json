@@ -1,0 +1,252 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-marca-ladder-develop-20261123",
+  "base_commits": {
+    "develop": "6a393e673f9b4480e1fe004bec210cb3ce89f428"
+  },
+  "target_head": "6a393e673f9b4480e1fe004bec210cb3ce89f428",
+  "certified_commit": "c777dc13528f6e8cd502d83effd68325a92f6486",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-marking-ladder-develop-20261123",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "c777dc13528f6e8cd502d83effd68325a92f6486",
+    "implementation_commit": "4776b8fdcf75b9397c8ae0f4096354b67ba81312"
+  },
+  "certified_functional_paths": [
+    "apps/api/server.js",
+    "apps/api/src/fabric/platformLogs.js",
+    "apps/api/src/modules/admin/public-routes.js",
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/security/fileSignature.js",
+    "apps/api/src/security/policy.js",
+    "apps/api/test/hr-administrative-punch-correction.test.js",
+    "apps/api/test/hr-evidence-resilience.test.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/api/test/platform-log-rejection-detail.test.js",
+    "apps/api/test/telemetry-client-logs-public.test.js",
+    "docs/briefs/2026-11-19-marcacion-evidencia-resiliente.md",
+    "docs/qa/certifications/hr-marking-evidence-resilience-20261123.md",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/estado-post-rescate-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/local-certification.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-antes-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-ejecucion-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-entrada-539-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-pendientes-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-verificacion-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/retirada-admin-temporal-produccion-20261123.json",
+    "scripts/certifications/hr-marking-blocked-workers.js",
+    "scripts/certifications/hr-marking-evidence-resilience-local.js",
+    "scripts/certifications/hr-marking-rescue-apply.js"
+  ],
+  "change_intent": {
+    "summary": "Una foto rechazada deja de comerse la jornada y el 4xx dice su causa: la evidencia degradada se degrada a marcador sin verificar, el log de rechazo compacta claves seguras y la escalera de marcacion admite la correccion administrativa con motivo.",
+    "modules": [
+      "hr",
+      "admin",
+      "platform-logs",
+      "security"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/server.js",
+    "apps/api/src/fabric/platformLogs.js",
+    "apps/api/src/modules/admin/public-routes.js",
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/security/fileSignature.js",
+    "apps/api/src/security/policy.js",
+    "apps/api/test/hr-administrative-punch-correction.test.js",
+    "apps/api/test/hr-evidence-resilience.test.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/api/test/platform-log-rejection-detail.test.js",
+    "apps/api/test/telemetry-client-logs-public.test.js",
+    "docs/briefs/2026-11-19-marcacion-evidencia-resiliente.md",
+    "docs/qa/certifications/hr-marking-evidence-resilience-20261123.md",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/estado-post-rescate-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/local-certification.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-antes-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-ejecucion-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-entrada-539-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-pendientes-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-verificacion-produccion-20261123.json",
+    "docs/qa/evidence/hr-marca-evidence-resilience-20261119/retirada-admin-temporal-produccion-20261123.json",
+    "scripts/certifications/hr-marking-blocked-workers.js",
+    "scripts/certifications/hr-marking-evidence-resilience-local.js",
+    "scripts/certifications/hr-marking-rescue-apply.js",
+    "docs/qa/manifests/hr-marca-ladder-develop-20261123-preqa.json",
+    "docs/qa/manifests/hr-marca-ladder-develop-20261123-scope.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/fabric/platformLogs.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/public-routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/security/fileSignature.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/security/policy.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-administrative-punch-correction.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-evidence-resilience.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-mobile-identity.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/platform-log-rejection-detail.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/telemetry-client-logs-public.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-19-marcacion-evidencia-resiliente.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-marking-evidence-resilience-20261123.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/estado-post-rescate-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-antes-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-ejecucion-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-entrada-539-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-pendientes-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/rescate-verificacion-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marca-evidence-resilience-20261119/retirada-admin-temporal-produccion-20261123.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-marking-blocked-workers.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-marking-evidence-resilience-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-marking-rescue-apply.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marca-ladder-develop-20261123-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marca-ladder-develop-20261123-scope.json"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Jornada escrita aunque la evidencia sea degradada o ilegible",
+      "status": "passed",
+      "evidence": [
+        "hr-marca-ladder-develop-20261123-preqa.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md",
+        "../evidence/hr-marca-evidence-resilience-20261119/local-certification.json"
+      ]
+    },
+    {
+      "name": "Escalera de marcacion con correccion administrativa motivada",
+      "status": "passed",
+      "evidence": [
+        "hr-marca-ladder-develop-20261123-preqa.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md",
+        "../evidence/hr-marca-evidence-resilience-20261119/rescate-ejecucion-produccion-20261123.json"
+      ]
+    },
+    {
+      "name": "Rechazo legible sin filtrar cuerpo, imagen ni secreto",
+      "status": "passed",
+      "evidence": [
+        "hr-marca-ladder-develop-20261123-preqa.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md",
+        "../evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json"
+      ]
+    },
+    {
+      "name": "Identidad movil y firma de archivo decididas por contenido",
+      "status": "passed",
+      "evidence": [
+        "hr-marca-ladder-develop-20261123-preqa.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md",
+        "../evidence/hr-marca-evidence-resilience-20261119/rescate-entrada-539-produccion-20261123.json"
+      ]
+    },
+    {
+      "name": "Autenticacion, RBAC y aislamiento de tenant inalterados",
+      "status": "passed",
+      "evidence": [
+        "hr-marca-ladder-develop-20261123-preqa.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md",
+        "../evidence/hr-marca-evidence-resilience-20261119/estado-post-rescate-produccion-20261123.json"
+      ]
+    }
+  ]
+}

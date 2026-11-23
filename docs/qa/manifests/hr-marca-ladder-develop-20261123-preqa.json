@@ -1,0 +1,138 @@
+{
+  "change_id": "hr-marca-ladder-develop-20261123",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-marking-ladder-develop-20261123",
+  "target_head": "6a393e673f9b4480e1fe004bec210cb3ce89f428",
+  "commit": "c777dc13528f6e8cd502d83effd68325a92f6486",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-marca-ladder-develop-20261123-preqa.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md",
+        "../evidence/hr-marca-evidence-resilience-20261119/local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-marca-ladder-develop-20261123-preqa.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md",
+        "../evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-marca-ladder-develop-20261123-preqa.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md",
+        "../evidence/hr-marca-evidence-resilience-20261119/local-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-marca-ladder-develop-20261123-preqa.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md",
+        "../evidence/hr-marca-evidence-resilience-20261119/local-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-marca-ladder-develop-20261123-preqa.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md",
+        "../evidence/hr-marca-evidence-resilience-20261119/estado-post-rescate-produccion-20261123.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-marking-evidence-resilience-local.js",
+    "evidence": [
+      "hr-marca-ladder-develop-20261123-preqa.json",
+      "../certifications/hr-marking-evidence-resilience-20261123.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-marking-evidence-resilience-local.js",
+    "evidence": [
+      "hr-marca-ladder-develop-20261123-preqa.json",
+      "../certifications/hr-marking-evidence-resilience-20261123.md"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Owner: 'procede' (promocion desarrollo -> develop -> main autorizada 2026-11-23)",
+    "approved_at": "2026-11-23T15:21:26.242Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "functional_commit": "c777dc13528f6e8cd502d83effd68325a92f6486",
+    "canonical_source_commit": "4776b8fdcf75b9397c8ae0f4096354b67ba81312",
+    "certification": {
+      "environment": "LOCAL",
+      "status": "passed",
+      "front": "docs/briefs/2026-11-19-marcacion-evidencia-resiliente.md",
+      "instruments": [
+        "scripts/certifications/hr-marking-evidence-resilience-local.js",
+        "scripts/certifications/hr-marking-blocked-workers.js",
+        "scripts/certifications/hr-marking-rescue-apply.js"
+      ],
+      "checked_at": "2026-11-23T15:21:26.242Z"
+    },
+    "focus_unit": {
+      "tests": 79,
+      "passed": 79,
+      "failed": 0,
+      "scope": "candidato"
+    },
+    "antes_unit": {
+      "tests": 79,
+      "passed": 36,
+      "failed": 43,
+      "scope": "origin/develop sin el parche: el arnes puede fallar"
+    },
+    "api_suite": {
+      "candidate": {
+        "tests": 1232,
+        "passed": 1225,
+        "failed": 5,
+        "skipped": 2
+      },
+      "baseline": {
+        "tests": 1194,
+        "passed": 1187,
+        "failed": 5,
+        "skipped": 2
+      },
+      "attribution": "Conjunto de rojos identico al baseline limpio. Cuatro son del worktree sin config/ (DATABASE_URL, JWT_SECRET, REDIS_URL) y vuelven a verde con ambiente: 22 tests, 21 pass, 0 fail. El quinto es invariante textual preexistente del destino (6 pg_advisory_xact_lock en service.js de develop, 0 en desarrollo), ajeno a este alcance."
+    },
+    "migrations": {
+      "applied": 0,
+      "declared": 0
+    },
+    "deletions": {
+      "allowed": 0,
+      "present": 0
+    },
+    "privacy_scan": {
+      "patterns": "nombre|empleado_codigo|codigo|user_email|email|data:image|base64|Bearer |eyJ",
+      "artifacts": 9,
+      "hits": 0,
+      "note": "Los manifiestos de rescate con nombres de operario viven fuera del repositorio."
+    },
+    "excluded_scope": {
+      "web": "apps/web/** queda fuera: la pagina de marcacion la promove en paralelo otra pierna de Talento Humano; va en segundo candidato.",
+      "agents": "agents/** y .qoder/skills/** no viajan a develop."
+    },
+    "source": "Pierna API del frente de marcacion resiliente. Sin cambios de esquema, sin secretos, sin despliegue en esta puerta."
+  }
+}
