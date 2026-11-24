@@ -1,0 +1,114 @@
+{
+  "change_id": "hr-time-report-20261123",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "914d1721965d727a14c7e836039e2334678ca2de",
+  "commit": "d1358ba130a965d2ae28ee52f5b987aba9bced0f",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-time-report-20261123-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-time-report-20261123-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-time-report-20261123-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-time-report-20261123-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-time-report-20261123-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-time-report-local.js",
+    "evidence": [
+      "hr-time-report-20261123-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-time-report-local.js",
+    "evidence": [
+      "hr-time-report-20261123-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario: despliega a qa",
+    "approved_at": "2026-11-24T02:48:47.344Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "statement": "despliega a qa",
+    "branch_authorization": "Reuse of the previously authorized existing HR QA promotion branch; no new branch created."
+  },
+  "execution": {
+    "functional_commit": "d1358ba130a965d2ae28ee52f5b987aba9bced0f",
+    "implementation_commit": "77e09e148446c3ff32dc7c5a8b8529bd9fd6c7a1",
+    "certification": {
+      "environment": "LOCAL",
+      "status": "passed",
+      "started_at": "2026-11-24T02:46:56.795Z",
+      "checks": [
+        "report derives day/night overtime, ordinary night and holidays from the payroll engine even when every punch extra_minutes is zero",
+        "authentication, forbidden role, tenant separation and invalid ranges fail explicitly",
+        "browser merges APK and web identities, shows all classified columns, filters overtime and reopens details after reload",
+        "downloaded Excel includes each separate concept and 18 minutes exports as 0.30 hours",
+        "a real interrupted summary request is visible and retry restores the calculated data",
+        "reading and exporting never changes punches, processed hours or payroll documents"
+      ],
+      "finished_at": "2026-11-24T02:47:46.250Z"
+    },
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1795488395990",
+      "source_database_modified": false,
+      "fixture_schema_hunks": [
+        "20261016123000_sedes_replace_origins: sections 1-2 only",
+        "20260919110000_time_route_kind_descanso",
+        "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+      ],
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-24T02:47:46.316Z"
+    },
+    "regression": {
+      "status": "passed",
+      "tests": 67,
+      "groups": {
+        "web_identity_monitor_write_guard": 28,
+        "payroll_engine_administrative_correction_photo_resilience": 31,
+        "report_range_punctuality_xlsx": 8
+      }
+    },
+    "typecheck": "passed: full exact QA candidate",
+    "lint": {
+      "errors": 0,
+      "preexisting_warnings": 4
+    },
+    "preservation": "Preserves QA processed-hours comparison, late-entry justification and photo evidence metadata. Only the requested report and its read-only source change. No migrations or customer-data writes."
+  }
+}
