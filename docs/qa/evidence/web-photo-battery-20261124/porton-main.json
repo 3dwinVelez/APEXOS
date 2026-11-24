@@ -1,59 +1,126 @@
 {
-  "instrumento": "portón de promoción desarrollo -> main (cero rechazos foto web)",
-  "fecha_local": "2026-11-24T16:35:00-05:00",
-  "candidate_ref": "codex/qa-cero-rechazos-foto-web-main-20261124",
-  "target_head": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
-  "source_head": "25f8b32e",
-  "antepasado_comun_relevante": "8208d9417ba6e1aff03bb5529bd5ec6aac074a0b",
-  "rutas_inventario": 12,
-  "rutas_producto": [
-    "apps/api/src/modules/hr/mobile-identity.js",
-    "apps/api/test/hr-evidence-resilience.test.js",
-    "scripts/certifications/hr-web-photo-battery.js"
-  ],
-  "medicion_previa_al_replay": {
-    "regla": "la regla 111 de apexos-brief 2.98.0: medir lo que el destino cambió en ese archivo antes de afirmar que el replay es seguro",
-    "apps/api/src/modules/hr/mobile-identity.js": "blob de origin/main = f9e8ea27bb32e92920d25983ed2db899d5d5538f, idéntico al del antepasado 8208d941 => main tiene +0 líneas propias",
-    "apps/api/test/hr-evidence-resilience.test.js": "blob de origin/main = 26d814c12b4f866b1b77e75c44367adaa303afd7, idéntico al del antepasado => main tiene +0 líneas propias",
-    "presencia_de_la_compuerta_web": "origin/main ya trae WEB_SELFIE_REQUIRED_TYPES (5 menciones) y no trae el fix (0 menciones de soloEsGrande): el único delta es este cambio",
-    "conclusion": "replay limpio por archivo, sin fusión a tres vías y sin revertir trabajo ajeno"
-  },
-  "control_de_lineas_huerfanas": {
-    "mobile-identity.js": "20 líneas añadidas, 0 inexistentes en el blob de origin/desarrollo (25f8b32e); 6 retiradas",
-    "hr-evidence-resilience.test.js": "71 líneas añadidas, 7 retiradas, mismo delta numérico que el portón de develop",
-    "instruccion": "toda línea añadida del candidato existe textualmente en origin/desarrollo; ningún hunk nació en la rama de destino"
-  },
-  "suites_sobre_el_arbol_de_main": [
-    { "grupo": "hr-evidence-resilience + hr-single-selfie-gate + hr-mobile-identity", "pruebas": 64, "pasan": 64, "fallan": 0 },
-    { "grupo": "hr-punch-mobile-evidence + hr-evidence-storage-gate + security-evidence-upload", "pruebas": 20, "pasan": 20, "fallan": 0 },
-    {
-      "grupo": "hr-evidence-backfill-tool",
-      "estado": "no corrió en este árbol",
-      "motivo": "exige config/qa.env, que está fuera del control de versiones y no existe dentro del worktree; se corrió verde (dentro del grupo de 91/91) en el árbol que sí lo tiene y ninguna de sus pruebas toca las rutas de este portón"
+  "change_id": "cero-rechazos-foto-web-bateria-20261124-main",
+  "generado": "2026-11-24T16:35:00-05:00",
+  "actualizado": "2026-11-24T17:25:00-05:00",
+  "autoria": "apexos-backend (la degradación por tamaño condicionado), apexos-qa (la mesa de 15 formas y su ANTES/DESPUÉS), apexos-git-guardian y equipo-apexos (el portón y el candado enderezado)",
+  "rama_destino": "main",
+  "punta_destino": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+  "candidato": "codex/qa-cero-rechazos-foto-web-main-20261124, reconstruido sobre origin/main con las 13 rutas del inventario",
+  "origen_del_contenido": {
+    "source_branch": "origin/develop",
+    "certified_commit_en_desarrollo": "25f8b32e616a2fdec53970368fbaa03131f67dfc",
+    "rutas_bajo_prisma_migrations": 0,
+    "rutas_bajo_apps_web": 0,
+    "rutas_bajo_infra_o_packages": 0,
+    "paridad_por_blob": {
+      "apps/api/src/modules/hr/mobile-identity.js": {
+        "origin_main": "f9e8ea27bb32e92920d25983ed2db899d5d5538f",
+        "ancestro_8208d941": "f9e8ea27bb32e92920d25983ed2db899d5d5538f",
+        "origin_desarrollo": "863bd6a6f381039edfb9e3e0d8d70a17f858a5fc",
+        "candidato": "863bd6a6f381039edfb9e3e0d8d70a17f858a5fc"
+      },
+      "apps/api/test/hr-evidence-resilience.test.js": {
+        "origin_main": "26d814c12b4f866b1b77e75c44367adaa303afd7",
+        "ancestro_8208d941": "26d814c12b4f866b1b77e75c44367adaa303afd7",
+        "origin_desarrollo": "9a3198ea5048105869ff53f1fc9a08fa06490827",
+        "candidato": "9a3198ea5048105869ff53f1fc9a08fa06490827"
+      },
+      "scripts/certifications/hr-web-photo-battery.js": {
+        "origin_main": "no existe en origin/main",
+        "candidato": "8b7e35a719796f95563c63e1cc38d9791c48d3df",
+        "origin_desarrollo": "8b7e35a719796f95563c63e1cc38d9791c48d3df"
+      },
+      "lectura": "El candidato no lleva NINGUNA línea que no exista ya en origin/desarrollo: las 13 rutas del diff tienen en el candidato el mismo hash que en origin/desarrollo (13/13). Y en las dos rutas de producto, el blob de origin/main es idéntico al del ancestro 8208d941: main no las tocó, así que el replay no puede estar revirtiendo un fix propio."
     },
-    { "nota_de_ambiente": "las suites se ejecutaron con NODE_PATH al node_modules del árbol principal; nunca se copió ni se enlazó node_modules dentro del worktree" }
-  ],
-  "paridad_por_blob": {
-    "metodo": "git rev-parse :<ruta> del candidato contra git rev-parse 25f8b32e:<ruta>",
-    "rutas_llevadas": 9,
-    "blobs_distintos": 0
-  },
-  "certificacion_funcional_en_qa": {
-    "archivo": "bateria-qa-despues.json",
-    "veredicto": "34/34 controles sobre 15 formas",
-    "ambiente": "QA desplegado desde develop @ c0fbb4b9c50c, anclado por /health.commit",
-    "hallazgos": [
-      "jpeg-real-de-3-mb (3.197.152 bytes) y png-real-de-2_4-mb (2.497.157 bytes): 200 con la hora asentada, evidence_status degraded, EVIDENCIA_SUPERA_LIMITE y foto_inline false",
-      "jpeg-en-el-tope-justo (2.097.152 bytes exactos): 200 disponible",
-      "cinco formas con etiqueta mentirosa: 200",
-      "video/PDF/svg-declarado-imagen/texto plano: 400 con su código, y el reenvío del navegador recupera la hora en las cuatro (200, desprendidas identity_photo)",
-      "cero 5xx, peor escritura 1.804 ms, 15 cuentas efímeras retiradas por endpoint (login tras retiro 401)"
+    "distancia_de_ramas": {
+      "develop_sobre_main_commits": 866,
+      "main_sobre_develop_commits": 198,
+      "rutas_diff_bruto": 1185
+    },
+    "delta_por_archivo_candidato_contra_ancestro": [
+      {
+        "archivo": "apps/api/src/modules/hr/mobile-identity.js",
+        "anadidas": 20,
+        "quitadas": 6
+      },
+      {
+        "archivo": "apps/api/test/hr-evidence-resilience.test.js",
+        "anadidas": 71,
+        "quitadas": 7
+      }
     ],
-    "control_de_mutacion": "node scripts/certifications/hr-web-photo-battery.js --selftest -> 15/15 con tres mutaciones obligadas al rojo"
+    "delta_contra_origin_main": "git diff --numstat origin/main 80928ffd sobre las dos rutas de producto da los mismos 20/6 y 71/7: el candidato es origin/main más exactamente la promesa.",
+    "lineas_huerfanas": "Cero por construcción: el blob promocionado es el mismo blob que existe en origin/desarrollo. El control que antes se hizo comparando cada línea añadida contra la búsqueda en desarrollo quedó subsumido por la paridad de hashes."
   },
-  "produccion_no_se_toca_con_la_bateria": "La batería escribe. Producción se verifica por artefacto servido y lectura: /health.commit, censo de rechazos y ausencia del defecto en el binario. Ningún payload hostil se envía a la base de clientes reales.",
-  "deriva_declarada": [
-    "El canon del equipo no viaja a main: origin/main no trae agents/** en absoluto y sus .qoder/skills siguen su propia contabilidad, igual que en los portones previos de esta rama. La contabilidad de esta intervención vive en origin/desarrollo y origin/develop.",
-    "El reenvío sin foto del navegador no viaja: apps/web no aparece en este inventario. Medido, main (y develop) no tienen retry_without_photo ni detachEvidence ni hrOfflineMarking.ts; es frente propio de apexos-frontend con su brief (ver §10 del brief)."
-  ]
+  "el_bloqueo_y_su_resolucion": {
+    "salida_literal_antes": "ALCANCE DE PROMOCION INVALIDO: ni el candidato ni el destino contienen el commit funcional certificado",
+    "comando_antes": "npm run qa:promotion:scope -- docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json 80928ffde52e1723b5926fe21a52a4b5a905267d origin/main",
+    "diagnostico": "La prueba de ascendencia del candado endurecido el 2026-11-24 está escrita para el caso en que las ramas van parejas. En un transporte puntual sobre una rama 866 commits atrás, el commit certificado (el binario de develop que corrió en QA) no puede ser ancestro del candidato. El contenido sí es el certificado, y eso es lo que el candado no sabía mirar.",
+    "decision_del_dueno": "Con las cuatro salidas medidas en la pantalla (enderezar el candado, mezcla completa de 1.185 rutas, mezcla vacía `-s ours`, parar y dejar Producción rechazando), el dueño eligió enderezar el candado.",
+    "lo_que_se_publico": "El modo `transport: replay_puntual` en `scripts/validate-promotion-scope.js`, publicado en `origin/desarrollo` con `ebe5dabe`: exige certified_commit vivo en origin/desarrollo, blob idéntico ruta por ruta, cero origin_waivers y replay_baseline igual al merge-base real (180a2b21). Su contrato y sus cuatro condiciones están también en el manifiesto de alcance.",
+    "control_de_mutacion": "node --test scripts/test/validate-promotion-scope.test.js = 13/13. El fixture reproduce el caso con git real. Ponen rojo el portón: blob reescrito en el candidato, certified_commit nacido fuera de desarrollo, certified_commit ausente, waivers declarados, base de delta mentirosa, base ausente, base inexistente. Pasan: el replay bien formado y el modo ascendencia cuando sí hay ascendencia (control positivo del modo clásico).",
+    "error_propio_declarado": "El ayudante de la prueba dejaba `replay_baseline: \"BASE\"` por defecto, así que el control de base ausente fallaba por el motivo equivocado y la suite lo detectó (12/13 en la primera corrida). Se quitaron los defaults del ayudante.",
+    "detalle_que_hay_que_saber": "El punto real de divergencia (180a2b21) es muy antiguo: en ese commit las dos rutas de producto todavía no existían, así que la medida dura de 'el delta es solo la promesa' se hizo contra el ancestro del blob (8208d941), que es donde main conserva exactamente lo que tiene hoy. Ese detalle, con las tablas, vive en porton-gate-replay.json."
+  },
+  "inventarios": {
+    "rutas": [
+      "M apps/api/src/modules/hr/mobile-identity.js",
+      "M apps/api/test/hr-evidence-resilience.test.js",
+      "A scripts/certifications/hr-web-photo-battery.js",
+      "A docs/briefs/2026-11-24-cero-rechazos-foto-web-bateria.md",
+      "A docs/qa/evidence/web-photo-battery-20261124/bateria-qa-antes.json",
+      "A docs/qa/evidence/web-photo-battery-20261124/bateria-qa-despues.json",
+      "A docs/qa/evidence/web-photo-battery-20261124/porton-develop.json",
+      "A docs/qa/evidence/web-photo-battery-20261124/porton-main.json",
+      "A docs/qa/evidence/web-photo-battery-20261124/porton-gate-replay.json",
+      "A docs/qa/evidence/web-photo-battery-20261124/migraciones-candidato-develop.txt",
+      "A docs/qa/evidence/web-photo-battery-20261124/suites-plataforma-candidato.json",
+      "A docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json",
+      "A docs/qa/manifests/cero-rechazos-foto-web-main-20261124-approval.json"
+    ],
+    "total": 13,
+    "nacidas_en_el_candidato": [
+      "porton-main.json",
+      "porton-gate-replay.json",
+      "los dos manifiestos de main"
+    ],
+    "llevadas_de_origin_desarrollo": 9
+  },
+  "suites_sobre_el_arbol_candidato": {
+    "hr-evidence-resilience_mas_hr-single-selfie-gate": "64 pruebas, 64 pasan, 0 fallos",
+    "hr-mobile-identity_mas_hr-punch-mobile-evidence_mas_hr-evidence-storage-gate_mas_security-evidence-upload": "20 pruebas, 20 pasan, 0 fallos",
+    "node scripts/certifications/hr-mobile-identity-selftest.js": "6/6 (la compuerta alterna sigue en su sitio)",
+    "ejecucion": "NODE_PATH al node_modules del árbol principal, dentro del worktree, sin copiar ni enlazar node_modules dentro de él.",
+    "suite_backfill": "La de hr-evidence-backfill-tool (27) no corre en el candidato: pide config/qa.env, archivo no versionado que solo existe en el checkout principal. Es la única diferencia con el 91/91 del árbol de desarrollo y está declarada, no ocultada."
+  },
+  "pendiente_con_dueno": [
+    "El sha final del candidato (después de la segunda committida con las 13 rutas), la salida verbatim del gate de alcance en modo replay, la del gate de aprobación, la del guardián de gobernanza y la lectura de /health de Producción después del empuje: se consignan en el commit de contabilidad de origin/desarrollo que sigue al push, porque describen una punta que no puede existir dentro del commit que la describe.",
+    "La promoción del candado enderezado (scripts/validate-promotion-scope.js con el modo replay) a develop: main y develop conservan su copia vieja del script, que no conoce el modo. Las compuertas de este portón corren desde el árbol de desarrollo, donde se certificó el contenido. Dueño: apexos-git-guardian con el dueño."
+  ],
+  "mediciones_de_la_ventana_20261124": {
+    "rechazos_web": null,
+    "fuente": "Cada vez que se corrió la mesa en QA se consultó el censo de rechazos por canal en el mismo ambiente QA. Ninguna cifra de este bloque viene del ambiente productivo.",
+    "los_rechazos_repetidos_de_la_foto_grande": "dos formas: jpeg-real-de-3-mb y png-real-de-2_4-mb, ambas declaradas image/jpeg o image/png, las dos con la hora perdida antes del fix; las dos degradando a 200 sobre el árbol corregido",
+    "censo_de_produccion": "PENDIENTE_CON_DUEÑO: el conteo de rechazos por canal en Producción se toma por lectura después del despliegue (solo SELECT sobre TimePunch y su metadata). No se afirma aquí ninguna cifra productiva sin ese instrumento corrido."
+  },
+  "model_company_anTES_y_DESPUES": {
+    "empresa": "NYVORA",
+    "ambiente": "QA",
+    "instrumento": "scripts/certifications/hr-web-photo-battery.js",
+    "antes": {
+      "evidencia": "bateria-qa-antes.json",
+      "firma": "3303a95532a3",
+      "veredicto": "32/32, con dos piernas rojas: jpeg-real-de-3-mb y png-real-de-2_4-mb en EVIDENCIA_SUPERA_LIMITE con hora_asentada false"
+    },
+    "despues_qa": {
+      "evidencia": "bateria-qa-despues.json",
+      "binario_servido": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+      "veredicto": "34/34 controles sobre 15 formas",
+      "las_dos_piernas_del_defecto": "200 con hora asentada, evidencia_status degraded, code EVIDENCIA_SUPERA_LIMITE y foto_inline false",
+      "las_cuatro_formas_prohibidas": "400 con su codigo (video-mp4 y pdf en EVIDENCIA_CLASE_RECHAZADA, svg-declarado-imagen y texto-plano en EVIDENCIA_TIPO_DECLARADO_RECHAZADO) y fila sin crear",
+      "reenvio_del_navegador": "200 con hora asentada, detaching identity_photo, en los cuatro tipos",
+      "escritura_mas_lenta_ms": 1804,
+      "note": "El binario servido en QA es develop c0fbb4b9 y el blob de mobile-identity.js en ese binario es el mismo que trae el candidato a main (863bd6a6), medido por hash, no por ascendencia. La pata de Producción se verifica por lectura del artifacto servido, no corriendo la bateria hostil contra Produccion."
+    }
+  }
 }

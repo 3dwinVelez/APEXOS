@@ -1,7 +1,11 @@
 {
   "change_id": "cero-rechazos-foto-web-bateria-20261124-main",
+  "transport": "replay_puntual",
   "commit": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
-  "tree_evaluated": "25f8b32e",
+  "tree_evaluated": "arbol del candidato codex/qa-cero-rechazos-foto-web-main-20261124, reconstruido sobre origin/main con las 13 rutas del manifiesto de alcance; su sha final y la salida verbatim de las compuertas van en el commit de contabilidad de origin/desarrollo",
+  "certified_commit": "25f8b32e616a2fdec53970368fbaa03131f67dfc",
+  "replay_baseline": "180a2b21d21a152a9937c099c6e46500a3774908",
+  "por_que_replay": "Main esta 866 commits atras de develop y el commit certificado en QA (c0fbb4b9) no es ancestro de un candidato reconstruido sobre main. El porton se nego y el dueno decidio enderezarlo: el modo transport: replay_puntual cambia la ascendencia por el contenido y exige que las 13 rutas del diff sean byte a byte las que ya existen en origin/desarrollo (13/13 medidos), que el certified_commit viva en origin/desarrollo, cero origin_waivers y que el replay_baseline sea el merge-base real. Decision, contrato y suite de 13/13 en ../evidence/web-photo-battery-20261124/porton-gate-replay.json.",
   "source_branch": "develop",
   "target_branch": "main",
   "environment": "QA",
@@ -39,9 +43,10 @@
       "evidence": [
         "../evidence/web-photo-battery-20261124/porton-develop.json",
         "../evidence/web-photo-battery-20261124/porton-main.json",
+        "../evidence/web-photo-battery-20261124/porton-gate-replay.json",
         "../evidence/web-photo-battery-20261124/suites-plataforma-candidato.json"
       ],
-      "notes": "Los instrumentos que sostienen el portón viajan versionados en el propio inventario: scripts/certifications/hr-web-photo-battery.js (seis por tres matrices de formas de foto, lectura de la fila, censo de rechazos por canal y retiro de las cuentas efímeras por el endpoint administrativo) y scripts/validate-promotion-scope-v2.js con el control de origen de blobs y waivers nombrados. Los tres reportes del portón también: porton-develop.json, porton-main.json y suites-plataforma-candidato.json."
+      "notes": "Los instrumentos que sostienen el porton viajan versionados en el propio inventario: scripts/certifications/hr-web-photo-battery.js (dieciseis formas de foto, lectura de la fila, censo de rechazos por canal y retiro de las cuentas efimeras por el endpoint administrativo) y el porton de alcance con su modo de transporte puntual, cuya suite de 13 controles vive en origin/desarrollo (ebe5dabe) y se corre desde ese arbol. Los reportes del porton tambien viajan: porton-develop.json, porton-main.json, porton-gate-replay.json y suites-plataforma-candidato.json."
     },
     "regression": {
       "status": "passed",
@@ -64,7 +69,7 @@
     "evidence": [
       "../evidence/web-photo-battery-20261124/bateria-qa-despues.json"
     ],
-    "notes": "La certificación end-to-end del flujo pedido es la batería sobre el ambiente desplegado: login del fixture, las cuatro marcaciones web en orden con su forma de foto, verificación de la hora real en la fila, del veredicto y del inline del jsonb por el cliente de Prisma del API, censo de rechazos por canal y retiro de las cuentas efímeras. El binario evaluado es origin/develop c0fbb4b9c50c, desplegado y servido en QA, cuyos blobs son los mismos que el candidato de main (verificado por hash: 9/9 idénticos). El instrumento se niega a correr si el ambiente es producción y el censo final de Producción se hace por lectura, no corriendo la batería."
+    "notes": "La certificación end-to-end del flujo pedido es la batería sobre el ambiente desplegado: login del fixture, las cuatro marcaciones web en orden con su forma de foto, verificación de la hora real en la fila, del veredicto y del inline del jsonb por el cliente de Prisma del API, censo de rechazos por canal y retiro de las cuentas efímeras. El binario evaluado en QA es origin/develop c0fbb4b9c50c, desplegado y servido, y lo que sube a main es un candidato reconstruido sobre origin/main cuyas 13 rutas son byte a byte las mismas que existen en origin/desarrollo (13/13, con el delta por archivo medido contra el ancestro que main todavia conserva). El instrumento se niega a correr si el ambiente es producción y el censo final de Producción se hace por lectura, no corriendo la batería."
   },
   "regression_certification": {
     "script": "../../../scripts/certifications/promotion-migration-check.js",
