@@ -41,6 +41,7 @@ async function requireHrModuleEnabled(request, reply) {
 async function hrRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
   fastify.addHook("preHandler", tenancy);
+  fastify.get("/hr/time-report", { preHandler: requirePermission("hr", "read") }, request => service.timeReportSummary(request.user.tenant_id, request.query));
 
   fastify.get("/talento-humano/usuarios-vinculables", {
     preHandler: requirePermission("hr", "write"),

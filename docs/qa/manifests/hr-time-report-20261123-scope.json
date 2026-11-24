@@ -1,0 +1,120 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-time-report-20261123",
+  "base_commit": "914d1721965d727a14c7e836039e2334678ca2de",
+  "base_commits": {
+    "develop": "914d1721965d727a14c7e836039e2334678ca2de"
+  },
+  "target_head": "914d1721965d727a14c7e836039e2334678ca2de",
+  "certified_commit": "d1358ba130a965d2ae28ee52f5b987aba9bced0f",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "d1358ba130a965d2ae28ee52f5b987aba9bced0f",
+    "implementation_commit": "77e09e148446c3ff32dc7c5a8b8529bd9fd6c7a1",
+    "reconstruction": "Only reviewed HR time-report hunks on the current remote QA target; QA changes preserved."
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/lib/hrTimeReport.ts",
+    "apps/web/test/hr-time-report.test.mjs",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-time-report-local.js"
+  ],
+  "change_intent": {
+    "summary": "Calculate time-report overtime using the payroll workday projection and display day, night and Sunday/holiday concepts in table, detail and real Excel export.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/lib/hrTimeReport.ts",
+    "apps/web/test/hr-time-report.test.mjs",
+    "docs/qa/manifests/hr-time-report-20261123-preqa.json",
+    "docs/qa/manifests/hr-time-report-20261123-scope.json",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-time-report-local.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrScheduleMonitor.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/hrTimeReport.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-time-report.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-time-report-20261123-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-time-report-20261123-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-time-report-local.js"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Payroll workday agreement, ordinary night and overtime discrimination, lunch and calendar",
+      "status": "passed",
+      "evidence": [
+        "hr-time-report-20261123-preqa.json"
+      ]
+    },
+    {
+      "name": "APK/web employee identity consolidation, authenticated reads and tenant isolation",
+      "status": "passed",
+      "evidence": [
+        "hr-time-report-20261123-preqa.json"
+      ]
+    },
+    {
+      "name": "Existing QA processed-hours comparison, justification and evidence controls",
+      "status": "passed",
+      "evidence": [
+        "hr-time-report-20261123-preqa.json"
+      ]
+    },
+    {
+      "name": "Browser date filtering, detail, reload, error recovery and real Excel export",
+      "status": "passed",
+      "evidence": [
+        "hr-time-report-20261123-preqa.json"
+      ]
+    }
+  ]
+}
