@@ -1243,7 +1243,7 @@ export default function RoutesPlanningPage() {
             </tbody>
           </table>
         </div>
-        {!filteredRoutes.length ? <div className="p-10 text-center"><Filter className="mx-auto text-content-subtle" size={28} /><p className="mt-3 text-sm font-semibold">No hay horarios con estos filtros</p><p className="mt-1 text-sm text-content-muted">{dateFilter ? `La pantalla esta fijada al ${dateFilter}. Elige otra fecha o quita el filtro para ver todo el historial.` : {onMallasPath ? "Revisa los filtros o crea una jornada en Programación." : "Limpia los filtros o crea una nueva asignacion."}}</p></div> : null}
+        {!filteredRoutes.length ? <div className="p-10 text-center"><Filter className="mx-auto text-content-subtle" size={28} /><p className="mt-3 text-sm font-semibold">No hay horarios con estos filtros</p><p className="mt-1 text-sm text-content-muted">{dateFilter ? `La pantalla esta fijada al ${dateFilter}. Elige otra fecha o quita el filtro para ver todo el historial.` : onMallasPath ? "Revisa los filtros o crea una jornada en Programación." : "Limpia los filtros o crea una nueva asignacion."}</p></div> : null}
       </section>
 
       {modal ? (
