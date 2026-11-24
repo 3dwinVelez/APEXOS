@@ -10,10 +10,11 @@
     "merge_base_desarrollo_develop": "36111a6ae1a18c59de0fc72c135bc890c011c1d7"
   },
   "certified_commit": "f3e85f1aff5cb600fdd6bc84e7a40dd0902e191c",
+  "candidate_tip": "0a902366 (solo manifesto, evidencia y contexto vivo; el blob de las rutas de producto no cambia respecto del commit certificado)",
   "candidate_source": {
     "branch": "desarrollo",
     "commit": "f3e85f1aff5cb600fdd6bc84e7a40dd0902e191c",
-    "replay_de_commits": ["41134bf4", "ba00d9f7", "ce654d10", "f3e85f1a"],
+    "replay_de_commits": ["41134bf4", "ba00d9f7", "ce654d10", "f3e85f1a", "0a902366"],
     "no_incluidos": {
       "134816de": "regla de idioma en AGENTS.md y los once SKILL.md: su codigo es texto de gobernanza, viaja con su propio candidato o con este si el propietario prefiere un solo paquete; hoy no esta en expected_changes salvo el contenido que ya traen los blobs de .qoder/skills",
       "21a99f47": "paquete selfie de la sesion concurrente: su codigo HR no es de este candidato"
@@ -140,7 +141,7 @@
     "comando": "node scripts/validate-promotion-scope.js docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json f3e85f1a origin/develop",
     "veredicto": "ALCANCE DE PROMOCION INVALIDO",
     "rutas_fuera_de_alcance": 1043,
-    "lectura": "el portón compara el diff neto punta contra punta: 252 commits propios de desarrollo mas 119 ajenos de origin/develop. Este manifiesto no esta pensado para el tip de la rama, esta pensado para un candidato reconstruido por replay de los cuatro commits sobre el tip actual de origin/develop. Correccion versionada en ../evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt",
+    "lectura": "el portón compara el diff neto punta contra punta: 252 commits propios de desarrollo mas 119 ajenos de origin/develop. Este manifiesto no esta pensado para el tip de la rama, esta pensado para un candidato reconstruido por replay de los cinco commits de candidate_source sobre el tip actual de origin/develop. Correccion versionada en ../evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt",
     "medido_en": "2026-11-24T16:02:08Z"
   },
   "bloqueos_de_replay": {

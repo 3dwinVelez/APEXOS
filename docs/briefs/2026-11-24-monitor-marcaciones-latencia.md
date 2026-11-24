@@ -366,8 +366,9 @@ entregadas. Mientras tanto el acceso operativo correcto es `www.apexos.com.co`.
       y las mismas dos rutas de producto, y separarlo produciría dos candidatos que tocan el mismo blob.
 - [ ] **Preparación medida del manifiesto (2026-11-24, sin promocionar).** `docs/qa/manifests/
       monitor-latencia-sesion-20261124-scope.json` declara las **52 rutas exactas** del paquete
-      (`41134bf4` + `ba00d9f7` + `ce654d10` + `f3e85f1a`) contra el tip actual `origin/develop = b59f286d`,
-      `allowed_deletions: []` y `approval.status: pendiente`. Dos hallazgos que cambian el método:
+      (`41134bf4` + `ba00d9f7` + `ce654d10` + `f3e85f1a` + `0a902366`) contra el tip actual
+      `origin/develop = b59f286d`, `allowed_deletions: []` y `approval.status: pendiente`.
+      Dos hallazgos que cambian el método:
       **(a)** el portón corriendo el tip contra el tip responde `ALCANCE DE PROMOCION INVALIDO` con
       **1.043 rutas fuera de alcance** (`puerta-alcance-origin-develop.txt`): `desarrollo` va 252 commits por
       delante y `develop` tiene **119 propios**, así que no hay fusión de rama posible para este paquete;
