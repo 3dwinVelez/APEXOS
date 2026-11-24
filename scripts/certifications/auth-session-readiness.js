@@ -7,6 +7,10 @@ const expectedCommit = process.env.CERT_EXPECTED_COMMIT;
 const environment = process.env.CERT_ENVIRONMENT || "unknown";
 // Fase 0 mide; Fase 2 enciende este flag cuando la revocación surte efecto.
 const requireRevocation = String(process.env.CERT_REQUIRE_REVOCATION || "").toLowerCase() === "true";
+// Ruta autenticada que demuestra el permiso. El portafolio de módulos es por tenant y por ambiente:
+// en Producción `services` no está habilitado para la empresa modelo y el instrumento reventaba
+// antes de medir los cinco rechazos. Se declara la ruta, no se relaja la exigencia.
+const probePath = process.env.CERT_PROBE_PATH || "/api/v1/services/orders";
 
 if (!apiUrl || !email || !password || !expectedCommit) {
   throw new Error("CERT_API_URL, CERT_LOGIN_EMAIL, CERT_LOGIN_PASSWORD y CERT_EXPECTED_COMMIT son obligatorios");
@@ -89,7 +93,7 @@ async function main() {
   const auth = { authorization: `Bearer ${token}` };
   const me = await expectOk("/api/v1/auth/me", { headers: auth });
   assert.ok(me.id || me.user?.id, "La sesion no retorno una identidad autenticada");
-  await expectOk("/api/v1/services/orders", { headers: auth });
+  await expectOk(probePath, { headers: auth });
 
   // Pruebas de rechazo: hoy no existen y son la razon por la que este gate no podia fallar.
   const rejections = {};
@@ -117,6 +121,7 @@ async function main() {
     ok: true,
     environment,
     commit: health.commit,
+    probe: probePath,
     health: health.status,
     login: "passed",
     authenticated_query: "passed",

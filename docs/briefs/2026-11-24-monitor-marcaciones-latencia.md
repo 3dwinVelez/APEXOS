@@ -798,6 +798,34 @@ La base se movió a mitad de camino y el portón lo avisó. El primer candidato 
 el baseline aprobado`: `main` había avanzado a `b08699e3`, un commit de documentación de dos rutas ajenas a este
 paquete y sin traslape con ninguna de sus rutas. El candidato se reconstruyó con `git reset --soft` sobre el tip
 nuevo —nunca por merge ni con un snapshot viejo del árbol, que es como se reintroducen regeneraciones— y se
-volvieron a medir las invariantes y el inventario de blobs contra la base nueva. El funcional quedó en `66d2765a`
+volvieron a medir las invariantes y el inventario de blobs contra la base nueva. El funcional quedó en `82664fee`
 con 50 rutas y la capa de documentación (dos manifiestos, el veredicto y el reporte del replay) viajó encima, en
-su propio commit, porque esas cuatro rutas solo pueden escribirse con las medidas del commit que certifican.
+su propio commit `cf2adc59`, porque esas cuatro rutas solo pueden escribirse con las medidas del commit que certifican.
+
+Un sha escrito a mano se corrompió por el camino y el portón lo trapó: al cambiar el prefijo `66d2765a` por
+`82664fee` con un reemplazo de texto, el sha de 40 caracteres del manifiesto quedó en
+`82664feed605...`, que no es ningún commit. `qa:promotion:scope` respondió *ni el candidato ni el destino
+contienen el commit funcional certificado*: el instrumento sí verifica que el sha declarado exista y sea
+ancestro, y esa es la razón por la que el manifiesto no puede llenarse de shas copiados a medias.
+
+## 17. El DESPUÉS de Producción, medido, y lo que quedó abierto con su dueño
+
+`GET /health` de Producción devuelve `cf2adc59d446` y 19 módulos: el binario en pie es el candidato promovido.
+Con ese ancla (evidencia en `docs/qa/evidence/auth-session-path-20261124/`):
+
+- **Contadores del día fijado**: 6,5 KB · p95 3.500 ms → **0,1 KB · p95 1.851 ms**. Es la lectura que este
+  paquete acotó, y en Producción baja 65 veces de peso y 1,6 segundos de reloj.
+- **Camino de sesión**: `login` 200, `/auth/me` 200, consulta autenticada 200 y **5 de 5 rechazos en 401**.
+  `revocation.measured: true`, `enforced: false`: la revocación sigue siendo Fase 2 de su propio flag.
+- **Binarios inline: cero** en las cuatro lecturas, antes y después.
+- **La compuerta de presupuesto quedó en rojo por una lectura**: mapa del día p95 3.405 ms contra 3.000 ms.
+  Ya estaba roja en el ANTES (3.246 ms) y el mapa no cambió de código; su piso es el viaje al pooler por
+  petición autenticada, que es el frente del paquete siguiente.
+
+Lo que **no** sube con esta pata, con nombre y número: `mobile-identity.js` (la regla de selfie en las cuatro
+marcaciones web) conserva en `main` el blob `756b0572` — Producción no exige selfie en las cuatro —, el árbol de
+gobernanza (20 rutas) se queda en `desarrollo` y `develop`, y las reparaciones de instrumentación
+(`hr-monitor-evidence-demand-qa.js` y `auth-session-readiness.js`, esta última con la ruta de sondeo declarable
+porque `services` no está habilitado para la empresa modelo en Producción: `403 PERMISO_DENEGADO`, medido en
+`sondeo-produccion.txt`) tampoco viajan. El brief, en cambio, sí se puso al día en `develop` con un avance de
+documentación de tres rutas y cero de producto, punta `406c517e`, medido por el mismo portón de alcance.

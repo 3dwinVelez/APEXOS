@@ -70,15 +70,42 @@ candidato: **0 módulos huérfanos**.
 - La pantalla `dispositivos-marcacion` y `rostros`, el módulo de identidad de dispositivo compartido y las tres
   migraciones citadas.
 
-## DESPUÉS de Producción: pendiente del despliegue, no afirmación
+## DESPUÉS de Producción: medido sobre la punta servida
 
-`origin/main` sirve hoy `b08699e3214a` (medido en `GET https://apexos-api-prod-production.up.railway.app/health`
-→ `{"modules":19,"commit":"b08699e3214a","service_certification":"products-v2"}`). El DESPUÉS solo puede
-escribirse cuando ese `commit` devuelva el sha promovido, y entonces se corren, anclados a ese sha:
+`GET https://apexos-api-prod-production.up.railway.app/health` devuelve
+`{"modules":19,"commit":"cf2adc59d446","service_certification":"products-v2"}`: el binario en pie es el
+candidato promovido, no el anterior. Con ese ancla se corrieron los dos instrumentos.
+
+**Presupuesto de reloj** (`certify:hr-monitor-budget:production`, día 2026-11-24, 3 muestras por lectura,
+`despues-produccion.json`):
+
+| Lectura | ANTES (2026-11-24T13:51) | DESPUÉS (2026-11-24T18:54) |
+|---|---|---|
+| Contadores del día fijado (`event-summaries?date=`) | 6,5 KB · p50 3.238 · p95 3.500 ms | **0,1 KB · p50 1.850 · p95 1.851 ms** |
+| Mapa del día | 0,3 KB · p50 1.873 · p95 3.246 ms | 0,3 KB · p50 1.974 · p95 **3.405 ms** |
+| Reporte de asistencia (un día) | <0,1 KB · p50 1.261 · p95 1.364 ms | 5,7 KB · p50 1.281 · p95 1.282 ms |
+| Contadores sin fecha (referencia) | 6,5 KB · p95 4.129 ms | 6,5 KB · p95 3.410 ms · referencia sin veredicto |
+
+Cero binarios inline en las cuatro lecturas, en los dos lados de la mesa. La compuerta quedó **en rojo por una
+sola razón**: el mapa del día con p95 de 3.405 ms contra un presupuesto de 3.000 ms. Esa lectura ya estaba roja
+en el ANTES (3.246 ms) y no es una ruta de este paquete: el mapa no cambió de código, y su piso es el viaje al
+pooler por petición autenticada.
+
+**Camino de sesión** (`certify:auth-session`, `despues-auth-produccion.json`): `login` 200, `/auth/me` 200,
+consulta autenticada 200 y **5 de 5 rechazos en 401** (sin token, token basura, `alg none`, firma con clave
+ajena, firma alterada). `revocation.measured: true` con `enforced: false`: la revocación sigue sin exigirse,
+que es la Fase 2 del flag `AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED` y no este paquete.
+
+Un hallazgo del DESPUÉS, declarado: el instrumento pedía permiso de `services` para la consulta autenticada y
+en Producción ese módulo no está habilitado para la empresa modelo (`403 PERMISO_DENEGADO`, medido en
+`sondeo-produccion.txt`), así que reventaba antes de probar los rechazos. No se relajó la exigencia: se declaró
+la ruta por donde se mide (`CERT_PROBE_PATH`, ahora apuntando al endpoint del propio paquete). El cambio vive en
+`scripts/certifications/auth-session-readiness.js` de `desarrollo` y **no viaja** a `main`, igual que las otras
+reparaciones de instrumentación de esta intervención.
 
 ```text
 npm run certify:hr-monitor-budget:production -- --output=docs/qa/evidence/auth-session-path-20261124/despues-produccion.json
-CERT_ENVIRONMENT=production CERT_API_URL=https://apexos-api-prod-production.up.railway.app CERT_EXPECTED_COMMIT=<sha> npm run certify:auth-session
+CERT_ENVIRONMENT=production CERT_API_URL=https://apexos-api-prod-production.up.railway.app \
+  CERT_EXPECTED_COMMIT=cf2adc59d44693f368418fb20cb66a06a388daa3 \
+  CERT_PROBE_PATH=/api/v1/hr/routes/event-summaries?date=2026-11-24 npm run certify:auth-session
 ```
-
-Hasta esa lectura existir, esta pata está publicada pero no cerrada en Producción.
