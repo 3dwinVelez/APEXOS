@@ -96,9 +96,9 @@ Rollback de cada variable: devolver el valor previo (`https://apexos-web-prod-pr
 - Supuesto: el API seguirá en su dominio de Railway mientras el dueño no pida `api.apexos.com.co`.
 - Supuesto: `www.apexos.com.co` es el origin canónico de la web de Producción.
 - Decisión abierta del dueño, la única que no puede tomarse por defecto: qué hace bajar el monitor de los 20 s. Tres vías medidas, ninguna aplicada:
-  - **(A) Promover** los arreglos de latencia y evidencia que ya viven en `desarrollo` (`19df3ca2`, `2f8907af`, `4f5a6e4b`, `c6058332`) por `develop` hasta `main`. Requiere autorización de promoción y certificación de alcance.
-  - **(B) Purjar** los ~50 MB de base64 inline de las 55 filas de `TimePunch` hacia el bucket `operational-evidence`, que ya existe. Destructivo: exige respaldo y autorización explícita.
-  - **(C) Encender** `HR_EVIDENCE_STORAGE_ENABLED=true` en `apexos-api-prod`. Solo configuración: el código ya está desplegado y lee la bandera. Frena bytes nuevos, no encoge los 50 MB actuales, y cambia la conducta en campo: una subida fallida rechaza la marcación con `503 STORAGE_UPLOAD_FAILED`.
+  - **(A) Promover** lo que falta de `desarrollo` a `main`. Medido por igualdad de blob contra `origin/main` (la ancestralidad engaña: estos commits no son ancestros, pero su código ya viajó en replay): `apps/api/src/security/authorizationState.js` (piso de autorización de `19df3ca2`) **IGUAL**, `apps/api/src/modules/hr/evidenceStorage.js`, `punchEvidence.js`, `punchEvidence.d.ts` y `hr-evidence-storage-gate.test.js` (barrera de Fase D de `2f8907af`) **IGUALES**. Lo que sí falta es de presentation: `apps/web/app/dashboard/talento-humano/mapa/page.tsx` (`c6058332`) **DISTINTO**. O sea: promover la parte de API ya está hecho en contenido — la vía (A) no es la palanca del monitor; la palanca es el peso de los datos o el diseño de la lectura.
+  - **(B) Purjar** los ~50 MB de base64 inline de las 55 filas de `TimePunch` hacia el bucket `operational-evidence`, que ya existe. Destructivo: exige respaldo y autorización explícita. **Es la única vía que achica lo que hoy hace abortar la lectura.**
+  - **(C) Encender** `HR_EVIDENCE_STORAGE_ENABLED=true` en `apexos-api-prod`. Solo configuración, y el verificador `/health` sirve `e68eed4c63f4` = tip de `origin/main`, así que el código que lee la bandera ya está desplegado. Frena los bytes nuevos, no toca los 50 MB actuales, y cambia la conducta en campo: una subida fallida rechaza la marcación con `503 STORAGE_UPLOAD_FAILED`.
 
 ## 10. Autorizaciones requeridas
 
