@@ -182,8 +182,8 @@ test("la web guarda la selfie pero no la da por verificada", async () => {
   assert.ok(result.identity_photo.base64_data.startsWith("data:image/jpeg;base64,"));
 });
 
-test("la web no puede marcar entrada ni salida sin selfie", async () => {
-  for (const punchType of ["entrada", "salida"]) {
+test("la web no puede marcar ninguna de las cuatro sin selfie", async () => {
+  for (const punchType of ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"]) {
     await rejects(async () => identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch({ punchType, selfie: false }), now: NOW }), "SELFIE_REQUERIDA");
   }
 });
@@ -192,7 +192,7 @@ test("la web reenvia una entrada sin foto cuando el servidor ya rechazo esa foto
   // La cola web despega la foto que el propio API rechazo y reenvia la hora con su novedad.
   // Si aqui vuelve SELFIE_REQUERIDA, el operario pierde la jornada: la espiral medida del
   // user 231 (sin entrada, todo lo demas paso a FUERA_DE_SECUENCIA).
-  for (const punchType of ["entrada", "salida"]) {
+  for (const punchType of ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"]) {
     const input = webPunch({ punchType, selfie: false });
     input.metadata.evidence_status = "degraded";
     input.metadata.evidence_detached_reason = "El archivo de validacion debe ser una imagen JPEG o PNG.";
@@ -219,10 +219,57 @@ test("la excepcion de la foto desprendida no se compra con una declaracion inven
   }
 });
 
-test("el almuerzo de la web sigue marcandose sin foto", async () => {
+test("el almuerzo de la web se marca con su selfie y queda photo_only", async () => {
+  // La web pide las cuatro porque no hay chip que firme: la cara es la unica prueba.
+  // El contraste es la app firmada, que sigue marcando el almuerzo sin foto
+  // ("el almuerzo se marca sin selfie pero firmado"): ahi exigir foto romperia la firma.
+  const real = await realJpeg();
   for (const punchType of ["inicio_almuerzo", "fin_almuerzo"]) {
-    const result = await identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch({ punchType, selfie: false }), now: NOW });
-    assert.deepEqual(result, { identity_verification: { status: "not_verified", channel: "web" } });
+    const result = await identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch({ punchType, bytes: real }), now: NOW });
+    assert.equal(result.identity_verification.status, "photo_only");
+    assert.equal(result.identity_verification.channel, "web");
+    assert.equal(result.identity_photo.sha256, sha(real));
+  }
+});
+
+test("la web acepta la foto real aunque el navegador la anuncie con el formato equivocado", async () => {
+  // Este es exactamente el rechazo que costo jornadas en Produccion: la camara entrega
+  // unos bytes y el navegador etiqueta otros. La validacion es por CLASE, asi que una
+  // foto legitima se acepta; el control de contenido duro sigue vigente abajo.
+  const real = await realJpeg();
+  const casos = [
+    { etiqueta: "PNG anunciado como JPEG", bytes: PNG, type: "image/jpeg" },
+    { etiqueta: "JPEG anunciado como PNG", bytes: real, type: "image/png" }
+  ];
+  for (const punchType of ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"]) {
+    for (const caso of casos) {
+      const result = await identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch({ punchType, bytes: caso.bytes, type: caso.type }), now: NOW });
+      assert.equal(result.identity_verification.status, "photo_only", `${caso.etiqueta} en ${punchType} no puede costarle la marcacion`);
+      assert.ok(result.identity_photo, `${caso.etiqueta} en ${punchType} debe conservar la foto`);
+    }
+  }
+});
+
+test("la web sigue rechazando lo que no es una foto", async () => {
+  // Control positivo: aceptar por clase no es aceptar basura. Un video o un PDF
+  // firmado como imagen se rechazan de plano, no se degradan. El contrato del modulo
+  // deja el codigo de negocio en VALIDACION y el motivo machine-readable en
+  // details.evidence_failure_code: si el motivo se pierde, el administrador vuelve a
+  // ver la frase suelta y el rechazo vuelve a ser ininterpretable.
+  const video = Buffer.concat([Buffer.from([0x00, 0x00, 0x00, 0x18]), Buffer.from("ftypmp42", "ascii"), Buffer.alloc(200, 7)]);
+  for (const punchType of ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"]) {
+    await rejects(
+      async () => identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch({ punchType, bytes: video, type: "image/jpeg" }), now: NOW }),
+      "VALIDACION"
+    );
+    await assert.rejects(
+      async () => identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch({ punchType, bytes: video, type: "image/jpeg" }), now: NOW }),
+      (error) => {
+        assert.equal(error.statusCode, 400, `${punchType}: un video debe costarle la marcacion a quien lo manda`);
+        assert.equal(error.details.evidence_failure_code, "EVIDENCIA_CLASE_RECHAZADA", `${punchType}: el motivo debe viajar machine-readable`);
+        return true;
+      }
+    );
   }
 });
 

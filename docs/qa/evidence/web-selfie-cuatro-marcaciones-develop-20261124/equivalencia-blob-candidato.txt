@@ -1,0 +1,16 @@
+# Equivalencia de blobs del replay hacia develop
+# Candidato: un solo commit certificado (codigo + evidencia + spec + brief) | Base: origin/develop | Origen: origin/desarrollo
+# Fecha: 2026-11-24T16:46:08Z  Node: v22.23.1
+# Medida con git ls-tree / git ls-files -s (regla 25: rev-parse <ref>:<ruta> reescribe separadores en esta estacion y inventa divergencias).
+# La columna CANDIDATO mide lo que se publica: commit funcional + indice de los documentos aun sin commitear.
+RUTA                                                             | ORIGEN       | CANDIDATO    | BASE-DEVELOP | VEREDICTO
+apps/api/src/modules/hr/mobile-identity.js                       | f9e8ea27bb32 | f9e8ea27bb32 | 1134eff847c8 | IGUAL a origen, byte a byte
+apps/api/src/modules/hr/service.js                               | 9b60a419f5d9 | 06b6e0569a81 | 43a38dd257d9 | HUNKEO DECLARADO: exige origin_waivers nominal
+apps/api/src/modules/hr/webPunchSelfie.js                        | AUSENTE      | AUSENTE      | ce6c0af32681 | BORRADO: nunca existio en desarrollo, no viola el origen
+apps/api/test/hr-mobile-identity.test.js                         | ed115470c173 | ed115470c173 | e504bfcc178a | IGUAL a origen, byte a byte
+apps/api/test/hr-single-selfie-gate.test.js                      | 812d669b3851 | 812d669b3851 | AUSENTE      | IGUAL a origen, byte a byte
+apps/api/test/hr-web-punch-selfie.test.js                        | AUSENTE      | AUSENTE      | 24ff2c93b0f3 | BORRADO: nunca existio en desarrollo, no viola el origen
+scripts/certifications/hr-mobile-identity-local.js               | 636986001ad8 | 636986001ad8 | a012f3b251a8 | IGUAL a origen, byte a byte
+docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json | 759e2894731e | 759e2894731e | AUSENTE      | IGUAL a origen, byte a byte
+# service.js: unica linea retirada por hunkeo -> 'input = require("./webPunchSelfie").prepareWebPunchSelfie(input);' (0 lineas anadidas, medido en invariantes-replay-*.json)
+# El diff entre desarrollo y develop en service.js es de 331 anadidas y 305 eliminadas: lineas propias de la rama. Llevar el blob de origen las habia revertido en la promocion anterior. Por eso el hunkeo y no el carry.

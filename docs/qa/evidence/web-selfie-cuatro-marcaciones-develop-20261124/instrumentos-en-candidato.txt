@@ -1,0 +1,24 @@
+# Los dos instrumentos de promocion viajan con el replay
+
+Medido en el arbol del candidato el 2026-11-24T17:20Z.
+
+| RUTA | BLOB CANDIDATO | BLOB origin/desarrollo | VEREDICTO |
+|---|---|---|---|
+| scripts/certifications/promotion-migration-check.js | 309ddadea1f4 | 309ddadea1f4 | byte a byte |
+| scripts/certifications/promotion-gates-runner.js | 14760388b3c0 | 14760388b3c0 | byte a byte |
+| scripts/test/promotion-replay-instruments.test.js | edecb7853f2e | edecb7853f2e | byte a byte |
+
+`node --test scripts/test/promotion-replay-instruments.test.js` en el arbol del candidato:
+tests 4, pass 4, fail 0. El cuarto test exige que el runner se niegue a pisar evidencia
+existente y el primero exige que el medidor de replay detecte las tres derivas.
+
+Por que viajan: el porton de CI (`git-governance-guard ci-promotion`, linea 177) verifica que el
+`regression_certification.script` del manifiesto pre-QA este versionado en el candidato. Si el
+instrumento que midio el replay no existe en la rama que lo recibe, la medalla no se puede
+volver a colgar: la promocion queda afirmada y no comprobable. Tambien es la razon por la que
+`promotion-migration-check.js` y su spec quedan citados en el manifiesto de alcance en lugar de
+vivir solo en desarrollo.
+
+Los tres archivos son gobernanza, no producto: no tocan el camino de marcacion, no cambian el
+esquema y no afectan a ningun cliente. Su contenido es identico al de origen, asi que el porton
+de origen los ve como carry legitimo y no como excepcion.

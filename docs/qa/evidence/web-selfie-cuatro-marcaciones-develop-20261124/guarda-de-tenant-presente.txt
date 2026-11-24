@@ -1,0 +1,18 @@
+# Guarda de tenant de updateRoute: sobrevive al hunkeo de service.js
+
+Medido en el arbol del candidato (el commit certificado por el manifiesto de alcance) el 2026-11-24T16:50Z.
+
+`git diff --numstat origin/develop HEAD -- apps/api/src/modules/hr/service.js` = **0 anadidas, 1 eliminada**.
+El unico cambio respecto del develop publicado es la linea del `require` de la compuerta alterna, asi que
+cualquier linea propia de la rama sigue donde estaba. La prueba no es narrativa: se leyo el archivo.
+
+apps/api/src/modules/hr/service.js:1576  const ownedRoute = await prisma.timeRoute.findFirst({ where: { id: Number(id), tenant_id: tenantId } });
+apps/api/src/modules/hr/service.js:1577  if (!ownedRoute) throw validationError("Horario no encontrado.", 404, "HORARIO_NO_ENCONTRADO");
+
+Conteo de `HORARIO_NO_ENCONTRADO`: base origin/develop = 1, candidato = 1, origin/desarrollo = 1.
+
+Por que este archivo existe: el manifiesto del frente concurrente
+(docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json, bloqueos_de_replay) consigno que llevar el
+blob de desarrollo sobre develop revertia cd3a88e5, un arreglo de aislamiento de tenant que solo vivia en
+develop. Aqui no se llevo el blob: se quito una linea. La diferencia entre las dos formas de replay es
+exactamente esta guarda.

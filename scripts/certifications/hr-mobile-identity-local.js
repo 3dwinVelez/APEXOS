@@ -9,6 +9,12 @@
 //      selfie alterada, sin selfie, con una version vieja de la app y un
 //      segundo registro sin restablecer.
 //   4. La web sigue marcando, como no verificada.
+//   4bis. La ventana de actualizacion del canal web: las CUATRO marcaciones piden
+//      selfie y ninguna se pierde por el formato de la foto. Se reproduce el rechazo
+//      de produccion (foto real del telefono con la etiqueta que anuncio el navegador)
+//      y se exige que entre; se exige que lo que no es imagen siga rechazandose sin
+//      etiqueta SELFIE_INVALIDA; y se manda el reenvio sin foto que hace el navegador
+//      (desprendimiento declarado) para probar que la hora sobrevive.
 //   5. El supervisor ve la selfie por el monitor; el listado no la trae.
 //   6. Solo un administrador restablece, y nadie se restablece a si mismo;
 //      tras restablecer el tecnico se registra de nuevo y la llave vieja ya
@@ -85,6 +91,32 @@ function deviceKey() {
 function selfieBytes(seed) {
   return Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), crypto.createHash("sha256").update(seed).digest(), Buffer.alloc(2000, 9)]);
 }
+
+const sharp = require("sharp");
+
+// Fotos verdaderas, y ademas las cuatro marcaciones de la web. Lo que tumbo la
+// produccion no fueron fotos falsas: fueron fotos reales cuya etiqueta no coincidia con
+// los bytes. sharp genera el archivo decodificable y el certificado decide que MIME
+// anuncia, que es exactamente el poder que tiene el navegador de un telefono.
+function realImage(format, tone) {
+  const background = tone === "frio" ? { r: 40, g: 120, b: 160 } : { r: 140, g: 90, b: 60 };
+  return sharp({ create: { width: 480, height: 640, channels: 3, background } }).toFormat(format).toBuffer();
+}
+
+// Un MP4 y un HEIC declarados como JPEG. El primero no es una imagen y tiene que
+// rechazarse; el segundo si es una foto que este build no puede pintar y tiene que
+// guardarse degradada. Los dos llegaron etiquetados igual en produccion.
+const videoBytes = Buffer.concat([Buffer.from([0x00, 0x00, 0x00, 0x18]), Buffer.from("ftypmp42", "ascii"), Buffer.alloc(400, 7)]);
+const heicBytes = Buffer.concat([Buffer.from([0x00, 0x00, 0x00, 0x18]), Buffer.from("ftyp", "ascii"), Buffer.from("heic", "ascii"), Buffer.alloc(400, 11)]);
+
+const WEB_PUNCH_TYPES = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
+// Etiqueta que la pantalla web manda realmente en `metadata.source`. No es la constante
+// firmada de la app (`MOBILE_SOURCE`), y por eso el servidor lo toma por canal web.
+const WEB_SOURCE_ALIAS = "apexos-mobile";
+// Codigo duro que devolvio la compuerta alterna de `develop`. Si reaparece en cualquier
+// respuesta de esta ventana, la certificacion se cae: es la firma de dos dictamenes sobre
+// la misma foto.
+const SELFIE_GATE_RETIRED_CODE = "SELFIE_INVALIDA";
 
 function startSupabaseStub() {
   const server = http.createServer((req, res) => {
@@ -215,6 +247,67 @@ async function mobilePunch(who, { type, key, deviceId, selfie = selfieBytes(type
   return { response: await call(who, "POST", "/hr/self/time-punches", body), body };
 }
 
+// Marcacion como la manda la pantalla web: sin firma (el navegador no tiene chip), con
+// la selfie en `metadata.identity_photo` y con el MIME que el navegador quiso anunciar.
+// `declaredType` es la perilla que reproduce el incidente; `detach` arma el reenvio sin
+// foto que hace la cola del navegador despues de un rechazo de formato.
+async function webPunch(who, { type, photo, declaredType = "image/jpeg", source = WEB_SOURCE_ALIAS, detached = false, idempotencyKey = crypto.randomUUID(), punchedAt = new Date().toISOString() }) {
+  const body = {
+    user_name: `Cert ${who.key}`,
+    type,
+    punched_at: punchedAt,
+    idempotency_key: idempotencyKey,
+    // La pantalla real pone la foto en la raiz del cuerpo (`payload.identity_photo`,
+    // marcacion/page.tsx:1306) y el desprendimiento declarado en `metadata`: reproducir esa
+    // separacion es lo que hace que esta evidencia mida lo que manda un telefono de verdad.
+    ...(photo ? { identity_photo: { base64: photo.toString("base64"), name: "selfie.jpg", type: declaredType, size: photo.length } } : {}),
+    metadata: {
+      source,
+      gps_quality: "sin_gps",
+      ...(detached ? {
+        evidence_status: "degraded",
+        evidence_detached_reason: "El navegador no pudo entregar la foto de esta marcacion.",
+        hr_novelty: {
+          kind: "MARCAT_SIN_EVIDENCIA",
+          requires_supervisor_action: true,
+          failure_code: "EVIDENCIA_CLASE_RECHAZADA",
+          message: "La foto de validacion no se pudo guardar en este telefono.",
+          punch_type: type,
+          punched_at: punchedAt,
+          idempotency_key: idempotencyKey,
+          evidence_pending_refs: []
+        }
+      } : {})
+    }
+  };
+  return call(who, "POST", "/hr/self/time-punches", body);
+}
+
+// Desde `70e4e100` marcar sin `Employee` vinculado es 404 `EMPLEADO_NO_ASOCIADO`: la
+// evidencia siembra su ficha para no medir los datos que hubo en la maquina de quien corre.
+async function sembrarFichas(prisma) {
+  for (const who of people) {
+    await call(who, "GET", "/auth/me");
+    const user = await prisma.user.findFirst({ where: { email: who.email } });
+    if (!user) throw new Error(`el aprovisionamiento no creo el usuario ${who.email}`);
+    const existing = await prisma.employee.findFirst({ where: { user_id: user.id } });
+    if (existing) { who.employee_id = existing.id; continue; }
+    const employee = await prisma.employee.create({
+      data: {
+        tenant_id: user.tenant_id,
+        user_id: user.id,
+        code: `CERT-${who.key}-${RUN_ID}`,
+        position: `Tecnico ${who.key}`,
+        department: "Certificacion",
+        salary_base: 2000000,
+        hire_date: new Date("2026-01-05"),
+        metadata: { name: `Cert ${who.key}`, employee_code: `CERT-${who.key}-${RUN_ID}` }
+      }
+    });
+    who.employee_id = employee.id;
+  }
+}
+
 async function main() {
   const stub = await startSupabaseStub();
   const api = startApi(`http://127.0.0.1:${stub.address().port}`);
@@ -223,6 +316,8 @@ async function main() {
   try {
     await waitForApi(api);
     check("la API real arranca contra el Postgres local", true, { api: API });
+    await sembrarFichas(prisma);
+    check("las fichas de la certificacion existen y estan vinculadas", people.every((p) => p.employee_id), { employee_ids: people.map((p) => p.employee_id) });
 
     const keyA = deviceKey();
     const keyB = deviceKey();
@@ -294,16 +389,71 @@ async function main() {
     check("un telefono que quedo registrado para dos empleados no puede marcar", duplicated.response.status === 403 && duplicated.response.code === "DISPOSITIVO_COMPARTIDO", { status: duplicated.response.status, code: duplicated.response.code });
     await prisma.employee.update({ where: { id: otroBefore.id }, data: { metadata: otroBefore.metadata || {} } });
 
-    // La web sigue igual.
-    const web = await call(tecnico, "POST", "/hr/self/time-punches", { user_name: "Cert tecnico", type: "inicio_almuerzo", punched_at: new Date().toISOString(), idempotency_key: crypto.randomUUID(), metadata: { source: "web" } });
-    const webPunch = await prisma.timePunch.findFirst({ where: { employee_id: employee.id, type: "inicio_almuerzo" } });
-    check("la web sigue marcando y queda como no verificada", [200, 201].includes(web.status) && webPunch?.metadata?.identity_verification?.status === "not_verified", { status: web.status, code: web.code, error: web.payload?.error });
+    // El canal firmado NO cambia en esta ventana. Las apps instaladas firman el almuerzo
+    // contra el hash del vacio: exigirles selfie no produce un pedido de foto, produce una
+    // firma invalida, y deja sin marcar a quien todavia no actualizo.
+    const signedLunch = await mobilePunch(tecnico, { type: "inicio_almuerzo", key: keyA, deviceId: DEVICE_A, withSelfie: false, signedSelfie: Buffer.alloc(0) });
+    check("la app instalada sigue marcando el almuerzo sin foto", [200, 201].includes(signedLunch.response.status), { status: signedLunch.response.status, code: signedLunch.response.code, error: signedLunch.response.payload?.error });
+    const storedLunch = await prisma.timePunch.findFirst({ where: { employee_id: employee.id, type: "inicio_almuerzo" }, orderBy: { id: "desc" } });
+    check("el almuerzo firmado queda verificado y sin cara acumulada", storedLunch?.metadata?.identity_verification?.status === "verified" && !storedLunch?.metadata?.identity_photo, { identity_verification: storedLunch?.metadata?.identity_verification });
+
+    // Ventana de actualizacion del canal web: las cuatro marcaciones piden selfie y la
+    // hora nunca se pierde por el formato de la foto. Cada tipo se intenta primero sin
+    // foto (debe rechazarlo con nombre propio) y despues con la forma en que realmente
+    // llega del telefono: foto verdadera con la etiqueta que el navegador quiso anunciar.
+    const jpegReal = await realImage("jpeg", "frio");
+    const pngReal = await realImage("png", "calido");
+    const otroFicha = await prisma.employee.findFirst({ where: { user: { email: otro.email } } });
+    const formasWeb = [
+      { type: "entrada", photo: jpegReal, declaredType: "image/png", estado: "available", como: "JPEG real declarado PNG" },
+      { type: "inicio_almuerzo", photo: pngReal, declaredType: "image/jpeg", estado: "available", como: "PNG real declarado JPEG (el rechazo literal de produccion)", video: true },
+      { type: "fin_almuerzo", photo: heicBytes, declaredType: "image/jpeg", estado: "degraded", como: "HEIC de telefono que el visor no pinta" },
+      { type: "salida", detached: true, estado: "desprendida", como: "reenvio sin foto que hace la cola del navegador" }
+    ];
+    const codigosWeb = [];
+    const filasWeb = new Map();
+    for (const forma of formasWeb) {
+      const sinFoto = await webPunch(otro, { type: forma.type });
+      codigosWeb.push(sinFoto.code);
+      check(`la web no puede marcar ${forma.type} sin selfie`, sinFoto.status === 400 && sinFoto.code === "SELFIE_REQUERIDA", { status: sinFoto.status, code: sinFoto.code, error: sinFoto.payload?.error });
+      if (forma.video) {
+        // Control positivo: la ventana no abre la puerta a cualquier cosa. Un MP4
+        // etiquetado como foto se rechaza, y se rechaza con el motivo de evidencia en
+        // claro, no con la etiqueta suelta de la compuerta alterna.
+        const video = await webPunch(otro, { type: forma.type, photo: videoBytes, declaredType: "image/jpeg" });
+        codigosWeb.push(video.code);
+        const motivo = String(video.payload?.error?.message || video.payload?.error || "");
+        check(`un video declarado foto si se rechaza (${forma.type})`, video.status === 400 && /imagen permitida/.test(motivo), { status: video.status, code: video.code, message: motivo });
+      }
+      const respuesta = await webPunch(otro, { type: forma.type, photo: forma.photo, declaredType: forma.declaredType, detached: Boolean(forma.detached) });
+      codigosWeb.push(respuesta.code);
+      check(`la web marca ${forma.type} con ${forma.como}`, [200, 201].includes(respuesta.status), { status: respuesta.status, code: respuesta.code, error: respuesta.payload?.error });
+      const fila = await prisma.timePunch.findFirst({ where: { employee_id: otroFicha.id, type: forma.type }, orderBy: { id: "desc" } });
+      filasWeb.set(forma.type, fila);
+      const verificacion = fila?.metadata?.identity_verification || {};
+      check(`${forma.type}: la marcacion web entro por el canal web`, verificacion.channel === "web", { identity_verification: verificacion });
+      if (forma.estado === "available") {
+        check(`${forma.type}: la foto verdadero-etiqueta-mentiroso se guarda disponible`, verificacion.status === "photo_only" && fila?.metadata?.identity_photo?.evidence_status === "available" && Boolean(fila?.metadata?.identity_photo?.base64_data), { status: verificacion.status, evidence_status: fila?.metadata?.identity_photo?.evidence_status });
+      }
+      if (forma.estado === "degraded") {
+        // El visor no pinta el HEIC, pero la hora entro y la fila dice por que: ciego para
+        // el supervisor, nunca perdido para el empleado.
+        check(`${forma.type}: la foto que el visor no pinta se conserva degradada y la hora entra`, verificacion.status === "photo_only" && verificacion.evidence_status === "degraded" && fila?.metadata?.identity_photo?.evidence_status === "degraded" && Boolean(fila?.metadata?.identity_photo?.evidence_failure_code), { identity_verification: verificacion, identity_photo: fila?.metadata?.identity_photo });
+      }
+      if (forma.estado === "desprendida") {
+        check(`${forma.type}: el reenvio sin foto registra la hora con su novedad`, verificacion.status === "not_verified" && verificacion.evidence_status === "degraded" && verificacion.evidence_failure_code === "EVIDENCIA_CLASE_RECHAZADA" && Boolean(verificacion.evidence_detached_reason) && !fila?.metadata?.identity_photo, { identity_verification: verificacion });
+      }
+    }
+    check("los cuatro tipos de la web quedaron marcados", WEB_PUNCH_TYPES.every((type) => filasWeb.get(type)), { tipos: [...filasWeb.keys()] });
+    check("ninguna respuesta de la ventana web lleva la etiqueta de la compuerta alterna", !codigosWeb.includes(SELFIE_GATE_RETIRED_CODE), { codigos: codigosWeb.filter(Boolean) });
 
     // Monitor.
     const evidence = await call(admin, "GET", `/hr/monitor-evidence/identity/${stored.id}`);
     check("el supervisor ve la selfie desde el monitor", evidence.status === 200 && evidence.payload.base64_data === photo.base64_data && evidence.payload.source === "identity", { status: evidence.status, code: evidence.code });
-    const noSelfieEvidence = await call(admin, "GET", `/hr/monitor-evidence/identity/${webPunch.id}`);
-    check("una marcacion sin selfie no inventa evidencia", noSelfieEvidence.status === 404, { status: noSelfieEvidence.status });
+    const webSelfie = await call(admin, "GET", `/hr/monitor-evidence/identity/${filasWeb.get("inicio_almuerzo").id}`);
+    check("el supervisor ve la selfie de la web tal como llego", webSelfie.status === 200 && webSelfie.payload.base64_data === `data:image/png;base64,${pngReal.toString("base64")}`, { status: webSelfie.status, code: webSelfie.code, mime: webSelfie.payload?.type });
+    const detachedEvidence = await call(admin, "GET", `/hr/monitor-evidence/identity/${filasWeb.get("salida").id}`);
+    check("una marcacion sin selfie no inventa evidencia", detachedEvidence.status === 404, { status: detachedEvidence.status });
 
     // Marcaciones hechas con la app nueva ANTES del despliegue: la API anterior
     // guardo la selfie tal cual la mando la app (identity_photo.base64).
