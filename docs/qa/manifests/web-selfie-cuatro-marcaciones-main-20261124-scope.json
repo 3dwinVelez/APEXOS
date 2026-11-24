@@ -1,0 +1,188 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "web-selfie-cuatro-marcaciones-main-20261124",
+  "target_branch": "main",
+  "source_branch": "develop",
+  "base_commits": {
+    "main": "e68eed4c63f412d1382df4b65187b1a943c3a8a8"
+  },
+  "base_commit": "e68eed4c63f412d1382df4b65187b1a943c3a8a8",
+  "target_head": "e68eed4c63f412d1382df4b65187b1a943c3a8a8",
+  "certified_commit": "26dbc25807947eed1fd83c48aa720997bc6ce451",
+  "candidate_tip": "el tip del candidato es el commit de documentacion que trae los dos manifiestos, el brief, el veredicto reescrito con las medidas finales y los tres archivos de evidencia que solo pueden medirse despues del commit certificado; el blob de las 21 rutas certificadas no cambia despues del commit certificado",
+  "promotion_branch": "codex/qa-web-selfie-cuatro-marcaciones-main-20261124",
+  "candidate_source": {
+    "branch": "develop",
+    "commit": "26dbc25807947eed1fd83c48aa720997bc6ce451",
+    "replay_sobre": "origin/main e68eed4c63f412d1382df4b65187b1a943c3a8a8",
+    "origen_del_contenido": "origin/desarrollo ffbd009d para las ocho rutas carry, los cuatro instrumentos de promocion, la spec del replay, el brief y la evidencia; main conserva sus lineas propias en service.js, entre ellas la guarda de tenant de updateRoute",
+    "metodo": "replay por invariantes, no por archivo ni por rama: ocho carry byte a byte desde origin/desarrollo, dos borrados de rutas que si existian en main, un hunkeo de una linea en service.js con excepcion nominal de origen, y la transformacion declarada en docs/qa/specs/web-selfie-cuatro-marcaciones-main-20261124.replay.json verificada por scripts/certifications/promotion-migration-check.js"
+  },
+  "change_intent": {
+    "summary": "La marcacion web deja de tener dos compuertas de selfie en Produccion: se retira webPunchSelfie.js, nacida en develop sin origen en desarrollo el 20-11 y fundida en main sin que nadie la viera ahi, que rechazaba etiqueta-declarada-verso-bytes antes de que la guarda clasista de mobile-identity decidiera, y mobile-identity.js pasa a exigir foto en las cuatro marcaciones web (entrada, inicio_almuerzo, fin_almuerzo, salida) sin ensanchar el conjunto firmado del telefono. Va el replay puntual porque main esta a 596 commits de develop y un merge de rama esta prohibido por el manifiesto de alcance de la ultima promocion.",
+    "modules": [
+      "talento-humano",
+      "auth",
+      "qa-evidencia"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/api/test/hr-single-selfie-gate.test.js",
+    "apps/api/test/hr-web-punch-selfie.test.js",
+    "scripts/certifications/hr-mobile-identity-local.js",
+    "scripts/certifications/hr-web-selfie-field.js",
+    "scripts/certifications/promotion-migration-check.js",
+    "scripts/certifications/promotion-gates-runner.js",
+    "scripts/test/promotion-replay-instruments.test.js",
+    "docs/briefs/2026-11-24-web-selfie-cuatro-marcaciones-porton-origen.md",
+    "docs/qa/specs/web-selfie-cuatro-marcaciones-main-20261124.replay.json",
+    "docs/qa/manifests/web-selfie-cuatro-marcaciones-main-20261124-scope.json",
+    "docs/qa/manifests/web-selfie-cuatro-marcaciones-main-20261124-approval.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/"
+  ],
+  "allowed_deletions": [
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-web-punch-selfie.test.js"
+  ],
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/mobile-identity.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "D", "file": "apps/api/src/modules/hr/webPunchSelfie.js" },
+    { "status": "M", "file": "apps/api/test/hr-mobile-identity.test.js" },
+    { "status": "A", "file": "apps/api/test/hr-single-selfie-gate.test.js" },
+    { "status": "D", "file": "apps/api/test/hr-web-punch-selfie.test.js" },
+    { "status": "M", "file": "scripts/certifications/hr-mobile-identity-local.js" },
+    { "status": "A", "file": "scripts/certifications/hr-web-selfie-field.js" },
+    { "status": "A", "file": "scripts/certifications/promotion-migration-check.js" },
+    { "status": "A", "file": "scripts/certifications/promotion-gates-runner.js" },
+    { "status": "A", "file": "scripts/test/promotion-replay-instruments.test.js" },
+    { "status": "A", "file": "docs/briefs/2026-11-24-web-selfie-cuatro-marcaciones-porton-origen.md" },
+    { "status": "A", "file": "docs/qa/specs/web-selfie-cuatro-marcaciones-main-20261124.replay.json" },
+    { "status": "A", "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-main-20261124-scope.json" },
+    { "status": "A", "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-main-20261124-approval.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/campo-qa.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/control-de-mutacion-instrumento.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/equivalencia-blob-candidato.txt" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/instrumentos-en-candidato.txt" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/invariantes-replay-commit.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/invariantes-replay-indice.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/produccion-antes.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/selftest-instrumento.txt" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/suites-api-apuntadas.txt" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/suites-web-apuntadas.txt" },
+    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md" }
+  ],
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/api/test/hr-single-selfie-gate.test.js",
+    "apps/api/test/hr-web-punch-selfie.test.js",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/campo-qa.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/equivalencia-blob-candidato.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/invariantes-replay-indice.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/local-certification.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/produccion-antes.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/selftest-instrumento.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/suites-api-apuntadas.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/suites-web-apuntadas.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md",
+    "docs/qa/specs/web-selfie-cuatro-marcaciones-main-20261124.replay.json",
+    "scripts/certifications/hr-mobile-identity-local.js",
+    "scripts/certifications/hr-web-selfie-field.js",
+    "scripts/certifications/promotion-gates-runner.js",
+    "scripts/certifications/promotion-migration-check.js",
+    "scripts/test/promotion-replay-instruments.test.js"
+  ],
+  "origin_waivers": [
+    {
+      "file": "apps/api/src/modules/hr/service.js",
+      "reason": "El blob de desarrollo no se puede llevar: main tiene lineas propias que no existen en desarrollo. El replay quita UNA linea (el require de la compuerta alterna) y no anade ninguna: git diff --numstat e68eed4c 26dbc258 = 0 anadidas / 1 eliminada, medido en invariantes-replay-commit.json y en la tabla de equivalencia. Las lineas que protegen el tenant en updateRoute (prisma.timeRoute.findFirst con tenant_id y el 404 HORARIO_NO_ENCONTRADO, service.js:1576-1577) quedan intactas y verificadas leyendo el blob indexado.",
+      "approval": "Edwin (dueno de APEXOS), orden del 2026-11-24 de alinear las tres ramas sin romper nada mas"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "marcacion-web-con-foto-en-las-cuatro",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/campo-qa.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/suites-web-apuntadas.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md"
+      ]
+    },
+    {
+      "name": "rechazo-por-mala-cara-no-por-etiqueta",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/suites-api-apuntadas.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/local-certification.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md"
+      ]
+    },
+    {
+      "name": "reenvio-sin-foto-degrada-y-no-rechaza",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/campo-qa.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/produccion-antes.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md"
+      ]
+    },
+    {
+      "name": "aislamiento-multi-tenant-del-horario",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/invariantes-replay-commit.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/equivalencia-blob-candidato.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md"
+      ]
+    },
+    {
+      "name": "trazabilidad-del-origen-del-contenido",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/instrumentos-en-candidato.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/control-de-mutacion-instrumento.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md"
+      ]
+    }
+  ],
+  "compuertas_exigidas": [
+    "npm run qa:promotion:scope -- <este manifiesto> <candidato> origin/main",
+    "npm run qa:approval:evidence -- <manifiesto de aprobacion>",
+    "certificacion de campo hr-web-selfie-field.js contra el ambiente desplegado y anclada al commit servido",
+    "verificacion del origen byte a byte contra origin/desarrollo y spec de replay verificada por instrumento versionado"
+  ],
+  "deriva_declarada": [
+    "agents/** y .qoder/skills/** no viajan: origin/main no tiene el arbol de agentes; el contexto vivo de este frente se versiona en desarrollo",
+    "el cliente web de marcacion no cambia: el blob de apps/web/app/dashboard/talento-humano/marcacion/page.tsx de main ya pide foto en los cuatro tipos y es identico al de develop, medido en la tabla de equivalencia",
+    "el escape hatch retry_without_photo vive solo en desarrollo y no baja a main: el API degrada en vez de rechazar, asi que no hay rechazo por formato que resolver en el cliente",
+    "los tres archivos de evidencia que solo pueden medirse despues del commit certificado (invariantes-replay-commit, control-de-mutacion-instrumento e instrumentos-en-candidato) y los dos manifiestos viajan en el commit de documentacion, con blobs ya pusheados en origin/desarrollo antes del porton",
+    "los dos rojos pre-existentes de main (stub timeRoute.findFirst en hr-route-assignment-lock.test.js y hr-punch-mobile-evidence.test.mjs en apps/web) quedan declarados en el veredicto con su dueno y no se arreglan de contrabando en este alcance"
+  ],
+  "verificado_local": {
+    "suites_api_apuntadas": "98 pruebas, 97 pasan, 1 rojo pre-existente declarado (hr-route-assignment-lock.test.js)",
+    "suites_web_apuntadas": "22 pruebas, 21 pasan, 1 rojo pre-existente declarado (hr-punch-mobile-evidence.test.mjs, apps/web no se toca)",
+    "certificador_hermetico": "55/55 CERTIFICACION APROBADA sobre el arbol del candidato con base de pruebas aislada",
+    "instrumento_de_replay": "11/11 invariantes validas contra el index y contra el commit 26dbc258; autocontrol con tres mutaciones, las tres en rojo",
+    "arnes_de_campo": "selftest 10/10 con cuatro rojos obligatorios sobre el arbol del candidato"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-24T21:00:00-05:00",
+    "instruction": "procede con los cambios y alinear todas las ramas con esta decision e implementa en cada una de ellas los ajustes necesarios sin romper nada mas; necesito que estos ajustes esten en todas las ramas verificadas y probadas que no existiran rechazos",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "Main esta a 596 commits de develop, asi que el transporte es un replay puntual de las once rutas del frente; el contenido que cambia es byte a byte el que QA certifico 13/13 en campo sobre el API desplegado 6b42b365a64e y la unica linea que se toca en service.js es la que enganchaba la compuerta alterna."
+    }
+  },
+  "notas": "Este manifiesto declara el alcance exacto de la pata main. La transformacion no se narrara en el CHANGELOG de main: se verificara con el instrumento de replay contra el commit, y ese JSON viaja en el mismo arbol que se promociona."
+}

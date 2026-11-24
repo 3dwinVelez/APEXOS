@@ -1,0 +1,112 @@
+{
+  "change_id": "web-selfie-cuatro-marcaciones-main-20261124",
+  "commit": "26dbc25807947eed1fd83c48aa720997bc6ce451",
+  "tree_evaluated": "punta de codex/qa-web-selfie-cuatro-marcaciones-main-20261124 medida al generar este manifiesto (replay puntual sobre e68eed4c, especificacion de transformacion, evidencia de la pata main y estos dos manifiestos)",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-24T21:00:00-05:00",
+    "scope": "promotion_to_main",
+    "instruction": "procede con los cambios y alinear todas las ramas con esta decision e implementa en cada una de ellas los ajustes necesarios sin romper nada mas; necesito que estos ajustes esten en todas las ramas verificadas y probadas que no existiran rechazos",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "Main esta a 596 commits de develop, asi que el transporte es un replay puntual de las once rutas del frente; las rutas que cambian en este candidato son blob-identicas a las que QA certifico en campo con 13/13 sobre el API desplegado 6b42b365a64e, y la unica linea que se toca en service.js es la que enganchaba la compuerta alterna."
+    },
+    "authorization_basis": "La orden del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas y la verificacion en los ambientes QA y Produccion, incluidas las lecturas de los servicios desplegados. No otorga force push, reescritura de historia, borrado de ramas, migraciones remotas de esquema ni cambios de infraestructura o secretos.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen y se corren manifiesto v2, qa:promotion:scope, qa:approval:evidence, la verificacion de origen en el porton, la certificacion de campo contra el ambiente desplegado y la verificacion de Produccion por artefacto servido."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/campo-qa.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md",
+        "../specs/web-selfie-cuatro-marcaciones-main-20261124.replay.json"
+      ],
+      "notes": "Certificacion de campo contra el API desplegado en QA (ancla health_commit=6b42b365a64e): 13/13 controles. Las cuatro marcaciones web (entrada, inicio de almuerzo, fin de almuerzo y salida) se asentaron con HTTP 200 mandando JPEG declarado PNG y PNG declarado JPEG, con evidencia available y verificacion photo_only en las tres que llevan foto y not_verified en el reenvio sin foto. Cero rechazos por formato (SELFIE_INVALIDA / SELFIE_NO_LEIBLE) y cero marcaciones perdidas: las filas se releen del ambiente, no del cuerpo de la respuesta."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/produccion-antes.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/campo-qa.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/local-certification.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md"
+      ],
+      "notes": "El antes se midio contra lo que Produccion sirve hoy (ancla health_commit=e68eed4c63f4): 10/10 controles con el defecto reproducido, es decir las dos marcaciones que declaran un tipo y mandan otro devuelven HTTP 400 SELFIE_INVALIDA y el chequeo de lectura no encuentra la fila (foto_guardada:false). Las otras dos piernas se registran como informativas porque el operario efimero no tiene secuencia previa ni selfie: 409 MARCACION_FUERA_DE_SECUENCIA y 400 SELFIE_REQUERIDA, codigos que no son de formato. El despues medido en QA contra 6b42b365a64e cierra 13/13 con las cuatro piernas asentadas y HTTP 200. Las dos corridas usan el mismo arnes versionado (script_sha256 identico); lo unico que cambia es el ambiente."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/suites-api-apuntadas.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/suites-web-apuntadas.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/instrumentos-en-candidato.txt"
+      ],
+      "notes": "Suites API apuntadas (identidad, tanda del operador, degradacion de evidencia, compuerta de horario, mobile-identity y la guarda estructural de una sola compuerta) y suites web apuntadas (asistencia, horarios y mallas, rutas y pantalla de marcacion del operario), todas sobre el arbol de este candidato. El autocontrol del arnes de campo corre aparte: exige sus diez rojos forzados y solo puede ponerse verde si la compuerta alterna vuelve a existir, si el color declarado recupera poder de decision, si la foto vuelve a ser opcional o si el retiro del usuario deja de ser por el endpoint."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/equivalencia-blob-candidato.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/invariantes-replay-commit.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md"
+      ],
+      "notes": "Equivalencia blob por blob entre el replay aplicado a e68eed4c y origin/desarrollo: las ocho rutas que se copian llegan byte a byte, las dos de la compuerta alterna quedan borradas y service.js muestra cero lineas agregadas y una eliminada (la llamada a prepareWebPunchSelfie). git grep webPunchSelfie sobre apps/api/src no devuelve ninguna ruta. Las lineas de updateRoute que protegen el tenant (findFirst con tenant_id y el 404 HORARIO_NO_ENCONTRADO) quedan intactas: aqui no se llevo el blob de desarrollo sobre main, se quito una linea."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/equivalencia-blob-candidato.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/invariantes-replay-commit.json",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/suites-api-apuntadas.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md"
+      ],
+      "notes": "El replay no toca Prisma ni migraciones ni cambia el esquema: las tablas de marcaciones, novelties e identidades quedan como estan. Las cuatro piernas de la tanda del operador (entrada, almuerzo, almuerzo, salida) siguen el mismo orden en el contrato, asi que no hay efecto en calculo de jornada, recargos, prestaciones ni cierre."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-web-selfie-field.js",
+    "evidence": [
+      "../evidence/web-selfie-cuatro-marcaciones-main-20261124/campo-qa.json",
+      "../evidence/web-selfie-cuatro-marcaciones-main-20261124/produccion-antes.json",
+      "../evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md"
+    ],
+    "controls": 13,
+    "passed": 13,
+    "failed": 0,
+    "substrate": "ambiente QA desplegado desde la promocion a develop (API servido 6b42b365a64e, health_commit medido en la propia corrida); la columna foto de la marcacion se relee del ambiente y el usuario efimero se retira por el endpoint administrativo"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-mobile-identity-local.js",
+    "evidence": [
+      "../evidence/web-selfie-cuatro-marcaciones-main-20261124/local-certification.json",
+      "../evidence/web-selfie-cuatro-marcaciones-main-20261124/invariantes-replay-commit.json",
+      "../evidence/web-selfie-cuatro-marcaciones-main-20261124/control-de-mutacion-instrumento.json"
+    ],
+    "basis": "El certificador hermetico corre sobre el arbol de este candidato (sin red, con base de datos de prueba aislada) y no sobre el de otra rama: la tanda del operador, la aceptacion por clase del color, el pasaporte de cara limpia, el mandato de foto en las cuatro marcaciones web, el reenvio sin foto y la guarda de tenant del horario quedan ejercitados sobre el codigo que se despliega. El instrumento de replay se autocontrola con mutaciones inyectadas y exige sus rojos."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-web-selfie-field.js",
+    "evidence": [
+      "../evidence/web-selfie-cuatro-marcaciones-main-20261124/campo-qa.json",
+      "../evidence/web-selfie-cuatro-marcaciones-main-20261124/veredicto.md"
+    ],
+    "notes": "Corrida 0531308 sobre la empresa modelo real NYVORA en QA, con usuario efimero creado por el propio arnes, rol Empleado, login 200 y retiro por el endpoint administrativo al terminar. El arnes no escribe en la base del ambiente mas alla de las marcaciones que el propio efimero produce y desactiva; el registro y la telemetria quedan intactos."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "e68eed4c63f412d1382df4b65187b1a943c3a8a8",
+    "trigger": "Si en Produccion una marcacion web con foto deja de asentarse, si vuelve a aparecer SELFIE_INVALIDA sobre una foto legitima, si el color declarado recupera poder de decision sobre una cara clasificable o si la marca sin foto deja de bajar degradada con su novedad.",
+    "notes": "Revert controlado del replay sobre main (git revert del commit de promocion, sin reescribir historia compartida) y redeploy de apexos-api-prod y apexos-web-prod. El revert reengancha la linea de prepareWebPunchSelfie y devuelve el modulo webPunchSelfie.js y su prueba; no hay migraciones de esquema, asi que al revertir no se toca ninguna tabla. El instrumento de replay deja constancia de la transformacion exacta, por lo que el revert es simetrico y verificable."
+  }
+}

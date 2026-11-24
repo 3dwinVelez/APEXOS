@@ -1,0 +1,21 @@
+# Version exacta de los instrumentos que el porton va a leer, medida sobre el commit certificado 26dbc25807947eed1fd83c48aa720997bc6ce451
+# origin/desarrollo al medir: cbddb077
+
+## Instrumentos versionados en el commit certificado (byte a byte desde origin/desarrollo)
+IGUAL  14760388b3c0  scripts/certifications/promotion-gates-runner.js
+IGUAL  309ddadea1f4  scripts/certifications/promotion-migration-check.js
+IGUAL  7b5cb6d4a831  scripts/certifications/hr-web-selfie-field.js
+IGUAL  636986001ad8  scripts/certifications/hr-mobile-identity-local.js
+IGUAL  edecb7853f2e  scripts/test/promotion-replay-instruments.test.js
+
+## Especificacion del replay (nace para main, por eso su blob es propio y se versiona en desarrollo antes del porton)
+candidato=873a2f301295014ce9b31bfdc6f790c602a43158 desarrollo=origin/desarrollo:docs/qa/specs/web-selfie-cuatro-marcaciones-main-20261124.replay.json
+AUSENTE
+
+## Evidencia citada por los manifiestos
+la corrida de campo (campo-qa.json) y el antes de produccion (produccion-antes.json) se midieron en sus ambientes y ya estan versionadas; las tres medidas sobre este arbol (suites, certificador hermetico y autocontrol del instrumento) son salida de los binarios arriba, sobre el arbol de main y su base de pruebas local aislada.
+el control de mutacion usa el camino propio del instrumento (--selftest): mide un replay correcto 3/3 y exige rojos en las tres derivas que justifican su existencia (anadir linea en el hunkeo, tocar el archivo llevado, revivir la ruta borrada). El arnes de campo corre aparte con --selftest: 10 casos, cuatro rojos obligatorios.
+
+## Version del arnes de campo, medida por sha256 del archivo que esta en el commit certificado
+13a70fc92b4f6544e0e4f3ffcad4ebc968944666f7d3463d7e1050ba616134f3
+13a70fc92b4f6544e0e4f3ffcad4ebc968944666f7d3463d7e1050ba616134f3  es el sha256 que registran campo-qa.json y produccion-antes.json
