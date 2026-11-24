@@ -148,7 +148,8 @@ en un solo lugar.
 - Riesgo: mientras la compuerta alterna siga servida en `develop`/`main`, la Producción seguirá
   dictaminando con `SELFIE_INVALIDA` → Mitigación: el portón de origen impide que se repita y
   esta evidencia deja el dictamen único en `desarrollo`; la resolución en Producción es una
-  promoción autorizada aparte, no un cambio de código de esta rama.
+  promoción autorizada aparte, no un cambio de código de esta rama. **(esa promoción aparte se autorizó y
+  se ejecutó el mismo 2026-11-24: ver 15.1 y 15.2; el `SELFIE_INVALIDA` ya no está servido en Producción)**
 - Riesgo: ambiente de certificación que pasa en verde por datos ajenos → Mitigación: el
   certificador siembra su tenant, usuario y ficha (`sembrarFichas`) en lugar de depender de lo
   que hubiera en la máquina.
@@ -253,7 +254,7 @@ Desde esta intervención el protocolo deja de ser recomendación y pasa a ser bl
 | P-1 | Retirar la compuerta alterna `webPunchSelfie.js` del código servido en `develop`/`main` (reconstrucción en `desarrollo` + manifiesto de alcance + `qa:preqa:evidence`) | `equipo-apexos` con `apexos-git-guardian` | **ejecutada el 2026-11-24 con autorización del dueño**: develop vía replay por invariantes (merge rápido `6b42b365`) y main vía replay puntual; detalle en la sección 15 |
 | P-2 | Decidir si `AuthorizationSession.id uuid` se blinda con migración o se documenta como requisito de ambiente | `apexos-db-nube` | abierto, hallazgo 10.1 |
 | P-3 | Dejar reconstruible la base desde `prisma migrate deploy` (baseline faltante y `Item`) | `apexos-db-nube` | abierto, hallazgo 10.2 |
-| P-4 | QA funcional en navegador contra ambiente QA una vez exista promoción | `apexos-qa` | **cerrada en QA**: 13/13 de campo sobre el API servido `6b42b365a64e`, las cuatro marcaciones asentadas y cero rechazos por formato; en Produccion queda el DESPUÉS después del despliegue |
+| P-4 | QA funcional en navegador contra ambiente QA una vez exista promoción | `apexos-qa` | **cerrada en QA y en Producción**: 13/13 de campo sobre el API servido `6b42b365a64e` en QA y **13/13** sobre el API servido `45809d87d61d` en Producción, en las dos con las cuatro marcaciones asentadas y cero rechazos por formato (ver 15.2) |
 | P-5 | Herramienta única de marcación y bloqueo de versiones viejas (retira lo provisional, sección 11) | dueño del producto | en curso, fuera de este brief |
 | P-6 | Los dos rojos pre-existentes de main que este frente **no** tocó: el stub de `hr-route-assignment-lock.test.js` (le falta `timeRoute.findFirst`) y `hr-punch-mobile-evidence.test.mjs` en `apps/web` | backend con QA, y frontend, cada uno en su propio corte | abiertos, declarados en el veredicto de la pata main |
 
@@ -296,9 +297,16 @@ y "verificadas y probadas que no existirán rechazos". La orden incluye verifica
 - Commit certificado `26dbc258`. Evidencia medida sobre este árbol: suites API apuntadas 97/98, suites web
   21/22, suite propia de la compuerta 40/40, certificador hermético 55/55, autocontrol del instrumento de
   replay con sus tres derivas en rojo y autocontrol del arnés de campo 10/10.
-- El **ANTES** se midió contra lo que Producción sirve hoy (`e68eed4c63f4`): 10/10 con el defecto
+- El **ANTES** se midió contra lo que Producción servía entonces (`e68eed4c63f4`): 10/10 con el defecto
   reproducido, las dos etiquetas mentirosas devolviendo HTTP 400 `SELFIE_INVALIDA` y cero fila escrita. El
-  **DESPUÉS** queda pendiente del despliegue (P del dueño, sección 15.3).
+  **DESPUÉS** se corrió el mismo día sobre el binario ya desplegado: `GET /health` devolvió
+  `commit 45809d87d61d` y el mismo arnés dio **13/13** — las cuatro piernas con HTTP 200 y la hora asentada,
+  `codigos:[]` (ninguna respuesta con el código de la compuerta alterna), las tres fotos reales
+  `evidence_status:available`, el reenvío sin foto asentado con `verificacion:not_verified` y su novedad,
+  el día leído con 4 filas de 4 esperadas, la escritura más lenta en **6,55 s** de un presupuesto de 30 s y
+  la cuenta efímera retirada con login 401 después (`docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/produccion-despues.json`).
+  La corrida de evidencia viajó a `main` como commit de documentación encima del tip promocionado, con el
+  mismo precedente que ya se usó en `9d13cae0`: el manifiesto no se reescribe para que pareciera completo.
 
 ### 15.3 Lo que este frente no arregla, dicho con su dueño
 

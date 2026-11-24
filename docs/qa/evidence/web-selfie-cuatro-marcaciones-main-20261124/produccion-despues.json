@@ -1,0 +1,350 @@
+{
+  "certification": "hr-web-selfie-field",
+  "version": 1,
+  "ambiente": "PRODUCCION",
+  "instruccion": "Cuatro marcaciones web con etiqueta mentirosa, medidas sobre el binario desplegado",
+  "generado_en": "2026-11-24T18:16:56.095Z",
+  "env_file": "config/production.env",
+  "api_host": "apexos-api-prod-production.up.railway.app",
+  "script_sha256": "13a70fc92b4f6544e0e4f3ffcad4ebc968944666f7d3463d7e1050ba616134f3",
+  "dia_operativo": "2026-11-24",
+  "run": "4215822",
+  "formas": [
+    {
+      "tipo": "entrada",
+      "nombre": "jpeg-declarado-png",
+      "bytes": 36892,
+      "declarado": "image/png"
+    },
+    {
+      "tipo": "inicio_almuerzo",
+      "nombre": "png-declarado-jpeg",
+      "bytes": 120303,
+      "declarado": "image/jpeg"
+    },
+    {
+      "tipo": "fin_almuerzo",
+      "nombre": "jpeg-honesto",
+      "bytes": 36892,
+      "declarado": "image/jpeg"
+    },
+    {
+      "tipo": "salida",
+      "nombre": "reenvio-sin-foto",
+      "bytes": 0,
+      "declarado": null
+    }
+  ],
+  "compromiso_del_arreglo": {
+    "fix_de_referencia": "26dbc25807947eed1fd83c48aa720997bc6ce451",
+    "servidor_lee": "git merge-base --is-ancestor"
+  },
+  "cheques": [
+    {
+      "name": "health_ancla_el_commit_servido",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "45809d87d61d",
+        "ancla": "arreglo"
+      }
+    },
+    {
+      "name": "operario_efimero_con_sesion",
+      "ok": true,
+      "detail": {
+        "login": 200,
+        "rol": "Empleado"
+      }
+    },
+    {
+      "name": "pierna_entrada_jpeg-declarado-png",
+      "ok": true,
+      "detail": {
+        "esperado": "arreglo",
+        "observado": "arreglo",
+        "ancla": "arreglo",
+        "exigida": true,
+        "fallos": [],
+        "status": 200,
+        "code": null,
+        "asentada": true
+      }
+    },
+    {
+      "name": "pierna_inicio_almuerzo_png-declarado-jpeg",
+      "ok": true,
+      "detail": {
+        "esperado": "arreglo",
+        "observado": "arreglo",
+        "ancla": "arreglo",
+        "exigida": true,
+        "fallos": [],
+        "status": 200,
+        "code": null,
+        "asentada": true
+      }
+    },
+    {
+      "name": "pierna_fin_almuerzo_jpeg-honesto",
+      "ok": true,
+      "detail": {
+        "esperado": "arreglo",
+        "observado": "arreglo",
+        "ancla": "arreglo",
+        "exigida": true,
+        "fallos": [],
+        "status": 200,
+        "code": null,
+        "asentada": true
+      }
+    },
+    {
+      "name": "pierna_salida_reenvio-sin-foto",
+      "ok": true,
+      "detail": {
+        "esperado": "arreglo",
+        "observado": "arreglo",
+        "ancla": "arreglo",
+        "exigida": true,
+        "fallos": [],
+        "status": 200,
+        "code": null,
+        "asentada": true
+      }
+    },
+    {
+      "name": "ninguna_respuesta_lleva_codigo_de_la_compuerta_alterna",
+      "ok": true,
+      "detail": {
+        "codigos": []
+      }
+    },
+    {
+      "name": "el_dia_se_lee_con_las_cuatro_piernas",
+      "ok": true,
+      "detail": {
+        "esperados": [
+          "entrada",
+          "inicio_almuerzo",
+          "fin_almuerzo",
+          "salida"
+        ],
+        "asentados": [
+          "entrada",
+          "inicio_almuerzo",
+          "fin_almuerzo",
+          "salida"
+        ]
+      }
+    },
+    {
+      "name": "lectura_no_vacia_cuando_se_afirma_un_dia_completo",
+      "ok": true,
+      "detail": {
+        "filas": 4,
+        "esperadas": 4
+      }
+    },
+    {
+      "name": "las_tres_fotos_reales_quedan_guardadas_disponibles_o_degradadas",
+      "ok": true,
+      "detail": {
+        "detalle": [
+          {
+            "forma": "jpeg-declarado-png",
+            "evidence_status": "available"
+          },
+          {
+            "forma": "png-declarado-jpeg",
+            "evidence_status": "available"
+          },
+          {
+            "forma": "jpeg-honesto",
+            "evidence_status": "available"
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_marca_sin_foto_registra_la_hora_con_su_novedad",
+      "ok": true,
+      "detail": {
+        "pierna": {
+          "forma": "reenvio-sin-foto",
+          "tipo": "salida",
+          "status": 200,
+          "code": null,
+          "observado": "arreglo",
+          "exigida": true,
+          "hora_asentada": true,
+          "verificacion": "not_verified",
+          "evidence_status": null,
+          "evidence_failure_code": "EVIDENCIA_CLASE_RECHAZADA",
+          "foto_guardada": false
+        }
+      }
+    },
+    {
+      "name": "toda_escritura_dentro_del_presupuesto",
+      "ok": true,
+      "detail": {
+        "peor": 6553,
+        "presupuesto_ms": 30000
+      }
+    },
+    {
+      "name": "cuenta_efimera_retirada",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "login_tras_retiro": 401,
+        "admin_retirado": 200
+      }
+    }
+  ],
+  "tiempos": [
+    {
+      "ruta": "/health",
+      "method": "GET",
+      "status": 200,
+      "ms": 1003
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 3452
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 6553
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 5114
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 4818
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 4547
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 3414
+    },
+    {
+      "ruta": "/api/v1/admin/users/275/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 5654
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 401,
+      "ms": 1077
+    },
+    {
+      "ruta": "/api/v1/admin/users/276/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 4858
+    }
+  ],
+  "ids": {
+    "usuarios": [
+      275,
+      276
+    ],
+    "empleados": [
+      567
+    ]
+  },
+  "presupuesto_ms": 30000,
+  "despliegue": {
+    "status": 200,
+    "commit_servido": "45809d87d61d",
+    "codigo_servido_contiene_el_fix": "arreglo"
+  },
+  "efimeros": {
+    "user_id": 275,
+    "employee_id": 567,
+    "rol": "Empleado",
+    "login": 200
+  },
+  "piernas": [
+    {
+      "forma": "jpeg-declarado-png",
+      "tipo": "entrada",
+      "status": 200,
+      "code": null,
+      "observado": "arreglo",
+      "exigida": true,
+      "hora_asentada": true,
+      "verificacion": "photo_only",
+      "evidence_status": "available",
+      "evidence_failure_code": null,
+      "foto_guardada": true
+    },
+    {
+      "forma": "png-declarado-jpeg",
+      "tipo": "inicio_almuerzo",
+      "status": 200,
+      "code": null,
+      "observado": "arreglo",
+      "exigida": true,
+      "hora_asentada": true,
+      "verificacion": "photo_only",
+      "evidence_status": "available",
+      "evidence_failure_code": null,
+      "foto_guardada": true
+    },
+    {
+      "forma": "jpeg-honesto",
+      "tipo": "fin_almuerzo",
+      "status": 200,
+      "code": null,
+      "observado": "arreglo",
+      "exigida": true,
+      "hora_asentada": true,
+      "verificacion": "photo_only",
+      "evidence_status": "available",
+      "evidence_failure_code": null,
+      "foto_guardada": true
+    },
+    {
+      "forma": "reenvio-sin-foto",
+      "tipo": "salida",
+      "status": 200,
+      "code": null,
+      "observado": "arreglo",
+      "exigida": true,
+      "hora_asentada": true,
+      "verificacion": "not_verified",
+      "evidence_status": null,
+      "evidence_failure_code": "EVIDENCIA_CLASE_RECHAZADA",
+      "foto_guardada": false
+    }
+  ],
+  "veredicto": {
+    "total": 13,
+    "pasaron": 13,
+    "fallaron": 0,
+    "esperado": "arreglo",
+    "estado": "APROBADO"
+  }
+}
