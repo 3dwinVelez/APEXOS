@@ -3133,9 +3133,12 @@ async function createOwnPunch(tenantId, user, input) {
   }
   // Maestro de rostros: la selfie se compara con el rostro registrado y la marcacion
   // queda SENALADA si no coincide. Nunca la rechaza (ver faceMatchForPunch).
+  // Huella propia (WebAuthn): firma invalida -> rechazo; ausente -> se senala.
+  const fingerprint = await fingerprintForPunch(tenantId, employee, user, input);
+  if (fingerprint && identity.identity_verification) identity.identity_verification = { ...identity.identity_verification, fingerprint };
   const faceMatch = await faceMatchForPunch(tenantId, employee.id, identity.identity_photo);
   if (faceMatch && identity.identity_verification) identity.identity_verification = { ...identity.identity_verification, face_match: faceMatch };
-  const { identity: _signature, identity_photo: _photo, ...metadata } = input.metadata || {};
+  const { identity: _signature, identity_photo: _photo, webauthn: _webauthn, ...metadata } = input.metadata || {};
   const verifiedInput = { ...input, metadata: { ...metadata, ...identity } };
   return createPunch(tenantId, ownOperationalInput(verifiedInput, employee, user), user, { scope: "own" });
 }
@@ -3553,6 +3556,92 @@ async function faceMatchForPunch(tenantId, employeeId, storedPhoto) {
   } catch (error) {
     return { status: "no_disponible", reason: String(error?.message || error).slice(0, 160) };
   }
+}
+
+// ------------------------------------------------------------------------------------
+// Huella propia (WebAuthn) para marcar desde el navegador. Junto con el rostro: la
+// huella firma la marcacion (celular + llave del usuario) y el rostro prueba la persona.
+// Firma invalida = manipulacion -> se RECHAZA. Huella ausente -> se SENALA.
+// ------------------------------------------------------------------------------------
+const personalWebauthn = require("./personal-webauthn");
+
+async function activeWebauthnCredentials(tenantId, employeeId) {
+  return prisma.runWithTenant(tenantId, () => prisma.hrWebauthnCredential.findMany({
+    where: { tenant_id: tenantId, employee_id: employeeId, active: true },
+    orderBy: { id: "desc" }
+  }));
+}
+
+async function getOwnWebauthn(tenantId, user) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  const creds = await activeWebauthnCredentials(tenantId, employee.id);
+  return {
+    enrolled: creds.length > 0,
+    credentials: creds.map((c) => ({ credential_id: c.credential_id, rp_id: c.rp_id, device_label: c.device_label, enrolled_at: c.enrolled_at }))
+  };
+}
+
+async function createOwnWebauthnChallenge(tenantId, user) {
+  await getCurrentEmployee(tenantId, user);
+  sharedDeviceWebauthnConfig();
+  return sharedDeviceIdentity.issueRegistrationChallenge({ tenantId, userId: user.id, secret: process.env.JWT_SECRET });
+}
+
+async function registerOwnWebauthn(tenantId, user, input = {}) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  const record = personalWebauthn.verifyPersonalRegistration({
+    input,
+    tenantId,
+    user,
+    secret: process.env.JWT_SECRET,
+    ...sharedDeviceWebauthnConfig()
+  });
+  return prisma.runWithTenant(tenantId, async () => {
+    const existing = await prisma.hrWebauthnCredential.findFirst({ where: { tenant_id: tenantId, credential_id: record.credential_id } });
+    if (existing) throw validationError("Esta llave de huella ya esta registrada.", 409, "HUELLA_YA_REGISTRADA");
+    const saved = await prisma.hrWebauthnCredential.create({
+      data: { tenant_id: tenantId, employee_id: employee.id, user_id: user.id, ...record, active: true, enrolled_at: new Date() }
+    });
+    return { enrolled: true, credential_id: saved.credential_id, rp_id: saved.rp_id, enrolled_at: saved.enrolled_at };
+  });
+}
+
+async function resetEmployeeWebauthn(tenantId, user, employeeId, input = {}) {
+  if (!(user?.role?.name === "APEX_ADMIN" || isAdministrativeRole(user?.role))) {
+    throw validationError("Solo un administrador puede restablecer las huellas registradas.", 403, "HUELLA_RESTABLECER_DENEGADO");
+  }
+  const id = optionalNumericId(employeeId);
+  if (!id) throw validationError("Empleado invalido.", 400, "EMPLEADO_INVALIDO");
+  return prisma.runWithTenant(tenantId, async () => {
+    const employee = await prisma.employee.findFirst({ where: { id, tenant_id: tenantId } });
+    if (!employee) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
+    const creds = await prisma.hrWebauthnCredential.findMany({ where: { tenant_id: tenantId, employee_id: id, active: true } });
+    for (const c of creds) {
+      await prisma.hrWebauthnCredential.update({
+        where: { id: c.id },
+        data: { active: false, revoked_by: user?.id || null, revoked_at: new Date(), revoke_reason: String(input.reason || "").trim().slice(0, 200) || null }
+      });
+    }
+    return { ok: true, employee_id: id, revoked: creds.length };
+  });
+}
+
+// Huella de una marcacion web. Lanza si la firma presentada es invalida.
+async function fingerprintForPunch(tenantId, employee, user, input) {
+  if (input.metadata?.source === mobileIdentity.MOBILE_SOURCE) return null; // la app nativa tiene su propia firma
+  const creds = await activeWebauthnCredentials(tenantId, employee.id);
+  const presented = input.metadata?.webauthn;
+  if (!presented) return { status: creds.length ? "no_presentada" : "sin_registro" };
+  const config = sharedDeviceIdentity.webauthnConfig();
+  if (!config.allowedOrigins.length || !config.allowedRpIds.length) return { status: "no_verificable", reason: "WEBAUTHN_NO_CONFIGURADO" };
+  const credential = creds.find((c) => c.credential_id === String(presented.credential_id || ""));
+  // La selfie no va en la firma (se toma despues de la huella): la valida el rostro.
+  const result = personalWebauthn.verifyPersonalAssertion({ credential, user, input, ...config });
+  await prisma.runWithTenant(tenantId, () => prisma.hrWebauthnCredential.update({
+    where: { id: credential.id },
+    data: { sign_count: result.sign_count, last_used_at: new Date() }
+  }));
+  return result.fingerprint;
 }
 
 async function createGpsPing(tenantId, input) {
@@ -8416,6 +8505,10 @@ async function listPayroll(tenantId, query = {}) {
 }
 
 module.exports = {
+  getOwnWebauthn,
+  createOwnWebauthnChallenge,
+  registerOwnWebauthn,
+  resetEmployeeWebauthn,
   getOwnFaceEnrollment,
   enrollOwnFace,
   resetEmployeeFace,

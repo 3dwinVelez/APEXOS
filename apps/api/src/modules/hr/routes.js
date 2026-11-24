@@ -77,6 +77,11 @@ async function hrRoutes(fastify) {
   fastify.post("/hr/self/biometric-enrollment", { schema: schemas.biometricEnrollmentSchema, preHandler: ownWrite }, async (request, reply) => reply.code(201).send(await service.enrollOwnBiometric(request.user?.tenant_id, request.user, request.body)));
   fastify.post("/hr/self/time-punches", { schema: schemas.punchSchema, preHandler: ownWrite, config: { rateLimit: { max: 600, timeWindow: "1 minute" } } }, (request) => service.createOwnPunch(request.user?.tenant_id, request.user, request.body));
   fastify.post("/hr/self/work-activities", { schema: schemas.workActivitySchema, preHandler: ownWrite }, (request) => service.createOwnWorkActivity(request.user?.tenant_id, request.user, request.body));
+  // Huella propia (WebAuthn) para marcar desde el navegador, junto con el rostro.
+  fastify.get("/hr/self/webauthn", { preHandler: ownRead }, (request) => service.getOwnWebauthn(request.user?.tenant_id, request.user));
+  fastify.post("/hr/self/webauthn/registration-challenge", { preHandler: ownWrite }, (request) => service.createOwnWebauthnChallenge(request.user?.tenant_id, request.user));
+  fastify.post("/hr/self/webauthn", { schema: schemas.personalWebauthnSchema, preHandler: ownWrite }, async (request, reply) => reply.code(201).send(await service.registerOwnWebauthn(request.user?.tenant_id, request.user, request.body)));
+  fastify.delete("/hr/employees/:id/webauthn", { preHandler: requirePermission("hr", "write") }, (request) => service.resetEmployeeWebauthn(request.user?.tenant_id, request.user, request.params.id, request.body || {}));
   // Maestro de rostros: cada empleado registra su rostro (con autorizacion de datos
   // biometricos) y la selfie de cada marcacion se compara con el. Restablecer exige
   // ademas rol administrativo (ver service.resetEmployeeFace).

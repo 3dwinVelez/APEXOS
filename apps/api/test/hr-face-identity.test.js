@@ -139,6 +139,7 @@ function fakePrisma(capture, { enrolled = null } = {}) {
       create: async ({ data }) => { const row = { id: enrollments.length + 1, ...data }; enrollments.push(row); capture.created.push(row); return row; },
       update: async ({ where, data }) => { const row = enrollments.find((e) => e.id === where.id); Object.assign(row, data); capture.updated.push(data); return row; }
     },
+    hrWebauthnCredential: { findMany: async () => [], update: async () => ({}) },
     timePunch: { findFirst: async () => null },
     workSession: { findFirst: async () => null },
     timeRoute: { findFirst: async () => null, findMany: async () => [] }

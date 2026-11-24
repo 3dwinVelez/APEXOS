@@ -17,7 +17,7 @@ type Punch = { id: number; user_name: string; type: string; time: string; punche
 // Selfie y verificacion de la marcacion de la app (hr/mobile-identity.js). La
 // API anterior al despliegue guardaba la selfie en `base64`; la actual, en
 // `base64_data`. Se leen ambas.
-type PunchIdentityMetadata = { identity_verification?: { status?: string; face_match?: { status?: string; similarity?: number | null } }; identity_photo?: { base64_data?: string; base64?: string; type?: string; has_base64_data?: boolean } };
+type PunchIdentityMetadata = { identity_verification?: { status?: string; face_match?: { status?: string; similarity?: number | null }; fingerprint?: { status?: string } }; identity_photo?: { base64_data?: string; base64?: string; type?: string; has_base64_data?: boolean } };
 type Attendance = { user_name: string; next_type: string | null; punches: Punch[] };
 type WorkActivity = { id: number; employee_id?: number | string; user_id?: string; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number | string; vehicle_plate?: string; evidence?: HrTimelinePhoto[]; metadata?: { supplied_user_name?: string; employee_code?: string; employee_name?: string; identity_aliases?: string[] } };
 type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number };
@@ -138,6 +138,13 @@ function hour(value?: string) {
 
 // Maestro de rostros: la marcacion no se rechaza si la selfie no coincide; se senala aqui.
 function faceMatchNote(punch: { metadata?: PunchIdentityMetadata | null }) {
+  const finger = punch.metadata?.identity_verification?.fingerprint?.status;
+  const fingerNote = finger === "verificada" ? "Huella verificada" : finger === "no_presentada" ? "SIN HUELLA" : "";
+  const faceNote = faceOnlyNote(punch);
+  return [faceNote, fingerNote].filter(Boolean).join(" · ");
+}
+
+function faceOnlyNote(punch: { metadata?: PunchIdentityMetadata | null }) {
   const match = punch.metadata?.identity_verification?.face_match;
   if (!match?.status) return "";
   const pct = typeof match.similarity === "number" ? ` (similitud ${Math.round(match.similarity * 100)}%)` : "";

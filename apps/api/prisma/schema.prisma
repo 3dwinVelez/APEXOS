@@ -2376,6 +2376,35 @@ model HrFaceEnrollment {
   @@index([tenant_id, active])
 }
 
+// Huella propia de cada empleado para marcar desde el navegador (WebAuthn, M-17).
+// Cada empleado registra con su usuario una llave de acceso en el celular (varios
+// empleados pueden registrar la suya en el mismo celular). Cada marcacion va firmada
+// con esa llave tras la huella; el rostro (HrFaceEnrollment) prueba quien marco.
+model HrWebauthnCredential {
+  id            Int       @id @default(autoincrement())
+  tenant_id     String
+  employee_id   Int
+  user_id       Int
+  credential_id String
+  public_key    String
+  key_algorithm String    @default("WEBAUTHN_ES256")
+  sign_count    Int       @default(0)
+  rp_id         String
+  device_label  String?
+  active        Boolean   @default(true)
+  enrolled_at   DateTime  @default(now())
+  last_used_at  DateTime?
+  revoked_by    Int?
+  revoked_at    DateTime?
+  revoke_reason String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  @@map("hr_webauthn_credentials")
+  @@unique([tenant_id, credential_id])
+  @@index([tenant_id, employee_id, active])
+}
+
 model ProcessedWorkday {
   id                                      Int           @id @default(autoincrement())
   tenant_id                               String

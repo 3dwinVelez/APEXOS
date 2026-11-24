@@ -275,5 +275,8 @@ module.exports = {
   crewPunchMessage,
   challengeForMessage,
   verifyCrewAssertion,
-  webauthnConfig
+  webauthnConfig,
+  // Reutilizados por personal-webauthn.js (huella propia de cada empleado).
+  parseClientData,
+  assertOriginAndRp
 };

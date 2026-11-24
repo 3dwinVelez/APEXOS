@@ -140,6 +140,23 @@ const faceEnrollmentSchema = {
   }
 };
 
+// Registro de la huella propia (WebAuthn). La llave publica viaja en SPKI.
+const personalWebauthnSchema = {
+  body: {
+    type: "object",
+    required: ["credential_id", "public_key", "public_key_algorithm", "client_data_json", "authenticator_data", "rp_id"],
+    properties: {
+      credential_id: { type: "string", minLength: 16, maxLength: 1024 },
+      public_key: { type: "string", minLength: 40, maxLength: 1024 },
+      public_key_algorithm: { type: "integer" },
+      client_data_json: { type: "string", minLength: 20, maxLength: 4096 },
+      authenticator_data: { type: "string", minLength: 40, maxLength: 4096 },
+      rp_id: { type: "string", minLength: 1, maxLength: 253 },
+      device_label: { type: "string", maxLength: 120 }
+    }
+  }
+};
+
 const routeSchema = {
   body: {
     type: "object",
@@ -861,6 +878,7 @@ const preopSubmitSchema = {
 };
 
 module.exports = {
+  personalWebauthnSchema,
   faceEnrollmentSchema,
   sharedDeviceRegistrationSchema,
   crewPunchSchema,
