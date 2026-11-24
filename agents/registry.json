@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.92.0",
+      "version": "2.92.2",
       "updated_at": "2026-11-24",
-      "sha256": "1a0105dffbe6f1029636f4ef785c3cb93d32de77b6f7544c897efb4be61868a7",
+      "sha256": "fe930f158e6fd51b4235ddf100ec6cb21d2b3ef8b8ed4f57dd678d47ecc08cdd",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -260,9 +260,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.33.0",
+      "version": "2.34.0",
       "updated_at": "2026-11-24",
-      "sha256": "ad0488aecb2292dd13350e190acc8f3cc2aa8441f1172a7ffc45d6fb9d59eb7c",
+      "sha256": "231577ec35ec50ffe1d30518314529ff85877e5c6962e52ddbddaa9599a67d2d",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [

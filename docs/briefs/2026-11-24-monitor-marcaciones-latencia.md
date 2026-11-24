@@ -658,3 +658,24 @@ La lección no es del instrumento sino del protocolo: un `ROTO carry` masivo (to
 incluidas las que nadie tocó) es señal de que se midió el árbol equivocado, no de que el paquete revierta
 trabajo ajeno. Un rojo que aparece en rutas que el candidato no modificó hay que atribuirlo antes de
 creérselo.
+
+### 14.4 Las compuertas rojas por forma: un `allowed_paths` sin barra y dos `script` mal relativos
+
+`qa:promotion:gates` respondió `rutas fuera de alcance` **listando las 61 rutas del paquete**, incluida
+`apps/api/src/modules/auth/service.js`, que estaba declarada en el inventario y en `allowed_paths`. La causa
+no era el candidato: `scripts/validate-promotion-scope.js:13` (`matchesAllowed`) solo perdona el prefijo
+cuando la entrada termina en `/`, y este manifiesto declaraba `apps/api/test`, `scripts/certifications`,
+`.qoder/skills` sin ella —ninguna ruta del paquete podía coincidir—. Antes de tocar el árbol se midió el
+invariante real: el diff neto `origin/develop..candidato` dio **61 entradas idénticas** a `expected_changes`,
+cero sobrantes y cero faltantes, así que el inventario era cierto y el documento estaba mal escrito. Se corrigió
+`allowed_paths` a las 61 rutas exactas (la lectura estricta de «rutas puntuales») y **no** se ensanchó permiso
+ni se rehízo el candidato, que era la tentación de menor resistencia.
+
+El segundo rojo venía del pre-QA: `certification.script` y `regression_certification.script` decían
+`../../certifications/...`, pero `validate-preqa-promotion-evidence.js:19,36` resuelve contra **el directorio
+del manifiesto** (`docs/qa/manifests`), así que apuntaban a `docs/certifications/...`. Con
+`../../../scripts/certifications/...` la compuerta pasó.
+
+Cierre medido, sobre el árbol congelado `bb2b29f6`: `ALCANCE DE PROMOCION VALIDO: monitor-latencia-sesion-20261124
+(61 rutas, origen verificado contra origin/desarrollo)`, `AUTORIZACION PRE-QA VALIDA: monitor-latencia-sesion-20261124`
+y `INVARIANTES DE REPLAY VALIDAS: 51/51`.
