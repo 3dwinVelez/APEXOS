@@ -1,0 +1,89 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "monitor-latencia-brief-develop-20261124",
+  "creado": "2026-11-24T23:35:00-05:00",
+  "autorizado": "2026-11-24T20:40:00-05:00",
+  "target_branch": "develop",
+  "source_branch": "desarrollo",
+  "base_commits": {
+    "develop": "3303a95532a35603f53f1eced0300f4febb0eab3",
+    "main": "cf2adc59d44693f368418fb20cb66a06a388daa3"
+  },
+  "base_commit": "3303a95532a35603f53f1eced0300f4febb0eab3",
+  "target_head": "3303a95532a35603f53f1eced0300f4febb0eab3",
+  "certified_commit": "3303a95532a35603f53f1eced0300f4febb0eab3",
+  "naturealeza": "Avance de documentacion, cero rutas de producto. El brief del paquete de latencia gano 122 lineas durante la pata main (seccion 16: por que el transporte fue replay, las cuatro roturas que se midieron antes de commitear, el re-anclaje de la base cuando el porton de alcance rechazo el baseline viejo y las invariantes re-medidas). Esas lineas ya viven en origin/desarrollo y en origin/main cf2adc59; develop se quedo con la version anterior del archivo. El commit que se promociona trae solo esa ruta y este manifiesto.",
+  "change_intent": {
+    "modules": [
+      "documentacion",
+      "qa-evidencia"
+    ],
+    "summary": "Poner al dia el brief 2026-11-24-monitor-marcaciones-latencia.md en develop para que las tres ramas cuenten la misma intervencion. No cambia una linea de codigo, de esquema ni de instrumentacion: el diff neto es una ruta de docs/briefs y este manifiesto."
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/brief-develop-diff.txt"
+    }
+  ],
+  "allowed_deletions": [],
+  "allowed_paths": [
+    "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
+    "docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json",
+    "docs/qa/evidence/auth-session-path-20261124/brief-develop-diff.txt"
+  ],
+  "origin_waivers": [],
+  "protected_capabilities": [
+    {
+      "name": "Cero rutas de producto y de instrumentacion en el diff",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/brief-develop-diff.txt"
+      ],
+      "notes": "git diff --name-only origin/develop..punta filtrado por ^(apps|scripts)/ devolvio 0 rutas. El diff neto son tres rutas bajo docs/: el brief, este manifiesto y la evidencia de la medici."
+    },
+    {
+      "name": "El brief que sube es el blob canonico de desarrollo y el mismo que sirve main",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/brief-develop-diff.txt"
+      ],
+      "notes": "b04d2d7c0b6b49aec719323488ac604c57ca3368 en las tres ramas, medido con git rev-parse por rama. Contra la version de develop son 122 lineas anadidas y 0 quitadas."
+    },
+    {
+      "name": "Ningun manifiesto de promocion existente se reescribe",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/replay-arbol-candidato-main.json",
+        "../evidence/auth-session-path-20261124/candidato-main.txt"
+      ],
+      "notes": "El inventario del diff neto solo declara una ruta M (el brief) y dos A. Los manifiestos de la pata develop y de la pata main quedan byte a byte como estaban."
+    }
+  ],
+  "compuertas_exigidas": [
+    "npm run qa:promotion:scope -- docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json <punta> origin/develop",
+    "git diff --name-only origin/develop..<punta> | grep -cE '^(apps|scripts)/' debe dar 0",
+    "git rev-parse <punta>:docs/briefs/2026-11-24-monitor-marcaciones-latencia.md == git rev-parse origin/desarrollo:docs/briefs/2026-11-24-monitor-marcaciones-latencia.md"
+  ],
+  "deriva_declarada": [
+    "El ciclo pre-QA de cinco chequeos (functional, error, support_scripts, regression, platform_regression) no se corre: no hay ruta de producto ni de instrumentacion en el diff, y certificaria una ejecucion que este commit no puede provocar. El precedente versionado es el mismo dia: 9d13cae0 y b08699e3 subieron evidencia de documentacion a las ramas de promocion sin ciclo funcional, y la regla del repositorio sigue exigiendo el ciclo para cualquier cambio que pueda ejecutarse."
+  ],
+  "verificado_local": "Diff neto medido contra origin/develop: 2 rutas, ambas bajo docs/. Contenido del brief == blob de origin/desarrollo == blob de origin/main.",
+  "approval": {
+    "status": "approved",
+    "approved_by": "dueno del proyecto",
+    "approved_at": "2026-11-24T20:40:00-05:00",
+    "instruction": "procede con la promocion controlada de esta intervencion alineado las 3 ramas al finalizar brindame un resumen en lenguaje natural de lo que se hizo sin dejar pendientes abiertos",
+    "authorization_flags": {
+      "direct_push_to_develop": true
+    }
+  }
+}

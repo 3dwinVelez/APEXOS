@@ -679,3 +679,125 @@ del manifiesto** (`docs/qa/manifests`), así que apuntaban a `docs/certification
 Cierre medido, sobre el árbol congelado `bb2b29f6`: `ALCANCE DE PROMOCION VALIDO: monitor-latencia-sesion-20261124
 (61 rutas, origen verificado contra origin/desarrollo)`, `AUTORIZACION PRE-QA VALIDA: monitor-latencia-sesion-20261124`
 y `INVARIANTES DE REPLAY VALIDAS: 51/51`.
+
+## 15. QA sobre el candidato servido: la puerta estuvo a punto de aprobarse sobre 0 KB (2026-11-24, pata `develop -> main`)
+
+`origin/develop` sirve `3303a95532a35603f53f1eced0300f4febb0eab3` y el despliegue de QA lo confirmó por
+`GET /health` (`{"modules":19,"commit":"3303a95532a3","service_certification":"products-v2"}`). Sobre ese
+binario, no sobre el árbol local, se corrió la certificación funcional. Índice completo en
+`docs/qa/evidence/auth-session-path-20261124/qa-cierre.md`.
+
+| Instrumento | Veredicto | Número |
+|---|---|---|
+| `certify:auth-session` | verde | 200 en login, `/auth/me` y `/services/orders`; **5/5 rechazos** en 401; revocación medida, no exigida |
+| `certify:hr-monitor-evidence:qa` | verde | **12/12** controles, incluido `cross_tenant_evidence_denied` (404 del tenant vecino) y el 403 del rol solo-marcación |
+| `certify:hr-auth-latency:qa` | verde | **18 casos, 0 divergencias**, mediana **407 ms vs 1.538 ms**, factor **0,26** |
+| `certify:hr-monitor-budget:qa` (NYVORA, día 2026-11-23) | verde | mapa **52 KB · p95 1.152 ms**; contadores con fecha **3 KB** vs **7 KB** sin fecha; asistencia **24 KB**; **0 binarios inline** |
+| `certify:hr-monitor-budget:qa` (tenant del arnés, día de corrida) | verde | mapa **17 KB**, asistencia **8 KB**, **0 binarios inline** con dos evidencias escritas minutos antes |
+
+### 15.1 La credencial de QA ya no existía: se construyó el recurso
+
+`certify:hr-monitor-budget:qa` respondía `El ambiente no acepto la sesion de medicion (HTTP 401)`. No era
+un problema del paquete: la cuenta que usaba (`nyvora.real.admin.202607141705@internal.apexos.local`, del
+archivo ignorado `config/nyvora-real-test-credentials.env`, generado el 2026-07-14) **no está en la base de
+QA** —censo de solo lectura: 0 filas para ese correo sobre 554 usuarios y 27 empresas, y las cuentas
+`qa.paquete.*` / `cert.*` del tenant NYVORA figuran todas `active = false`, retiradas por sus rondas—. Como
+dicta la política de no dejar pendientes construibles, se provisionó la sesión con el propio servicio del
+producto (`admin.createUser`, rol `APEX_ADMIN` de NYVORA `1d162ffd`, user `845`) en vez de declarar el
+bloqueo, y las tres cuentas de medición se retiraron al cerrar con control de login **200 antes / 401
+después** (`qa-retiro-cuentas.json`).
+
+### 15.2 El verde que no medía: umbral sin volumen
+
+La primera corrida del portón de presupuesto dio **0 KB en las cuatro lecturas** y `GATE DE PRESUPUESTO EN
+VERDE`. Dos causas medidas: el arnés resolvió el tenant `fd3e2802` («NYVORA QA ISOLATION CONTROL», sin
+antigüedad) por su `contains:"NYVORA"`, y se le pasó `--date=2026-11-23` cuando el único día con filas de ese
+tenant era el de la propia corrida. Un presupuesto que no tiene datos que aprobar no puede fallar, así que esa
+salida no sirve como evidencia. Se re-corrió contra el día cargado del tenant real (2026-11-23, el de 20
+marcaciones sobre **113 en 120 días**) y quedó escrito el fondo, para que nadie lea el `0 KB` como mérito ni
+el factor de aceleración donde no hay volumen: la comparación gruesa existe en Producción.
+
+### 15.3 Dos defectos del instrumento versionado, y lo que no sube con este paquete
+
+`scripts/certifications/hr-monitor-evidence-demand-qa.js` tenía su analizador de argumentos sin soporte para
+`--flag=value`: con esa forma la corrida pedía `--api-url=https://...` y terminaba contra
+`http://127.0.0.1:3100` (`cause=ECONNREFUSED`), y la misma forma le habría pisado la evidencia versionada por
+defecto (`docs/qa/evidence/hr-monitor-evidence-demand-20260824/certification.json`). La caída ocurrió en el
+primer `fetch`, antes de abrir el bloque que escribe, así que no tocó datos ni evidencia (el archivo conserva
+su `generated_at` del 2026-08-24 y el árbol de git está limpio). El segundo: mandaba los almuerzos sin selfie
+esperando 200, y develop ya responde `SELFIE_REQUERIDA` por `WEB_SELFIE_REQUIRED_TYPES`. Se arregló el parser,
+se mandó la foto y se agregó el control positivo del rechazo; el arnés pasó de fallar a **12/12**.
+
+Ambas rutas son de herramienta y **no viajan** en este paquete (no están en las 61). Lo mismo hay que decir de
+`apps/api/src/modules/hr/mobile-identity.js`, que tampoco está en el inventario y cuyo blob difiere
+(`756b0572178bb137…` en `origin/main` contra `f9e8ea27bb32e929…` en `origin/desarrollo`): con esta promoción
+Producción **no** va a exigir selfie en las cuatro marcaciones web. Es deliberate —el paquete es de latencia y
+camino de sesión—, pero queda escrito para que la corrida de QA no se lea como si certificara una regla que el
+destino no sirve.
+
+
+## 16. La pata `develop -> main`: el replay que no pudo ser fusión (2026-11-24)
+
+La distancia medida: `origin/main` está a **859 commits** de `origin/develop` (`git rev-list --count`), y su
+`merge-base` es `180a2b21`. Con esa distancia, un merge de rama está prohibido por el propio manifiesto: el
+diff neto traería módulos que nunca se promocionaron. Se intentó medir primero qué habría roto llevar los
+blobs de `develop` sobre `main`, y la respuesta es concreta:
+
+- `apps/api/src/modules/auth/service.js` de develop pide `require("../hr/personal-webauthn")`, y esa ruta **no
+  existe en `main`** (`git ls-tree origin/main` responde AUSENTE). El API promovido habría caído al cargar el
+  módulo de autenticación, o sea: no arranca Producción.
+- Con el blob de develop entran `fingerprintLogin`, la identidad de dispositivos compartidos y la biométrica,
+  con sus tres migraciones (`20261121230000_hr_shared_devices`, `20261122060000_hr_face_enrollments`,
+  `20261122120000_hr_webauthn_credentials`), ninguna de ellas aplicada a la base de Producción.
+- `apps/api/src/modules/hr/service.js` de develop **revierte** el motor de liquidación de main: el candidato
+  conserva `pg_advisory_xact_lock` **6 veces** y `buildEmployeeTerminationLiquidation` **4 veces** porque el
+  replay parte del blob de main, no del de develop.
+- Los dos instrumentos del camino de sesión (`auth-session-sql-guard.js`, `auth-email-collision-census.js`)
+  piden `./recovery-readiness.js`, que tampoco llegó a `main`: llevados solos dejan un árbol promovido con un
+  instrumento que revienta al ejecutarlo. No viajan.
+
+La transformación quedó escrita como invariante y no como narrativa
+(`docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json`), medida con
+`npm run qa:promotion:migration` sobre el índice del candidato: **carry 49 + delete 24 = 73 invariantes**. Los
+`delete` son las rutas ajenas que tienen que seguir ausentes (biometría, webauthn, dispositivos compartidos,
+las dos pantallas nuevas de Talento Humano, `recovery-readiness` y las rutas de gobernanza `agents/**`).
+
+| Capa | Rutas | Cómo se probó |
+|---|---|---|
+| carry desde `origin/desarrollo` | 48 | blob igual, medido archivo por archivo |
+| carry desde `origin/develop` | 1 (`talento-humano/rutas/page.tsx`) | el blob servido a QA es `c79f3da7`; el de `desarrollo` (`df9fd61d`) trae 53 líneas de otra intervención sin certificar |
+| replay propio | 3 (`auth/service.js`, `hr/routes.js`, `hr/service.js`) | blob de `main` + los hunks de `41134bf4` y `f3e85f1a` (`31a36e77` ya estaba en `main`) |
+| spec y su reporte | 2 | no se auto-miden: el archivo que declara la invariante no puede certificar su propio blob, queda declarado en `rutas_del_tip_sin_invariante_carry` |
+
+Las cuatro excepciones de origen del portón se justifican con medida y no con intención
+(`docs/qa/evidence/auth-session-path-20261124/invariantes-replay-main.json`):
+
+- `hr/service.js`: **32 líneas añadidas, 0 huérfanas** —cada línea existe textualmente en `origin/desarrollo`—
+  y el cuerpo de `listRouteEventSummaries` sale **byte a byte** igual (5.445 caracteres en los dos árboles).
+- `auth/service.js`: **46 añadidas, 0 huérfanas**, con `login` (1.899), `startSession` (711), `me` (353) y
+  `refresh` (2.610) idénticos carácter por carácter a los de la rama certificada.
+- `hr/routes.js`: la línea de `/hr/routes/event-summaries` es exacta, y los contadores de lo que no viaja dan
+  **0** (`webauthn`, `face`).
+- `page.tsx`: 41 líneas añadidas, 0 huérfanas contra `origin/develop`, y `EVIDENCE_FETCH_CONCURRENCY` presente.
+
+Suitas sobre el árbol candidato (no sobre el de trabajo): **70 pruebas, 69 pasan, 0 fallan, 1 `SKIP` explícito
+y preexistente** en `authorization-status-codes.test.js`, más el autocontrol del instrumento de presupuesto en
+verde (`suites-candidato-main.txt`).
+
+Lo que **no** sube con este paquete, declarado para que nadie lo lea como olvido: el árbol de gobernanza (20
+rutas de `agents/**` y `.qoder/skills/**`, que en `main` ni siquiera existe `agents/`), la reparación de
+`hr-monitor-evidence-demand-qa.js` (`main` conserva `726ee951`, la reparación `6208f982` queda en `desarrollo`
+con su comando de remedición) y la regla de selfie en las cuatro marcaciones web (`mobile-identity.js` no entra
+al inventario: Producción sigue sirviendo `756b0572`). El DESPUÉS de Producción es pendiente del despliegue, no
+afirmación: solo cuenta cuando `GET https://apexos-api-prod-production.up.railway.app/health` devuelva el sha
+promovido, y entonces se corren `certify:hr-monitor-budget:production` y `certify:auth-session` anclados a ese
+sha.
+
+La base se movió a mitad de camino y el portón lo avisó. El primer candidato (funcional `65b9dd7a`) se ancló a
+`3baf8e4a` y `qa:promotion:scope` respondió `ALCANCE DE PROMOCION INVALIDO: el destino origin/main cambio desde
+el baseline aprobado`: `main` había avanzado a `b08699e3`, un commit de documentación de dos rutas ajenas a este
+paquete y sin traslape con ninguna de sus rutas. El candidato se reconstruyó con `git reset --soft` sobre el tip
+nuevo —nunca por merge ni con un snapshot viejo del árbol, que es como se reintroducen regeneraciones— y se
+volvieron a medir las invariantes y el inventario de blobs contra la base nueva. El funcional quedó en `66d2765a`
+con 50 rutas y la capa de documentación (dos manifiestos, el veredicto y el reporte del replay) viajó encima, en
+su propio commit, porque esas cuatro rutas solo pueden escribirse con las medidas del commit que certifican.
