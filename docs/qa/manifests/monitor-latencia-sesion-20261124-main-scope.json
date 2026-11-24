@@ -6,20 +6,21 @@
   "target_branch": "main",
   "source_branch": "develop",
   "base_commits": {
-    "main": "3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
+    "main": "b08699e3214a41f946cf3080b313cbfe637e33dd",
     "develop": "3303a95532a35603f53f1eced0300f4febb0eab3",
     "merge_base_develop_main": "180a2b21d21a152a9937c099c6e46500a3774908",
     "distancia_commits_main_desde_develop": 859
   },
-  "base_commit": "3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
-  "target_head": "3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
-  "certified_commit": "65b9dd7a9d66565b7f728124c4208f484bc58c07",
-  "candidate_tip": "La punta que se empuja es el commit de documentacion que trae estos dos manifiestos y el veredicto, encima del funcional 65b9dd7a. El funcional es fast-forward sobre 3baf8e4a y no toca ninguna de las tres rutas que ese commit sirvio; la diferencia entre las dos capas esta escrita en deriva_declarada y no detras de un numero redondo. La re-medicion del replay sobre la punta queda en docs/qa/evidence/auth-session-path-20261124/ (regla 124 de apexos-qa: medir solo el certificado dejaria pasar una ruta carry revertida por el commit de docs).",
+  "base_commit": "b08699e3214a41f946cf3080b313cbfe637e33dd",
+  "target_head": "b08699e3214a41f946cf3080b313cbfe637e33dd",
+  "certified_commit": "66d2765ad605c3744ab71be871d75ab9a7421e3e",
+  "candidate_tip": "La punta que se empuja es el commit de documentacion que trae estos dos manifiestos y el veredicto, encima del funcional 66d2765a. El funcional es fast-forward sobre b08699e3 y no toca ninguna de las rutas que ese commit sirvio; la diferencia entre las dos capas esta escrita en deriva_declarada y no detras de un numero redondo. La re-medicion del replay sobre la punta queda en docs/qa/evidence/auth-session-path-20261124/ (regla 124 de apexos-qa: medir solo el certificado dejaria pasar una ruta carry revertida por el commit de docs).",
+  "rebase_declarado": "El primer candidato (funcional 65b9dd7a) se anclo a 3baf8e4a y el scope gate lo rechazo: ALCANCE DE PROMOCION INVALIDO, el destino origin/main cambio desde el baseline aprobado. Main habia avanzado a b08699e3, un commit de documentacion de dos rutas (el brief del selfie web y su veredicto) ajeno a este paquete y sin traslape con ninguna de sus 51 rutas. El candidato se reconstruyo con reset --soft sobre el tip nuevo, se reverifico que las dos rutas del commit ajeno quedan intactas y se regeneraron el spec de replay, el inventario de blobs y las invariantes: 50 rutas funcionales mas 4 de documentos de promocion (los dos manifiestos, el veredicto y el replay de la punta). La regla 51 de apexos-git-guardian consigna el procedimiento: nunca re-anclar por merge ni por snapshot viejo, y volver a medir las invariantes despues de mover la base.",
   "promotion_branch": "codex/qa-monitor-latencia-sesion-main-20261124",
   "candidate_source": {
     "branch": "develop",
     "commit": "3303a95532a35603f53f1eced0300f4febb0eab3",
-    "replay_sobre": "origin/main 3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
+    "replay_sobre": "origin/main b08699e3214a41f946cf3080b313cbfe637e33dd",
     "origen_del_contenido": "origin/desarrollo para las 45 rutas carry y los cuatro instrumentos, origin/develop para la pantalla de rutas (blob c79f3da7, el que QA sirvio y certifico) y replay por hunks sobre el blob de main para los tres archivos de fusion",
     "replay_de_commits": ["41134bf4", "f3e85f1a", "31a36e77"],
     "linaje": "41134bf4 trae el acote del resumen de eventos y el camino de sesion en una sentencia; f3e85f1a cierra el login con correos repetidos y el refresh sin relectura; 31a36e77 (guarda de tenant en updateRoute) ya estaba en main, medida en su blob, por eso no se re-aplico."
@@ -117,7 +118,7 @@
     {"status": "M", "file": "scripts/certifications/hr-monitor-byte-budget.js"},
     {"status": "A", "file": "scripts/hr-evidence-backfill-storage.js"}
   ],
-  "certified_functional_paths": "Las 51 rutas del commit funcional 65b9dd7a (apps, scripts, brief, spec de replay y evidencia). expected_changes declara 54: las tres restantes son los dos manifiestos y el veredicto, que solo pueden escribirse con las medidas del commit que certifican y no pueden citarse a si mismos.",
+  "certified_functional_paths": "Las 50 rutas del commit funcional 66d2765a (apps, scripts, brief, spec de replay y evidencia). expected_changes declara 54: las cuatro restantes son los dos manifiestos, el veredicto y el reporte del replay, que solo pueden escribirse con las medidas del commit que certifican y no pueden citarse a si mismos.",
   "origin_waivers": [
     {
       "file": "apps/api/src/modules/hr/service.js",
@@ -193,7 +194,7 @@
     "DESPUES del despliegue, condicionado al sha servido: GET /health tiene que devolver el sha promocionado antes de correr certify:hr-monitor-budget:production y certify:auth-session anclados a ese sha"
   ],
   "deriva_declarada": [
-    "Las dos capas del inventario: 51 rutas en el commit funcional y 54 en la punta. La diferencia son los dos manifiestos y el veredicto, que no pueden citarse a si mismos.",
+    "Las dos capas del inventario: 50 rutas en el commit funcional y 54 en la punta. La diferencia son los dos manifiestos, el veredicto y el reporte del replay, que no pueden citarse a si mismos.",
     "La salida de las compuertas (alcance, aprobacion, gates) no viaja en el commit que describen: queda declarada y se cita verbatim en veredicto-main.md.",
     "No viajan las 20 rutas de gobernanza del paquete (agents/** y .qoder/skills/**): main no tiene arbol agents/ y su canon de skills es anterior. La canonia vive en desarrollo y develop.",
     "No viajan scripts/security/auth-session-sql-guard.js ni auth-email-collision-census.js: los dos piden ./recovery-readiness.js, ruta que nunca llego a main, y llevados solos dejan un instrumento que revienta al ejecutarlo. Tampoco viaja recovery-readiness.js.",
@@ -217,7 +218,7 @@
     "instruction": "procede con la promocion controlada de esta intervencion alineado las 3 ramas al finalizar brindame un resumen en lenguaje natural de lo que se hizo sin dejar pendientes abiertos",
     "authorization_flags": {
       "direct_push_to_main": true,
-      "reason": "Main esta a 859 commits de develop, asi que el transporte es replay puntual de 51 rutas y no fusion de rama. Las rutas del paquete se verifican byte a byte contra el arbol que QA certifico en campo (5/5 rechazos, 12/12 de evidencia bajo demanda, presupuesto verde con volumen) y los archivos de fusion conservan el codigo productivo de main medido por marcador."
+      "reason": "Main esta a 859 commits de develop, asi que el transporte es replay puntual de 50 rutas funcionales y no fusion de rama. Las rutas del paquete se verifican byte a byte contra el arbol que QA certifico en campo (5/5 rechazos, 12/12 de evidencia bajo demanda, presupuesto verde con volumen) y los archivos de fusion conservan el codigo productivo de main medido por marcador."
     },
     "limits": "La autorizacion cubre el flujo desarrollo -> develop -> main con sus compuertas y la verificacion en los ambientes. No otorga force push, reescritura de historia, borrado de ramas, migraciones remotas de esquema, cambios de infraestructura ni secretos."
   },

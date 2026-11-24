@@ -1,9 +1,9 @@
 Candidato a main del paquete monitor-latencia-sesion-20261124
-base (origin/main al construir): 3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23
+base (origin/main al construir): b08699e3214a41f946cf3080b313cbfe637e33dd
 rama de trabajo local: codex/qa-monitor-latencia-sesion-main-20261124
-rutas en el indice del candidato: 51
+rutas en el indice del candidato: 54
 
-carry desde origin/desarrollo (45):
+carry desde origin/desarrollo (48):
   81eaa53aa3a4c959831cc7e910b840c1dfdbdd0e  apps/api/src/modules/hr/monitorEvidenceRows.js
   a7189cc6ced6839ce139cf53dbb6cab8c05b6fc3  apps/api/src/security/authorizationState.js
   73dd30b1ad4291b7691aee681b1e45f0d72609bf  apps/api/test/auth-me-single-statement.test.js
@@ -15,10 +15,10 @@ carry desde origin/desarrollo (45):
   f8fa2297ef1e658fa18fa557ec40e4e61a916ed9  apps/api/test/hr-route-assignment-lock.test.js
   f762ad29f75ece41dd2c174dca95a3ff6340f88d  apps/web/test/hr-monitor-refresh.test.mjs
   90243afefaea2dfc04e4e17372f72058b5dd31a0  docs/PERFORMANCE_ANTI_PATTERNS.md
-  ba7db82f1dfe2419b2ede8a958e74cc595340345  docs/briefs/2026-11-24-monitor-marcaciones-latencia.md
+  6e2b3e8eb6aad8a9c995526af1ce14e38d1d3c3c  docs/briefs/2026-11-24-monitor-marcaciones-latencia.md
   66abc1f9b74d04176de4ecf0a1923a089a1b57b4  docs/project/talento-humano-implementacion-seguimiento.md
   5133616f3ca9cfb5cfb443ecf7c3668cda695935  docs/qa/evidence/auth-session-path-20261124/candidato-develop.json
-  690e791e99a95e00877a0325570658c0798f84de  docs/qa/evidence/auth-session-path-20261124/candidato-main.txt
+  54ffa0c0db43abd9f51d9fa9ddd19e51e33b1d5f  docs/qa/evidence/auth-session-path-20261124/candidato-main.txt
   a095a49654383bd54822bb8dd8ecd0cef3447695  docs/qa/evidence/auth-session-path-20261124/censo-correos-production.json
   aa5528dc18448f8b9ec1f897ce7d9743f8809ccd  docs/qa/evidence/auth-session-path-20261124/censo-correos-qa.json
   40e50d8f2ff8e0182d68c9c4044cb441b9b1f6ae  docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt
@@ -38,12 +38,15 @@ carry desde origin/desarrollo (45):
   5a8e8f75c532a74ff2615a447b32ba478a25ba4c  docs/qa/evidence/auth-session-path-20261124/suite-plataforma-candidato.json
   3b9e070e6a94810b747332715d710d6d4d59a640  docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json
   3ca1533c308957accb8f40790669a7c50626c201  docs/qa/evidence/auth-session-path-20261124/suites-candidato-main.txt
+  f5aa2c675dad5f5650044c2b67e312a649c3868b  docs/qa/evidence/auth-session-path-20261124/veredicto-main.md
   49a52d67f7768aa81097e06dbf3753082396ddb0  docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json
   56bcfa81351f70193d2df7401901a3f67b30f3e9  docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795543145867.json
   7f62b7ae166dfa2f5ff142fb4ed85c9d75985cfc  docs/qa/evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json
   8bb05ded58b1fedbac1ff078f59cd38d5e09c142  docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527496487.json
   9cc64066dd5eea19bda2f1a923c14ff068bb2fbc  docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json
   7b60d257929a9ab3be9f5b7e9d0d0d67a5a8e779  docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json
+  75987f0bf198ba50a99929ddc27a9d0f8c9d4a82  docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json
+  0869713814bd3847affae466ef475b61427a6ca5  docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json
   a5bf142b3fca2b199ca487dd54b25b3611aa2dcf  docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json
   5ed5033de94241605e6ec215682491b39bc2ba86  docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json
   aa3e3c40e1ee12e36d8139b22f12681bf4a0d7a7  docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json

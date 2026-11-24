@@ -1,7 +1,7 @@
 {
   "change_id": "monitor-latencia-sesion-main-20261124",
-  "commit": "65b9dd7a9d66565b7f728124c4208f484bc58c07",
-  "tree_evaluated": "punta de codex/qa-monitor-latencia-sesion-main-20261124: replay puntual del paquete sobre origin/main 3baf8e4a (51 rutas funcionales) mas los dos manifiestos y el veredicto. Ninguna ruta de producto cambia entre el commit certificado y la punta.",
+  "commit": "66d2765ad605c3744ab71be871d75ab9a7421e3e",
+  "tree_evaluated": "punta de codex/qa-monitor-latencia-sesion-main-20261124: replay puntual del paquete sobre origin/main b08699e3 (50 rutas funcionales) mas la capa de documentacion: los dos manifiestos, el veredicto y el reporte del replay. Ninguna ruta de producto cambia entre el commit certificado 66d2765a y la punta.",
   "source_branch": "develop",
   "target_branch": "main",
   "environment": "QA",
@@ -14,7 +14,7 @@
     "instruction": "procede con la promocion controlada de esta intervencion alineado las 3 ramas al finalizar brindame un resumen en lenguaje natural de lo que se hizo sin dejar pendientes abiertos",
     "authorization_flags": {
       "direct_push_to_main": true,
-      "reason": "Main esta a 859 commits de develop, asi que el transporte es replay de 51 rutas y no fusion. Las rutas del paquete son blob-identicas al arbol que QA certifico en campo sobre el binario 3303a95532a3 (5/5 rechazos, 12/12 de evidencia bajo demanda, 18 casos de latencia sin divergencia, presupuesto verde con volumen) y los tres archivos de fusion conservan el codigo productivo de main medido por marcador: pg_advisory_xact_lock 6, buildEmployeeTerminationLiquidation 4."
+      "reason": "Main esta a 859 commits de develop, asi que el transporte es replay de 50 rutas funcionales y no fusion. Las rutas del paquete son blob-identicas al arbol que QA certifico en campo sobre el binario 3303a95532a3 (5/5 rechazos, 12/12 de evidencia bajo demanda, 18 casos de latencia sin divergencia, presupuesto verde con volumen) y los tres archivos de fusion conservan el codigo productivo de main medido por marcador: pg_advisory_xact_lock 6, buildEmployeeTerminationLiquidation 4."
     },
     "authorization_basis": "La orden del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas y la verificacion en los ambientes QA y Produccion, incluidas las lecturas de los servicios desplegados y el retiro de las cuentas efimeras que el arnes creo. No otorga force push, reescritura de historia, borrado de ramas, migraciones remotas de esquema ni cambios de infraestructura o secretos.",
     "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen y se corren manifiesto v2, qa:promotion:scope contra la punta, qa:approval:evidence, el instrumento de replay contra el indice y contra la punta, y la verificacion de Produccion por artefacto servido anclada al sha."
@@ -114,7 +114,7 @@
   "rollback_plan": {
     "status": "ready",
     "strategy": "controlled_revert",
-    "previous_main_commit": "3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
+    "previous_main_commit": "b08699e3214a41f946cf3080b313cbfe637e33dd",
     "trigger": "Si en Produccion el monitor de marcaciones deja de listar el dia pedido, si vuelve a viajar binario inline en la respuesta o pasa el presupuesto de 30 s, si un login legitimo empieza a recibir 401, si /auth/me responde con un perfil incompleto o si el retiro o la liquidacion de main dejan de calcular con su advisory lock.",
     "notes": "Revert controlado del replay (git revert del commit de promocion, sin reescribir historia compartida) y redeploy de apexos-api-prod y apexos-web-prod. Como el candidato se construyo hunkeando sobre el blob de main, el revert devuelve exactamente ese blob: no hay migraciones de esquema que deshacer y ninguna tabla se toca. El spec de replay y su reporte quedan en el arbol, asi que el revert es simetrico y verificable ruta por ruta, y el tag backup/premain-monitor-latencia-sesion-20261124 conserva la punta anterior."
   }

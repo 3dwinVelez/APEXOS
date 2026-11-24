@@ -1,8 +1,8 @@
 # Veredicto de la pata `develop -> main` — paquete de latencia del monitor y camino de sesión
 
 Change id: `monitor-latencia-sesion-main-20261124`. Candidato: rama auxiliar local
-`codex/qa-monitor-latencia-sesion-main-20261124`, funcional `65b9dd7a9d66565b7f728124c4208f484bc58c07` sobre
-`origin/main 3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23`.
+`codex/qa-monitor-latencia-sesion-main-20261124`, funcional `66d2765ad605c3744ab71be871d75ab9a7421e3e` sobre
+`origin/main b08699e3214a41f946cf3080b313cbfe637e33dd`.
 
 ## Por qué replay y no fusión
 
@@ -23,10 +23,10 @@ Change id: `monitor-latencia-sesion-main-20261124`. Candidato: rama auxiliar loc
 
 | Capa | Rutas | Prueba |
 |---|---|---|
-| carry desde `origin/desarrollo` | 45 | blob igual, archivo por archivo (`candidato-main.txt`) |
+| carry desde `origin/desarrollo` | 50 | blob igual, archivo por archivo (`candidato-main.txt`) |
 | carry desde `origin/develop` | 1 · `talento-humano/rutas/page.tsx` | `c79f3da7`, el blob que QA sirvió; `desarrollo` tiene `df9fd61d` con 53 líneas de otro frente |
 | replay por hunks sobre el blob de `main` | 3 · `auth/service.js`, `hr/routes.js`, `hr/service.js` | 0 líneas añadidas huérfanas + paridad de cuerpo de función |
-| commit de documentación | 3 | dos manifiestos y este veredicto |
+| capa de documentación (viaja dentro del carry) | 4 | los dos manifiestos, este veredicto y el reporte del replay, en su propio commit encima del funcional |
 
 Invariante del replay (`npm run qa:promotion:migration`, `--against index`): **70/70 válidas** — 46 `carry` y
 24 `delete` de rutas ajenas que siguen ausentes. Re-medición contra la punta: `replay-punta-main.json`, salida
@@ -70,8 +70,8 @@ candidato: **0 módulos huérfanos**.
 
 ## DESPUÉS de Producción: pendiente del despliegue, no afirmación
 
-`origin/main` sirve hoy `3baf8e4a409b` (medido en `GET https://apexos-api-prod-production.up.railway.app/health`
-→ `{"modules":19,"commit":"3baf8e4a409b","service_certification":"products-v2"}`). El DESPUÉS solo puede
+`origin/main` sirve hoy `b08699e3214a` (medido en `GET https://apexos-api-prod-production.up.railway.app/health`
+→ `{"modules":19,"commit":"b08699e3214a","service_certification":"products-v2"}`). El DESPUÉS solo puede
 escribirse cuando ese `commit` devuelva el sha promovido, y entonces se corren, anclados a ese sha:
 
 ```text

@@ -3,7 +3,7 @@
   "creado": "2026-11-24T21:40:00-05:00",
   "target_branch": "main",
   "source_branch": "develop",
-  "base_ref": "3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
+  "base_ref": "b08699e3214a41f946cf3080b313cbfe637e33dd",
   "origin_ref": "origin/desarrollo",
   "purpose": "Invariante del replay a main. La pata main no puede ser una fusion de develop: main esta 859 commits detras y conserva fusiones productivas propias (liquidacion, retiro con pg_advisory_xact_lock, motor de tarifas). El replay lleva el paquete de latencia hunkeando sobre el blob de main, y este spec fija que nada mas se movio.",
   "origin_waivers_para": [
@@ -149,6 +149,10 @@
       "from_ref": "origin/desarrollo"
     },
     {
+      "file": "docs/qa/evidence/auth-session-path-20261124/veredicto-main.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
       "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json",
       "from_ref": "origin/desarrollo"
     },
@@ -170,6 +174,14 @@
     },
     {
       "file": "docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json",
       "from_ref": "origin/desarrollo"
     },
     {
