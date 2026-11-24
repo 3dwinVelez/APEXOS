@@ -571,3 +571,67 @@ se deja, vuelve a tapar el rojo real siguiente.
 - **Clic en navegador** con la cuenta de prueba y la sesión del operario intacta: **dueño**.
 - **Bandera `HR_EVIDENCE_STORAGE_ENABLED` + C.1/C.2/C.3** y **ápice DNS**: **dueño**, sin cambio desde §10.
 
+
+## 14. La promoción a `develop`: el `develop` promovido no era el árbol que se creía
+
+El `desarrollo` certificado iba 254 commits adelante y el `origin/develop` servido 119 adelante del
+antepasado común (`36111a6a`). Copiar los archivos de desarrollo sobre develop —el método que se usó en
+otras promociones— habría borrado el aislamiento de tenant de `cd3a88e5` y los módulos de liquidación que
+nunca bajaron a desarrollo. El método que se usó:
+
+- Retro-integrar a **desarrollo** el guard de tenant de `updateRoute` con su prueba y su control de
+  mutación (`31a36e77`), para que el portón de origen compare contra el baseline real y no contra una
+  versión vieja de la misma ruta.
+- Reconstruir el candidato por **fusión a tres vías por ruta** sobre el tip de `origin/develop`, registrar
+  el linaje con `git merge -s ours origin/desarrollo` (el árbol publicado declara los commits certificados
+  sin arrastrar el resto de la rama) y tomar de desarrollo el texto canónico de los `SKILL.md` para que los
+  `sha256` del `registry.json` cuadren.
+- Certificar **el árbol del candidato**, no el de trabajo: suitas del paquete 70/70, suite web del monitor
+  7/7, `auth-session-sql-guard --selftest` 16/16, presupuesto de reloj con selftest aprobado,
+  `node --check` en las tres rutas JS de fusión y parseo TSX con 0 diagnósticos frente a 1 de control de
+  mutación. El inventario quedó en 58 rutas y solo 3 salieron con excepción nominal de origen.
+
+La fusión medida cayó dos veces y las dos se corrigieron antes de publicar: el presupuesto de evidencia del
+monitor perdió la carga del archivo de ambiente (`--env-file=...`) y el párrafo del estado vacío quedó con
+un ternario envuelto en llaves, JSX inválido. Ninguno de los dos lo habría avisado un `git diff --stat`.
+
+### 14.1 Los rojos de la suite completa: atribuidos, no absorbidos
+
+Sobre el árbol ya fusionado con el `develop` nuevo (`6a503dd6`), el candidato corre 1.327 pruebas de API
+(**1.323 pasan**, 2 rojos, 2 omitidas) y 767 de web (**753 pasan**, 14 rojos). El baseline de web en el árbol
+de trabajo es 885/894. Cada rojo tiene nombre y causa en
+`docs/qa/evidence/auth-session-path-20261124/suite-plataforma-candidato.json`: siete son
+`ERR_MODULE_NOT_FOUND` o `ENOENT` de raíz porque la worktree despegada no tiene `node_modules` (ESM ignora
+`NODE_PATH`), uno es la guarda del propio arnés que solo pasa en un árbol instalado, uno es
+`@vladmandic/human` declarado y no instalado en esta máquina —cae igual en el árbol de trabajo—, cuatro son
+deuda de portada/nómina que cae **también** en el baseline, y uno es real pero **heredado de la rama
+destino**.
+
+Ese último es el que valía la pena medir: la prueba `fix concurrencia` prohíbe `pg_advisory_xact_lock` en
+`apps/api/src/modules/hr/service.js`. Hoy hay **6** en `origin/develop` y los mismos **6** en `origin/main`
+(`runPayrollLiquidation`, `runEmployeeTerminationLiquidation`, `deleteEmployeeTerminationLiquidation`,
+`runSocialBenefitProvisions`, `runSocialBenefitPayments`, `deleteSocialBenefitPaymentDocument`), y el
+candidato conserva los 6 blobs sin añadir ninguno. En desarrollo la prueba pasa 8/8 por una razón que no es
+un avance: esas funciones nunca bajaron a desarrollo. Un candado bloqueante no avisa al operario —espera
+hasta que Prisma aborta y sale como 500—, así que la deuda es de verdad, pero es de la rama que ya la tenía
+y se promueve como está.
+
+### 14.2 Pendientes con dueño y con lo que hay que decidir
+
+- **Migrar los 6 `pg_advisory_xact_lock` de liquidación al helper acotado `acquireBoundedScopeLocks`** (los
+  5 sitios que sí conozco ya están migrados): **dueño del paquete de nómina/liquidación**, que es quien
+  tiene esas funciones en su rama. Intervención propia con su manifiesto, su prueba y su control de
+  mutación. Se mide con `grep -c pg_advisory_xact_lock apps/api/src/modules/hr/service.js`.
+- **Dos candidatos sobre la misma ruta, resuelto absorbiendo y no pisando** (ya no es pendiente: se cerró en
+  esta misma corrida). La sesión concurrente del selfie promovió su paquete a `develop` (`52a8d9a7` → tip
+  `6b42b365`) mientras este candidato estaba armado, y compartía **una sola ruta** con el mío:
+  `apps/api/src/modules/hr/service.js`. Empujar el candidato viejo sobre el tip nuevo habría revivido
+  `webPunchSelfie.js` y revertido su compuerta única, así que el candidato **absorbió el tip del destino por
+  fusión** (`6a503dd6`) y volvió a certificarse entero sobre ese árbol. Verificado por blob:
+  `mobile-identity.js` y `hr-single-selfie-gate.test.js` idénticos a `origin/develop`, `webPunchSelfie.js`
+  ausente en los dos, y `service.js` sin una sola referencia a esa compuerta.
+- **`DESPUÉS` end-to-end sobre el artefacto desplegado en QA** (`certify:auth-session`,
+  `certify:hr-monitor-budget:qa`, `certify:hr-auth-latency:qa`): **dueño**, porque `config/qa.env` no
+  declara `CERT_LOGIN_EMAIL` / `CERT_LOGIN_PASSWORD` y el certificado necesita una cuenta real de QA. Se
+  construye la cuenta si hace falta; la bandera `HR_EVIDENCE_STORAGE_ENABLED` y el ápice DNS siguen sin
+  cambio desde §10.
