@@ -2,7 +2,7 @@
 name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
-version: 2.39.0
+version: 2.40.0
 updated_at: 2026-11-25
 contract: 2
 ---
@@ -150,9 +150,8 @@ Si la intervención toca agentes o gobernanza, leer además `.qoder/skills/equip
 
 55. **El canon del equipo viaja entero o no viaja: `agents/registry.json` declara once agentes y sus documentos son una sola unidad verificable.** El 2026-11-24, el spec de la pata `develop` exigía `carry` byte a byte de diez rutas de `agents/` y `.qoder/skills/`. Llevar solo los cuatro `SKILL.md` que avanzaron en esta intervención habría dejado en `develop` un registro que cita dos auditores (`apexos-auditor-marcaciones`, `apexos-auditor-nomina`), un README y una plantilla que no están en su árbol: un registro que miente y un `agents:check` rojo. Subieron las dieciséis rutas del canon, el instrumento pasó de 41/51 a 51/51 y la verificación quedó verde en la rama. Por qué: `agents:coverage` decide qué agente es dueño de una ruta leyendo ese registro; si el registro y los documentos se promocionan partido, el portón deja de poder fallar justo donde debería.
 
+56. **Un transporte puntual a una rama atrasada se declara con `transport: replay_puntual`, y el candado no se afloja: cambia la ascendencia por el contenido.** El 2026-11-24 el portón endurecido el mismo día respondió `ni el candidato ni el destino contienen el commit funcional certificado` porque main estaba 866 commits detrás de develop y el fix se certificó en el binario de develop. Cuatro salidas medidas se le presentaron al dueño (enderezar el candado, mezcla completa de 1.185 archivos, mezcla vacía `-s ours`, parar) y eligió la primera. El modo nuevo exige las cuatro a la vez: `certified_commit` vivo en `origin/desarrollo`, cada ruta del diff con el **mismo blob** que en `origin/desarrollo`, **cero `origin_waivers`** y `replay_baseline` igual al `git merge-base` real entre destino y certificado. Por qué: la mezcla vacía engaña al candado y le dice a git que 866 commits ya están integrados, rompiendo la contabilidad de la próxima promoción real; y poner el sha del propio candidato en `certified_commit` es un verde que no puede fallar.
 ## Checklist de intervención
-
-
 
 Antes:
 - [ ] Preflight de agentes sin bloqueos y lecturas obligatorias leídas.

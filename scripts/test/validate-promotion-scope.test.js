@@ -5,12 +5,15 @@ const os = require("node:os");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 const {
+  REPLAY_TRANSPORT,
   findUnoriginatedChanges,
   matchesAllowed,
   readBlobAt,
   readRefAt,
+  validateCertifiedTransport,
   validateManifest,
-  validateOriginUniqueness
+  validateOriginUniqueness,
+  validateReplayTransport
 } = require("../validate-promotion-scope");
 
 test("solo acepta rutas exactas o prefijos declarados", () => {
@@ -177,5 +180,170 @@ test("la plomeria de blob distingue la ruta ausente de la ruta distinta", () => 
     assert.equal(readRefAt("desarrollo-inexistente", { cwd: directory }), null);
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+// Reproduccion en miniatura del caso real del 2026-11-24: main esta atras de desarrollo y
+// el fix se lleva arriba por replay, asi que el commit certificado NO es ancestro del
+// candidato. El modo ascendencia lo bloquea (y asi nacio el bloqueo que el dueno resolvio
+// enderezando el candado); el modo replay exige, en lugar de ascendencia, que cada ruta sea
+// el blob de desarrollo, que el certificado viva en desarrollo y que la base del delta sea
+// el punto real de divergencia. Cada control de esta seccion tiene que poder fallar.
+function replayRepository() {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "apexos-replay-repo-"));
+  const gitHere = (args) => execFileSync("git", args, { cwd: directory, encoding: "utf8" }).trim();
+  const write = (file, content) => fs.writeFileSync(path.join(directory, file), content);
+  const commit = (message) => {
+    gitHere(["add", "-A"]);
+    gitHere(["commit", "-q", "-m", message]);
+  };
+  gitHere(["init", "-q", "--initial-branch=desarrollo"]);
+  gitHere(["config", "user.email", "porton@apex.local"]);
+  gitHere(["config", "user.name", "Porton de replay"]);
+  gitHere(["config", "commit.gpgsign", "false"]);
+  write("producto.js", "const viejo = 1;\n");
+  write("compartido.js", "const compartido = 1;\n");
+  commit("base comun de desarrollo y main");
+  const BASE = gitHere(["rev-parse", "HEAD"]);
+  write("producto.js", "const fix = 1;\n");
+  commit("desarrollo escribe y certifica el fix");
+  const CERT = gitHere(["rev-parse", "HEAD"]);
+  gitHere(["checkout", "-q", "-b", "main", BASE]);
+  write("propio-de-main.js", "const contabilidad = 'release que solo existe en main';\n");
+  commit("main avanza por su lado");
+  const MAIN = gitHere(["rev-parse", "HEAD"]);
+  gitHere(["checkout", "-q", "-b", "candidato", "main"]);
+  write("producto.js", "const fix = 1;\n");
+  commit("replay del fix sobre el arbol de main");
+  const CANDIDATO = gitHere(["rev-parse", "HEAD"]);
+  gitHere(["checkout", "-q", "-b", "candidato_adulterado", "candidato"]);
+  write("producto.js", "const fix = 1; // reescrito en el candidato\n");
+  commit("el candidato reescribe el fix sin que exista ese blob en desarrollo");
+  const ADULTERADO = gitHere(["rev-parse", "HEAD"]);
+  gitHere(["checkout", "-q", "desarrollo"]);
+  const changes = (from, to) => gitHere(["diff", "--name-status", `${from}..${to}`])
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => {
+      const parts = line.split("\t");
+      return { status: parts[0], file: parts[parts.length - 1] };
+    });
+  return { directory, BASE, CERT, MAIN, CANDIDATO, ADULTERADO, changes };
+}
+
+// Sin valores por defecto: un placeholder que se cuela en el manifiesto taparia el control
+// de la base ausente (así lo demostró la primera corrida de esta suite).
+const replayManifest = ({ certified_commit, replay_baseline, origin_waivers = [] }) => ({
+  transport: REPLAY_TRANSPORT,
+  certified_commit,
+  ...(replay_baseline === undefined ? {} : { replay_baseline }),
+  origin_waivers
+});
+
+test("el modo ascendencia bloquea un replay: el commit certificado no esta en la linea que sube", () => {
+  const repo = replayRepository();
+  const changes = repo.changes(repo.MAIN, repo.CANDIDATO);
+  try {
+    assert.deepEqual(changes.map(({ file }) => file), ["producto.js"]);
+    assert.throws(
+      () => validateCertifiedTransport({ certified_commit: repo.CERT }, changes, {
+        candidate: repo.CANDIDATO, target: repo.MAIN, cwd: repo.directory
+      }),
+      /ni el candidato ni el destino contienen el commit funcional certificado/
+    );
+    // Control positivo del mismo modo: cuando si hay ascendencia, no se interpone.
+    assert.doesNotThrow(() => validateCertifiedTransport({ certified_commit: repo.CERT }, changes, {
+      candidate: repo.CERT, target: repo.MAIN, cwd: repo.directory
+    }));
+  } finally {
+    fs.rmSync(repo.directory, { recursive: true, force: true });
+  }
+});
+
+test("el transporte puntual pasa con el blob de desarrollo, el certificado en desarrollo y la base real", () => {
+  const repo = replayRepository();
+  const changes = repo.changes(repo.MAIN, repo.CANDIDATO);
+  try {
+    const manifest = replayManifest({ certified_commit: repo.CERT, replay_baseline: repo.BASE });
+    assert.doesNotThrow(() => validateReplayTransport(manifest, changes, {
+      candidate: repo.CANDIDATO, target: repo.MAIN, baselineRef: "desarrollo", cwd: repo.directory
+    }));
+    // Y el dispatch por la clave del manifiesto: con transport puesto, el mismo candidato
+    // que el modo ascendencia rechazaba arriba se acepta aqui. Sin esa linea el modo nuevo
+    // seria decorativo: nunca lo invocaria nadie.
+    assert.doesNotThrow(() => validateCertifiedTransport(manifest, changes, {
+      candidate: repo.CANDIDATO, target: repo.MAIN, cwd: repo.directory, baselineRef: "desarrollo"
+    }));
+  } finally {
+    fs.rmSync(repo.directory, { recursive: true, force: true });
+  }
+});
+
+test("el transporte puntual rechaza un blob reescrito en el candidato", () => {
+  const repo = replayRepository();
+  const changes = repo.changes(repo.MAIN, repo.ADULTERADO);
+  try {
+    assert.throws(
+      () => validateReplayTransport(
+        replayManifest({ certified_commit: repo.CERT, replay_baseline: repo.BASE }),
+        changes,
+        { candidate: repo.ADULTERADO, target: repo.MAIN, baselineRef: "desarrollo", cwd: repo.directory }
+      ),
+      /rutas que no son el blob de desarrollo: \[M:producto\.js\]/
+    );
+  } finally {
+    fs.rmSync(repo.directory, { recursive: true, force: true });
+  }
+});
+
+test("el transporte puntual rechaza un commit certificado nacido fuera de desarrollo", () => {
+  const repo = replayRepository();
+  const changes = repo.changes(repo.MAIN, repo.CANDIDATO);
+  try {
+    assert.throws(
+      () => validateReplayTransport(
+        replayManifest({ certified_commit: repo.MAIN, replay_baseline: repo.BASE }),
+        changes,
+        { candidate: repo.CANDIDATO, target: repo.MAIN, baselineRef: "desarrollo", cwd: repo.directory }
+      ),
+      /no esta en desarrollo/
+    );
+    assert.throws(
+      () => validateReplayTransport({ transport: REPLAY_TRANSPORT }, changes, {
+        candidate: repo.CANDIDATO, target: repo.MAIN, baselineRef: "desarrollo", cwd: repo.directory
+      }),
+      /exige certified_commit/
+    );
+  } finally {
+    fs.rmSync(repo.directory, { recursive: true, force: true });
+  }
+});
+
+test("el transporte puntual no admite excepciones de origen ni una base de delta inventada", () => {
+  const repo = replayRepository();
+  const changes = repo.changes(repo.MAIN, repo.CANDIDATO);
+  const refs = { candidate: repo.CANDIDATO, target: repo.MAIN, baselineRef: "desarrollo", cwd: repo.directory };
+  try {
+    assert.throws(
+      () => validateReplayTransport(
+        replayManifest({ certified_commit: repo.CERT, replay_baseline: repo.BASE, origin_waivers: [{ file: "producto.js", reason: "conveniencia", approval: "nadie" }] }),
+        changes, refs
+      ),
+      /no admite origin_waivers/
+    );
+    assert.throws(
+      () => validateReplayTransport(replayManifest({ certified_commit: repo.CERT, replay_baseline: repo.MAIN }), changes, refs),
+      /distinto del punto real de divergencia/
+    );
+    assert.throws(
+      () => validateReplayTransport(replayManifest({ certified_commit: repo.CERT }), changes, refs),
+      /exige replay_baseline/
+    );
+    assert.throws(
+      () => validateReplayTransport(replayManifest({ certified_commit: repo.CERT, replay_baseline: "referencia-inexistente" }), changes, refs),
+      /no se puede verificar replay_baseline/
+    );
+  } finally {
+    fs.rmSync(repo.directory, { recursive: true, force: true });
   }
 });

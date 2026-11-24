@@ -1,0 +1,77 @@
+{
+  "change_id": "porton-transporte-puntual-20261124",
+  "generado": "2026-11-24T17:05:00-05:00",
+  "autoria": "apexos-git-guardian (contrato del transporte), apexos-qa (paridad por blob), equipo-apexos (la decisión ante el dueño), apexos-brief (el registro en el brief)",
+  "decision_del_dueno": "Preguntado con las cuatro salidas medidas, eligió «Enderezar el candado»: un modo explícito de transporte puntual con sus condiciones y sus pruebas de mutación, en lugar de una mezcla de 1.185 rutas, de una mezcla vacía `-s ours` o de dejar Producción rechazando fotos grandes.",
+  "el_bloqueo": {
+    "salida_literal_antes_del_cambio": "ALCANCE DE PROMOCION INVALIDO: ni el candidato ni el destino contienen el commit funcional certificado",
+    "comando": "npm run qa:promotion:scope -- docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json 80928ffde52e1723b5926fe21a52a4b5a905267d origin/main",
+    "por_que_no_es_defecto_del_cambio": "La prueba de ascendencia está escrita para el caso en que las ramas van parejas. Main está 866 commits detrás de develop y 198 delante; el fix se certificó contra el binario de develop `c0fbb4b9`, que no es ancestro de un candidato reconstruido sobre main.",
+    "medicion_de_la_distancia": {
+      "develop_sobre_main_commits": 866,
+      "main_sobre_develop_commits": 198,
+      "rutas_del_diff_bruto_main_develop": 1185
+    }
+  },
+  "el_contrato_nuevo": {
+    "clave_de_manifiesto": "transport: replay_puntual",
+    "condiciones": [
+      "certified_commit vivo en origin/desarrollo",
+      "cada ruta del diff con el mismo blob que en origin/desarrollo",
+      "cero origin_waivers declarados",
+      "replay_baseline igual al git merge-base real entre el destino y el commit certificado"
+    ],
+    "lo_que_no_cambia": "El modo clásico (sin la clave) conserva la exigencia de ascendencia, probado en la suite. Un manifiesto que declare el modo y no pueda cumplir cualquiera de las cuatro condiciones se rechaza.",
+    "archivos": [
+      "scripts/validate-promotion-scope.js",
+      "scripts/test/validate-promotion-scope.test.js"
+    ]
+  },
+  "control_de_mutacion": {
+    "suite": "node --test scripts/test/validate-promotion-scope.test.js",
+    "resultado": "13 pruebas, 13 pasan",
+    "fixture": "replayRepository(): desarrollo certifica el fix, main se queda con su propia contabilidad, el candidato reconstruye el fix sobre main (blob idéntico al de desarrollo) y un segundo candidato lo reescribe a mano.",
+    "controles_que_deben_poder_fallar": [
+      "modo ascendencia sobre el replay: rechaza (el bloqueo real, reproducido)",
+      "modo ascendencia con ascendencia real: pasa (control positivo, no puede fallar en falso)",
+      "replay bien formado: pasa",
+      "blob reescrito en el candidato: rechaza con `rutas que no son el blob de desarrollo: [M:producto.js]`",
+      "certified_commit nacido fuera de desarrollo: rechaza",
+      "certified_commit ausente: rechaza",
+      "origin_waivers declarados en replay: rechaza",
+      "replay_baseline mentiroso: rechaza con `distinto del punto real de divergencia`",
+      "replay_baseline ausente: rechaza",
+      "replay_baseline inexistente como referencia: rechaza"
+    ],
+    "arreglo_propio_declarado": "La primera versión del ayudante de prueba ponía `replay_baseline: 'BASE'` por defecto, con lo cual el control de 'base ausente' fallaba por el motivo equivocado y la prueba lo descubrió (12/13). Se quitaron los valores por defecto del ayudante: ahora cada caso declara lo que quiere probar."
+  },
+  "la_promesa_de_contenido_del_porton_real": {
+    "certified_commit_resuelto": "25f8b32e616a2fdec53970368fbaa03131f67dfc",
+    "certified_commit_es_ancestro_de_origin_desarrollo": true,
+    "binario_certificado_en_qa": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+    "replay_baseline_resuelto": "180a2b21d21a152a9937c099c6e46500a3774908",
+    "merge_base_real": "git merge-base origin/main 25f8b32e616a2fdec53970368fbaa03131f67dfc = 180a2b21d21a152a9937c099c6e46500a3774908 (un punto antiguo: en 180a2b21 las dos rutas de producto ni siquiera existían)",
+    "paridad_de_blobs_candidato_vs_origin_desarrollo": "12/12 idénticos",
+    "hashes_por_ruta_producto": {
+      "apps/api/src/modules/hr/mobile-identity.js": {
+        "origin_main": "f9e8ea27bb32e92920d25983ed2db899d5d5538f",
+        "ancestro_8208d941": "f9e8ea27bb32e92920d25983ed2db899d5d5538f",
+        "origin_desarrollo": "863bd6a6f381039edfb9e3e0d8d70a17f858a5fc",
+        "candidato": "863bd6a6f381039edfb9e3e0d8d70a17f858a5fc"
+      },
+      "apps/api/test/hr-evidence-resilience.test.js": {
+        "origin_main": "26d814c12b4f866b1b77e75c44367adaa303afd7",
+        "ancestro_8208d941": "26d814c12b4f866b1b77e75c44367adaa303afd7",
+        "origin_desarrollo": "9a3198ea5048105869ff53f1fc9a08fa06490827",
+        "candidato": "9a3198ea5048105869ff53f1fc9a08fa06490827"
+      }
+    },
+    "lectura_de_la_tabla": "Main no tocó estas dos rutas desde 8208d941 (los hashes coinciden) y el candidato lleva exactamente el blob que hoy está en origin/desarrollo. Con las dos cosas, el delta del candidato contra origin/main es la promesa y nada más: git diff --numstat 8208d941 80928ffd da 20/6 en el servidor y 71/7 en la suite, y git diff --numstat origin/desarrollo 80928ffd sobre esas rutas sale vacío.",
+    "delta_por_archivo": [
+      { "archivo": "apps/api/src/modules/hr/mobile-identity.js", "anadidas": 20, "quitadas": 6 },
+      { "archivo": "apps/api/test/hr-evidence-resilience.test.js", "anadidas": 71, "quitadas": 7 }
+    ],
+    "lineas_huerfanas": "Cero por construcción: el blob promocionado es el mismo blob que existe en origin/desarrollo, así que ninguna línea puede haber nacido en el candidato."
+  },
+  "salida_del_porton_despues_del_cambio": "PENDIENTE_CON_DUEÑO: se pega verbatim en la evidencia del portón (porton-main.json) y en el commit de contabilidad, porque describe una punta que todavía no existe dentro del commit que la describe."
+}

@@ -75,6 +75,7 @@ function validateManifest(manifest, manifestDir, changes) {
 }
 
 const ORIGIN_BASELINE = "origin/desarrollo";
+const REPLAY_TRANSPORT = "replay_puntual";
 
 function gitQuiet(args, options = {}) {
   try {
@@ -125,6 +126,55 @@ function validateOriginUniqueness(manifest, changes, origin = {}) {
   fail(`contenido sin origen en desarrollo, no se promociona: [${detail}]. Solo sube lo escrito y certificado en desarrollo; una divergencia real exige un origin_waivers con reason y approval`);
 }
 
+// Transporte puntual (replay) sobre un destino que esta cientos de commits atras. Aqui lo
+// que sube NO desciende del binario que se certifico: se reconstruye sobre el arbol del
+// destino, asi que la prueba de ascendencia no puede darse y el candado cambia de prueba,
+// no se afloja. Exige las cuatro cosas a la vez:
+//   1) que el commit certificado viva en origin/desarrollo, la rama donde nace todo;
+//   2) que cada ruta del diff sea, blob por blob, la que esa ruta tiene en origin/desarrollo
+//      (sube el contenido que se probo, no una reconstruccion parecida);
+//   3) que no se declare ninguna excepcion de origen: sin ascendencia, no hay nada perdonable;
+//   4) que la base declarada del delta sea el punto real de divergencia entre el destino y el
+//      commit certificado, para que "el delta es solo la promesa" no se invente despues.
+function validateReplayTransport(manifest, changes, { candidate, target, baselineRef = ORIGIN_BASELINE, cwd } = {}) {
+  const options = cwd ? { cwd } : {};
+  if (!manifest.certified_commit) fail(`el transporte puntual exige certified_commit: es el commit que se certifico en ${baselineRef}`);
+  const certified = git(["rev-parse", manifest.certified_commit], options);
+  try {
+    git(["merge-base", "--is-ancestor", certified, baselineRef], options);
+  } catch {
+    fail(`el commit certificado ${manifest.certified_commit} no esta en ${baselineRef}: el transporte puntual solo lleva contenido nacido y certificado en desarrollo`);
+  }
+  if (Array.isArray(manifest.origin_waivers) && manifest.origin_waivers.length) {
+    fail("el transporte puntual no admite origin_waivers: sin ascendencia que respalde el replay, cada ruta tiene que ser el blob de origen");
+  }
+  const unoriginated = findUnoriginatedChanges(changes, { candidateRef: candidate, baselineRef, cwd });
+  if (unoriginated.length) {
+    fail(`el transporte puntual promete rutas que no son el blob de ${baselineRef}: [${unoriginated.map(({ status, file }) => `${status}:${file}`).join(", ")}]`);
+  }
+  if (!manifest.replay_baseline) fail("el transporte puntual exige replay_baseline: el antepasado comun contra el que se midio el delta");
+  const declared = readRefAt(manifest.replay_baseline, options);
+  if (!declared) fail(`no se puede verificar replay_baseline: no existe ${manifest.replay_baseline}`);
+  const divergenceBase = git(["merge-base", target, certified], options);
+  if (declared !== divergenceBase) {
+    fail(`replay_baseline declarado (${declared}) distinto del punto real de divergencia entre el destino y el commit certificado (${divergenceBase})`);
+  }
+}
+
+function validateCertifiedTransport(manifest, changes, refs = {}) {
+  if (manifest.transport === REPLAY_TRANSPORT) return validateReplayTransport(manifest, changes, refs);
+  const options = refs.cwd ? { cwd: refs.cwd } : {};
+  const certified = git(["rev-parse", manifest.certified_commit], options);
+  let contained = true;
+  try { git(["merge-base", "--is-ancestor", certified, refs.candidate], options); } catch { contained = false; }
+  if (contained) return;
+  try {
+    git(["merge-base", "--is-ancestor", certified, refs.target], options);
+  } catch {
+    fail("ni el candidato ni el destino contienen el commit funcional certificado; un transporte puntual se declara con transport: replay_puntual");
+  }
+}
+
 function main() {
   const manifestPath = process.argv[2];
   const candidateRef = process.argv[3] || "HEAD";
@@ -135,22 +185,17 @@ function main() {
   const manifest = JSON.parse(fs.readFileSync(absoluteManifest, "utf8"));
   const candidate = git(["rev-parse", candidateRef]);
   const target = git(["rev-parse", targetRef]);
-  const certified = git(["rev-parse", manifest.certified_commit]);
   const targetName = targetRef.split("/").pop();
   const declaredBase = manifest.base_commits?.[targetName] || manifest.base_commit;
   if (!declaredBase) fail(`el manifiesto no declara baseline para ${targetName}`);
   if (target !== git(["rev-parse", declaredBase])) fail(`el destino ${targetRef} cambio desde el baseline aprobado`);
   const commonBase = git(["merge-base", target, candidate]);
   if (!commonBase) fail("el candidato y el destino no comparten un historial controlado");
-  let certifiedContained = true;
-  try { git(["merge-base", "--is-ancestor", certified, candidate]); } catch { certifiedContained = false; }
-  if (!certifiedContained) {
-    try { git(["merge-base", "--is-ancestor", certified, target]); } catch { fail("ni el candidato ni el destino contienen el commit funcional certificado"); }
-  }
   const changes = changedFiles(target, candidate);
+  validateCertifiedTransport(manifest, changes, { candidate, target });
   validateManifest(manifest, path.dirname(absoluteManifest), changes);
   validateOriginUniqueness(manifest, changes, { candidateRef: candidate });
-  console.log(`ALCANCE DE PROMOCION VALIDO: ${manifest.change_id} (${changes.length} rutas, origen verificado contra ${ORIGIN_BASELINE})`);
+  console.log(`ALCANCE DE PROMOCION VALIDO: ${manifest.change_id} (${changes.length} rutas, transporte ${manifest.transport === REPLAY_TRANSPORT ? "puntual: cada blob verificado contra " + ORIGIN_BASELINE : "por ascendencia del commit certificado"}, origen verificado contra ${ORIGIN_BASELINE})`);
 }
 
 if (require.main === module) {
@@ -163,12 +208,15 @@ if (require.main === module) {
 }
 
 module.exports = {
+  REPLAY_TRANSPORT,
   changedFiles,
   findUnoriginatedChanges,
   matchesAllowed,
   readBlobAt,
   readRefAt,
+  validateCertifiedTransport,
   validateExpectedChanges,
   validateManifest,
-  validateOriginUniqueness
+  validateOriginUniqueness,
+  validateReplayTransport
 };
