@@ -1,0 +1,78 @@
+# Puertas del canon de agentes antes del porton a develop
+# Fecha local: 2026-11-24T14:20-05:00 | rama: desarrollo | tree evaluado: 956f1811e713573f3bd76573f288b1ba2cb7cca0
+
+$ npm run agents:sync -- --paths "agents/ .qoder/skills/ docs/qa/"
+[agents] sincronizados 11 agentes y 11 documentos
+
+$ npm run agents:check -- --paths "agents/ .qoder/skills/ docs/qa/"
+[agents] OK: 11 agentes y 11 documentos verificados
+
+$ npm run agents:preflight -- --paths "agents/ .qoder/skills/ docs/qa/"
+[agents:preflight] rama: desarrollo | HEAD: 956f1811 | fetch: si
+[agents:preflight] comparacion contra origin/desarrollo @ 956f1811
+Frescura de agentes
+  NOMBRE                      LOCAL       REMOTO      ESTADO
+  apexos-auditor-marcaciones  2.1.0       2.1.0       in-sync
+  apexos-auditor-nomina       2.1.0       2.1.0       in-sync
+  apexos-backend              2.30.0      2.30.0      in-sync
+  apexos-brief                2.97.0      2.97.0      in-sync
+  apexos-db-nube              2.10.0      2.10.0      in-sync
+  apexos-frontend             2.46.0      2.46.0      in-sync
+  apexos-git-guardian         2.39.0      2.39.0      in-sync
+  apexos-performance          2.25.1      2.25.1      in-sync
+  apexos-qa                   2.118.0     2.118.0     in-sync
+  apexos-seguridad            2.42.0      2.42.0      in-sync
+  equipo-apexos               2.65.0      2.65.0      in-sync
+Frescura de gobernanza
+  NOMBRE                                    LOCAL       REMOTO      ESTADO
+  AGENTS.md                                 2026-11-24  2026-11-24  in-sync
+  BRANCHING_WORKFLOW.md                     2026-08-11  2026-08-11  in-sync
+  docs/CHANGE_APPROVAL_QA_POLICY.md         2026-09-08  2026-09-08  in-sync
+  docs/DATABASE_CONVENTIONS.md              2026-11-03  2026-11-03  in-sync
+  docs/MULTITENANT_DATA_ISOLATION.md        2026-07-02  2026-07-02  in-sync
+  docs/PERFORMANCE_ENGINEERING_STANDARD.md  2026-07-25  2026-07-25  in-sync
+  docs/SECURITY_THREAT_MODEL.md             2026-11-08  2026-11-08  in-sync
+  docs/briefs/_TEMPLATE.md                  2026-11-03  2026-11-03  in-sync
+  docs/design/APEXOS_COMPONENT_CATALOG.md   2026-11-12  2026-11-12  in-sync
+  docs/project/CONTRATO_EQUIPO_APEXOS.md    2026-11-03  2026-11-03  in-sync
+  docs/project/filosofia-producto-ui.md     2026-11-18  2026-11-18  in-sync
+Ruteo obligatorio (3 ruta(s))
+  equipo-apexos: .qoder/skills/, agents/
+  apexos-brief: .qoder/skills/, agents/
+  apexos-git-guardian: .qoder/skills/, agents/
+  apexos-qa: docs/qa/
+Lecturas obligatorias antes de editar
+  - .qoder/skills/equipo-apexos/SKILL.md
+  - .qoder/skills/apexos-brief/SKILL.md
+  - .qoder/skills/apexos-git-guardian/SKILL.md
+  - .qoder/skills/apexos-qa/SKILL.md
+Veredicto: OK
+
+$ npm run agents:coverage -- --paths "agents/ .qoder/skills/ docs/qa/"
+[agents:coverage] rama: desarrollo | rutas: 3 | fetch: si
+  Sin agentes duenos para estas rutas: no se exige actualizacion de contexto.
+[agents:coverage] OK: contexto del equipo actualizado para todas las rutas.
+
+
+# Inventario real de las rutas de gobernanza entre origin/develop y origin/desarrollo
+
+$ git diff --name-status origin/develop..origin/desarrollo -- agents/ .qoder/skills/
+M	.qoder/skills/apexos-git-guardian/SKILL.md
+M	.qoder/skills/apexos-qa/SKILL.md
+M	agents/CHANGELOG.md
+M	agents/apexos-git-guardian/SKILL.md
+M	agents/apexos-qa/SKILL.md
+M	agents/registry.json
+
+# Las tres rutas nuevas del porton (aun solo en el arbol de trabajo)
+
+docs/qa/evidence/auth-session-path-20261124/canon-gates.txt
+docs/qa/manifests/cierre-canon-develop-20261124-preqa.json
+docs/qa/manifests/cierre-canon-develop-20261124-scope.json
+
+# Composicion del candidato (no es merge de ramas)
+
+El porton se arma sobre origin/develop @ 4381c08d y se le hace checkout puntual de las nueve
+rutas nombradas desde origin/desarrollo. Ninguna ruta bajo apps/, scripts/, packages/ o infra/
+entra en el inventario, asi que el diff del candidato no puede mover producto: el gate de
+alcance compara el inventario exacto contra ese diff y lo verifica por blob contra origin/desarrollo.

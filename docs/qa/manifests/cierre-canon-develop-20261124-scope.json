@@ -1,0 +1,126 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "monitor-latencia-sesion-20261124",
+  "creado": "2026-11-24T14:24:00-05:00",
+  "autorizado": "dueno del proyecto (Edwin), 2026-11-24: «procede con la promocion controlada de esta intervencion alineado las 3 ramas al finalizar brindame un resumen en lenguaje natural de lo que se hizo sin dejar pendientes abiertos». La autorizacion cubre el porton de contabilidad hacia develop; no cubre main, force push, migraciones remotas ni infraestructura.",
+  "target_branch": "develop",
+  "source_branch": "desarrollo",
+  "promotion_branch": "codex/qa-canon-agentes-develop-20261124",
+  "base_commits": {
+    "main": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+    "develop": "4381c08d131cf8773e6b7537347eeca355eaea1f",
+    "desarrollo": "956f1811e713573f3bd76573f288b1ba2cb7cca0"
+  },
+  "base_commit": "4381c08d131cf8773e6b7537347eeca355eaea1f",
+  "target_head": "4381c08d131cf8773e6b7537347eeca355eaea1f",
+  "certified_commit": "4381c08d131cf8773e6b7537347eeca355eaea1f",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "956f1811e713573f3bd76573f288b1ba2cb7cca0",
+    "nota": "El canon (seis rutas de agents/ y .qoder/skills/) sale tal cual de 956f1811. Las tres rutas nuevas (canon-gates.txt y los dos manifiestos de este porton) se conmutan en el commit inmediatamente posterior de desarrollo, que se empuja antes de correr el gate: la verificacion por blob se hace contra la punta viva de origin/desarrollo, no contra 956f1811, y el sha exacto queda consignado en agents/CHANGELOG.md."
+  },
+  "naturaleza": "Porton de contabilidad: sube a develop el canon del equipo que la pata main de esta misma intervencion hizo avanzar (apexos-git-guardian 2.38.0 -> 2.39.0, apexos-qa 2.117.0 -> 2.118.0, registry.json y CHANGELOG) junto con la evidencia de las cuatro puertas y los dos manifiestos que autorizan el propio porton. Cero rutas de producto, de esquema y de instrumentacion.",
+  "change_intent": {
+    "modules": ["gobernanza-agentes", "documentacion-qa"],
+    "summary": "Alinear el canon del equipo con el de origin/desarrollo para que develop no quede con un registro que declara once agentes y cuatro documentos atrasados. Regla versionada en apexos-git-guardian 2.39.0: el canon viaja entero o no viaja. Inventario exacto: nueve rutas, seis M bajo agents/ y .qoder/skills/ y tres A bajo docs/qa/. Ninguna ruta bajo apps/, scripts/, packages/ o infra/."
+  },
+  "expected_changes": [
+    { "status": "M", "file": ".qoder/skills/apexos-git-guardian/SKILL.md" },
+    { "status": "M", "file": ".qoder/skills/apexos-qa/SKILL.md" },
+    { "status": "M", "file": "agents/CHANGELOG.md" },
+    { "status": "M", "file": "agents/apexos-git-guardian/SKILL.md" },
+    { "status": "M", "file": "agents/apexos-qa/SKILL.md" },
+    { "status": "M", "file": "agents/registry.json" },
+    { "status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/canon-gates.txt" },
+    { "status": "A", "file": "docs/qa/manifests/cierre-canon-develop-20261124-preqa.json" },
+    { "status": "A", "file": "docs/qa/manifests/cierre-canon-develop-20261124-scope.json" }
+  ],
+  "allowed_paths": [
+    ".qoder/skills/apexos-git-guardian/SKILL.md",
+    ".qoder/skills/apexos-qa/SKILL.md",
+    "agents/CHANGELOG.md",
+    "agents/apexos-git-guardian/SKILL.md",
+    "agents/apexos-qa/SKILL.md",
+    "agents/registry.json",
+    "docs/qa/evidence/auth-session-path-20261124/canon-gates.txt",
+    "docs/qa/manifests/cierre-canon-develop-20261124-preqa.json",
+    "docs/qa/manifests/cierre-canon-develop-20261124-scope.json"
+  ],
+  "allowed_deletions": [],
+  "origin_waivers": [],
+  "protected_capabilities": [
+    {
+      "name": "Cero rutas de producto, esquema o instrumentacion en el diff",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/canon-gates.txt"
+      ],
+      "notes": "El candidato no es un merge de ramas: se arma sobre origin/develop @ 4381c08d y recibe checkout puntual de las nueve rutas nombradas. Las seis rutas de gobernanza se miden contra origin/desarrollo en canon-gates.txt (seis M, todas bajo agents/ o .qoder/skills/); las tres A son evidencia y manifiestos de este mismo porton. El diff resultante no toca apps/, scripts/, packages/ ni infra/."
+    },
+    {
+      "name": "El canon que sube concuerda con el registro que sube con el",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/canon-gates.txt",
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-develop.json"
+      ],
+      "notes": "registry.json declara once agentes y once documentos verificados (agents:check). Esta es la correccion del hallazgo del cierre anterior: el porton de 4381c08d llevé cuatro rutas de skills y dejo siete, con lo que develop quedo con un registro que apuntaba a SKILL.md atrasados. La regla 55 de apexos-git-guardian 2.39.0 consigna que el canon viaja entero."
+    },
+    {
+      "name": "Ningun manifiesto, informe o evidencia publicada se reescribe",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-develop.json",
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-main.json"
+      ],
+      "notes": "El inventario no contiene ninguna de las rutas de docs/qa ya publicadas (veredicto-main.md, qa-cierre.md, los manifiestos del paquete y del cierre, los reportes de replay). Solo anade tres archivos nuevos y modifica seis de gobernanza. La paridad por ruta sigue medida: 51/51 contra origin/develop y 73/73 contra origin/main."
+    },
+    {
+      "name": "El binario servido no cambia: develop sigue con el mismo arbol de producto certificado",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/puertas-develop.json",
+        "../evidence/auth-session-path-20261124/suites-candidato-main.txt"
+      ],
+      "notes": "No hay ninguna ruta de producto en el diff, asi que el arbol de apps/ de la punta nueva es identico byte a byte al de 4381c08d, que ya paso las suites de API y web del paquete. La compuerta de promocion no vuelve a certificar el producto: lo declara intacto y cita la corrida que lo certifico."
+    }
+  ],
+  "compuertas_exigidas": [
+    "npm run agents:sync && npm run agents:check && npm run agents:preflight && npm run agents:coverage (salida verbatim en canon-gates.txt)",
+    "npm run qa:promotion:scope -- docs/qa/manifests/cierre-canon-develop-20261124-scope.json <punta-candidato> origin/develop",
+    "npm run qa:preqa:evidence -- docs/qa/manifests/cierre-canon-develop-20261124-preqa.json",
+    "node scripts/git-governance-guard.js promote desarrollo-a-develop con APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP, desde el worktree limpio",
+    "node scripts/certifications/promotion-migration-check.js --against commit --ref origin/develop, corrida despues del push (la re-medicion de una punta no puede viajar dentro del commit que la describe)"
+  ],
+  "deriva_declarada": [
+    "La re-medición post-push del canon contra origin/develop, la salida verbatim del gate de alcance y la limpieza de ramas auxiliares y worktrees se consignan en agents/CHANGELOG.md de desarrollo y no pueden viajar dentro de este commit: describen una punta que solo existe despues del push. Las lleva el portón de la intervencion siguiente.",
+    "Los instrumentos del porton main (docs/qa/specs y docs/qa/evidence de cierre) ya quedaron en main y desarrollo con 4381c08d y e4595dce; este porton no los mueve.",
+    "apps/control-tower/** no promociona por regla de repositorio y no esta en el inventario.",
+    "La regla de enmudecimiento de ventanas y el resto de frentes de otras sesiones (biometria, WebAuthn, dispositivos compartidos, selfie en las cuatro marcaciones) no viajan: este manifiesto es puntual y no barre ramas."
+  ],
+  "verificado_local": {
+    "fecha_hora_local": "2026-11-24T14:24:00-05:00",
+    "rama_trabajo": "desarrollo",
+    "puntas": {
+      "origin/main": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+      "origin/develop": "4381c08d131cf8773e6b7537347eeca355eaea1f",
+      "origin/desarrollo": "956f1811e713573f3bd76573f288b1ba2cb7cca0"
+    },
+    "rutas_inventario": 9,
+    "rutas_producto_en_el_diff": 0,
+    "paridad_por_ruta_previa": {
+      "contra_origin_develop": "51/51",
+      "contra_origin_main": "73/73"
+    }
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-24T14:24:00-05:00",
+    "authorization_flags": {
+      "direct_push_to_develop": true
+    },
+    "nota": "La bandera de push directo a develop cubre exclusivamente las nueve rutas de este inventario, todas de gobernanza y documentacion. No autoriza main, force push, rebase de ramas permanentes, migraciones remotas, infraestructura ni borrado de ramas ajenas."
+  }
+}
