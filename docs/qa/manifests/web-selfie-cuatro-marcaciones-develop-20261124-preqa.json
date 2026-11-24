@@ -1,0 +1,93 @@
+{
+  "change_id": "web-selfie-cuatro-marcaciones-develop-20261124",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "promotion_branch": "codex/qa-web-selfie-cuatro-marcaciones-develop-20261124",
+  "commit": "c1f858f2",
+  "target_head": "b59f286dd1d05ed29a6e040c2d7027dd1b55cf17",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/veredicto.md",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-api-apuntadas.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-api-apuntadas.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-web-apuntadas.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-commit.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-api-apuntadas.txt"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-web-apuntadas.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/guarda-de-tenant-presente.txt"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-mobile-identity-local.js",
+    "evidence": [
+      "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json",
+      "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/veredicto.md"
+    ],
+    "controls": 55,
+    "passed": 55,
+    "failed": 0,
+    "substrate": "API Fastify real + PostgreSQL 16 local en 127.0.0.1:55442/apexos_cand_dev + stub de Supabase Auth; fotos reales generadas con sharp",
+    "arbol": "worktree del candidato c1f858f2 con node_modules propio (regla 40: nada de enlaces a los del arbol principal)"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-commit.json",
+      "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-indice.json",
+      "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/control-de-mutacion-instrumento.json",
+      "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/equivalencia-blob-candidato.txt"
+    ],
+    "basis": "El certificador hermetico barre los cuatro tipos de la web con etiqueta mentirosa, HEIC no pintable y reenvio sin foto, ademas del canal firmado del telefono; la suite de identidad movil y la guarda estructural hr-single-selfie-gate.test.js corren sobre el arbol del candidato. La regresion del replay se mide por invariantes (carry/delete/edit) y el propio instrumento se prueba contra tres derivas que deben quedar rojas. El script del porton vive en desarrollo: se invoco desde ese arbol contra el SHA del candidato y su salida se versiona alli."
+  },
+  "validation_summary": {
+    "certified_application_commit": "c1f858f2",
+    "baseline_preserved": "b59f286dd1d05ed29a6e040c2d7027dd1b55cf17",
+    "certificacion_local": "55/55",
+    "suites_api_apuntadas": "105/105",
+    "suites_web_apuntadas": "34/34",
+    "invariantes_replay": "7/7 contra indice, 7/7 contra commit",
+    "lineas_anadidas_en_el_hunkeo": 0,
+    "evidence_policy": "La evidencia del certificador y de las suites viaja revisada en docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124; los logs del API levantado quedan fuera del repositorio y la base local es desechable."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-24T11:00:00-05:00",
+    "instruction": "procede con los cambios y alinear todas las ramas con esta desicion e implementa en cada una de ellas los ajustes necesarios sin romper nada mas necesito que estos ajustes esten en todas las ramas verificadas y probadas que no existiran rechazos",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorization_basis": "La orden del 2026-11-24 autoriza el flujo completo desarrollo -> develop -> main con sus compuertas y la verificacion en QA y Produccion. No otorga force push, reescritura de historia compartida, borrado de ramas ajenas al frente ni cambios de secretos."
+  }
+}

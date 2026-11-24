@@ -1,0 +1,660 @@
+(node:9196) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+TAP version 13
+# (node:8640) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: el canal propio nunca puede declararse correccion administrativa
+ok 1 - el canal propio nunca puede declararse correccion administrativa
+  ---
+  duration_ms: 1.7757
+  type: 'test'
+  ...
+# Subtest: sin declaracion explicita manda la escalera en la ruta administrativa
+ok 2 - sin declaracion explicita manda la escalera en la ruta administrativa
+  ---
+  duration_ms: 0.3639
+  type: 'test'
+  ...
+# Subtest: una correccion sin motivo se rechaza con codigo y campo
+ok 3 - una correccion sin motivo se rechaza con codigo y campo
+  ---
+  duration_ms: 1.5177
+  type: 'test'
+  ...
+# Subtest: la correccion nombra que esperaba la escalera
+ok 4 - la correccion nombra que esperaba la escalera
+  ---
+  duration_ms: 0.3555
+  type: 'test'
+  ...
+# Subtest: el motivo se acota: no es un vertedero de texto
+ok 5 - el motivo se acota: no es un vertedero de texto
+  ---
+  duration_ms: 0.6493
+  type: 'test'
+  ...
+# Subtest: la bandera tambien se acepta dentro de metadata (el canal que usa la app)
+ok 6 - la bandera tambien se acepta dentro de metadata (el canal que usa la app)
+  ---
+  duration_ms: 0.367
+  type: 'test'
+  ...
+# (node:18152) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la marcacion diferida del dia anterior dentro de la ventana se acepta contra su propia ruta
+ok 7 - la marcacion diferida del dia anterior dentro de la ventana se acepta contra su propia ruta
+  ---
+  duration_ms: 353.1174
+  type: 'test'
+  ...
+# Subtest: la marcacion diferida fuera de la ventana maxima se rechaza
+ok 8 - la marcacion diferida fuera de la ventana maxima se rechaza
+  ---
+  duration_ms: 13.6144
+  type: 'test'
+  ...
+# Subtest: la marcacion con fecha futura se rechaza
+ok 9 - la marcacion con fecha futura se rechaza
+  ---
+  duration_ms: 4.7136
+  type: 'test'
+  ...
+# Subtest: la regla del dia sigue bloqueando una ruta de otro dia marcada hoy
+ok 10 - la regla del dia sigue bloqueando una ruta de otro dia marcada hoy
+  ---
+  duration_ms: 9.1266
+  type: 'test'
+  ...
+# Subtest: la actividad con GPS declarado obligatorio y sin coordenadas se rechaza
+ok 11 - la actividad con GPS declarado obligatorio y sin coordenadas se rechaza
+  ---
+  duration_ms: 5.5533
+  type: 'test'
+  ...
+# Subtest: la correccion administrativa fuera del dia deja novedad de ajuste manual
+ok 12 - la correccion administrativa fuera del dia deja novedad de ajuste manual
+  ---
+  duration_ms: 12.8065
+  type: 'test'
+  ...
+# Subtest: la marcacion propia del dia en curso no genera ajuste manual
+ok 13 - la marcacion propia del dia en curso no genera ajuste manual
+  ---
+  duration_ms: 19.2927
+  type: 'test'
+  ...
+# Subtest: la migracion siembra el tipo de novedad de forma idempotente
+ok 14 - la migracion siembra el tipo de novedad de forma idempotente
+  ---
+  duration_ms: 4.5451
+  type: 'test'
+  ...
+# Subtest: el contrato de marcacion sin senal queda versionado en el servicio
+ok 15 - el contrato de marcacion sin senal queda versionado en el servicio
+  ---
+  duration_ms: 4.6889
+  type: 'test'
+  ...
+# (node:5788) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: similitud coseno: identica 1, cercana alta, distinta baja, vectores invalidos 0
+ok 16 - similitud coseno: identica 1, cercana alta, distinta baja, vectores invalidos 0
+  ---
+  duration_ms: 2.0794
+  type: 'test'
+  ...
+# Subtest: registro exige exactamente un rostro legible
+ok 17 - registro exige exactamente un rostro legible
+  ---
+  duration_ms: 0.9649
+  type: 'test'
+  ...
+# Subtest: antispoof solo bloquea si se configura un minimo (por defecto es informativo)
+ok 18 - antispoof solo bloquea si se configura un minimo (por defecto es informativo)
+  ---
+  duration_ms: 2.0103
+  type: 'test'
+  ...
+# Subtest: la selfie se evalua: coincide / no_coincide / sin_rostro / varios_rostros
+ok 19 - la selfie se evalua: coincide / no_coincide / sin_rostro / varios_rostros
+  ---
+  duration_ms: 0.8599
+  type: 'test'
+  ...
+# Subtest: si el motor falla o esta desactivado, el resultado es no_disponible (nunca lanza)
+ok 20 - si el motor falla o esta desactivado, el resultado es no_disponible (nunca lanza)
+  ---
+  duration_ms: 0.7938
+  type: 'test'
+  ...
+# Subtest: la autorizacion de datos tiene version y hash del texto exacto
+ok 21 - la autorizacion de datos tiene version y hash del texto exacto
+  ---
+  duration_ms: 0.3245
+  type: 'test'
+  ...
+# Subtest: servicio: registrar el rostro exige aceptar la autorizacion vigente
+ok 22 - servicio: registrar el rostro exige aceptar la autorizacion vigente
+  ---
+  duration_ms: 160.082
+  type: 'test'
+  ...
+# Subtest: servicio: registro valido queda ACTIVO con hash de la autorizacion y foto de referencia
+ok 23 - servicio: registro valido queda ACTIVO con hash de la autorizacion y foto de referencia
+  ---
+  duration_ms: 165.0324
+  type: 'test'
+  ...
+# Subtest: servicio: sin rostro en la foto responde 422 y no guarda
+ok 24 - servicio: sin rostro en la foto responde 422 y no guarda
+  ---
+  duration_ms: 9.965
+  type: 'test'
+  ...
+# Subtest: servicio: con un rostro activo no se puede re-registrar (409) y solo un admin restablece
+ok 25 - servicio: con un rostro activo no se puede re-registrar (409) y solo un admin restablece
+  ---
+  duration_ms: 10.4762
+  type: 'test'
+  ...
+# Subtest: servicio: la marcacion cuya selfie coincide queda con face_match coincide
+ok 26 - servicio: la marcacion cuya selfie coincide queda con face_match coincide
+  ---
+  duration_ms: 31.2288
+  type: 'test'
+  ...
+# Subtest: servicio: si la selfie NO coincide la marcacion se registra igual pero SENALADA
+ok 27 - servicio: si la selfie NO coincide la marcacion se registra igual pero SENALADA
+  ---
+  duration_ms: 10.9848
+  type: 'test'
+  ...
+# Subtest: servicio: sin rostro registrado la marcacion indica sin_registro
+ok 28 - servicio: sin rostro registrado la marcacion indica sin_registro
+  ---
+  duration_ms: 16.5935
+  type: 'test'
+  ...
+# Subtest: humo: el modelo real (Human wasm) distingue a la misma persona de otra
+ok 29 - humo: el modelo real (Human wasm) distingue a la misma persona de otra
+  ---
+  duration_ms: 3160.0812
+  type: 'test'
+  ...
+# (node:18956) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la correccion administrativa con empleado valido marca a ese empleado y genera el ajuste
+ok 30 - la correccion administrativa con empleado valido marca a ese empleado y genera el ajuste
+  ---
+  duration_ms: 161.2862
+  type: 'test'
+  ...
+# Subtest: un employee_id inexistente en el tenant falla explicitamente sin escribir nada
+ok 31 - un employee_id inexistente en el tenant falla explicitamente sin escribir nada
+  ---
+  duration_ms: 8.4442
+  type: 'test'
+  ...
+# Subtest: un employee_id con formato invalido (UUID) falla explicitamente sin escribir nada
+ok 32 - un employee_id con formato invalido (UUID) falla explicitamente sin escribir nada
+  ---
+  duration_ms: 3.644
+  type: 'test'
+  ...
+# Subtest: el ambito self-service ignora un employee_id declarado y marca al usuario conectado
+ok 33 - el ambito self-service ignora un employee_id declarado y marca al usuario conectado
+  ---
+  duration_ms: 5.143
+  type: 'test'
+  ...
+# Subtest: la correccion administrativa sin employee_id conserva el respaldo sobre el propio usuario
+ok 34 - la correccion administrativa sin employee_id conserva el respaldo sobre el propio usuario
+  ---
+  duration_ms: 8.1062
+  type: 'test'
+  ...
+# Subtest: el servicio declara el rechazo explicito del empleado no resuelto
+ok 35 - el servicio declara el rechazo explicito del empleado no resuelto
+  ---
+  duration_ms: 3.8725
+  type: 'test'
+  ...
+# Subtest: profile and punches require an existing employee and never provision one
+ok 36 - profile and punches require an existing employee and never provision one
+  ---
+  duration_ms: 6.1337
+  type: 'test'
+  ...
+# (node:6884) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: time_tracking usa la habilitacion M-17 del tenant
+ok 37 - time_tracking usa la habilitacion M-17 del tenant
+  ---
+  duration_ms: 1.1352
+  type: 'test'
+  ...
+# Subtest: el rol exclusivo puede usar endpoints self de lectura y escritura
+ok 38 - el rol exclusivo puede usar endpoints self de lectura y escritura
+  ---
+  duration_ms: 1.3705
+  type: 'test'
+  ...
+# Subtest: el rol exclusivo no obtiene acceso al modulo general hr
+ok 39 - el rol exclusivo no obtiene acceso al modulo general hr
+  ---
+  duration_ms: 0.4399
+  type: 'test'
+  ...
+# Subtest: las rutas self fuerzan identidad y las rutas generales conservan hr
+ok 40 - las rutas self fuerzan identidad y las rutas generales conservan hr
+  ---
+  duration_ms: 5.3908
+  type: 'test'
+  ...
+# (node:1056) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: registra el telefono con una firma valida de la huella
+ok 41 - registra el telefono con una firma valida de la huella
+  ---
+  duration_ms: 11.9145
+  type: 'test'
+  ...
+# Subtest: no se vuelve a registrar sin que un supervisor restablezca
+ok 42 - no se vuelve a registrar sin que un supervisor restablezca
+  ---
+  duration_ms: 1.8554
+  type: 'test'
+  ...
+# Subtest: el registro exige que la firma sea de la llave enviada
+ok 43 - el registro exige que la firma sea de la llave enviada
+  ---
+  duration_ms: 2.3199
+  type: 'test'
+  ...
+# Subtest: el registro firmado para otro usuario no sirve
+ok 44 - el registro firmado para otro usuario no sirve
+  ---
+  duration_ms: 1.8096
+  type: 'test'
+  ...
+# Subtest: solo acepta llaves EC P-256
+ok 45 - solo acepta llaves EC P-256
+  ---
+  duration_ms: 86.3897
+  type: 'test'
+  ...
+# Subtest: un registro con la hora muy corrida se rechaza
+ok 46 - un registro con la hora muy corrida se rechaza
+  ---
+  duration_ms: 3.2907
+  type: 'test'
+  ...
+# Subtest: un identificador de telefono raro se rechaza
+ok 47 - un identificador de telefono raro se rechaza
+  ---
+  duration_ms: 1.4139
+  type: 'test'
+  ...
+# Subtest: la marcacion de la app firmada en el telefono registrado queda verificada
+ok 48 - la marcacion de la app firmada en el telefono registrado queda verificada
+  ---
+  duration_ms: 72.1454
+  type: 'test'
+  ...
+# Subtest: la selfie se guarda como data URL canonico aunque llegue sin prefijo
+ok 49 - la selfie se guarda como data URL canonico aunque llegue sin prefijo
+  ---
+  duration_ms: 9.6399
+  type: 'test'
+  ...
+# Subtest: acepta selfie PNG declarada PNG
+ok 50 - acepta selfie PNG declarada PNG
+  ---
+  duration_ms: 14.0986
+  type: 'test'
+  ...
+# Subtest: la web guarda la selfie pero no la da por verificada
+ok 51 - la web guarda la selfie pero no la da por verificada
+  ---
+  duration_ms: 7.6911
+  type: 'test'
+  ...
+# Subtest: la web no puede marcar ninguna de las cuatro sin selfie
+ok 52 - la web no puede marcar ninguna de las cuatro sin selfie
+  ---
+  duration_ms: 1.5226
+  type: 'test'
+  ...
+# Subtest: la web reenvia una entrada sin foto cuando el servidor ya rechazo esa foto
+ok 53 - la web reenvia una entrada sin foto cuando el servidor ya rechazo esa foto
+  ---
+  duration_ms: 0.8653
+  type: 'test'
+  ...
+# Subtest: la excepcion de la foto desprendida no se compra con una declaracion inventada
+ok 54 - la excepcion de la foto desprendida no se compra con una declaracion inventada
+  ---
+  duration_ms: 0.9676
+  type: 'test'
+  ...
+# Subtest: el almuerzo de la web se marca con su selfie y queda photo_only
+ok 55 - el almuerzo de la web se marca con su selfie y queda photo_only
+  ---
+  duration_ms: 14.2128
+  type: 'test'
+  ...
+# Subtest: la web acepta la foto real aunque el navegador la anuncie con el formato equivocado
+ok 56 - la web acepta la foto real aunque el navegador la anuncie con el formato equivocado
+  ---
+  duration_ms: 32.4384
+  type: 'test'
+  ...
+# Subtest: la web sigue rechazando lo que no es una foto
+ok 57 - la web sigue rechazando lo que no es una foto
+  ---
+  duration_ms: 20.9192
+  type: 'test'
+  ...
+# Subtest: la app sin telefono registrado no puede marcar
+ok 58 - la app sin telefono registrado no puede marcar
+  ---
+  duration_ms: 5.1783
+  type: 'test'
+  ...
+# Subtest: una version vieja de la app (sin firma) no puede marcar
+ok 59 - una version vieja de la app (sin firma) no puede marcar
+  ---
+  duration_ms: 1.8903
+  type: 'test'
+  ...
+# Subtest: desde otro telefono no se puede marcar
+ok 60 - desde otro telefono no se puede marcar
+  ---
+  duration_ms: 1.1263
+  type: 'test'
+  ...
+# Subtest: con la llave de otro telefono la firma no pasa
+ok 61 - con la llave de otro telefono la firma no pasa
+  ---
+  duration_ms: 6.4498
+  type: 'test'
+  ...
+# Subtest: cambiar la selfie despues de firmar invalida la marcacion
+ok 62 - cambiar la selfie despues de firmar invalida la marcacion
+  ---
+  duration_ms: 10.2442
+  type: 'test'
+  ...
+# Subtest: cambiar el tipo de marcacion despues de firmar la invalida
+ok 63 - cambiar el tipo de marcacion despues de firmar la invalida
+  ---
+  duration_ms: 7.835
+  type: 'test'
+  ...
+# Subtest: sin selfie la app no puede marcar entrada ni salida
+ok 64 - sin selfie la app no puede marcar entrada ni salida
+  ---
+  duration_ms: 4.6418
+  type: 'test'
+  ...
+# Subtest: el almuerzo se marca sin selfie pero firmado
+ok 65 - el almuerzo se marca sin selfie pero firmado
+  ---
+  duration_ms: 2.7214
+  type: 'test'
+  ...
+# Subtest: quitarle la selfie a una entrada firmada con foto no la cuela como almuerzo
+ok 66 - quitarle la selfie a una entrada firmada con foto no la cuela como almuerzo
+  ---
+  duration_ms: 2.0864
+  type: 'test'
+  ...
+# Subtest: una app vieja todavia marca el almuerzo con foto, pero la foto no se guarda
+ok 67 - una app vieja todavia marca el almuerzo con foto, pero la foto no se guarda
+  ---
+  duration_ms: 29.8296
+  type: 'test'
+  ...
+# Subtest: en el almuerzo la firma sigue atada al telefono registrado
+ok 68 - en el almuerzo la firma sigue atada al telefono registrado
+  ---
+  duration_ms: 10.5238
+  type: 'test'
+  ...
+# Subtest: una selfie que no es imagen se rechaza
+ok 69 - una selfie que no es imagen se rechaza
+  ---
+  duration_ms: 8.7604
+  type: 'test'
+  ...
+# Subtest: una selfie declarada JPEG pero con contenido PNG real es evidencia disponible
+ok 70 - una selfie declarada JPEG pero con contenido PNG real es evidencia disponible
+  ---
+  duration_ms: 17.1305
+  type: 'test'
+  ...
+# Subtest: un PNG declarado jpeg que el navegador no puede decodificar degrada, no rechaza
+ok 71 - un PNG declarado jpeg que el navegador no puede decodificar degrada, no rechaza
+  ---
+  duration_ms: 5.05
+  type: 'test'
+  ...
+# Subtest: una selfie demasiado grande se rechaza
+ok 72 - una selfie demasiado grande se rechaza
+  ---
+  duration_ms: 16.0641
+  type: 'test'
+  ...
+# Subtest: restablecer pasa el registro al historial sin la llave
+ok 73 - restablecer pasa el registro al historial sin la llave
+  ---
+  duration_ms: 0.9323
+  type: 'test'
+  ...
+# Subtest: el historial de registros no crece sin limite
+ok 74 - el historial de registros no crece sin limite
+  ---
+  duration_ms: 0.9542
+  type: 'test'
+  ...
+# Subtest: los listados no llevan el contenido de la selfie ni la firma cruda
+ok 75 - los listados no llevan el contenido de la selfie ni la firma cruda
+  ---
+  duration_ms: 12.2944
+  type: 'test'
+  ...
+# Subtest: una fila degradada jamas anuncia evidencia en los listados, aunque lleve bytes
+ok 76 - una fila degradada jamas anuncia evidencia en los listados, aunque lleve bytes
+  ---
+  duration_ms: 0.6454
+  type: 'test'
+  ...
+# Subtest: la selfie se entrega al monitor como evidencia
+ok 77 - la selfie se entrega al monitor como evidencia
+  ---
+  duration_ms: 11.299
+  type: 'test'
+  ...
+# Subtest: la evidencia degradada tambien llega al monitor, con su motivo
+ok 78 - la evidencia degradada tambien llega al monitor, con su motivo
+  ---
+  duration_ms: 5.5375
+  type: 'test'
+  ...
+# Subtest: las selfies guardadas antes del despliegue tambien llegan al monitor
+ok 79 - las selfies guardadas antes del despliegue tambien llegan al monitor
+  ---
+  duration_ms: 0.5598
+  type: 'test'
+  ...
+# Subtest: lo que ve el empleado de su registro nunca incluye la llave
+ok 80 - lo que ve el empleado de su registro nunca incluye la llave
+  ---
+  duration_ms: 1.7139
+  type: 'test'
+  ...
+# (node:15040) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: mobile identity photo is read from TimePunch metadata with either base64 spelling
+ok 81 - mobile identity photo is read from TimePunch metadata with either base64 spelling
+  ---
+  duration_ms: 53.9529
+  type: 'test'
+  ...
+# Subtest: identity and overtime support are retained, deduplicated and unsafe content ignored
+ok 82 - identity and overtime support are retained, deduplicated and unsafe content ignored
+  ---
+  duration_ms: 7.9254
+  type: 'test'
+  ...
+# Subtest: summary counters include mobile photos for linked and unlinked marks
+ok 83 - summary counters include mobile photos for linked and unlinked marks
+  ---
+  duration_ms: 54.9437
+  type: 'test'
+  ...
+# Subtest: single monitor keeps the mobile photo bytes and the batch stays an index without them
+ok 84 - single monitor keeps the mobile photo bytes and the batch stays an index without them
+  ---
+  duration_ms: 116.795
+  type: 'test'
+  ...
+# Subtest: legacy document supports are not discarded while identity remains photo-only
+ok 85 - legacy document supports are not discarded while identity remains photo-only
+  ---
+  duration_ms: 0.4357
+  type: 'test'
+  ...
+# (node:13740) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: registro valido devuelve el registro normalizado sin datos de mas
+ok 86 - registro valido devuelve el registro normalizado sin datos de mas
+  ---
+  duration_ms: 9.7573
+  type: 'test'
+  ...
+# Subtest: registro con reto de otra sesion, vencido o alterado se rechaza
+ok 87 - registro con reto de otra sesion, vencido o alterado se rechaza
+  ---
+  duration_ms: 4.1945
+  type: 'test'
+  ...
+# Subtest: registro desde un origen no permitido o sin huella verificada se rechaza
+ok 88 - registro desde un origen no permitido o sin huella verificada se rechaza
+  ---
+  duration_ms: 2.266
+  type: 'test'
+  ...
+# Subtest: registro con algoritmo distinto de ES256 o llave invalida se rechaza
+ok 89 - registro con algoritmo distinto de ES256 o llave invalida se rechaza
+  ---
+  duration_ms: 1.7334
+  type: 'test'
+  ...
+# Subtest: marcacion firmada por el celular registrado queda device_verified con la selfie
+ok 90 - marcacion firmada por el celular registrado queda device_verified con la selfie
+  ---
+  duration_ms: 222.0705
+  type: 'test'
+  ...
+# Subtest: la firma no se puede reusar para OTRA persona, otro tipo u otra selfie
+ok 91 - la firma no se puede reusar para OTRA persona, otro tipo u otra selfie
+  ---
+  duration_ms: 10.4816
+  type: 'test'
+  ...
+# Subtest: firma de otro celular, celular revocado o credencial distinta se rechaza
+ok 92 - firma de otro celular, celular revocado o credencial distinta se rechaza
+  ---
+  duration_ms: 14.1052
+  type: 'test'
+  ...
+# Subtest: origen ajeno, dominio distinto o sin huella verificada se rechaza
+ok 93 - origen ajeno, dominio distinto o sin huella verificada se rechaza
+  ---
+  duration_ms: 14.4265
+  type: 'test'
+  ...
+# Subtest: sin selfie o sin firma se rechaza
+ok 94 - sin selfie o sin firma se rechaza
+  ---
+  duration_ms: 3.8789
+  type: 'test'
+  ...
+# Subtest: el contador de firmas que no avanza se senala para auditoria sin bloquear
+ok 95 - el contador de firmas que no avanza se senala para auditoria sin bloquear
+  ---
+  duration_ms: 29.6346
+  type: 'test'
+  ...
+# Subtest: webauthnConfig lee listas separadas por coma
+ok 96 - webauthnConfig lee listas separadas por coma
+  ---
+  duration_ms: 4.729
+  type: 'test'
+  ...
+# Subtest: servicio: el conductor con sesion abierta marca al AUXILIAR desde el celular del camion
+ok 97 - servicio: el conductor con sesion abierta marca al AUXILIAR desde el celular del camion
+  ---
+  duration_ms: 278.3099
+  type: 'test'
+  ...
+# Subtest: servicio: alguien sin malla HOY en esa placa no puede marcar en el celular
+ok 98 - servicio: alguien sin malla HOY en esa placa no puede marcar en el celular
+  ---
+  duration_ms: 8.5997
+  type: 'test'
+  ...
+# Subtest: servicio: celular no registrado o firma invalida no crea marcacion
+ok 99 - servicio: celular no registrado o firma invalida no crea marcacion
+  ---
+  duration_ms: 13.1216
+  type: 'test'
+  ...
+# Subtest: servicio: registrar y revocar exige rol administrativo
+ok 100 - servicio: registrar y revocar exige rol administrativo
+  ---
+  duration_ms: 6.5189
+  type: 'test'
+  ...
+# Subtest: servicio: sin WEBAUTHN_ORIGINS / WEBAUTHN_RP_IDS el registro avisa la configuracion faltante
+ok 101 - servicio: sin WEBAUTHN_ORIGINS / WEBAUTHN_RP_IDS el registro avisa la configuracion faltante
+  ---
+  duration_ms: 15.1743
+  type: 'test'
+  ...
+# (node:15436) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la marcacion web no puede volver a tener dos compuertas de selfie
+ok 102 - la marcacion web no puede volver a tener dos compuertas de selfie
+  ---
+  duration_ms: 11.0374
+  type: 'test'
+  ...
+# Subtest: la guarda detecta la compuerta alterna que rompio produccion
+ok 103 - la guarda detecta la compuerta alterna que rompio produccion
+  ---
+  duration_ms: 46.3719
+  type: 'test'
+  ...
+# Subtest: la guarda detecta un motivo de selfie dictaminado fuera de la compuerta unica
+ok 104 - la guarda detecta un motivo de selfie dictaminado fuera de la compuerta unica
+  ---
+  duration_ms: 32.3782
+  type: 'test'
+  ...
+# Subtest: la compuerta unica es la que decide en que marcaciones se exige selfie
+ok 105 - la compuerta unica es la que decide en que marcaciones se exige selfie
+  ---
+  duration_ms: 75.7744
+  type: 'test'
+  ...
+1..105
+# tests 105
+# suites 0
+# pass 105
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7089.3418
