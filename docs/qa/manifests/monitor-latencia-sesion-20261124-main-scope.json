@@ -22,12 +22,22 @@
     "commit": "3303a95532a35603f53f1eced0300f4febb0eab3",
     "replay_sobre": "origin/main b08699e3214a41f946cf3080b313cbfe637e33dd",
     "origen_del_contenido": "origin/desarrollo para las 45 rutas carry y los cuatro instrumentos, origin/develop para la pantalla de rutas (blob c79f3da7, el que QA sirvio y certifico) y replay por hunks sobre el blob de main para los tres archivos de fusion",
-    "replay_de_commits": ["41134bf4", "f3e85f1a", "31a36e77"],
+    "replay_de_commits": [
+      "41134bf4",
+      "f3e85f1a",
+      "31a36e77"
+    ],
     "linaje": "41134bf4 trae el acote del resumen de eventos y el camino de sesion en una sentencia; f3e85f1a cierra el login con correos repetidos y el refresh sin relectura; 31a36e77 (guarda de tenant en updateRoute) ya estaba en main, medida en su blob, por eso no se re-aplico."
   },
   "change_intent": {
-    "modules": ["talento-humano", "auth", "rendimiento", "platform-seguridad", "qa-evidencia"],
-    "resumen": "Bajar el piso de latencia del monitor de marcaciones y del camino de sesion: el resumen de eventos deja de leer el mes entero, /auth/me /login /refresh pasan de cuatro sentencias a una, la pantalla fija el dia consultado y la evidencia de foto se sirve por referencia en vez de viajar inline."
+    "modules": [
+      "talento-humano",
+      "auth",
+      "rendimiento",
+      "platform-seguridad",
+      "qa-evidencia"
+    ],
+    "summary": "La demora del monitor de Talento Humano era el viaje al pooler y no el peso del payload: el dia queda fijado en la pantalla, el resumen de eventos deja de leer el mes entero y el camino de sesion (login, /auth/me, refresh) pasa a una sentencia por lectura. A main esto llega por replay de 50 rutas sobre el blob de main, no por fusion de rama, porque main esta a 859 commits y conserva el motor de liquidacion, el retiro y el tarifario."
   },
   "allowed_paths": [
     "apps/api/src/modules/auth/service.js",
@@ -63,60 +73,222 @@
   ],
   "allowed_deletions": [],
   "expected_changes": [
-    {"status": "M", "file": "apps/api/src/modules/auth/service.js"},
-    {"status": "M", "file": "apps/api/src/modules/hr/monitorEvidenceRows.js"},
-    {"status": "M", "file": "apps/api/src/modules/hr/routes.js"},
-    {"status": "M", "file": "apps/api/src/modules/hr/service.js"},
-    {"status": "M", "file": "apps/api/src/security/authorizationState.js"},
-    {"status": "A", "file": "apps/api/test/auth-me-single-statement.test.js"},
-    {"status": "M", "file": "apps/api/test/auth-session-hardening.test.js"},
-    {"status": "M", "file": "apps/api/test/authorization-status-codes.test.js"},
-    {"status": "A", "file": "apps/api/test/hr-evidence-backfill-tool.test.js"},
-    {"status": "M", "file": "apps/api/test/hr-list-truncation.test.js"},
-    {"status": "M", "file": "apps/api/test/hr-monitor-evidence-columns.test.js"},
-    {"status": "M", "file": "apps/api/test/hr-route-assignment-lock.test.js"},
-    {"status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"},
-    {"status": "M", "file": "apps/web/test/hr-monitor-refresh.test.mjs"},
-    {"status": "M", "file": "docs/PERFORMANCE_ANTI_PATTERNS.md"},
-    {"status": "A", "file": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md"},
-    {"status": "M", "file": "docs/project/talento-humano-implementacion-seguimiento.md"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/candidato-develop.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/candidato-main.txt"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-production.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-qa.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/invariantes-replay-main.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-auth-session.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-cierre.md"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-harness.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-retiro-cuentas.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-main.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/replay-candidato-develop.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-production.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-qa.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/suite-plataforma-candidato.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/suites-candidato-main.txt"},
-    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/veredicto-main.md"},
-    {"status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json"},
-    {"status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795543145867.json"},
-    {"status": "A", "file": "docs/qa/evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json"},
-    {"status": "A", "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527496487.json"},
-    {"status": "A", "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json"},
-    {"status": "A", "file": "docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json"},
-    {"status": "A", "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json"},
-    {"status": "A", "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json"},
-    {"status": "A", "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json"},
-    {"status": "A", "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json"},
-    {"status": "A", "file": "docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json"},
-    {"status": "A", "file": "docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json"},
-    {"status": "M", "file": "scripts/certifications/hr-monitor-byte-budget.js"},
-    {"status": "A", "file": "scripts/hr-evidence-backfill-storage.js"}
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/auth/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/monitorEvidenceRows.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/security/authorizationState.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/auth-me-single-statement.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/auth-session-hardening.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/authorization-status-codes.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-evidence-backfill-tool.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-list-truncation.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-monitor-evidence-columns.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-route-assignment-lock.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-monitor-refresh.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "docs/PERFORMANCE_ANTI_PATTERNS.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/talento-humano-implementacion-seguimiento.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/candidato-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/candidato-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-production.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-qa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/invariantes-replay-main.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-auth-session.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-cierre.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-harness.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-retiro-cuentas.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-main.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-candidato-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-production.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-qa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/suite-plataforma-candidato.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/suites-candidato-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/veredicto-main.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795543145867.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527496487.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-monitor-byte-budget.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/hr-evidence-backfill-storage.js"
+    }
   ],
   "certified_functional_paths": "Las 50 rutas del commit funcional 82664fee (apps, scripts, brief, spec de replay y evidencia). expected_changes declara 54: las cuatro restantes son los dos manifiestos, el veredicto y el reporte del replay, que solo pueden escribirse con las medidas del commit que certifican y no pueden citarse a si mismos.",
   "origin_waivers": [
