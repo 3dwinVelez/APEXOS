@@ -735,3 +735,60 @@ Producción **no** va a exigir selfie en las cuatro marcaciones web. Es delibera
 camino de sesión—, pero queda escrito para que la corrida de QA no se lea como si certificara una regla que el
 destino no sirve.
 
+
+## 16. La pata `develop -> main`: el replay que no pudo ser fusión (2026-11-24)
+
+La distancia medida: `origin/main` está a **859 commits** de `origin/develop` (`git rev-list --count`), y su
+`merge-base` es `180a2b21`. Con esa distancia, un merge de rama está prohibido por el propio manifiesto: el
+diff neto traería módulos que nunca se promocionaron. Se intentó medir primero qué habría roto llevar los
+blobs de `develop` sobre `main`, y la respuesta es concreta:
+
+- `apps/api/src/modules/auth/service.js` de develop pide `require("../hr/personal-webauthn")`, y esa ruta **no
+  existe en `main`** (`git ls-tree origin/main` responde AUSENTE). El API promovido habría caído al cargar el
+  módulo de autenticación, o sea: no arranca Producción.
+- Con el blob de develop entran `fingerprintLogin`, la identidad de dispositivos compartidos y la biométrica,
+  con sus tres migraciones (`20261121230000_hr_shared_devices`, `20261122060000_hr_face_enrollments`,
+  `20261122120000_hr_webauthn_credentials`), ninguna de ellas aplicada a la base de Producción.
+- `apps/api/src/modules/hr/service.js` de develop **revierte** el motor de liquidación de main: el candidato
+  conserva `pg_advisory_xact_lock` **6 veces** y `buildEmployeeTerminationLiquidation` **4 veces** porque el
+  replay parte del blob de main, no del de develop.
+- Los dos instrumentos del camino de sesión (`auth-session-sql-guard.js`, `auth-email-collision-census.js`)
+  piden `./recovery-readiness.js`, que tampoco llegó a `main`: llevados solos dejan un árbol promovido con un
+  instrumento que revienta al ejecutarlo. No viajan.
+
+La transformación quedó escrita como invariante y no como narrativa
+(`docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json`), medida con
+`npm run qa:promotion:migration` sobre el índice del candidato: **carry 46 + delete 24 = 70 invariantes**. Los
+`delete` son las rutas ajenas que tienen que seguir ausentes (biometría, webauthn, dispositivos compartidos,
+las dos pantallas nuevas de Talento Humano, `recovery-readiness` y las rutas de gobernanza `agents/**`).
+
+| Capa | Rutas | Cómo se probó |
+|---|---|---|
+| carry desde `origin/desarrollo` | 45 | blob igual, medido archivo por archivo |
+| carry desde `origin/develop` | 1 (`talento-humano/rutas/page.tsx`) | el blob servido a QA es `c79f3da7`; el de `desarrollo` (`df9fd61d`) trae 53 líneas de otra intervención sin certificar |
+| replay propio | 3 (`auth/service.js`, `hr/routes.js`, `hr/service.js`) | blob de `main` + los hunks de `41134bf4` y `f3e85f1a` (`31a36e77` ya estaba en `main`) |
+| commit de documentación | 5 | el spec, su reporte, los dos manifiestos y el veredicto |
+
+Las cuatro excepciones de origen del portón se justifican con medida y no con intención
+(`docs/qa/evidence/auth-session-path-20261124/invariantes-replay-main.json`):
+
+- `hr/service.js`: **32 líneas añadidas, 0 huérfanas** —cada línea existe textualmente en `origin/desarrollo`—
+  y el cuerpo de `listRouteEventSummaries` sale **byte a byte** igual (5.445 caracteres en los dos árboles).
+- `auth/service.js`: **46 añadidas, 0 huérfanas**, con `login` (1.899), `startSession` (711), `me` (353) y
+  `refresh` (2.610) idénticos carácter por carácter a los de la rama certificada.
+- `hr/routes.js`: la línea de `/hr/routes/event-summaries` es exacta, y los contadores de lo que no viaja dan
+  **0** (`webauthn`, `face`).
+- `page.tsx`: 41 líneas añadidas, 0 huérfanas contra `origin/develop`, y `EVIDENCE_FETCH_CONCURRENCY` presente.
+
+Suitas sobre el árbol candidato (no sobre el de trabajo): **70 pruebas, 69 pasan, 0 fallan, 1 `SKIP` explícito
+y preexistente** en `authorization-status-codes.test.js`, más el autocontrol del instrumento de presupuesto en
+verde (`suites-candidato-main.txt`).
+
+Lo que **no** sube con este paquete, declarado para que nadie lo lea como olvido: el árbol de gobernanza (20
+rutas de `agents/**` y `.qoder/skills/**`, que en `main` ni siquiera existe `agents/`), la reparación de
+`hr-monitor-evidence-demand-qa.js` (`main` conserva `726ee951`, la reparación `6208f982` queda en `desarrollo`
+con su comando de remedición) y la regla de selfie en las cuatro marcaciones web (`mobile-identity.js` no entra
+al inventario: Producción sigue sirviendo `756b0572`). El DESPUÉS de Producción es pendiente del despliegue, no
+afirmación: solo cuenta cuando `GET https://apexos-api-prod-production.up.railway.app/health` devuelva el sha
+promovido, y entonces se corren `certify:hr-monitor-budget:production` y `certify:auth-session` anclados a ese
+sha.

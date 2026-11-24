@@ -1,0 +1,96 @@
+Candidato a main del paquete monitor-latencia-sesion-20261124
+base (origin/main al construir): 3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23
+rama de trabajo local: codex/qa-monitor-latencia-sesion-main-20261124
+rutas en el indice del candidato: 51
+
+carry desde origin/desarrollo (45):
+  81eaa53aa3a4c959831cc7e910b840c1dfdbdd0e  apps/api/src/modules/hr/monitorEvidenceRows.js
+  a7189cc6ced6839ce139cf53dbb6cab8c05b6fc3  apps/api/src/security/authorizationState.js
+  73dd30b1ad4291b7691aee681b1e45f0d72609bf  apps/api/test/auth-me-single-statement.test.js
+  99ac45fb2f00aec991f06123d985448ea0e0d83d  apps/api/test/auth-session-hardening.test.js
+  425d643f1f62d4077b620caeec624f0322c9e90f  apps/api/test/authorization-status-codes.test.js
+  18bc91ed942bcf9e1e72aa568c7f4acc97fc2015  apps/api/test/hr-evidence-backfill-tool.test.js
+  cba0b3dae5ef437c12858ac1be24aaa5f4bbd04d  apps/api/test/hr-list-truncation.test.js
+  5ffe388a17ca31d6af6648c548d95d3e66b8c147  apps/api/test/hr-monitor-evidence-columns.test.js
+  f8fa2297ef1e658fa18fa557ec40e4e61a916ed9  apps/api/test/hr-route-assignment-lock.test.js
+  f762ad29f75ece41dd2c174dca95a3ff6340f88d  apps/web/test/hr-monitor-refresh.test.mjs
+  90243afefaea2dfc04e4e17372f72058b5dd31a0  docs/PERFORMANCE_ANTI_PATTERNS.md
+  ba7db82f1dfe2419b2ede8a958e74cc595340345  docs/briefs/2026-11-24-monitor-marcaciones-latencia.md
+  66abc1f9b74d04176de4ecf0a1923a089a1b57b4  docs/project/talento-humano-implementacion-seguimiento.md
+  5133616f3ca9cfb5cfb443ecf7c3668cda695935  docs/qa/evidence/auth-session-path-20261124/candidato-develop.json
+  690e791e99a95e00877a0325570658c0798f84de  docs/qa/evidence/auth-session-path-20261124/candidato-main.txt
+  a095a49654383bd54822bb8dd8ecd0cef3447695  docs/qa/evidence/auth-session-path-20261124/censo-correos-production.json
+  aa5528dc18448f8b9ec1f897ce7d9743f8809ccd  docs/qa/evidence/auth-session-path-20261124/censo-correos-qa.json
+  40e50d8f2ff8e0182d68c9c4044cb441b9b1f6ae  docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt
+  29a9351cf8413c94a446d8f9f190d5f4bcde1baf  docs/qa/evidence/auth-session-path-20261124/invariantes-replay-main.json
+  6476e19a2b6cbffc2553b3f44b3d7466c0c8c236  docs/qa/evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt
+  b04583ec08ca926301570a93b4f866fb0749eea0  docs/qa/evidence/auth-session-path-20261124/qa-auth-session.json
+  bc507fc6025b87fb1611f81157dbe55647dfe95e  docs/qa/evidence/auth-session-path-20261124/qa-cierre.md
+  93a6bd5b018af73f463a02ee34beede69539f73e  docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json
+  6c737634e3ed6a66957963e47350025a217dde83  docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-harness.json
+  b714fbd85cf4772d58ba8798d5304c6064db43c5  docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget.json
+  c9bb52efdfce653973f9a1ab33fac1f08d9e2a51  docs/qa/evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json
+  6c2fbd57d10f652d3a3fb048dd03bb584cf7b78d  docs/qa/evidence/auth-session-path-20261124/qa-retiro-cuentas.json
+  7a3910fa00d9f4ec8c2d337f006cb78d7d3e0aa2  docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json
+  6f0d03763200d39cb3da3441b62317c47a422748  docs/qa/evidence/auth-session-path-20261124/replay-candidato-develop.json
+  69608f302e96ab23cb6fc638ab15022a3a434b39  docs/qa/evidence/auth-session-path-20261124/sentencias-production.json
+  ef030306a98c5cfd6099bf3268e5ddd7ffbc5cdc  docs/qa/evidence/auth-session-path-20261124/sentencias-qa.json
+  5a8e8f75c532a74ff2615a447b32ba478a25ba4c  docs/qa/evidence/auth-session-path-20261124/suite-plataforma-candidato.json
+  3b9e070e6a94810b747332715d710d6d4d59a640  docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json
+  3ca1533c308957accb8f40790669a7c50626c201  docs/qa/evidence/auth-session-path-20261124/suites-candidato-main.txt
+  49a52d67f7768aa81097e06dbf3753082396ddb0  docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json
+  56bcfa81351f70193d2df7401901a3f67b30f3e9  docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795543145867.json
+  7f62b7ae166dfa2f5ff142fb4ed85c9d75985cfc  docs/qa/evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json
+  8bb05ded58b1fedbac1ff078f59cd38d5e09c142  docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527496487.json
+  9cc64066dd5eea19bda2f1a923c14ff068bb2fbc  docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json
+  7b60d257929a9ab3be9f5b7e9d0d0d67a5a8e779  docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json
+  a5bf142b3fca2b199ca487dd54b25b3611aa2dcf  docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json
+  5ed5033de94241605e6ec215682491b39bc2ba86  docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json
+  aa3e3c40e1ee12e36d8139b22f12681bf4a0d7a7  docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json
+  57af20416adbb18efc4b67e9e373086bc1c4a859  scripts/certifications/hr-monitor-byte-budget.js
+  b75cd964dddc0c80dffce8b9eee35b8c6c80a4d8  scripts/hr-evidence-backfill-storage.js
+
+carry desde origin/develop (1):
+  c79f3da7530ca27e5a2d3126f580276fbb33e4ae  apps/web/app/dashboard/talento-humano/rutas/page.tsx
+
+replay propio sobre el blob de main (3):
+  1041c4efe75b795a26cb9ff81fb6f7bb3729d165  apps/api/src/modules/auth/service.js  (main tenia 41c4269af4439a6514107e1d4e6c1a7f827b20c6)
+  1032b19da8ebb72a5eb139d1be0a76f6a61a821b  apps/api/src/modules/hr/routes.js  (main tenia c10877f8acc38b2ee3b9f8a7e1d2dbc1397b160c)
+  0497014bf12c9fcbe1f577457c13e52ed6780f82  apps/api/src/modules/hr/service.js  (main tenia c30d6f11dce316a6c9fef66f169d2bf039d93d85)
+
+ausentes declaradas verificadas en el indice:
+  ausente  apps/api/src/modules/hr/face-consent.js
+  ausente  apps/api/src/modules/hr/face-identity.js
+  ausente  apps/api/src/modules/hr/personal-webauthn.js
+  ausente  apps/api/src/modules/hr/shared-device-identity.js
+  ausente  apps/api/test/auth-webauthn-login.test.js
+  ausente  apps/api/test/hr-face-identity.test.js
+  ausente  apps/api/test/hr-personal-webauthn.test.js
+  ausente  apps/api/test/hr-shared-device-identity.test.js
+  ausente  apps/api/test/prisma-deferred-tenant-context.test.js
+  ausente  apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql
+  ausente  apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql
+  ausente  apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql
+  ausente  apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx
+  ausente  apps/web/app/dashboard/talento-humano/rostros/page.tsx
+  ausente  scripts/security/recovery-readiness.js
+  ausente  scripts/security/auth-session-sql-guard.js
+  ausente  scripts/security/auth-email-collision-census.js
+  ausente  .qoder/skills/apexos-brief/SKILL.md
+  ausente  agents/CHANGELOG.md
+  ausente  agents/registry.json
+  ausente  agents/apexos-backend/SKILL.md
+  ausente  agents/apexos-performance/SKILL.md
+  ausente  agents/apexos-qa/SKILL.md
+  ausente  agents/equipo-apexos/SKILL.md
+
+gobernanza e instrumentacion que quedan en su blob de main (no entran al indice):
+  excluida  .qoder/skills/apexos-backend/SKILL.md
+  excluida  .qoder/skills/apexos-db-nube/SKILL.md
+  excluida  .qoder/skills/apexos-frontend/SKILL.md
+  excluida  .qoder/skills/apexos-git-guardian/SKILL.md
+  excluida  .qoder/skills/apexos-performance/SKILL.md
+  excluida  .qoder/skills/apexos-qa/SKILL.md
+  excluida  .qoder/skills/apexos-seguridad/SKILL.md
+  excluida  .qoder/skills/equipo-apexos/SKILL.md
+  excluida  scripts/certifications/hr-monitor-evidence-demand-qa.js

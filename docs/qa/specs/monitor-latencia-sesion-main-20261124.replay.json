@@ -1,0 +1,315 @@
+{
+  "change_id": "monitor-latencia-sesion-main-20261124",
+  "creado": "2026-11-24T21:40:00-05:00",
+  "target_branch": "main",
+  "source_branch": "develop",
+  "base_ref": "3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
+  "origin_ref": "origin/desarrollo",
+  "purpose": "Invariante del replay a main. La pata main no puede ser una fusion de develop: main esta 859 commits detras y conserva fusiones productivas propias (liquidacion, retiro con pg_advisory_xact_lock, motor de tarifas). El replay lleva el paquete de latencia hunkeando sobre el blob de main, y este spec fija que nada mas se movio.",
+  "origin_waivers_para": [
+    "apps/api/src/modules/auth/service.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js"
+  ],
+  "carry": [
+    {
+      "file": "apps/api/src/modules/hr/monitorEvidenceRows.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/src/security/authorizationState.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/test/auth-me-single-statement.test.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/test/auth-session-hardening.test.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/test/authorization-status-codes.test.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/test/hr-evidence-backfill-tool.test.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/test/hr-list-truncation.test.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/test/hr-monitor-evidence-columns.test.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/test/hr-route-assignment-lock.test.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/test/hr-monitor-refresh.test.mjs",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/PERFORMANCE_ANTI_PATTERNS.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/project/talento-humano-implementacion-seguimiento.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/candidato-develop.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/candidato-main.txt",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-production.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-qa.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/invariantes-replay-main.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-auth-session.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-cierre.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-harness.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-retiro-cuentas.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-candidato-develop.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-production.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-qa.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/suite-plataforma-candidato.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/suites-candidato-main.txt",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795543145867.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527496487.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "scripts/certifications/hr-monitor-byte-budget.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "scripts/hr-evidence-backfill-storage.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+      "from_ref": "origin/develop"
+    }
+  ],
+  "rutas_del_tip_sin_invariante_carry": {
+    "rutas": [
+      "docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json",
+      "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-main.json",
+      "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json",
+      "docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json",
+      "docs/qa/evidence/auth-session-path-20261124/veredicto-main.md"
+    ],
+    "motivo": "El spec y el reporte del propio instrumento no pueden incluirse a si mismos en el carry: el blob del spec se congela antes de que exista el reporte, y declararlo con un reporte viejo daria un verde que nadie midio. Los dos manifiestos y el veredicto llegan en el commit de documentacion que se escribe con estas medidas. Las cinco rutas si se verifican blob contra blob en el porton de alcance contra origin/desarrollo, que es el instrumento que las certifica."
+  },
+  "delete": [
+    "apps/api/src/modules/hr/face-consent.js",
+    "apps/api/src/modules/hr/face-identity.js",
+    "apps/api/src/modules/hr/personal-webauthn.js",
+    "apps/api/src/modules/hr/shared-device-identity.js",
+    "apps/api/test/auth-webauthn-login.test.js",
+    "apps/api/test/hr-face-identity.test.js",
+    "apps/api/test/hr-personal-webauthn.test.js",
+    "apps/api/test/hr-shared-device-identity.test.js",
+    "apps/api/test/prisma-deferred-tenant-context.test.js",
+    "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql",
+    "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql",
+    "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql",
+    "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
+    "scripts/security/recovery-readiness.js",
+    "scripts/security/auth-session-sql-guard.js",
+    "scripts/security/auth-email-collision-census.js",
+    ".qoder/skills/apexos-brief/SKILL.md",
+    "agents/CHANGELOG.md",
+    "agents/registry.json",
+    "agents/apexos-backend/SKILL.md",
+    "agents/apexos-performance/SKILL.md",
+    "agents/apexos-qa/SKILL.md",
+    "agents/equipo-apexos/SKILL.md"
+  ],
+  "gobernanza_sin_toque": [
+    {
+      "file": ".qoder/skills/apexos-backend/SKILL.md",
+      "blob_esperado_en_main": "e9bb81991028d66215ccfb6c1460e18c6d3c7a8f",
+      "viaja_en_este_candidato": false
+    },
+    {
+      "file": ".qoder/skills/apexos-db-nube/SKILL.md",
+      "blob_esperado_en_main": "210684819891cf010a0c28628cdc6d7f79fd3d14",
+      "viaja_en_este_candidato": false
+    },
+    {
+      "file": ".qoder/skills/apexos-frontend/SKILL.md",
+      "blob_esperado_en_main": "1bcf43b208ae6658cca2a775cbd1a154c536e29a",
+      "viaja_en_este_candidato": false
+    },
+    {
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md",
+      "blob_esperado_en_main": "150e7446dabf549beb90953f09aceeba614c86bf",
+      "viaja_en_este_candidato": false
+    },
+    {
+      "file": ".qoder/skills/apexos-performance/SKILL.md",
+      "blob_esperado_en_main": "a0fab862a2b8048b9678ee1c52e361fbf1ba2dea",
+      "viaja_en_este_candidato": false
+    },
+    {
+      "file": ".qoder/skills/apexos-qa/SKILL.md",
+      "blob_esperado_en_main": "2dd866a5c7fc0ead9bf3a1bbc7abe86a67960a95",
+      "viaja_en_este_candidato": false
+    },
+    {
+      "file": ".qoder/skills/apexos-seguridad/SKILL.md",
+      "blob_esperado_en_main": "7e47a25a31309d6b836697ea8521bb435bd42729",
+      "viaja_en_este_candidato": false
+    },
+    {
+      "file": ".qoder/skills/equipo-apexos/SKILL.md",
+      "blob_esperado_en_main": "da4f466cb1bb508087b021fd5bf470faf63d0cfe",
+      "viaja_en_este_candidato": false
+    },
+    {
+      "file": "scripts/certifications/hr-monitor-evidence-demand-qa.js",
+      "blob_esperado_en_main": "726ee951adf27c69a58c5bbcd489014802f41373",
+      "viaja_en_este_candidato": false
+    }
+  ],
+  "edit": [],
+  "replay_declarado": [
+    {
+      "file": "apps/api/src/modules/auth/service.js",
+      "transformacion": "blob de origin/main (3baf8e4a) + unicamente los hunks de 41134bf4 y f3e85f1a (y de 31a36e77, ya presente en main). Ninguna linea escrita a mano.",
+      "invariante_medido": "../evidence/auth-session-path-20261124/invariantes-replay-main.json",
+      "criterio": "toda linea anadida existe textualmente en origin/desarrollo (0 huerfanas) y los cuerpos de las funciones tocadas son byte a byte los de la rama certificada"
+    },
+    {
+      "file": "apps/api/src/modules/hr/routes.js",
+      "transformacion": "blob de origin/main (3baf8e4a) + unicamente los hunks de 41134bf4 y f3e85f1a (y de 31a36e77, ya presente en main). Ninguna linea escrita a mano.",
+      "invariante_medido": "../evidence/auth-session-path-20261124/invariantes-replay-main.json",
+      "criterio": "toda linea anadida existe textualmente en origin/desarrollo (0 huerfanas) y los cuerpos de las funciones tocadas son byte a byte los de la rama certificada"
+    },
+    {
+      "file": "apps/api/src/modules/hr/service.js",
+      "transformacion": "blob de origin/main (3baf8e4a) + unicamente los hunks de 41134bf4 y f3e85f1a (y de 31a36e77, ya presente en main). Ninguna linea escrita a mano.",
+      "invariante_medido": "../evidence/auth-session-path-20261124/invariantes-replay-main.json",
+      "criterio": "toda linea anadida existe textualmente en origin/desarrollo (0 huerfanas) y los cuerpos de las funciones tocadas son byte a byte los de la rama certificada"
+    }
+  ],
+  "exclusiones_declaradas": [
+    "los 20 archivos de .qoder/skills/** y los 26 de agents/** de este paquete: la canonia de agentes vive en desarrollo y develop, y main recibe solo producto y evidencia",
+    "scripts/security/auth-session-sql-guard.js y auth-email-collision-census.js: requieren ./recovery-readiness.js, que nunca llego a main; llevados solos dejarian el arbol promovido con un instrumento que revienta al ejecutarse",
+    "scripts/certifications/hr-monitor-evidence-demand-qa.js: main conserva 726ee951; la reparacion (6208f982) se versiona en origen y no viaja, y la evidencia 12/12 que produzco queda en el arbol con el comando de remedicion",
+    "apps/api/test/auth-webauthn-login.test.js: 171 lineas ajenas al paquete (biometria/webauthn) que no se promocionan",
+    "la regla de selfie en las cuatro marcaciones web no viaja con este paquete: mobile-identity.js queda en su blob de main (756b0572) y no entra en expected_changes"
+  ],
+  "verification": {
+    "command": "npm run qa:promotion:migration -- --spec docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json --against index --output docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-main.json",
+    "evidence": "../evidence/auth-session-path-20261124/replay-arbol-candidato-main.json"
+  }
+}
