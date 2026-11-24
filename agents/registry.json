@@ -57,9 +57,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.30.0",
+      "version": "2.31.0",
       "updated_at": "2026-11-24",
-      "sha256": "42f7a33d75eabdf5931bcbd10c35abcad286bd3e55209e9aacaabbb76fe1d977",
+      "sha256": "92ee0f51b9faa8cb3821336b46844cf9b53b14f2a36b8729677ac87ef7c867e9",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.97.0",
+      "version": "2.98.0",
       "updated_at": "2026-11-24",
-      "sha256": "099ed74a6c5c25ba3743122c38200e66fa4c947ed3c9aeba4a914856ef7a0879",
+      "sha256": "c63c867e0244df5d25c8cfc2c6dfe327282b46324c518bba777901c12d9f1c57",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -339,9 +339,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.118.0",
-      "updated_at": "2026-11-25",
-      "sha256": "c00407e359d7a2b72541fbed56b762e2ce065acfad2432c4ae278dd4d3071a0b",
+      "version": "2.119.0",
+      "updated_at": "2026-11-24",
+      "sha256": "01316305802423b43df9404e588c6f803fa79ef71293cdbc8a67f2d1fd278bcc",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -440,9 +440,9 @@
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.42.0",
+      "version": "2.43.0",
       "updated_at": "2026-11-24",
-      "sha256": "c064347f2988f8cb0dc1444ca8356daffd0ce6c15202ef811aa08f135888934d",
+      "sha256": "729a51e472120e1634f393dfb5975bc71dac87de9778bed1e1a565411cf4aa54",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -491,9 +491,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.65.0",
+      "version": "2.66.0",
       "updated_at": "2026-11-24",
-      "sha256": "82c039228b2d00be5bc27290e3862de90562f3f8a6e1ba7e13c8a1c506abc018",
+      "sha256": "f06cca7ab495dfd72ce6a71d07a5b8c83243c15ca1b2f1de21c356f430c5ef39",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
