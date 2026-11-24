@@ -1,0 +1,312 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "cierre-despues-produccion-develop-20261124",
+  "creado": "2026-11-25T02:10:00-05:00",
+  "autorizado": "2026-11-24T20:40:00-05:00",
+  "target_branch": "develop",
+  "source_branch": "desarrollo",
+  "promotion_branch": "codex/qa-monitor-latencia-brief-develop-20261124",
+  "base_commits": {
+    "develop": "406c517e6609b2795c885ceacaed46440f7ed80d",
+    "main": "cf2adc59d44693f368418fb20cb66a06a388daa3"
+  },
+  "base_commit": "406c517e6609b2795c885ceacaed46440f7ed80d",
+  "target_head": "406c517e6609b2795c885ceacaed46440f7ed80d",
+  "certified_commit": "406c517e6609b2795c885ceacaed46440f7ed80d",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "6ce8bff18422ee86dbc55ddc22fd691962fdf3b6"
+  },
+  "naturaleza": "Capa de documentacion y canon del equipo: cierre contable del DESPUES medido en Produccion. Cero rutas de producto, cero rutas de instrumentacion, cero migraciones. El paquete funcional ya esta publicado en develop (406c517e6609) y en main (cf2adc59d446); faltaba la evidencia que lo cuenta y el arbol de agentes que registra lo que esa pata aprendio.",
+  "change_intent": {
+    "modules": [
+      "documentacion",
+      "qa-evidencia"
+    ],
+    "summary": "Subir a develop la contabilidad de la intervencion monitor-latencia-sesion-20261124: el brief con las secciones 16 y 17, el veredicto de la pata main con el DESPUES medido sobre la punta servida, las tres lecturas de Produccion (despues-produccion.json, despues-auth-produccion.json, sondeo-produccion.txt), los dos reportes de compuertas de develop, el diff del brief, los manifiestos y el spec de replay; mas el canon del equipo (16 rutas de agents/ y .qoder/skills/) que la pata main haga avanzar. Inventario exacto: 42 rutas, 26 bajo docs/ y 16 de gobernanza, ninguna bajo apps/, scripts/, packages/ o infra/."
+  },
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-auditor-marcaciones/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-auditor-nomina/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-brief/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/CHANGELOG.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/README.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/TEMPLATE_SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-auditor-marcaciones/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-auditor-nomina/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/apexos-brief/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/registry.json"
+    },
+    {
+      "status": "M",
+      "file": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/candidato-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/despues-auth-produccion.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/despues-produccion.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/invariantes-replay-main.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/puertas-develop-forma-roja.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/puertas-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-auth-session.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-cierre.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-harness.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/qa-retiro-cuentas.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-main.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-cierre-docs-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-cierre-docs-main.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-tip-congelado-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/sondeo-produccion.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/suites-candidato-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/veredicto-main.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/cierre-despues-produccion-develop-20261124-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/cierre-despues-produccion-main-20261124-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json"
+    }
+  ],
+  "allowed_paths": [
+    ".qoder/skills/apexos-auditor-marcaciones/SKILL.md",
+    ".qoder/skills/apexos-auditor-nomina/SKILL.md",
+    ".qoder/skills/apexos-brief/SKILL.md",
+    ".qoder/skills/apexos-git-guardian/SKILL.md",
+    ".qoder/skills/apexos-qa/SKILL.md",
+    ".qoder/skills/equipo-apexos/SKILL.md",
+    "agents/CHANGELOG.md",
+    "agents/README.md",
+    "agents/TEMPLATE_SKILL.md",
+    "agents/apexos-auditor-marcaciones/SKILL.md",
+    "agents/apexos-auditor-nomina/SKILL.md",
+    "agents/apexos-brief/SKILL.md",
+    "agents/apexos-git-guardian/SKILL.md",
+    "agents/apexos-qa/SKILL.md",
+    "agents/equipo-apexos/SKILL.md",
+    "agents/registry.json",
+    "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
+    "docs/qa/evidence/auth-session-path-20261124/candidato-main.txt",
+    "docs/qa/evidence/auth-session-path-20261124/despues-auth-produccion.json",
+    "docs/qa/evidence/auth-session-path-20261124/despues-produccion.json",
+    "docs/qa/evidence/auth-session-path-20261124/invariantes-replay-main.json",
+    "docs/qa/evidence/auth-session-path-20261124/puertas-develop-forma-roja.json",
+    "docs/qa/evidence/auth-session-path-20261124/puertas-develop.json",
+    "docs/qa/evidence/auth-session-path-20261124/qa-auth-session.json",
+    "docs/qa/evidence/auth-session-path-20261124/qa-cierre.md",
+    "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json",
+    "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-harness.json",
+    "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget.json",
+    "docs/qa/evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json",
+    "docs/qa/evidence/auth-session-path-20261124/qa-retiro-cuentas.json",
+    "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-main.json",
+    "docs/qa/evidence/auth-session-path-20261124/replay-cierre-docs-develop.json",
+    "docs/qa/evidence/auth-session-path-20261124/replay-cierre-docs-main.json",
+    "docs/qa/evidence/auth-session-path-20261124/replay-tip-congelado-develop.json",
+    "docs/qa/evidence/auth-session-path-20261124/sondeo-produccion.txt",
+    "docs/qa/evidence/auth-session-path-20261124/suites-candidato-main.txt",
+    "docs/qa/evidence/auth-session-path-20261124/veredicto-main.md",
+    "docs/qa/manifests/cierre-despues-produccion-develop-20261124-scope.json",
+    "docs/qa/manifests/cierre-despues-produccion-main-20261124-scope.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json",
+    "docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json"
+  ],
+  "allowed_deletions": [],
+  "origin_waivers": [],
+  "protected_capabilities": [
+    {
+      "name": "Cero rutas de producto, esquema o instrumentacion en el diff",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-develop.json",
+        "../evidence/auth-session-path-20261124/candidato-main.txt"
+      ],
+      "notes": "git diff --name-only 406c517e6609..punta filtrado por ^(apps|scripts|packages|infra)/ devolvio 0 rutas. Las 42 rutas del inventario viven bajo docs/ (26) y bajo el canon del equipo agents/ y .qoder/skills/ (16)."
+    },
+    {
+      "name": "Las invariantes del replay siguen validas en el arbol del cierre",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-develop.json",
+        "../evidence/auth-session-path-20261124/replay-arbol-candidato-main.json"
+      ],
+      "notes": "promotion-migration-check con --against index sobre el indice ya armado del candidato, usando el spec propio de la pata develop (monitor-latencia-sesion-develop-20261124.replay.json): 51 validas de 51. Antes de este cierre la corrida devolvia 41/51 y los 10 rotos eran exactamente el arbol de gobernanza que el spec exige carry byte a byte contra origin/desarrollo."
+    },
+    {
+      "name": "El DESPUES de Produccion queda versionado y anclado al sha servido",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/despues-produccion.json",
+        "../evidence/auth-session-path-20261124/despues-auth-produccion.json",
+        "../evidence/auth-session-path-20261124/sondeo-produccion.txt"
+      ],
+      "notes": "Presupuesto de reloj sobre cf2adc59d446: contadores del dia fijado bajaron de p95 3.500 ms a 1.851 ms con 0,1 KB (antes 6,5 KB); cinco rechazos de sesion en 401; revocation medida sin exigencia (Fase 2). El rojo que queda es el mapa del dia, p95 3.405 ms contra presupuesto de 3.000 ms, y ya estaba rojo en el ANTES con 3.246 ms: no es ruta de este paquete."
+    },
+    {
+      "name": "Ningun manifiesto de promocion existente se reescribe",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/veredicto-main.md"
+      ],
+      "notes": "El inventario solo declara rutas nuevas (A) mas un M: el brief. Los manifiestos functional-pre-QA y de aprobacion de la pata quedan byte a byte como se publicaron; el veredicto gana la seccion de cierre contable y corrige la promesa de su propio reporte."
+    },
+    {
+      "name": "El registro de agentes que sube concuerda con los SKILL.md que suben con el",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-develop.json"
+      ],
+      "notes": "agents/registry.json de origin/desarrollo declara 11 agentes y 11 documentos. Llevar solo los cuatro SKILL.md que avanzaron en esta intervencion habria dejado en develop un registro que cita dos auditores (apexos-auditor-marcaciones, apexos-auditor-nomina), un README y una plantilla que no existen en su arbol. El canon se sube completo: 16 rutas, todas con el blob de origin/desarrollo."
+    }
+  ],
+  "compuertas_exigidas": [
+    "npm run qa:promotion:scope -- docs/qa/manifests/cierre-despues-produccion-develop-20261124-scope.json CODIGO origin/develop",
+    "git diff --name-only origin/develop..CODIGO | grep -cE '^(apps|scripts|packages|infra)/' debe dar 0",
+    "npm run qa:promotion:migration -- --spec=docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json --against=index --output=docs/qa/evidence/auth-session-path-20261124/replay-cierre-docs-develop.json  (51/51)",
+    "git rev-parse CODIGO:<ruta> == git rev-parse origin/desarrollo:<ruta> para las 26 rutas del inventario"
+  ],
+  "deriva_declarada": [
+    "El ciclo pre-QA de cinco chequeos (functional, error, support_scripts, regression, platform_regression) no se corre: el diff no contiene una sola ruta ejecutable, y certificaria una ejecucion que este commit no puede provocar. Precedentes del mismo dia: 9d13cae0, b08699e3 y 406c517e.",
+    "La aprobacion funcional que respalda este push es la de la pata que ya esta publicada en develop: el paquete monitor-latencia-sesion-20261124 paso por la certification local y la corrida de QA sobre 3303a95532a3. Este manifiesto no promociona codigo: promociona el relato medido de ese codigo.",
+    "Las 16 rutas de gobernanza incluyen dos agentes (apexos-auditor-marcaciones y apexos-auditor-nomina), el README del equipo y su plantilla que no nacieron en esta intervencion: venian atrasados en develop desde la auditoria de marcaciones y nomina del 30-10. Suben aqui porque agents/registry.json no se puede publicar partida: el registro y sus documentos son una sola unidad verificable por npm run agents:check."
+  ],
+  "verificado_local": "Inventario medido ruta por ruta contra 406c517e6609: 42 rutas (26 docs + 16 gobernanza). Filtro ^(apps|scripts|packages|infra)/ sobre el diff neto: 0. Blobs identicos a origin/desarrollo. npm run agents:check: 11 agentes y 11 documentos verificados.",
+  "approval": {
+    "status": "approved",
+    "approved_by": "dueno del proyecto",
+    "approved_at": "2026-11-24T20:40:00-05:00",
+    "instruction": "procede con la promocion controlada de esta intervencion alineado las 3 ramas al finalizar brindame un resumen en lenguaje natural de lo que se hizo sin dejar pendientes abiertos",
+    "authorization_flags": {
+      "direct_push_to_develop": true,
+      "auxiliary_branch_promotion": true
+    }
+  }
+}
