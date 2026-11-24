@@ -1,29 +1,42 @@
 {
   "scope_schema_version": 2,
+  "transport": "replay_puntual",
   "change_id": "cero-rechazos-foto-web-bateria-20261124",
   "creado": "2026-11-24T16:35:00-05:00",
+  "actualizado": "2026-11-24T17:20:00-05:00",
   "autorizado": "dueño del proyecto (Edwin), 2026-11-24: «procede a implementar y certificar 0 rechazos y aplica tus sugerencias para evitar mas inconvenientes con mi autorizacion y alinea todos los ambientes». Preguntado por el alcance respondió «Las tres ramas, completas» y por los ambientes «QA y Produccion». La firma de la pata funcional de QA la puso él mismo con la orden de hoy.",
+  "autorizacion_del_candado": "El mismo día, cuando el portón rechazó el transporte puntual, se le presentaron cuatro salidas medidas y eligió «Enderezar el candado»: el modo `transport: replay_puntual` publicado en `origin/desarrollo` con su suite de 13 controles (commit `ebe5dabe`).",
   "target_branch": "main",
   "source_branch": "develop",
   "promotion_branch": "codex/qa-cero-rechazos-foto-web-main-20261124",
   "base_commits": {
     "main": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
     "develop": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
-    "desarrollo": "25f8b32e"
+    "desarrollo": "ebe5dabe"
   },
   "base_commit": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
   "target_head": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
-  "certified_commit": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+  "certified_commit": "25f8b32e616a2fdec53970368fbaa03131f67dfc",
+  "replay_baseline": "180a2b21d21a152a9937c099c6e46500a3774908",
+  "binario_certificado_en_qa": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
   "candidate_source": {
     "branch": "develop",
     "commit": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
-    "blobs_de_origen": "origin/desarrollo @ 25f8b32e (los nueve archivos llevados son byte a byte los mismos que ya corrieron y fueron certificados en QA)",
-    "nota": "main está a cientos de commits de develop, así que el transporte no es un merge: es replay puntual de doce rutas sobre origin/main. Las tres rutas contables que nacen en el candidato (este manifiesto, el de aprobación y porton-main.json) se espejan en origin/desarrollo y se empujan antes de correr el gate, de modo que el portón verifique cada blob contra la punta viva de desarrollo y no haya que declarar ningún waiver."
+    "blobs_de_origen": "origin/desarrollo (la punta que certificó el contenido, `25f8b32e`, más la contabilidad posterior). Los trece archivos que suben son byte a byte los mismos que ya corrieron y fueron certificados en QA.",
+    "por_que_replay": "Main está 866 commits detrás de develop y 198 delante. Una mezcla de rama completa traería 1.185 archivos sin certificar a producción, que es exactamente lo que la disciplina de alcance prohíbe. El transporte es puntual y se declara con `transport: replay_puntual`.",
+    "condiciones_del_modo": [
+      "certified_commit 25f8b32e vive en origin/desarrollo (verificado con merge-base --is-ancestor)",
+      "las 13 rutas del diff tienen el mismo blob en el candidato que en origin/desarrollo (13/13, medido)",
+      "origin_waivers vacío por exigencia del modo: sin ascendencia no hay nada perdonable",
+      "replay_baseline 180a2b21 es el git merge-base real entre origin/main y el commit certificado"
+    ],
+    "medicion_del_delta_por_archivo": "main no tocó mobile-identity.js ni su suite desde 8208d941 (su blob f9e8ea27 / 26d814c1 es idéntico al de ese ancestro) y el delta del candidato contra ese ancestro es 20/6 en el servidor y 71/7 en la suite. Como el blob promocionado es el mismo de origin/desarrollo, ninguna línea puede haber nacido en el candidato.",
+    "nota": "Las cuatro rutas contables que nacen en el candidato (porton-main.json, porton-gate-replay.json y los dos manifiestos) se espejan en origin/desarrollo y se empujan antes de correr el gate, de modo que el portón verifique cada blob contra la punta viva de desarrollo."
   },
-  "naturaleza": "Portón funcional a producción: el cambio que deja de rechazar la foto de validación grande en la marcación web, degradando solo cuando el tamaño es la única causa del veredicto. Dos rutas ejecutables de API, un instrumento de certificación, un brief y seis reportes de evidencia. Ninguna ruta de esquema, ninguna ruta de apps/web, ninguna de infraestructura.",
+  "naturaleza": "Portón funcional a producción: el cambio que deja de rechazar la foto de validación grande en la marcación web, degradando solo cuando el tamaño es la única causa del veredicto. Dos rutas ejecutables de API, un instrumento de certificación, un brief y ocho reportes y manifiestos de evidencia y gobernanza. Ninguna ruta de esquema, ninguna de apps/web, ninguna de infraestructura.",
   "change_intent": {
     "modules": ["talento-humano", "certificaciones-qa", "documentacion-qa"],
-    "summary": "Que la JPEG real de cámara de 3 MB (3.197.152 bytes) y la PNG de 2,4 MB (2.497.157 bytes) dejen de costarle la hora al operario que marca desde el navegador, sin ensanchar la clase aceptada: video, PDF, SVG, texto y alfabeto inválido siguen rechazándose con su código y la fila degradada no guarda los bytes dentro del jsonb. Inventario exacto: doce rutas. Cero rutas bajo packages/, infra/ o apps/web."
+    "summary": "Que la JPEG real de cámara de 3 MB (3.197.152 bytes) y la PNG de 2,4 MB (2.497.157 bytes) dejen de costarle la hora al operario que marca desde el navegador, sin ensanchar la clase aceptada: video, PDF, SVG, texto y alfabeto inválido siguen rechazándose con su código y la fila degradada no guarda los bytes dentro del jsonb. Inventario exacto: trece rutas. Cero rutas bajo packages/, infra/ o apps/web."
   },
   "expected_changes": [
     { "status": "M", "file": "apps/api/src/modules/hr/mobile-identity.js" },
@@ -34,6 +47,7 @@
     { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/bateria-qa-despues.json" },
     { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/porton-develop.json" },
     { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/porton-main.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/porton-gate-replay.json" },
     { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/migraciones-candidato-develop.txt" },
     { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/suites-plataforma-candidato.json" },
     { "status": "A", "file": "docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json" },
@@ -48,6 +62,7 @@
     "docs/qa/evidence/web-photo-battery-20261124/bateria-qa-despues.json",
     "docs/qa/evidence/web-photo-battery-20261124/porton-develop.json",
     "docs/qa/evidence/web-photo-battery-20261124/porton-main.json",
+    "docs/qa/evidence/web-photo-battery-20261124/porton-gate-replay.json",
     "docs/qa/evidence/web-photo-battery-20261124/migraciones-candidato-develop.txt",
     "docs/qa/evidence/web-photo-battery-20261124/suites-plataforma-candidato.json",
     "docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json",
@@ -82,41 +97,45 @@
       "notes": "Cero rutas bajo apps/api/prisma/migrations y cero rutas de schema.prisma en el inventario. No hay nada que aplicar en la nube y por lo tanto no se pide ninguna migración remota."
     },
     {
-      "name": "El replay no revierte trabajo de main",
+      "name": "El replay no revierte trabajo de main ni trae contenido nacido fuera de desarrollo",
       "status": "passed",
       "evidence": [
-        "../evidence/web-photo-battery-20261124/porton-main.json"
+        "../evidence/web-photo-battery-20261124/porton-main.json",
+        "../evidence/web-photo-battery-20261124/porton-gate-replay.json"
       ],
-      "notes": "Medida de la regla 111 de apexos-brief 2.98.0: el blob de origin/main en mobile-identity.js es idéntico al del antepasado 8208d941 (f9e8ea27) y el de la suite también (26d814c1), así que main no tiene ni una línea propia que se pueda perder. Además 20 líneas añadidas, 0 inexistentes en origin/desarrollo, y 84/84 pruebas del frente verdes sobre el árbol del candidato."
+      "notes": "Doble medida. Por contenido: las 13 rutas del diff son byte a byte las mismas que existen en origin/desarrollo (13/13) y el modo replay no admite waivers, así que nada puede haber nacido en el candidato. Por destino: el blob de mobile-identity.js y de la suite en origin/main es idéntico al de 8208d941, es decir main no las tocó; el delta del candidato contra ese ancestro es exactamente 20/6 y 71/7. La decisión del dueño y el contrato del modo están en porton-gate-replay.json, con su suite 13/13."
     }
   ],
   "compuertas_exigidas": [
     "node --test sobre el árbol del candidato (seis suites del frente): 84 pruebas, 84 pasan, con NODE_PATH al node_modules del árbol principal y sin copiar node_modules dentro del worktree",
+    "node --test scripts/test/validate-promotion-scope.test.js: 13/13, con los controles que ponen rojo el portón cuando el blob no es el de origen, el certificado no está en desarrollo, se declaran waivers o la base del delta está inventada",
     "npm run qa:promotion:scope -- docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json <punta-candidato> origin/main",
     "npm run qa:approval:evidence -- docs/qa/manifests/cero-rechazos-foto-web-main-20261124-approval.json",
     "node scripts/git-governance-guard.js promote develop-to-main con su bandera de autorización, desde el árbol limpio del candidato",
     "git tag de respaldo sobre origin/main antes de empujar y git push --dry-run con el sha de cuarenta caracteres",
-    "verificación de Producción por lectura después del despliegue: /health.commit, ausencia del delta en el binario servido y censo de rechazos; la batería no se corre en Producción porque escribe"
+    "verificación de Producción por lectura después del despliegue: /health.commit, presencia del delta en el archivo servido y censo de rechazos; la batería hostil no se corre en Producción porque escribe"
   ],
   "deriva_declarada": [
     "El canon del equipo no viaja a main: origin/main no trae agents/** y sus .qoder/skills siguen su propia contabilidad, como en los portones previos de esta rama.",
+    "El candado enderezado (scripts/validate-promotion-scope.js con el modo replay) no viaja en este inventario: vive en origin/desarrollo y su promoción a develop es un frente propio. Main conserva su copia vieja del script, que no conoce el modo; las compuertas de este portón corren desde el árbol de desarrollo, que es donde el contenido se certificó.",
     "apps/web no viaja: el reenvío sin foto del navegador (retry_without_photo / detachEvidence / hrOfflineMarking.ts) no existe en main ni en develop. Es frente propio de apexos-frontend con su brief y su certificación en navegador (brief §10).",
     "No se relaja la escalera de marcaciones ni la ventana de diferidas de 24 horas: el dictamen del auditor lo rechaza (brief §6).",
     "La bandera HR_EVIDENCE_INLINE_MAX_BYTES sigue sin declararse en ningún ambiente; pendiente de infraestructura con dueño (apexos-performance).",
-    "El sha final que se empuja a main, la salida verbatim del gate de alcance y la lectura de /health post-despliegue se consignan en el portón de contabilidad siguiente de origin/desarrollo: describen una punta que no existe dentro del commit que la describe."
+    "El sha final que se empuja a main, la salida verbatim de las compuertas y la lectura de /health post-despliegue se consignan en el portón de contabilidad siguiente de origin/desarrollo: describen una punta que no existe dentro del commit que la describe."
   ],
   "verificado_local": {
-    "fecha_hora_local": "2026-11-24T16:35:00-05:00",
+    "fecha_hora_local": "2026-11-24T17:20:00-05:00",
     "rama_trabajo": "desarrollo",
     "puntas": {
       "origin/main": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
       "origin/develop": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
-      "origin/desarrollo": "25f8b32e"
+      "origin/desarrollo": "ebe5dabe"
     },
-    "rutas_inventario": 12,
+    "rutas_inventario": 13,
     "rutas_producto_en_el_diff": 3,
     "suites_sobre_el_arbol_candidato": "84/84 (hr-evidence-resilience, hr-single-selfie-gate, hr-mobile-identity, hr-punch-mobile-evidence, hr-evidence-storage-gate, security-evidence-upload)",
-    "paridad_por_blob": "9/9 rutas llevadas idénticas a origin/desarrollo, 0 distintas, 0 waivers"
+    "paridad_por_blob": "13/13 rutas idénticas a origin/desarrollo, 0 distintas, 0 waivers",
+    "delta_por_archivo_contra_el_ancestro": "20/6 en mobile-identity.js y 71/7 en la suite, con main intacta en esas rutas desde 8208d941"
   },
   "approval": {
     "status": "approved",
@@ -126,6 +145,6 @@
     "authorization_flags": {
       "direct_push_to_main": true
     },
-    "nota": "La bandera de push a main cubre exclusivamente las doce rutas de este inventario. No autoriza force push, rebase, migraciones remotas, infraestructura, borrado de ramas ajenas ni cambios de configuración en Railway/Supabase."
+    "nota": "La bandera de push a main cubre exclusivamente las trece rutas de este inventario. No autoriza force push, rebase, mezcla de rama completa, migraciones remotas, infraestructura, borrado de ramas ajenas ni cambios de configuración en Railway/Supabase."
   }
 }

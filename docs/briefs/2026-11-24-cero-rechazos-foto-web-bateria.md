@@ -90,3 +90,26 @@ El DESPUÉS (`docs/qa/evidence/web-photo-battery-20261124/bateria-qa-despues.jso
 El navegador desplegado en `develop` y `main` **no hace el reenvío sin foto**. Medido, no deducido: `retry_without_photo` y `detachEvidence` no existen en ninguna ruta de `apps/web` de `origin/develop` ni de `origin/main`, y sí existen en `origin/desarrollo`. La brecha no es de dos líneas: `apps/web/lib/hrOfflineMarking.ts` (502 líneas) no existe en esas ramas y `marcacion/page.tsx` difiere en 561 líneas añadidas / 141 quitadas.
 
 Consecuencia honesta: el fix de servidor quita de en medio la causa real del campo (la foto grande), y por eso la hora ya no se pierde por tamaño en ninguna rama en cuanto suba. Pero si el rechazo lo provoca una clase o un tipo prohibido, el cliente desplegado todavía no tiene cómo recuperarla. Eso viaja como frentes separados —`apexos-frontend` con su propio brief, su certificación en navegador y su manifiesto de 2 rutas de `apps/web`—, no como un añadido a este portón, porque ampliar el alcance con el argumento de "aprovechar el viaje" es exactamente el patrón que rompió la plataforma.
+
+## 11. El candado nuevo bloqueó el viaje a main y el dueño decidió enderezarlo
+
+Al correr `npm run qa:promotion:scope` contra `origin/main`, el portón endurecido hoy mismo respondió `ALCANCE DE PROMOCION INVALIDO: ni el candidato ni el destino contienen el commit funcional certificado`. No es un defecto del cambio: es que esa prueba está escrita para el caso en que las ramas van parejas. Main está **866 commits** detrás de develop (y develop **198** detrás de main); el diff bruto entre las dos es de **1.185 archivos**. El fix se certificó en el binario de develop `c0fbb4b9`, que no es ancestro de un candidato reconstruido sobre main, así que ninguna variante honesta de `certified_commit` satisface la ascendencia.
+
+Las cuatro salidas se le presentaron al dueño con números: enderezar el candado (modo replay con sus condiciones y sus pruebas de mutación), mezcla completa de ramas (1.185 rutas sin certificar a producción), mezcla vacía `-s ours` (pasa el candado sin tocarlo, pero le dice a git que los 866 commits de develop ya están en main y la próxima promoción real se salta trabajo — la trampa documentada en `next-phase-merge-trap`), o parar y dejar producción rechazando fotos grandes. Eligió la primera.
+
+## 12. Contrato del modo `transport: replay_puntual`
+
+No afloja nada: cambia la prueba de ascendencia por la prueba de contenido, que es la que de verdad dice que sube lo certificado. Exige las cuatro cosas a la vez, y cada una tiene su prueba que puede fallar (`scripts/test/validate-promotion-scope.test.js`, 13 controles):
+
+1. El `certified_commit` declarado **vive en `origin/desarrollo`** (aquí `25f8b32e`). Un commit inventado o nacido en otra rama se rechaza.
+2. **Cada ruta del diff es, blob por blob, la que esa ruta tiene en `origin/desarrollo`.** Medido en este portón: **12/12 idénticos**, incluidas `apps/api/src/modules/hr/mobile-identity.js` (`863bd6a6`) y su suite (`9a3198ea`).
+3. **Cero `origin_waivers`.** Sin ascendencia no hay nada perdonable: una excepción declarada en modo replay invalida el portón.
+4. El `replay_baseline` declarado es el punto real de divergencia entre destino y commit certificado (`git merge-base origin/main 25f8b32e` = `180a2b21`). Inventárselo invalida.
+
+La medida complementaria, la que dice que el replay no arrastra trabajo propio de main: el blob de esas dos rutas en `origin/main` es idéntico al que tienen en `8208d941` (es decir, main no las tocó desde ahí) y el delta del candidato contra ese ancestro es **exactamente 20/6 en el servidor y 71/7 en la suite**. Como el blob del candidato es idéntico al de `origin/desarrollo`, ninguna línea promocionada puede ser huérfana: ya existía donde se certificó.
+
+## 13. Normas de migración que este corte deja vigentes
+
+- **Un transporte puntual se declara, no se disimula.** Quien lleve archivos a una rama atrasada escribe `transport: replay_puntual`, `certified_commit` de la línea de desarrollo y `replay_baseline` resuelto por comando. Nadie pone el sha del propio candidato en `certified_commit` para que la ascendencia se cumpla sola: eso sería un verde que no puede fallar.
+- **La mezcla vacía está prohibida como vía de promoción.** `git merge -s ours` con el árbol del destino hace ancestro al commit certificado sin llevar su contenido; rompe la contabilidad de la próxima mezcla real y repone el accidente del 23-11 con otra cara.
+- **Cambiar un candado bloqueante es una intervención con dueño, control de mutación y evidencia**, no un ajuste de forma para pasar un portón. Si el candado rechaza un transporte legítimo, se trae la decisión al dueño con las opciones medidas; si el candado rechaza un transporte ilegítimo, se obedece.
