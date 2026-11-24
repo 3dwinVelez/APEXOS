@@ -1,0 +1,423 @@
+{
+  "instrumento": "promotion-migration-check",
+  "ejecutado_en": "2026-11-24T17:38:34.628Z",
+  "cwd": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-workflow\\develop-cand-1795537505",
+  "spec": "docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json",
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "contra": "commit 3303a95532a35603f53f1eced0300f4febb0eab3",
+  "label": "invariantes del replay",
+  "passed": true,
+  "total": 51,
+  "rotos": 0,
+  "results": [
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-backend/SKILL.md",
+      "esperado": "5a68ad152ce7658238232222b0879b99608cc3ac",
+      "actual": "5a68ad152ce7658238232222b0879b99608cc3ac",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-brief/SKILL.md",
+      "esperado": "3567512d5a390863875be158dc47febc87c14f37",
+      "actual": "3567512d5a390863875be158dc47febc87c14f37",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-db-nube/SKILL.md",
+      "esperado": "1510520a035cef715836d93a1b0bd0629cae38ba",
+      "actual": "1510520a035cef715836d93a1b0bd0629cae38ba",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-frontend/SKILL.md",
+      "esperado": "8d40becd74c551affd2ab57c0cbc9d47d06cc980",
+      "actual": "8d40becd74c551affd2ab57c0cbc9d47d06cc980",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md",
+      "esperado": "c7a69c1dc250d2aeb2f95e49ff6025cce95a8093",
+      "actual": "c7a69c1dc250d2aeb2f95e49ff6025cce95a8093",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-performance/SKILL.md",
+      "esperado": "cd87fd9f543804ee24d8cf91f98bc63a3fc41bf4",
+      "actual": "cd87fd9f543804ee24d8cf91f98bc63a3fc41bf4",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-qa/SKILL.md",
+      "esperado": "04cffce2539ae1384ee48fa6d8d8041b5c6fbf09",
+      "actual": "04cffce2539ae1384ee48fa6d8d8041b5c6fbf09",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-seguridad/SKILL.md",
+      "esperado": "1b30beb1f42266b251e6b65ec37d93ee0c89da8f",
+      "actual": "1b30beb1f42266b251e6b65ec37d93ee0c89da8f",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/equipo-apexos/SKILL.md",
+      "esperado": "b2c8b69008cd479dea2984eb17045b99e8425e7b",
+      "actual": "b2c8b69008cd479dea2984eb17045b99e8425e7b",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/CHANGELOG.md",
+      "esperado": "f12a1e0bcb203831ee80232d6f3572c2f527cd4d",
+      "actual": "f12a1e0bcb203831ee80232d6f3572c2f527cd4d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-backend/SKILL.md",
+      "esperado": "5a68ad152ce7658238232222b0879b99608cc3ac",
+      "actual": "5a68ad152ce7658238232222b0879b99608cc3ac",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-brief/SKILL.md",
+      "esperado": "3567512d5a390863875be158dc47febc87c14f37",
+      "actual": "3567512d5a390863875be158dc47febc87c14f37",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-db-nube/SKILL.md",
+      "esperado": "1510520a035cef715836d93a1b0bd0629cae38ba",
+      "actual": "1510520a035cef715836d93a1b0bd0629cae38ba",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-frontend/SKILL.md",
+      "esperado": "8d40becd74c551affd2ab57c0cbc9d47d06cc980",
+      "actual": "8d40becd74c551affd2ab57c0cbc9d47d06cc980",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-git-guardian/SKILL.md",
+      "esperado": "c7a69c1dc250d2aeb2f95e49ff6025cce95a8093",
+      "actual": "c7a69c1dc250d2aeb2f95e49ff6025cce95a8093",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-performance/SKILL.md",
+      "esperado": "cd87fd9f543804ee24d8cf91f98bc63a3fc41bf4",
+      "actual": "cd87fd9f543804ee24d8cf91f98bc63a3fc41bf4",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-qa/SKILL.md",
+      "esperado": "04cffce2539ae1384ee48fa6d8d8041b5c6fbf09",
+      "actual": "04cffce2539ae1384ee48fa6d8d8041b5c6fbf09",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-seguridad/SKILL.md",
+      "esperado": "1b30beb1f42266b251e6b65ec37d93ee0c89da8f",
+      "actual": "1b30beb1f42266b251e6b65ec37d93ee0c89da8f",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/equipo-apexos/SKILL.md",
+      "esperado": "b2c8b69008cd479dea2984eb17045b99e8425e7b",
+      "actual": "b2c8b69008cd479dea2984eb17045b99e8425e7b",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/registry.json",
+      "esperado": "a4249db8bd7487b2ef2cf9f5273d2509ad4dbd76",
+      "actual": "a4249db8bd7487b2ef2cf9f5273d2509ad4dbd76",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/auth/service.js",
+      "esperado": "adc29f00292d79e62f0be31ebe410f13146277a5",
+      "actual": "adc29f00292d79e62f0be31ebe410f13146277a5",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/monitorEvidenceRows.js",
+      "esperado": "81eaa53aa3a4c959831cc7e910b840c1dfdbdd0e",
+      "actual": "81eaa53aa3a4c959831cc7e910b840c1dfdbdd0e",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/security/authorizationState.js",
+      "esperado": "a7189cc6ced6839ce139cf53dbb6cab8c05b6fc3",
+      "actual": "a7189cc6ced6839ce139cf53dbb6cab8c05b6fc3",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/auth-me-single-statement.test.js",
+      "esperado": "73dd30b1ad4291b7691aee681b1e45f0d72609bf",
+      "actual": "73dd30b1ad4291b7691aee681b1e45f0d72609bf",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/auth-session-hardening.test.js",
+      "esperado": "99ac45fb2f00aec991f06123d985448ea0e0d83d",
+      "actual": "99ac45fb2f00aec991f06123d985448ea0e0d83d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/auth-webauthn-login.test.js",
+      "esperado": "d06669e8ee68e38c49c03a11c641a1cd45562b61",
+      "actual": "d06669e8ee68e38c49c03a11c641a1cd45562b61",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/authorization-status-codes.test.js",
+      "esperado": "425d643f1f62d4077b620caeec624f0322c9e90f",
+      "actual": "425d643f1f62d4077b620caeec624f0322c9e90f",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-evidence-backfill-tool.test.js",
+      "esperado": "18bc91ed942bcf9e1e72aa568c7f4acc97fc2015",
+      "actual": "18bc91ed942bcf9e1e72aa568c7f4acc97fc2015",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-list-truncation.test.js",
+      "esperado": "cba0b3dae5ef437c12858ac1be24aaa5f4bbd04d",
+      "actual": "cba0b3dae5ef437c12858ac1be24aaa5f4bbd04d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-monitor-evidence-columns.test.js",
+      "esperado": "5ffe388a17ca31d6af6648c548d95d3e66b8c147",
+      "actual": "5ffe388a17ca31d6af6648c548d95d3e66b8c147",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-route-assignment-lock.test.js",
+      "esperado": "f8fa2297ef1e658fa18fa557ec40e4e61a916ed9",
+      "actual": "f8fa2297ef1e658fa18fa557ec40e4e61a916ed9",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-monitor-refresh.test.mjs",
+      "esperado": "f762ad29f75ece41dd2c174dca95a3ff6340f88d",
+      "actual": "f762ad29f75ece41dd2c174dca95a3ff6340f88d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/PERFORMANCE_ANTI_PATTERNS.md",
+      "esperado": "90243afefaea2dfc04e4e17372f72058b5dd31a0",
+      "actual": "90243afefaea2dfc04e4e17372f72058b5dd31a0",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
+      "esperado": "f372f601bd98878b7f5f6d3b045f9dd7aa194db0",
+      "actual": "f372f601bd98878b7f5f6d3b045f9dd7aa194db0",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/project/talento-humano-implementacion-seguimiento.md",
+      "esperado": "66abc1f9b74d04176de4ecf0a1923a089a1b57b4",
+      "actual": "66abc1f9b74d04176de4ecf0a1923a089a1b57b4",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-production.json",
+      "esperado": "a095a49654383bd54822bb8dd8ecd0cef3447695",
+      "actual": "a095a49654383bd54822bb8dd8ecd0cef3447695",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-qa.json",
+      "esperado": "aa5528dc18448f8b9ec1f897ce7d9743f8809ccd",
+      "actual": "aa5528dc18448f8b9ec1f897ce7d9743f8809ccd",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt",
+      "esperado": "6476e19a2b6cbffc2553b3f44b3d7466c0c8c236",
+      "actual": "6476e19a2b6cbffc2553b3f44b3d7466c0c8c236",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-production.json",
+      "esperado": "69608f302e96ab23cb6fc638ab15022a3a434b39",
+      "actual": "69608f302e96ab23cb6fc638ab15022a3a434b39",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-qa.json",
+      "esperado": "ef030306a98c5cfd6099bf3268e5ddd7ffbc5cdc",
+      "actual": "ef030306a98c5cfd6099bf3268e5ddd7ffbc5cdc",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json",
+      "esperado": "3b9e070e6a94810b747332715d710d6d4d59a640",
+      "actual": "3b9e070e6a94810b747332715d710d6d4d59a640",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json",
+      "esperado": "49a52d67f7768aa81097e06dbf3753082396ddb0",
+      "actual": "49a52d67f7768aa81097e06dbf3753082396ddb0",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json",
+      "esperado": "7f62b7ae166dfa2f5ff142fb4ed85c9d75985cfc",
+      "actual": "7f62b7ae166dfa2f5ff142fb4ed85c9d75985cfc",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527496487.json",
+      "esperado": "8bb05ded58b1fedbac1ff078f59cd38d5e09c142",
+      "actual": "8bb05ded58b1fedbac1ff078f59cd38d5e09c142",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json",
+      "esperado": "9cc64066dd5eea19bda2f1a923c14ff068bb2fbc",
+      "actual": "9cc64066dd5eea19bda2f1a923c14ff068bb2fbc",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json",
+      "esperado": "7b60d257929a9ab3be9f5b7e9d0d0d67a5a8e779",
+      "actual": "7b60d257929a9ab3be9f5b7e9d0d0d67a5a8e779",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json",
+      "esperado": "5ed5033de94241605e6ec215682491b39bc2ba86",
+      "actual": "5ed5033de94241605e6ec215682491b39bc2ba86",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/hr-monitor-byte-budget.js",
+      "esperado": "57af20416adbb18efc4b67e9e373086bc1c4a859",
+      "actual": "57af20416adbb18efc4b67e9e373086bc1c4a859",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/hr-evidence-backfill-storage.js",
+      "esperado": "b75cd964dddc0c80dffce8b9eee35b8c6c80a4d8",
+      "actual": "b75cd964dddc0c80dffce8b9eee35b8c6c80a4d8",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/security/auth-email-collision-census.js",
+      "esperado": "03b1a528ca4499a5193de2cac95481220f7bd3c9",
+      "actual": "03b1a528ca4499a5193de2cac95481220f7bd3c9",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/security/auth-session-sql-guard.js",
+      "esperado": "3e298e9c43247d0545383ef0758d54cd8df5d1e1",
+      "actual": "3e298e9c43247d0545383ef0758d54cd8df5d1e1",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    }
+  ]
+}

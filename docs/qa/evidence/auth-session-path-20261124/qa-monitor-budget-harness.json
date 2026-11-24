@@ -1,0 +1,92 @@
+{
+  "change_id": "hr-monitor-byte-budget",
+  "environment": "qa",
+  "env_file": "config/qa.env",
+  "api_url": "apexos-api-qa-production.up.railway.app",
+  "date": "2026-11-24",
+  "generated_at": "2026-11-24T18:03:20.244Z",
+  "samples_per_endpoint": 5,
+  "budgets": {
+    "listing_bytes": 4194304,
+    "p95_ms": 3000,
+    "inline_base64_chars": 8192
+  },
+  "baseline": {
+    "source": "docs/audits/2026-11-18-monitor-marcaciones-336/00-hallazgos-y-plan.md",
+    "before": {
+      "bytes": 46556774.4,
+      "ms": [
+        7740,
+        9790
+      ]
+    },
+    "after": {
+      "bytes": 157696,
+      "ms": [
+        940,
+        1060
+      ]
+    },
+    "proof": "mismo dia, mismo tenant, mismos ids y mismo conteo de evidencias (27=27, 25=25)"
+  },
+  "day_scope": {
+    "source": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
+    "before": {
+      "ms_event_summaries": 7000,
+      "bytes": 608256
+    },
+    "after": {
+      "ms_event_summaries": 500,
+      "bytes": 16384
+    },
+    "proof": "mismo dia y tenant medidos el 2026-11-24; 266 evidencias = 266 antes y despues"
+  },
+  "measurements": [
+    {
+      "key": "operations_map",
+      "label": "Mapa del dia",
+      "reference": false,
+      "samples": 5,
+      "bytes": 17833,
+      "p50_ms": 406,
+      "p95_ms": 619,
+      "max_ms": 619,
+      "inline_payloads": []
+    },
+    {
+      "key": "event_summaries_day",
+      "label": "Contadores de eventos (dia fijado)",
+      "reference": false,
+      "samples": 5,
+      "bytes": 416,
+      "p50_ms": 497,
+      "p95_ms": 511,
+      "max_ms": 511,
+      "inline_payloads": []
+    },
+    {
+      "key": "attendance_day",
+      "label": "Reporte de asistencia (un dia)",
+      "reference": false,
+      "samples": 5,
+      "bytes": 7850,
+      "p50_ms": 309,
+      "p95_ms": 320,
+      "max_ms": 320,
+      "inline_payloads": []
+    },
+    {
+      "key": "event_summaries_all",
+      "label": "Contadores de eventos (sin fecha, referencia)",
+      "reference": true,
+      "samples": 5,
+      "bytes": 416,
+      "p50_ms": 489,
+      "p95_ms": 494,
+      "max_ms": 494,
+      "inline_payloads": []
+    }
+  ],
+  "failures": [],
+  "status": "passed"
+}

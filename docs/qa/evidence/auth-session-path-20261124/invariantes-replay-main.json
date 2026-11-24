@@ -1,0 +1,82 @@
+{
+  "instrumento": "invariantes del replay a main (lneas anadidas, cuerpos byte a byte, marcadores)",
+  "ejecutado_en": "2026-11-24T18:40:10.476Z",
+  "base_main": "b08699e3214a41f946cf3080b313cbfe637e33dd",
+  "anadidas_huerfanas": [
+    {
+      "file": "apps/api/src/modules/hr/service.js",
+      "rama": "origin/desarrollo",
+      "anadidas": 32,
+      "huerfanas_en_la_rama_certificada": 0,
+      "detalle": []
+    },
+    {
+      "file": "apps/api/src/modules/auth/service.js",
+      "rama": "origin/desarrollo",
+      "anadidas": 46,
+      "huerfanas_en_la_rama_certificada": 0,
+      "detalle": []
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+      "rama": "origin/develop",
+      "anadidas": 41,
+      "huerfanas_en_la_rama_certificada": 0,
+      "detalle": []
+    }
+  ],
+  "funciones": {
+    "apps/api/src/modules/hr/service.js::listRouteEventSummaries": {
+      "presente_en_candidato": true,
+      "presente_en_certificada": true,
+      "identical_bytes": true,
+      "caracteres": 5445
+    },
+    "apps/api/src/modules/auth/service.js::login": {
+      "presente_en_candidato": true,
+      "presente_en_certificada": true,
+      "identical_bytes": true,
+      "caracteres": 1899
+    },
+    "apps/api/src/modules/auth/service.js::startSession": {
+      "presente_en_candidato": true,
+      "presente_en_certificada": true,
+      "identical_bytes": true,
+      "caracteres": 711
+    },
+    "apps/api/src/modules/auth/service.js::me": {
+      "presente_en_candidato": true,
+      "presente_en_certificada": true,
+      "identical_bytes": true,
+      "caracteres": 353
+    },
+    "apps/api/src/modules/auth/service.js::refresh": {
+      "presente_en_candidato": true,
+      "presente_en_certificada": true,
+      "identical_bytes": true,
+      "caracteres": 2610
+    }
+  },
+  "linea_ruta_event_summaries": {
+    "exacta_en_candidato": true,
+    "identica_a_desarrollo": true
+  },
+  "marcadores": {
+    "service.js pg_advisory_xact_lock (motor de liquidacion de main)": 6,
+    "service.js buildEmployeeTerminationLiquidation (retiro de main)": 4,
+    "service.js boundedReportRange (este paquete)": 6,
+    "auth/service.js fingerprintLogin (NO viaja)": 0,
+    "auth/service.js personal-webauthn (NO viaja)": 0,
+    "auth/service.js shared-device-identity (NO viaja)": 0,
+    "hr/routes.js webauthn (NO viaja)": 0,
+    "hr/routes.js face (NO viaja)": 0,
+    "page.tsx EVIDENCE_FETCH_CONCURRENCY (este paquete)": 2,
+    "page.tsx WEB_SELFIE (no viaja en este paquete)": 0
+  },
+  "tamano_candidato": {
+    "hr/service.js": 8436,
+    "auth/service.js": 277,
+    "hr/routes.js": 309,
+    "page.tsx": 1795
+  }
+}

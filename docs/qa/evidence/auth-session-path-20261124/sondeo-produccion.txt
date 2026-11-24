@@ -1,0 +1,10 @@
+health: {"commit":"cf2adc59d446","modules":19}
+login: 200 token obtenido
+200  /api/v1/auth/me  1.2 KB
+403  /api/v1/services/orders (PERMISO_DENEGADO) 0.1 KB
+200  /api/v1/hr/routes  42.6 KB
+200  /api/v1/hr/routes/event-summaries?date=2026-11-24  0.1 KB
+200  /api/v1/hr/employees?limit=1  235.7 KB
+404  /api/v1/hr/attendance/report?from=2026-11-24&to=2026-11-24  0.1 KB
+404  /api/v1/transport/settlements  0.1 KB
+404  /api/v1/hr/punches?limit=1  0.1 KB

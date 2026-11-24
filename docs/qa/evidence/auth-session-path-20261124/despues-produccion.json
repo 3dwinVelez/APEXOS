@@ -1,0 +1,94 @@
+{
+  "change_id": "hr-monitor-byte-budget",
+  "environment": "production",
+  "env_file": "config/production.env",
+  "api_url": "apexos-api-prod-production.up.railway.app",
+  "date": "2026-11-24",
+  "generated_at": "2026-11-24T18:54:00.987Z",
+  "samples_per_endpoint": 3,
+  "budgets": {
+    "listing_bytes": 4194304,
+    "p95_ms": 3000,
+    "inline_base64_chars": 8192
+  },
+  "baseline": {
+    "source": "docs/audits/2026-11-18-monitor-marcaciones-336/00-hallazgos-y-plan.md",
+    "before": {
+      "bytes": 46556774.4,
+      "ms": [
+        7740,
+        9790
+      ]
+    },
+    "after": {
+      "bytes": 157696,
+      "ms": [
+        940,
+        1060
+      ]
+    },
+    "proof": "mismo dia, mismo tenant, mismos ids y mismo conteo de evidencias (27=27, 25=25)"
+  },
+  "day_scope": {
+    "source": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
+    "before": {
+      "ms_event_summaries": 7000,
+      "bytes": 608256
+    },
+    "after": {
+      "ms_event_summaries": 500,
+      "bytes": 16384
+    },
+    "proof": "mismo dia y tenant medidos el 2026-11-24; 266 evidencias = 266 antes y despues"
+  },
+  "measurements": [
+    {
+      "key": "operations_map",
+      "label": "Mapa del dia",
+      "reference": false,
+      "samples": 3,
+      "bytes": 299,
+      "p50_ms": 1974,
+      "p95_ms": 3405,
+      "max_ms": 3405,
+      "inline_payloads": []
+    },
+    {
+      "key": "event_summaries_day",
+      "label": "Contadores de eventos (dia fijado)",
+      "reference": false,
+      "samples": 3,
+      "bytes": 123,
+      "p50_ms": 1850,
+      "p95_ms": 1851,
+      "max_ms": 1851,
+      "inline_payloads": []
+    },
+    {
+      "key": "attendance_day",
+      "label": "Reporte de asistencia (un dia)",
+      "reference": false,
+      "samples": 3,
+      "bytes": 5850,
+      "p50_ms": 1281,
+      "p95_ms": 1282,
+      "max_ms": 1282,
+      "inline_payloads": []
+    },
+    {
+      "key": "event_summaries_all",
+      "label": "Contadores de eventos (sin fecha, referencia)",
+      "reference": true,
+      "samples": 3,
+      "bytes": 6693,
+      "p50_ms": 3121,
+      "p95_ms": 3410,
+      "max_ms": 3410,
+      "inline_payloads": []
+    }
+  ],
+  "failures": [
+    "Mapa del dia: p95 de 3405 ms supera el presupuesto de 3000 ms"
+  ],
+  "status": "failed"
+}

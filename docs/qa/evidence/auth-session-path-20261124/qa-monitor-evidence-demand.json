@@ -1,0 +1,112 @@
+{
+  "change_id": "hr-monitor-evidence-demand-20260824",
+  "environment": "QA",
+  "company": "NYVORA",
+  "generated_at": "2026-11-24T18:02:17.556Z",
+  "api_commit": "3303a95532a3",
+  "checks": [
+    {
+      "name": "entrada_sin_selfie_rechazada",
+      "ok": true,
+      "detail": {
+        "code": "SELFIE_REQUERIDA"
+      }
+    },
+    {
+      "name": "inicio_almuerzo_sin_selfie_rechazada",
+      "ok": true,
+      "detail": {
+        "code": "SELFIE_REQUERIDA"
+      }
+    },
+    {
+      "name": "fin_almuerzo_sin_selfie_rechazada",
+      "ok": true,
+      "detail": {
+        "code": "SELFIE_REQUERIDA"
+      }
+    },
+    {
+      "name": "activity_summary_available",
+      "ok": true,
+      "detail": {
+        "id": 162,
+        "source": "activity",
+        "evidence_type": "photo",
+        "file_name": "activity-20261124180213.png",
+        "mime_type": "image/png",
+        "file_size": 68,
+        "storage_path": "company/fd3e2802-16d9-40ad-8813-c52696f05f5f/hr/work-sessions/503/users/846/activities/174/1795543346281-activity-20261124180213.png",
+        "has_base64_data": false,
+        "available": true
+      }
+    },
+    {
+      "name": "activity_summary_excludes_payload",
+      "ok": true,
+      "detail": {
+        "has_base64_data": false
+      }
+    },
+    {
+      "name": "punch_summary_available",
+      "ok": true,
+      "detail": {
+        "id": 1782,
+        "source": "punch",
+        "available": true,
+        "has_base64_data": true
+      }
+    },
+    {
+      "name": "punch_summary_excludes_payload",
+      "ok": true,
+      "detail": {
+        "has_base64_data": true
+      }
+    },
+    {
+      "name": "activity_loaded_on_demand",
+      "ok": true,
+      "detail": {
+        "id": 162,
+        "source": "activity"
+      }
+    },
+    {
+      "name": "punch_loaded_on_demand",
+      "ok": true,
+      "detail": {
+        "id": 1782,
+        "source": "punch"
+      }
+    },
+    {
+      "name": "marking_only_role_denied",
+      "ok": true,
+      "detail": {
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "missing_evidence_controlled",
+      "ok": true,
+      "detail": {
+        "code": "EVIDENCIA_MONITOR_NO_ENCONTRADA"
+      }
+    },
+    {
+      "name": "cross_tenant_evidence_denied",
+      "ok": true,
+      "detail": {
+        "other_tenant_id": "1afcb48f-39eb-4b59-af90-05e67d54593a"
+      }
+    }
+  ],
+  "fixture": {
+    "employee_user_id": 846,
+    "monitor_user_id": 847,
+    "route_id": 433
+  },
+  "status": "passed"
+}
