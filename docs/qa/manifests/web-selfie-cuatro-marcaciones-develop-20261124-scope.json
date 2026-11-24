@@ -35,7 +35,10 @@
     "docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json",
     "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-scope.json",
     "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-preqa.json",
-    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/"
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/",
+    "scripts/certifications/promotion-migration-check.js",
+    "scripts/certifications/promotion-gates-runner.js",
+    "scripts/test/promotion-replay-instruments.test.js"
   ],
   "allowed_deletions": [
     "apps/api/src/modules/hr/webPunchSelfie.js",
@@ -144,6 +147,21 @@
       "file": "apps/api/src/modules/hr/service.js",
       "reason": "El blob de desarrollo no se puede llevar: el diff desarrollo<->develop en este archivo es de 331 anadidas y 305 eliminadas, lineas propias de la rama que incluyen la guarda de tenant de updateRoute (cd3a88e5, HORARIO_NO_ENCONTRADO en service.js:1576-1577). El replay quita UNA linea del require de la compuerta alterna y no anade ninguna: git diff --numstat origin/develop HEAD = 0 anadidas / 1 eliminada, medido en invariantes-replay-commit.json y en guarda-de-tenant-presente.txt.",
       "approval": "Edwin (dueno de APEXOS), orden del 2026-11-24 de alinear las tres ramas sin romper nada mas"
+    },
+    {
+      "file": "scripts/certifications/promotion-migration-check.js",
+      "reason": "instrumento de gobernanza que el porton de CI exige versionado en el candidato (assertManifestRefs revisa que el script citado como regression_certification exista en el ref). Nacio en desarrollo y aqui viaja byte a byte, no es producto HR.",
+      "approval": "AUTORIZACION_EXPRESA_DEL_DUENIO_2026-11-24 (alineacion de las tres ramas); blobs verificados iguales a origin/desarrollo en instrumentos-en-candidato.txt"
+    },
+    {
+      "file": "scripts/certifications/promotion-gates-runner.js",
+      "reason": "instrumento de gobernanza que el porton de CI exige versionado en el candidato (assertManifestRefs revisa que el script citado como regression_certification exista en el ref). Nacio en desarrollo y aqui viaja byte a byte, no es producto HR.",
+      "approval": "AUTORIZACION_EXPRESA_DEL_DUENIO_2026-11-24 (alineacion de las tres ramas); blobs verificados iguales a origin/desarrollo en instrumentos-en-candidato.txt"
+    },
+    {
+      "file": "scripts/test/promotion-replay-instruments.test.js",
+      "reason": "instrumento de gobernanza que el porton de CI exige versionado en el candidato (assertManifestRefs revisa que el script citado como regression_certification exista en el ref). Nacio en desarrollo y aqui viaja byte a byte, no es producto HR.",
+      "approval": "AUTORIZACION_EXPRESA_DEL_DUENIO_2026-11-24 (alineacion de las tres ramas); blobs verificados iguales a origin/desarrollo en instrumentos-en-candidato.txt"
     }
   ],
   "protected_capabilities": [
