@@ -3,7 +3,7 @@
   "destino": "develop",
   "base_ref": "origin/develop",
   "origin_ref": "origin/desarrollo",
-  "nota": "Las cuatro rutas de producto no son carry: son fusion a tres vias del avance de desarrollo sobre el contenido propio de develop (cd3a88e5 y la marcacion web), y se declaran como origin_waivers en el manifiesto de alcance. Todo lo demas viaja byte a byte desde origin/desarrollo.",
+  "nota": "Las tres rutas de producto no son carry: son fusion a tres vias del avance de desarrollo sobre contenido propio de develop (cd3a88e5 en hr/service.js, la marcacion web y el maestro de rutas). Se declaran como origin_waivers en el manifiesto de alcance y aqui quedan fuera del inventario carry porque su blob no puede ser identico a origen. Todo lo demas -incluido scripts/certifications/hr-monitor-byte-budget.js- viaja byte a byte desde origin/desarrollo.",
   "carry": [
     {
       "file": ".qoder/skills/apexos-backend/SKILL.md",
@@ -126,6 +126,10 @@
       "motivo": "las pruebas que nacen con el cambio"
     },
     {
+      "file": "apps/api/test/hr-route-assignment-lock.test.js",
+      "motivo": "las pruebas que nacen con el cambio"
+    },
+    {
       "file": "apps/web/test/hr-monitor-refresh.test.mjs",
       "motivo": "las pruebas que nacen con el cambio"
     },
@@ -187,7 +191,11 @@
     },
     {
       "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json",
-      "motivo": "el manifiesto de alcance que declara esta promocion"
+      "motivo": "el manifiesto que declara esta promocion"
+    },
+    {
+      "file": "scripts/certifications/hr-monitor-byte-budget.js",
+      "motivo": "el instrumento de certificacion o de guard"
     },
     {
       "file": "scripts/hr-evidence-backfill-storage.js",

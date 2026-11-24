@@ -1,0 +1,169 @@
+{
+  "instrumento": "suite-plataforma-candidato",
+  "ejecutado_en": "2026-11-24T17:16:30.710Z",
+  "metodo": "las suites completas corruidas sobre el arbol del candidato (worktree despegada en TEMP) y, para cada rojo, la misma prueba re-corruida sobre el arbol de trabajo de desarrollo. Ningun rojo se absorbe en un total: se nombra y se le pone causa.",
+  "arbol_candidato": {
+    "sha": "6a503dd66a52064096bd7fde34cad8516be87c04",
+    "nota_sha": "el sha es el arbol ya fusionado con el tip de develop que la sesion concurrente promovio mientras se armaba el candidato (origin/develop 6b42b365: compuerta unica de selfie, webPunchSelfie.js borrado). Las suites se corrieron sobre ese arbol; el espejo posterior de docs/evidencia no toca ninguna ruta de producto y se prueba con el control de equivalencia de blobs.",
+    "api": {
+      "tests": 1327,
+      "pass": 1323,
+      "fail": 2,
+      "skipped": 2,
+      "tap": "$TEMP/api-cand2.tap"
+    },
+    "web": {
+      "tests": 767,
+      "pass": 753,
+      "fail": 14,
+      "tap": "$TEMP/web-cand2.tap"
+    }
+  },
+  "arbol_desarrollo": {
+    "web": {
+      "tests": 894,
+      "pass": 885,
+      "fail": 9,
+      "tap": "$TEMP/web-base.tap"
+    },
+    "api": "no hay segunda corrida completa de API en el arbol de trabajo: `.env` de esta estacion apunta a localhost:54320 y no hay base levatando ahi (`Can't reach database server at localhost:54320`), asi que la comparacion se hizo prueba por prueba, que es lo que realmente atribuye.",
+    "api_por_archivo": [
+      {
+        "archivo": "apps/api/test/hr-marking-concurrency.test.js",
+        "resultado": "8 pass / 0 fail"
+      },
+      {
+        "archivo": "apps/api/test/offline-bootstrap.test.js",
+        "resultado": "15 pass / 0 fail"
+      },
+      {
+        "archivo": "apps/api/test/hr-face-identity.test.js",
+        "resultado": "13 pass / 1 fail (idéntico rojo que en el candidato)"
+      }
+    ]
+  },
+  "rojos_api_candidato": [
+    {
+      "prueba": "humo: el modelo real (Human wasm) distingue a la misma persona de otra (apps/api/test/hr-face-identity.test.js)",
+      "clase": "condicion_de_estacion",
+      "causa": "Cannot find module '@vladmandic/human' -> el paquete esta declarado en apps/api/package.json (3.3.6) pero no esta instalado en esta maquina (no hay node_modules/@vladmandic ni en la raiz ni en apps/api).",
+      "evidencia": "la misma prueba, corruida en el arbol de trabajo de desarrollo, cae igual: 13 pass / 1 fail. No depende del candidato."
+    },
+    {
+      "prueba": "fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante",
+      "clase": "deuda_preexistente_de_la_rama_destino",
+      "causa": "la guarda prohibe `pg_advisory_xact_lock` en apps/api/src/modules/hr/service.js. origin/develop tiene 6 ocurrencias y origin/main tiene las mismas 6; el candidato conserva 6 (los mismos blobs, cero anadidos): runPayrollLiquidation, runEmployeeTerminationLiquidation, deleteEmployeeTerminationLiquidation, runSocialBenefitProvisions, runSocialBenefitPayments, deleteSocialBenefitPaymentDocument.",
+      "evidencia": "en desarrollo la prueba pasa 8/8 porque esas seis funciones de liquidacion nunca bajaron a desarrollo: el verde de desarrollo no es un avance que este candidato revierta, es la ausencia del archivo. La promocion no introduce la deuda, la hereda de la rama que ya la tenia y ya la servia."
+    }
+  ],
+  "rojos_web_candidato": [
+    {
+      "archivo": "test/gastos-menores-entry-ux.test.mjs",
+      "causa": "Cannot find package 'typescript'",
+      "reejecucion": "volvio a caer igual con cwd=apps/web (7/7 archivos con ERR_MODULE_NOT_FOUND)",
+      "prueba": "test/gastos-menores-entry-ux.test.mjs",
+      "clase": "condicion_del_arbol_del_candidato",
+      "evidencia": "ESM no encuentra el paquete porque la worktree no tiene node_modules; en el arbol de trabajo esos archivos pasan."
+    },
+    {
+      "archivo": "test/hr-offline-marking.test.mjs",
+      "causa": "Cannot find package 'fake-indexeddb'",
+      "reejecucion": "idem",
+      "prueba": "test/hr-offline-marking.test.mjs",
+      "clase": "condicion_del_arbol_del_candidato",
+      "evidencia": "ESM no encuentra el paquete porque la worktree no tiene node_modules; en el arbol de trabajo esos archivos pasan."
+    },
+    {
+      "archivo": "test/hr-reports-xlsx.test.mjs",
+      "causa": "Cannot find package 'exceljs'",
+      "reejecucion": "idem",
+      "prueba": "test/hr-reports-xlsx.test.mjs",
+      "clase": "condicion_del_arbol_del_candidato",
+      "evidencia": "ESM no encuentra el paquete porque la worktree no tiene node_modules; en el arbol de trabajo esos archivos pasan."
+    },
+    {
+      "archivo": "test/hr-route-write-fallback.test.mjs",
+      "causa": "Cannot find package 'typescript'",
+      "reejecucion": "idem",
+      "prueba": "test/hr-route-write-fallback.test.mjs",
+      "clase": "condicion_del_arbol_del_candidato",
+      "evidencia": "ESM no encuentra el paquete porque la worktree no tiene node_modules; en el arbol de trabajo esos archivos pasan."
+    },
+    {
+      "archivo": "test/hr-schedule-employee-source.test.mjs",
+      "causa": "Cannot find package 'typescript'",
+      "reejecucion": "idem; la ruta solo existe en develop (nunca subio a desarrollo), viaja byte a byte",
+      "prueba": "test/hr-schedule-employee-source.test.mjs",
+      "clase": "condicion_del_arbol_del_candidato",
+      "evidencia": "ESM no encuentra el paquete porque la worktree no tiene node_modules; en el arbol de trabajo esos archivos pasan."
+    },
+    {
+      "archivo": "test/offline-operation-queue.test.mjs",
+      "causa": "Cannot find package 'fake-indexeddb'",
+      "reejecucion": "idem",
+      "prueba": "test/offline-operation-queue.test.mjs",
+      "clase": "condicion_del_arbol_del_candidato",
+      "evidencia": "ESM no encuentra el paquete porque la worktree no tiene node_modules; en el arbol de trabajo esos archivos pasan."
+    },
+    {
+      "archivo": "test/offline-storage.test.mjs",
+      "causa": "Cannot find package 'fake-indexeddb'",
+      "reejecucion": "idem",
+      "prueba": "test/offline-storage.test.mjs",
+      "clase": "condicion_del_arbol_del_candidato",
+      "evidencia": "ESM no encuentra el paquete porque la worktree no tiene node_modules; en el arbol de trabajo esos archivos pasan."
+    },
+    {
+      "prueba": "la portada expone como acceso cada pantalla del modulo, incluida nomina",
+      "clase": "deuda_compartida_o_condicion_de_ruta",
+      "evidencia": "cuatro de ellas caen TAMBIEN en el arbol de trabajo de desarrollo por la misma razon (el test abre <raiz>/app/dashboard/talento-humano/<modulo>/page.tsx asumiendo otra raiz); las rutas que leen no estan en el inventario de este paquete y el replay las declara byte a byte contra origin/develop."
+    },
+    {
+      "prueba": "nomina UI distingue novedades IBC y exige referencia historica congelada",
+      "clase": "deuda_compartida_o_condicion_de_ruta",
+      "evidencia": "cuatro de ellas caen TAMBIEN en el arbol de trabajo de desarrollo por la misma razon (el test abre <raiz>/app/dashboard/talento-humano/<modulo>/page.tsx asumiendo otra raiz); las rutas que leen no estan en el inventario de este paquete y el replay las declara byte a byte contra origin/develop."
+    },
+    {
+      "prueba": "aportes UI muestra trazabilidad por segmento y subsistema",
+      "clase": "deuda_compartida_o_condicion_de_ruta",
+      "evidencia": "cuatro de ellas caen TAMBIEN en el arbol de trabajo de desarrollo por la misma razon (el test abre <raiz>/app/dashboard/talento-humano/<modulo>/page.tsx asumiendo otra raiz); las rutas que leen no estan en el inventario de este paquete y el replay las declara byte a byte contra origin/develop."
+    },
+    {
+      "prueba": "configuracion UI ofrece elegibilidad ET 114-1 explicita",
+      "clase": "deuda_compartida_o_condicion_de_ruta",
+      "evidencia": "cuatro de ellas caen TAMBIEN en el arbol de trabajo de desarrollo por la misma razon (el test abre <raiz>/app/dashboard/talento-humano/<modulo>/page.tsx asumiendo otra raiz); las rutas que leen no estan en el inventario de este paquete y el replay las declara byte a byte contra origin/develop."
+    },
+    {
+      "prueba": "maestro de empleados permite configurar elegibilidad y régimen soportado",
+      "clase": "deuda_compartida_o_condicion_de_ruta",
+      "evidencia": "cuatro de ellas caen TAMBIEN en el arbol de trabajo de desarrollo por la misma razon (el test abre <raiz>/app/dashboard/talento-humano/<modulo>/page.tsx asumiendo otra raiz); las rutas que leen no estan en el inventario de este paquete y el replay las declara byte a byte contra origin/develop."
+    },
+    {
+      "prueba": "la impresión aísla el tema claro y restaura el tema previo al salir sin persistir cambios",
+      "clase": "deuda_compartida_o_condicion_de_ruta",
+      "evidencia": "cuatro de ellas caen TAMBIEN en el arbol de trabajo de desarrollo por la misma razon (el test abre <raiz>/app/dashboard/talento-humano/<modulo>/page.tsx asumiendo otra raiz); las rutas que leen no estan en el inventario de este paquete y el replay las declara byte a byte contra origin/develop."
+    },
+    {
+      "prueba": "react y react-dom/server salen de la misma instalacion de node_modules",
+      "clase": "guarda_del_arnes_que_por_diseno_solo_pasa_en_arbol_instalado",
+      "evidencia": "la asercion exige que el arbol probado tenga su propio node_modules (<arbol>/node_modules/react/index.js). En una worktree sin instalar es roja por definicion, no por el codigo; en el arbol de trabajo pasa."
+    }
+  ],
+  "conteo_por_clase": {
+    "condicion_de_estacion": 1,
+    "condicion_del_arbol_del_candidato": 7,
+    "deuda_preexistente_de_la_rama_destino": 1,
+    "deuda_compartida_o_condicion_de_ruta": 6,
+    "guarda_del_arnes_que_por_diseno_solo_pasa_en_arbol_instalado": 1
+  },
+  "cuadre": "2 rojos de API + 14 de web = 16 nombrados, uno por linea de este expediente. Ninguno queda sin clase. La corrida anterior del mismo arbol, sin el `DISABLE_REDIS` del ambiente, habia sumado un tercer rojo de API (`offline-bootstrap.test.js` no cargaba); con la bandera correcta ese archivo pasa 15/15 en los dos arboles, lo que confirma que era condicion del ambiente y no del candidato.",
+  "criterio_de_descarte": "un rojo no es regresión de esta promoción si (a) la misma prueba cae igual en el arbol de trabajo, o (b) la causa es ERR_MODULE_NOT_FOUND / ENOENT de raiz, es decir el arbol de la worktree y no el contenido, o (c) la ruta que lo produce viaja byte a byte desde origin/develop y el porton de replay (promotion-migration-check, 51/51) lo certifico. Los 3 rojos de API y los 14 de web caen en (a), (b) o (c).",
+  "veredicto": "REGRESION DE PLATAFORMA ACOTADA: 0 rojos de producto nuevos atribuibles al candidato (API 1.323/1.327, web 753/767). Quedan declaradas dos cosas distintas: una dependencia de estacion no instalada y una deuda de la rama destino -6 locks bloqueantes de liquidacion que ya estan en origin/develop y origin/main y que este paquete conserva byte a byte-.",
+  "pendiente_declarado": {
+    "nombre": "migrar los 6 pg_advisory_xact_lock de liquidacion al helper acotado acquireBoundedScopeLocks (5 sitios ya migrados) para que el candado devuelva 503 y no 500",
+    "dueno": "responsable del paquete de nomina/liquidacion, que es quien tiene esas funciones en su rama",
+    "accion": "intervencion propia con su manifiesto, su prueba y su control de mutacion; no entra en este candidato porque exigiria editar por hunks rutas que el replay declara carry byte a byte y ensancharia el alcance mas alla de lo autorizado",
+    "como_se_mide": "grep -c pg_advisory_xact_lock apps/api/src/modules/hr/service.js (hoy: desarrollo 0 porque no existen las funciones, develop 6, main 6, candidato 6)"
+  },
+  "nota_trampa": "En la worktree NO se copiaron ni se enlazaron node_modules: el 2026-11-20 un `git worktree remove --force` sobre enlaces absolutos @apex-os/* vacio 1173 archivos del arbol principal. Por eso la suite completa del candidato tiene rojos de resolucion que el arbol de trabajo no tiene, y por eso la evidencia se toma con la prueba nominal re-corruida en el arbol bueno."
+}

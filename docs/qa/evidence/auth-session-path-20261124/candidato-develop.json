@@ -1,0 +1,91 @@
+{
+  "instrumento": "certificacion-del-arbol-candidato",
+  "candidato": "6a503dd66a52064096bd7fde34cad8516be87c04",
+  "destino": "develop",
+  "base_destino": "6b42b365",
+  "ejecutado_en": "2026-11-24T17:16:53.369Z",
+  "rutas_del_inventario_que_no_viajan_byte_a_byte": [
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+  ],
+  "verde": true,
+  "results": [
+    {
+      "label": "suitas-api-camino-sesion-mallas",
+      "cmd": "--test apps/api/test/auth-me-single-statement.test.js apps/api/test/auth-session-hardening.test.js apps/api/test/auth-webauthn-login.test.js apps/api/test/authorization-status-codes.test.js apps/api/test/hr-evidence-backfill-tool.test.js ap",
+      "exit": 0,
+      "ok": true,
+      "tests": 70,
+      "pass": 70,
+      "veredicto": "# duration_ms 4810.537"
+    },
+    {
+      "label": "suita-web-monitor",
+      "cmd": "--test apps/web/test/hr-monitor-refresh.test.mjs",
+      "exit": 0,
+      "ok": true,
+      "tests": 7,
+      "pass": 7,
+      "veredicto": "# duration_ms 155.7565"
+    },
+    {
+      "label": "guard-sql-sesion-selftest",
+      "cmd": "scripts/security/auth-session-sql-guard.js --selftest",
+      "exit": 0,
+      "ok": true,
+      "tests": 0,
+      "pass": 0,
+      "veredicto": "16/16"
+    },
+    {
+      "label": "presupuesto-reloj-selftest",
+      "cmd": "scripts/certifications/hr-monitor-byte-budget.js --selftest",
+      "exit": 0,
+      "ok": true,
+      "tests": 0,
+      "pass": 0,
+      "veredicto": "SELFTEST APROBADO: el gate falla con binario inline o latencia fuera de presupuesto y pasa con el aviso por referencia."
+    },
+    {
+      "label": "sintaxis-rutas-de-fusion",
+      "cmd": "--check apps/api/src/modules/hr/service.js",
+      "exit": 0,
+      "ok": true,
+      "tests": 0,
+      "pass": 0,
+      "veredicto": ""
+    },
+    {
+      "label": "sintaxis-rutas-de-fusion-routes",
+      "cmd": "--check apps/api/src/modules/hr/routes.js",
+      "exit": 0,
+      "ok": true,
+      "tests": 0,
+      "pass": 0,
+      "veredicto": ""
+    },
+    {
+      "label": "sintaxis-instrumento-presupuesto",
+      "cmd": "--check scripts/certifications/hr-monitor-byte-budget.js",
+      "exit": 0,
+      "ok": true,
+      "tests": 0,
+      "pass": 0,
+      "veredicto": ""
+    }
+  ],
+  "control_parseo_tsx": {
+    "arbol_del_candidato": {
+      "archivo": "page.tsx",
+      "diagnosticos": 0
+    },
+    "mutacion_del_teranario_roto": {
+      "archivo": "mutado-cand.tsx (control de que el parseo puede fallar)",
+      "diagnosticos": 1
+    },
+    "ok": true
+  },
+  "atribucion_de_los_rojos_del_arnes": "El worktree auxiliar no trae los archivos que el puesto tiene ignorados: sin config/qa.env, config/production.env, apps/api/.env y .env la primera corrida dio 66/70 (tres rojos de hr-evidence-backfill-tool porque resolveRuntime no encuentra el ambiente y uno del decorador real de authorization-status-codes por DATABASE_URL ausente). Copiados los cuatro -cada uno verificado con git check-ignore, ninguno cae en el indice- la misma corrida dio 70/70. Los rojos eran del arnes y no del producto, y se narran aqui para que el numero sea reproducible en otra maquina.",
+  "nota_resolucion": "NODE_PATH apunta al node_modules del arbol principal. No se copia ni se enlaza node_modules dentro de la worktree: los enlaces de los workspaces apuntan por ruta absoluta al arbol principal y un git worktree remove --force vaciaria el repositorio (incidente del 2026-11-20)."
+}

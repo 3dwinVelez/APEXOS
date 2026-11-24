@@ -1,0 +1,86 @@
+{
+  "change_id": "monitor-latencia-sesion-20261124",
+  "descripcion": "Pre-QA de la promocion desarrollo -> develop del paquete de latencia del monitor y camino de sesion, con el guard de tenant retro-integrado",
+  "commit": "228d10289029124a85e8615ff8996e0c8e42de9a",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "nota_sha": "commit es el arbol de producto contra el que corrieron las suites y el instrumento de replay (228d1028). El sha que se empuja difiere de ese arbol solo en los cuatro archivos de manifiesto, evidencia y spec que este mismo paquete versiona; esa diferencia queda medida en ../evidence/auth-session-path-20261124/puertas-develop.json y en el bloque delta_publicado_debajo_de_certificado del manifiesto de alcance.",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-24T12:30:00-05:00",
+    "authorization": "AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP: «procede con la promocion controlada de esta intervencion alineando las 3 ramas». Autoriza desplegar el candidato en el ambiente de QA para la certificacion funcional; no autoriza main, force push, migraciones remotas ni infraestructura."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "detalle": "El monitor lee solo el dia que la pantalla pide (266 marcaciones = 266) y el ingreso, /auth/me, refresh y huella resuelven en una sentencia por lectura.",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/candidato-develop.json",
+        "../evidence/auth-session-path-20261124/suites-camino-sesion.json",
+        "../evidence/auth-session-path-20261124/sentencias-qa.json",
+        "../evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json",
+        "../../briefs/2026-11-24-monitor-marcaciones-latencia.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "detalle": "Login fail-closed y uniforme: 401 sin delatar existencia ni empresa, cero creacion de sesion ambigua, y la malla de otro tenant responde 404 HORARIO_NO_ENCONTRADO sin escribir.",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/suites-camino-sesion.json",
+        "../evidence/auth-session-path-20261124/censo-correos-qa.json",
+        "../evidence/auth-session-path-20261124/censo-correos-production.json",
+        "../evidence/auth-session-path-20261124/candidato-develop.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "detalle": "Instrumentos del paquete corriendo sobre el arbol del candidato: guard de sentencias 16/16, selftest del presupuesto del reloj aprobado, backfill en seco contra QA y Produccion con escrituras 0, y el porton de alcance medido.",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/candidato-develop.json",
+        "../evidence/auth-session-path-20261124/replay-candidato-develop.json",
+        "../evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt",
+        "../evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json",
+        "../evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "detalle": "Regresion del frente tocado: las ocho suites de mallas, sesion, evidencia y truncado corren en el arbol del candidato (70/70) y la suite web del monitor 7/7, con el control de que cada guard puede fallar.",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/candidato-develop.json",
+        "../evidence/auth-session-path-20261124/suites-camino-sesion.json",
+        "../evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "detalle": "Suitas completas de API y web corruidas sobre el arbol del candidato, no sobre el de trabajo; los rojos se atribuyen por archivo y linea, y ningun rojo de producto queda absorbido.",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/suite-plataforma-candidato.json",
+        "../evidence/auth-session-path-20261124/candidato-develop.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../certifications/auth-session-readiness.js",
+    "evidence": [
+      "../evidence/auth-session-path-20261124/sentencias-qa.json",
+      "../evidence/auth-session-path-20261124/sentencias-production.json",
+      "../evidence/auth-session-path-20261124/candidato-develop.json"
+    ],
+    "nota": "El instrumento end-to-end con cuenta real (certify:auth-session) exige el artefacto desplegado: su corrida contra QA es el DESPUES que queda pendiente de ambiente (qa_status: pending) y se versiona despues del push."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/auth-session-path-20261124/replay-candidato-develop.json",
+      "../evidence/auth-session-path-20261124/suite-plataforma-candidato.json"
+    ]
+  }
+}
