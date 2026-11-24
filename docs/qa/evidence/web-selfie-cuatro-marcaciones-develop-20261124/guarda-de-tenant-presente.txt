@@ -1,6 +1,6 @@
 # Guarda de tenant de updateRoute: sobrevive al hunkeo de service.js
 
-Medido en el arbol del candidato (c1f858f2) el 2026-11-24T16:50Z.
+Medido en el arbol del candidato (el commit certificado por el manifiesto de alcance) el 2026-11-24T16:50Z.
 
 `git diff --numstat origin/develop HEAD -- apps/api/src/modules/hr/service.js` = **0 anadidas, 1 eliminada**.
 El unico cambio respecto del develop publicado es la linea del `require` de la compuerta alterna, asi que

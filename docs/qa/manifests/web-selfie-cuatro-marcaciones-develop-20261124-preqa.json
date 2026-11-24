@@ -5,7 +5,7 @@
   "target_branch": "develop",
   "qa_status": "pending",
   "promotion_branch": "codex/qa-web-selfie-cuatro-marcaciones-develop-20261124",
-  "commit": "c1f858f2",
+  "commit": "76e397191dae26ee52591b980cd5d0a157610b32",
   "target_head": "b59f286dd1d05ed29a6e040c2d7027dd1b55cf17",
   "checks": {
     "functional": {
@@ -70,7 +70,7 @@
     "basis": "El certificador hermetico barre los cuatro tipos de la web con etiqueta mentirosa, HEIC no pintable y reenvio sin foto, ademas del canal firmado del telefono; la suite de identidad movil y la guarda estructural hr-single-selfie-gate.test.js corren sobre el arbol del candidato. La regresion del replay se mide por invariantes (carry/delete/edit) y el propio instrumento se prueba contra tres derivas que deben quedar rojas. El script del porton vive en desarrollo: se invoco desde ese arbol contra el SHA del candidato y su salida se versiona alli."
   },
   "validation_summary": {
-    "certified_application_commit": "c1f858f2",
+    "certified_application_commit": "76e397191dae26ee52591b980cd5d0a157610b32",
     "baseline_preserved": "b59f286dd1d05ed29a6e040c2d7027dd1b55cf17",
     "certificacion_local": "55/55",
     "suites_api_apuntadas": "105/105",

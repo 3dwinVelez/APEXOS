@@ -6,18 +6,22 @@
   "base_commits": {
     "develop": "b59f286dd1d05ed29a6e040c2d7027dd1b55cf17"
   },
-  "certified_commit": "c1f858f2",
-  "candidate_tip": "el tip del candidato es este mismo manifiesto mas la evidencia y el brief; el blob de las siete rutas de producto no cambia respecto del commit funcional certificado",
+  "certified_commit": "76e397191dae26ee52591b980cd5d0a157610b32",
+  "candidate_tip": "el tip del candidato es el commit de los dos manifiestos; el blob de las 18 rutas certificadas no cambia despues de el commit certificado",
   "candidate_source": {
     "branch": "desarrollo",
-    "commit": "0bd638733b4346c6e30f022a724837a42aec053a",
-    "replay_sobre": "origin/develop b59f286d (tip de la rama al momento de armar el candidato)",
-    "metodo": "replay por invariantes, no por archivo ni por rama: cuatro carry byte a byte desde origin/desarrollo, dos borrados de rutas que nunca existieron en desarrollo, un hunkeo de una linea en service.js con excepcion nominal de origen",
-    "commits_funcionales": ["c1f858f2"]
+    "commit": "76e397191dae26ee52591b980cd5d0a157610b32",
+    "replay_sobre": "origin/develop b59f286dd1d05ed29a6e040c2d7027dd1b55cf17 (tip de la rama al armar el candidato)",
+    "origen_del_contenido": "origin/desarrollo para los cuatro carry byte a byte y para brief/spec/evidencia; develop conserva sus 305 lineas propias en service.js",
+    "metodo": "replay por invariantes, no por archivo ni por rama: cuatro carry byte a byte desde origin/desarrollo, dos borrados de rutas que nunca existieron en desarrollo, un hunkeo de una linea en service.js con excepcion nominal de origen"
   },
   "change_intent": {
     "summary": "La marcacion web vuelve a tener una sola compuerta de identidad: se retira webPunchSelfie.js, nacida en develop sin origen en desarrollo, que rechazaba por etiqueta-vs-bytes antes de que la guarda resiliente decidiera, y mobile-identity.js pasa a exigir selfie en las cuatro marcaciones de la web (entrada, inicio_almuerzo, fin_almuerzo, salida) sin ensanchar el conjunto firmado del telefono.",
-    "modules": ["talento-humano", "auth", "qa-evidencia"]
+    "modules": [
+      "talento-humano",
+      "auth",
+      "qa-evidencia"
+    ]
   },
   "allowed_paths": [
     "apps/api/src/modules/hr/mobile-identity.js",
@@ -38,26 +42,86 @@
     "apps/api/test/hr-web-punch-selfie.test.js"
   ],
   "expected_changes": [
-    { "status": "M", "file": "apps/api/src/modules/hr/mobile-identity.js" },
-    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
-    { "status": "D", "file": "apps/api/src/modules/hr/webPunchSelfie.js" },
-    { "status": "M", "file": "apps/api/test/hr-mobile-identity.test.js" },
-    { "status": "A", "file": "apps/api/test/hr-single-selfie-gate.test.js" },
-    { "status": "D", "file": "apps/api/test/hr-web-punch-selfie.test.js" },
-    { "status": "M", "file": "scripts/certifications/hr-mobile-identity-local.js" },
-    { "status": "A", "file": "docs/briefs/2026-11-24-web-selfie-cuatro-marcaciones-porton-origen.md" },
-    { "status": "A", "file": "docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json" },
-    { "status": "A", "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-scope.json" },
-    { "status": "A", "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-preqa.json" },
-    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/control-de-mutacion-instrumento.json" },
-    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/equivalencia-blob-candidato.txt" },
-    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/guarda-de-tenant-presente.txt" },
-    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-commit.json" },
-    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-indice.json" },
-    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json" },
-    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-api-apuntadas.txt" },
-    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-web-apuntadas.txt" },
-    { "status": "A", "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/veredicto.md" }
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "D",
+      "file": "apps/api/src/modules/hr/webPunchSelfie.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-mobile-identity.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-single-selfie-gate.test.js"
+    },
+    {
+      "status": "D",
+      "file": "apps/api/test/hr-web-punch-selfie.test.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-mobile-identity-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-24-web-selfie-cuatro-marcaciones-porton-origen.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/control-de-mutacion-instrumento.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/equivalencia-blob-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/guarda-de-tenant-presente.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-commit.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-indice.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-api-apuntadas.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-web-apuntadas.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/veredicto.md"
+    }
   ],
   "origin_waivers": [
     {
@@ -151,5 +215,27 @@
     "approved_at": "2026-11-24T11:00:00-05:00",
     "instruction": "procede con los cambios y alinear todas las ramas con esta desicion e implementa en cada una de ellas los ajustes necesarios sin romper nada mas necesito que estos ajustes esten en todas las ramas verificadas y probadas que no existiran rechazos",
     "authorization": "Alcance desarrollo -> develop con manifiesto de pre-QA local; la orden del dia incluye QA y Produccion. No cubre force push, reescritura de historia, borrado de ramas ajenos al frente ni migraciones remotas no declaradas."
-  }
+  },
+  "target_head": "b59f286dd1d05ed29a6e040c2d7027dd1b55cf17",
+  "promotion_branch": "codex/qa-web-selfie-cuatro-marcaciones-develop-20261124",
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/api/test/hr-single-selfie-gate.test.js",
+    "apps/api/test/hr-web-punch-selfie.test.js",
+    "docs/briefs/2026-11-24-web-selfie-cuatro-marcaciones-porton-origen.md",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/control-de-mutacion-instrumento.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/equivalencia-blob-candidato.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/guarda-de-tenant-presente.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-commit.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-indice.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-api-apuntadas.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-web-apuntadas.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/veredicto.md",
+    "docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json",
+    "scripts/certifications/hr-mobile-identity-local.js"
+  ]
 }

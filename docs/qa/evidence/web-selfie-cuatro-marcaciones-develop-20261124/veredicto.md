@@ -5,7 +5,9 @@ ramas y que no vuelvan los rechazos. Ejecuta: el frente de marcaciones de la web
 
 ## Que se publico
 
-Un commit funcional (`c1f858f2`) y este paquete documental. El commit funcional hace tres cosas y ninguna mas:
+Un solo commit funcional, certificado por el manifiesto `web-selfie-cuatro-marcaciones-develop-20261124-scope.json`
+en su campo `certified_commit` (el SHA no se cita aqui porque este archivo viaja dentro de ese commit). Ese commit
+hace tres cosas y ninguna mas:
 
 1. Borra `apps/api/src/modules/hr/webPunchSelfie.js` y su prueba `apps/api/test/hr-web-punch-selfie.test.js`.
    Esa guarda nacio en `develop` el 20-11 sin pasar nunca por `desarrollo`, se ejecutaba tres lineas antes de
@@ -26,7 +28,7 @@ Un commit funcional (`c1f858f2`) y este paquete documental. El commit funcional 
 | Instrumento | Resultado |
 |---|---|
 | `promotion-migration-check` contra el indice | 7/7 invariantes validas |
-| `promotion-migration-check` contra el commit `c1f858f2` | 7/7 invariantes validas (`invariantes-replay-commit.json`) |
+| `promotion-migration-check` contra el commit certificado | 7/7 invariantes validas (`invariantes-replay-commit.json`) |
 | `git diff --numstat origin/develop HEAD -- service.js` | 0 anadidas, 1 eliminada |
 | Certificador hermetico `hr-mobile-identity-local.js` sobre el arbol del candidato | **55/55** (`local-certification.json`) |
 | Suites API apuntadas (9 archivos del frente, incluida la guarda nueva) | 105 pruebas, 105 pasan, 0 fallan |
@@ -72,5 +74,5 @@ para no crear una autoreferencia: el archivo que mide la puerta no puede ser de 
 
 ## Rollback
 
-Revertir el commit funcional `c1f858f2` en `develop`. El árbol vuelve a `b59f286d`, que trae la compuerta
+Revertir el commit funcional certificado en `develop`. El arbol vuelve a `b59f286d`, que trae la compuerta
 alterna; no hay migracion de esquema, no hay dato que revertir.

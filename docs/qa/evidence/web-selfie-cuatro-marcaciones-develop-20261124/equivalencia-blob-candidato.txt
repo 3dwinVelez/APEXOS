@@ -1,5 +1,5 @@
 # Equivalencia de blobs del replay hacia develop
-# Candidato: funcional c1f858f2 + documentos en el indice | Base: origin/develop b59f286d | Origen: origin/desarrollo 0bd63873
+# Candidato: un solo commit certificado (codigo + evidencia + spec + brief) | Base: origin/develop | Origen: origin/desarrollo
 # Fecha: 2026-11-24T16:46:08Z  Node: v22.23.1
 # Medida con git ls-tree / git ls-files -s (regla 25: rev-parse <ref>:<ruta> reescribe separadores en esta estacion y inventa divergencias).
 # La columna CANDIDATO mide lo que se publica: commit funcional + indice de los documentos aun sin commitear.
