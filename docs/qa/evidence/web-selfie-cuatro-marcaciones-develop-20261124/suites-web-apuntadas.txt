@@ -1,0 +1,232 @@
+(node:6880) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+TAP version 13
+# (node:5336) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:5336) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/apexos-cand-web-selfie-develop-20261124/apps/web/lib/hrAttendanceState.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-web-selfie-develop-20261124\\apps\\web\\package.json.
+# Subtest: name and code groups combine the same employee and schedule across devices
+ok 1 - name and code groups combine the same employee and schedule across devices
+  ---
+  duration_ms: 31.2163
+  type: 'test'
+  ...
+# Subtest: different schedules, unassigned punches and other explicit employees remain isolated
+ok 2 - different schedules, unassigned punches and other explicit employees remain isolated
+  ---
+  duration_ms: 0.3331
+  type: 'test'
+  ...
+# Subtest: server and pending local copies never advance a type twice
+ok 3 - server and pending local copies never advance a type twice
+  ---
+  duration_ms: 0.2859
+  type: 'test'
+  ...
+# Subtest: explicit employee identity supports an older display name without accepting others
+ok 4 - explicit employee identity supports an older display name without accepting others
+  ---
+  duration_ms: 0.3201
+  type: 'test'
+  ...
+# (node:18232) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la llegada tarde se sustenta con motivo, texto y foto, igual que la extension
+ok 5 - la llegada tarde se sustenta con motivo, texto y foto, igual que la extension
+  ---
+  duration_ms: 2.3965
+  type: 'test'
+  ...
+# Subtest: la tolerancia del horario es la que decide si hay que justificar
+ok 6 - la tolerancia del horario es la que decide si hay que justificar
+  ---
+  duration_ms: 0.4106
+  type: 'test'
+  ...
+# Subtest: las cuatro marcaciones web requieren una selfie propia de ese paso
+ok 7 - las cuatro marcaciones web requieren una selfie propia de ese paso
+  ---
+  duration_ms: 0.6199
+  type: 'test'
+  ...
+# Subtest: la camara frontal es lo que hace que la selfie sea selfie
+ok 8 - la camara frontal es lo que hace que la selfie sea selfie
+  ---
+  duration_ms: 52.3033
+  type: 'test'
+  ...
+# Subtest: la selfie sale del localStorage a IndexedDB como las demas evidencias
+ok 9 - la selfie sale del localStorage a IndexedDB como las demas evidencias
+  ---
+  duration_ms: 0.2904
+  type: 'test'
+  ...
+# Subtest: abrir jornada con vehiculo pide kilometraje inicial
+ok 10 - abrir jornada con vehiculo pide kilometraje inicial
+  ---
+  duration_ms: 0.3486
+  type: 'test'
+  ...
+# Subtest: el reporte muestra la justificacion de la llegada tarde, no solo la de extension
+ok 11 - el reporte muestra la justificacion de la llegada tarde, no solo la de extension
+  ---
+  duration_ms: 32.7362
+  type: 'test'
+  ...
+# Subtest: el monitor nombra el retardo aparte de los minutos extra
+ok 12 - el monitor nombra el retardo aparte de los minutos extra
+  ---
+  duration_ms: 40.692
+  type: 'test'
+  ...
+# (node:18268) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:18268) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/apexos-cand-web-selfie-develop-20261124/apps/web/lib/hrScheduleMonitor.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-web-selfie-develop-20261124\\apps\\web\\package.json.
+# Subtest: monitor uses TimePunch operational endpoints and never a legacy table after failure
+ok 13 - monitor uses TimePunch operational endpoints and never a legacy table after failure
+  ---
+  duration_ms: 1.5126
+  type: 'test'
+  ...
+# Subtest: web normalizes mobile photos through the same reader and keeps legacy supports
+ok 14 - web normalizes mobile photos through the same reader and keeps legacy supports
+  ---
+  duration_ms: 1.7212
+  type: 'test'
+  ...
+# (node:6616) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: talent landing exposes novelties, employees and mallas navigation
+ok 15 - talent landing exposes novelties, employees and mallas navigation
+  ---
+  duration_ms: 41.9084
+  type: 'test'
+  ...
+# Subtest: mobile closing flow requires day mileage when the schedule has a vehicle
+ok 16 - mobile closing flow requires day mileage when the schedule has a vehicle
+  ---
+  duration_ms: 1.3237
+  type: 'test'
+  ...
+# Subtest: new talent pages consume talento humano API aliases
+ok 17 - new talent pages consume talento humano API aliases
+  ---
+  duration_ms: 105.5767
+  type: 'test'
+  ...
+# Subtest: talent modal and drawer surfaces escape dashboard layout
+ok 18 - talent modal and drawer surfaces escape dashboard layout
+  ---
+  duration_ms: 2.2994
+  type: 'test'
+  ...
+# Subtest: employee master exposes personal, labor and affiliation editing
+ok 19 - employee master exposes personal, labor and affiliation editing
+  ---
+  duration_ms: 2.8009
+  type: 'test'
+  ...
+# Subtest: labor entities page exposes entity CRUD while employee affiliations live in employee master
+ok 20 - labor entities page exposes entity CRUD while employee affiliations live in employee master
+  ---
+  duration_ms: 31.1064
+  type: 'test'
+  ...
+# Subtest: labor configuration page edits night range, overtime limits and surcharge concepts
+ok 21 - labor configuration page edits night range, overtime limits and surcharge concepts
+  ---
+  duration_ms: 30.7971
+  type: 'test'
+  ...
+# Subtest: payroll page supports preview, real liquidation, adjustments and pdf vouchers
+ok 22 - payroll page supports preview, real liquidation, adjustments and pdf vouchers
+  ---
+  duration_ms: 42.269
+  type: 'test'
+  ...
+# Subtest: libranzas page manages concepts, employee balances and recurrent deductions
+ok 23 - libranzas page manages concepts, employee balances and recurrent deductions
+  ---
+  duration_ms: 31.7621
+  type: 'test'
+  ...
+# Subtest: employee termination liquidation page supports severance balances and indemnization
+ok 24 - employee termination liquidation page supports severance balances and indemnization
+  ---
+  duration_ms: 49.2312
+  type: 'test'
+  ...
+# Subtest: social contributions page supports payroll contributions by entity
+ok 25 - social contributions page supports payroll contributions by entity
+  ---
+  duration_ms: 41.635
+  type: 'test'
+  ...
+# Subtest: social benefit provisions live outside payroll liquidation
+ok 26 - social benefit provisions live outside payroll liquidation
+  ---
+  duration_ms: 69.5007
+  type: 'test'
+  ...
+# Subtest: social benefit payments page pays provisioned balances
+ok 27 - social benefit payments page pays provisioned balances
+  ---
+  duration_ms: 32.7789
+  type: 'test'
+  ...
+# Subtest: reports page exports payroll auxiliary without previewing heavy rows
+ok 28 - reports page exports payroll auxiliary without previewing heavy rows
+  ---
+  duration_ms: 1.3909
+  type: 'test'
+  ...
+# (node:18404) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: el catálogo conserva 31 fichas y el portafolio publica 12
+ok 29 - el catálogo conserva 31 fichas y el portafolio publica 12
+  ---
+  duration_ms: 70.343
+  type: 'test'
+  ...
+# Subtest: todo módulo visible tiene pantalla propia y el retirado sin ruta deja de publicarse
+ok 30 - todo módulo visible tiene pantalla propia y el retirado sin ruta deja de publicarse
+  ---
+  duration_ms: 140.7989
+  type: 'test'
+  ...
+# Subtest: lobby, barra lateral y buscador solo ofrecen el portafolio
+ok 31 - lobby, barra lateral y buscador solo ofrecen el portafolio
+  ---
+  duration_ms: 82.7102
+  type: 'test'
+  ...
+# Subtest: la ficha genérica de un módulo retirado no se publica
+ok 32 - la ficha genérica de un módulo retirado no se publica
+  ---
+  duration_ms: 17.3045
+  type: 'test'
+  ...
+# Subtest: las fichas corrigen el estado que declaraban antes de operar
+ok 33 - las fichas corrigen el estado que declaraban antes de operar
+  ---
+  duration_ms: 1.7134
+  type: 'test'
+  ...
+# Subtest: ninguna acción frecuente ni función apunta a un módulo retirado
+ok 34 - ninguna acción frecuente ni función apunta a un módulo retirado
+  ---
+  duration_ms: 22.0802
+  type: 'test'
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1451.9729

@@ -1,0 +1,79 @@
+{
+  "instrumento": "promotion-migration-check",
+  "ejecutado_en": "2026-11-24T16:43:54.479Z",
+  "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-web-selfie-develop-20261124",
+  "spec": "docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json",
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "contra": "commit HEAD",
+  "label": "invariantes del replay",
+  "passed": true,
+  "total": 7,
+  "rotos": 0,
+  "results": [
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/mobile-identity.js",
+      "esperado": "f9e8ea27bb32e92920d25983ed2db899d5d5538f",
+      "actual": "f9e8ea27bb32e92920d25983ed2db899d5d5538f",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-mobile-identity.test.js",
+      "esperado": "ed115470c1737b7461e7782608484dd665023294",
+      "actual": "ed115470c1737b7461e7782608484dd665023294",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-single-selfie-gate.test.js",
+      "esperado": "812d669b38517174967bb0685fdddc7ba163392d",
+      "actual": "812d669b38517174967bb0685fdddc7ba163392d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/hr-mobile-identity-local.js",
+      "esperado": "636986001ad8a853303dfef97637ce7c42dd2638",
+      "actual": "636986001ad8a853303dfef97637ce7c42dd2638",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "delete",
+      "file": "apps/api/src/modules/hr/webPunchSelfie.js",
+      "esperado": null,
+      "actual": null,
+      "ok": true,
+      "detalle": "ausente en lo que se publica"
+    },
+    {
+      "tipo": "delete",
+      "file": "apps/api/test/hr-web-punch-selfie.test.js",
+      "esperado": null,
+      "actual": null,
+      "ok": true,
+      "detalle": "ausente en lo que se publica"
+    },
+    {
+      "tipo": "edit",
+      "file": "apps/api/src/modules/hr/service.js",
+      "esperado": {
+        "anadidas": 0,
+        "eliminadas": 1
+      },
+      "actual": {
+        "anadidas": 0,
+        "eliminadas": 1
+      },
+      "lineas_sobran": [],
+      "lineas_faltan": [],
+      "ok": true,
+      "detalle": "replay exacto: 0 anadidas, 1 eliminadas declaradas"
+    }
+  ]
+}
