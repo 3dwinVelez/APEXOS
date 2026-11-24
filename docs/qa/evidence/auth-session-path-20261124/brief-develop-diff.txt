@@ -1,0 +1,15 @@
+Candidato de documentacion a develop del paquete monitor-latencia-sesion-20261124
+punta: 9fd3bdb1491a893d59e457a34cbb9cb049157bad
+base (origin/develop al medir): 3303a95532a35603f53f1eced0300f4febb0eab3
+
+diff neto origin/develop..9fd3bdb1491a893d59e457a34cbb9cb049157bad (--name-status):
+M	docs/briefs/2026-11-24-monitor-marcaciones-latencia.md
+A	docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json
+
+rutas bajo apps/ o scripts/: 0
+
+blob del brief: punta=b04d2d7c0b6b49aec719323488ac604c57ca3368
+                desarrollo=b04d2d7c0b6b49aec719323488ac604c57ca3368
+                     main=b04d2d7c0b6b49aec719323488ac604c57ca3368
+
+lineas anadidas al brief contra la version de develop: 122	0	docs/briefs/2026-11-24-monitor-marcaciones-latencia.md
