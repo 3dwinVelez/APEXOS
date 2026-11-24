@@ -250,8 +250,70 @@ Desde esta intervención el protocolo deja de ser recomendación y pasa a ser bl
 
 | # | Pendiente | Dueño | Estado |
 |---|---|---|---|
-| P-1 | Retirar la compuerta alterna `webPunchSelfie.js` del código servido en `develop`/`main` (reconstrucción en `desarrollo` + manifiesto de alcance + `qa:preqa:evidence`) | `equipo-apexos` con `apexos-git-guardian` | bloqueado por autorización explícita de promoción |
+| P-1 | Retirar la compuerta alterna `webPunchSelfie.js` del código servido en `develop`/`main` (reconstrucción en `desarrollo` + manifiesto de alcance + `qa:preqa:evidence`) | `equipo-apexos` con `apexos-git-guardian` | **ejecutada el 2026-11-24 con autorización del dueño**: develop vía replay por invariantes (merge rápido `6b42b365`) y main vía replay puntual; detalle en la sección 15 |
 | P-2 | Decidir si `AuthorizationSession.id uuid` se blinda con migración o se documenta como requisito de ambiente | `apexos-db-nube` | abierto, hallazgo 10.1 |
 | P-3 | Dejar reconstruible la base desde `prisma migrate deploy` (baseline faltante y `Item`) | `apexos-db-nube` | abierto, hallazgo 10.2 |
-| P-4 | QA funcional en navegador contra ambiente QA una vez exista promoción | `apexos-qa` | pendiente de P-1 |
+| P-4 | QA funcional en navegador contra ambiente QA una vez exista promoción | `apexos-qa` | **cerrada en QA**: 13/13 de campo sobre el API servido `6b42b365a64e`, las cuatro marcaciones asentadas y cero rechazos por formato; en Produccion queda el DESPUÉS después del despliegue |
 | P-5 | Herramienta única de marcación y bloqueo de versiones viejas (retira lo provisional, sección 11) | dueño del producto | en curso, fuera de este brief |
+| P-6 | Los dos rojos pre-existentes de main que este frente **no** tocó: el stub de `hr-route-assignment-lock.test.js` (le falta `timeRoute.findFirst`) y `hr-punch-mobile-evidence.test.mjs` en `apps/web` | backend con QA, y frontend, cada uno en su propio corte | abiertos, declarados en el veredicto de la pata main |
+
+## 15. Ejecución de P-1: las dos promociones del 2026-11-24
+
+El dueño ordenó alinear las tres ramas con la decisión de las cuatro marcaciones web, "sin romper nada más"
+y "verificadas y probadas que no existirán rechazos". La orden incluye verificar en QA y en Producción.
+
+### 15.1 A `develop` (merge rápido, ya servida)
+
+- `origin/develop` estaba en `b59f286d` y **ya tenía el arreglo estructural**: el blob publicado de
+  `mobile-identity.js` (`756b057217`) trae `WEB_SELFIE_REQUIRED_TYPES` con los cuatro tipos, `service.js`
+  (`b5eebff8db`) llama a la compuerta una sola vez y `webPunchSelfie.js` no está enganchado en la ruta. Lo
+  único que seguía fallando era la boca de marcación web, que solo pedía selfie en entrada y salida.
+- Por eso el transporte no pudo ser "llevar el blob de desarrollo": el diff `desarrollo ↔ develop` de
+  `service.js` es de 31 agregadas y 5 eliminadas, y entre esas 5 está la guarda de tenant de `updateRoute`
+  (`cd3a88e5`, `HORARIO_NO_ENCONTRADO`). Llevar el blob la habría revertido en `develop`, que es justo el
+  fallo crítico que el dueño pidió blindar.
+- Se cambió el método: **replay por invariantes**. Cuatro rutas viajan byte a byte desde
+  `origin/desarrollo`, dos se borran, y `service.js` recibe el hunkeo exacto de cuatro líneas (la llamada a
+  `prepareWebPunchSelfie`). El instrumento versionado
+  `scripts/certifications/promotion-migration-check.js` lo verifica (11/11, medido contra el index y contra
+  el commit), y su `--selftest` inyecta tres mutaciones y exige que las tres se pongan en rojo.
+- Commit certificado `52a8d9a7` (22 rutas) + manifiestos en `dea65504` y `6b42b365`. Compuertas en verde 3/3
+  con el inventario exacto de 24 rutas y cuatro waiver nominales motivados.
+- QA de campo contra el API desplegado (`6b42b365a64e`): **13/13**, las cuatro marcaciones asentadas con
+  HTTP 200 mandando JPEG declarado PNG y PNG declarado JPEG, `evidence_status:available` en tres y
+  `not_verified` en el reenvío sin foto, cero `SELFIE_INVALIDA`.
+
+### 15.2 A `main` (replay puntual)
+
+- Main está a 596 commits de develop, así que un merge de rama está prohibido por el propio manifiesto de
+  alcance de la última promoción. El transporte es el mismo mecanismo: replay puntual de las once rutas del
+  frente sobre `e68eed4c`, con spec versionada y verificada por el mismo instrumento (11/11).
+- Ocho rutas llegan byte a byte desde `origin/desarrollo`, dos se borran (`webPunchSelfie.js` y su prueba,
+  que en main sí existían) y `service.js` muestra **cero líneas agregadas y una eliminada**; la guarda de
+  tenant sigue en su línea 1576 con su `HORARIO_NO_ENCONTRADO`. La pantalla de marcación web de main ya
+  pedía la foto en los cuatro tipos (blob `c13f7b4e` idéntico al de develop), así que no hay frontend que
+  mover.
+- Commit certificado `26dbc258`. Evidencia medida sobre este árbol: suites API apuntadas 97/98, suites web
+  21/22, suite propia de la compuerta 40/40, certificador hermético 55/55, autocontrol del instrumento de
+  replay con sus tres derivas en rojo y autocontrol del arnés de campo 10/10.
+- El **ANTES** se midió contra lo que Producción sirve hoy (`e68eed4c63f4`): 10/10 con el defecto
+  reproducido, las dos etiquetas mentirosas devolviendo HTTP 400 `SELFIE_INVALIDA` y cero fila escrita. El
+  **DESPUÉS** queda pendiente del despliegue (P del dueño, sección 15.3).
+
+### 15.3 Lo que este frente no arregla, dicho con su dueño
+
+1. Los clientes web de `develop` y `main` no traen el envío de resguardo sin foto (`retry_without_photo`),
+   que es de la pata provisional de la app instalada y vive solo en `desarrollo`. El API degrada en vez de
+   rechazar, así que no hay rechazo por formato; si el navegador no puede tomar la foto, la pantalla lo
+   dice en texto, no asienta una marca sin evidencia.
+2. Los rojos pre-existentes de main (`timeRoute.findFirst` en el stub de la prueba de locks y
+   `hr-punch-mobile-evidence.test.mjs` en `apps/web`) se declaran con su dueño y no se meten de contrabando:
+   se probó llevar el stub de desarrollo, verdeja la suite, pero son 43 líneas de un frente ajeno.
+3. La cadena de migraciones de main no reconstruye una base desde cero (`20260602_accounting_inventory_purchases_payroll`
+   altera `"Item"` que ninguna migración de main crea). Es el hallazgo 10.2 / P-3 que ya estaba abierto: la
+   verificación local del certificador hermetico usó una base aislada clonada del esquema alineado, y con el
+   esquema del `db push` de main el login del arnés devolvía 401 por `42883 operator does not exist: text = uuid`.
+4. `agents/**` y `.qoder/skills/**` no viajan a `develop` ni a `main`: esas ramas no tienen el árbol de
+   agentes. El contexto vivo queda versionado en `desarrollo`.
+5. Queda la rama auxiliar remota `codex/qa-web-selfie-cuatro-marcaciones-develop-20261124`, borrador de la
+   promoción de develop ya fusionado. Borrarla requiere autorización expresa del dueño.

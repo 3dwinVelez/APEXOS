@@ -1,0 +1,23 @@
+# Equivalencia de blobs: origin/main (e68eed4c) contra el arbol indexado del candidato de main (2026-11-24)
+#
+   Sobre el tip real de origin/main solo entran las once rutas de este frente: dos borrados, cinco
+   carries byte a byte con origin/desarrollo y un hunkeo de una linea en service.js. Ninguna otra
+   ruta del arbol de main se toca: los 596 commits que develop le lleva por delante no viajan.
+#
+apps/api/src/modules/hr/mobile-identity.js           756b057217  f9e8ea27bb  f9e8ea27bb  CARRY byte a byte con origin/desarrollo
+apps/api/src/modules/hr/service.js                   b5eebff8db  c30d6f11dc  9b60a419f5  HUNKEO: 0 anadidas, 1 eliminada sobre el contenido propio de main (waiver nominal)
+apps/api/src/modules/hr/webPunchSelfie.js            ce6c0af326  AUSENTE     AUSENTE     BORRADA (main la tenia; desarrollo ya no la tiene)
+apps/api/test/hr-mobile-identity.test.js             e504bfcc17  ed115470c1  ed115470c1  CARRY byte a byte con origin/desarrollo
+apps/api/test/hr-single-selfie-gate.test.js          AUSENTE     812d669b38  812d669b38  NUEVA byte a byte desde origin/desarrollo
+apps/api/test/hr-web-punch-selfie.test.js            24ff2c93b0  AUSENTE     AUSENTE     BORRADA (main la tenia; desarrollo ya no la tiene)
+scripts/certifications/hr-mobile-identity-local.js   a012f3b251  636986001a  636986001a  CARRY byte a byte con origin/desarrollo
+scripts/certifications/hr-web-selfie-field.js        AUSENTE     7b5cb6d4a8  7b5cb6d4a8  NUEVA byte a byte desde origin/desarrollo
+scripts/certifications/promotion-gates-runner.js     AUSENTE     14760388b3  14760388b3  NUEVA byte a byte desde origin/desarrollo
+scripts/certifications/promotion-migration-check.js  AUSENTE     309ddadea1  309ddadea1  NUEVA byte a byte desde origin/desarrollo
+scripts/test/promotion-replay-instruments.test.js    AUSENTE     edecb7853f  edecb7853f  NUEVA byte a byte desde origin/desarrollo
+#
+git diff --cached --numstat de service.js (anadidas  eliminadas  ruta):
+   0	1	apps/api/src/modules/hr/service.js
+
+git grep webPunchSelfie -- apps/api/src:
+   NINGUNA: la guarda alterna ya no esta enganchada en el producto de main

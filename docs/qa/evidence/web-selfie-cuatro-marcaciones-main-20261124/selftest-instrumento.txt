@@ -1,3 +1,4 @@
+# autocontrol del arnes de campo, en el arbol del candidato de main, con el instrumento copiado byte a byte desde origin/desarrollo
 OK    un_JPEG_declarado_PNG_rechazado_es_defecto
 OK    un_400_SELFIE_REQUERIDA_con_foto_enviada_es_defecto
 OK    la_misma_fila_sin_codigo_de_formato_es_arreglo
@@ -9,5 +10,5 @@ OK    --flag=valor_y_--flag_valor_resuelven_igual
 OK    una_bandera_de_valor_sin_valor_se_niega_en_vez_de_volverse_true
 OK    el_reenvio_sin_foto_se_clasifica_por_su_codigo
 SELFTEST APROBADO (10 casos): cuatro son rojos obligatorios (rechazo por etiqueta, hora no asentada, ancla que contradice, bandera sin valor).
-(node:12668) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(node:12384) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
 (Use `node --trace-warnings ...` to show where the warning was created)
