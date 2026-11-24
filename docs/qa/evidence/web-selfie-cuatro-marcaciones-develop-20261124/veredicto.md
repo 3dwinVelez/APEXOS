@@ -19,7 +19,11 @@ hace tres cosas y ninguna mas:
    `hr-mobile-identity.test.js`, el certificador `hr-mobile-identity-local.js` y la guarda estructural
    `apps/api/test/hr-single-selfie-gate.test.js`, que estaba ausente de `develop` y es la que impide que alguien
    vuelva a montar un segundo dictamen sobre la misma foto.
-3. En `service.js` quita una sola linea: `input = require("./webPunchSelfie").prepareWebPunchSelfie(input);`.
+3. Lleva ademas los dos instrumentos que midieron este replay (`scripts/certifications/promotion-migration-check.js`,
+   `promotion-gates-runner.js`) y su prueba, byte a byte desde origen: el porton de CI exige que el script
+   citado como `regression_certification.script` este versionado en el candidato (ver
+   `instrumentos-en-candidato.txt`). Son gobernanza, no producto.
+4. En `service.js` quita una sola linea: `input = require("./webPunchSelfie").prepareWebPunchSelfie(input);`.
    No se llevo el blob de `service.js` de desarrollo porque develop tiene 305 lineas propias en ese archivo,
    incluida la guarda de tenant de `updateRoute` (ver `guarda-de-tenant-presente.txt`).
 

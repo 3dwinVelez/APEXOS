@@ -6,13 +6,13 @@
   "base_commits": {
     "develop": "b59f286dd1d05ed29a6e040c2d7027dd1b55cf17"
   },
-  "certified_commit": "76e397191dae26ee52591b980cd5d0a157610b32",
+  "certified_commit": "52a8d9a799e5acb7b2707871791206c1355a7f39",
   "candidate_tip": "el tip del candidato es el commit de los dos manifiestos; el blob de las 18 rutas certificadas no cambia despues de el commit certificado",
   "candidate_source": {
     "branch": "desarrollo",
-    "commit": "76e397191dae26ee52591b980cd5d0a157610b32",
-    "replay_sobre": "origin/develop b59f286dd1d05ed29a6e040c2d7027dd1b55cf17 (tip de la rama al armar el candidato)",
-    "origen_del_contenido": "origin/desarrollo para los cuatro carry byte a byte y para brief/spec/evidencia; develop conserva sus 305 lineas propias en service.js",
+    "commit": "52a8d9a799e5acb7b2707871791206c1355a7f39",
+    "replay_sobre": "origin/develop b59f286dd1d05ed29a6e040c2d7027dd1b55cf17",
+    "origen_del_contenido": "origin/desarrollo 5b87e9ea para los cuatro carry de producto, los tres instrumentos de promocion y el brief/spec/evidencia; develop conserva sus 305 lineas propias en service.js",
     "metodo": "replay por invariantes, no por archivo ni por rama: cuatro carry byte a byte desde origin/desarrollo, dos borrados de rutas que nunca existieron en desarrollo, un hunkeo de una linea en service.js con excepcion nominal de origen"
   },
   "change_intent": {
@@ -67,24 +67,8 @@
       "file": "apps/api/test/hr-web-punch-selfie.test.js"
     },
     {
-      "status": "M",
-      "file": "scripts/certifications/hr-mobile-identity-local.js"
-    },
-    {
       "status": "A",
       "file": "docs/briefs/2026-11-24-web-selfie-cuatro-marcaciones-porton-origen.md"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-scope.json"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-preqa.json"
     },
     {
       "status": "A",
@@ -97,6 +81,10 @@
     {
       "status": "A",
       "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/guarda-de-tenant-presente.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/instrumentos-en-candidato.txt"
     },
     {
       "status": "A",
@@ -121,6 +109,34 @@
     {
       "status": "A",
       "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/veredicto.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-mobile-identity-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/promotion-gates-runner.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/promotion-migration-check.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/promotion-replay-instruments.test.js"
     }
   ],
   "origin_waivers": [
@@ -200,7 +216,8 @@
     "agents/** y .qoder/skills/** no viajan: origin/develop no tiene el arbol de agentes; el contexto vivo de este frente se versiona en desarrollo",
     "scripts/certifications/promotion-gates-runner.js y promotion-migration-check.js no viajan: son gobernanza de desarrollo y las compuertas se corren desde ese arbol; el manifiesto los cita por comando, no por blob",
     "apps/web/app/dashboard/talento-humano/marcacion/page.tsx no se toca: el cliente de develop ya pide foto en los cuatro tipos y manda identity_photo en la raiz; el escape hatch retry_without_photo sigue viviendo solo en desarrollo y queda como pendiente del frente de frontend",
-    "suite-api.txt del intento con npm --workspace apps/api test se descarto como evidencia: develop no declara script test en apps/api; la suite se corrio apuntada y eso es lo que se versiona"
+    "suite-api.txt del intento con npm --workspace apps/api test se descarto como evidencia: develop no declara script test en apps/api; la suite se corrio apuntada y eso es lo que se versiona",
+    "los dos manifiestos viajan en un commit posterior al certified_commit: el manifiesto no puede citarse a si mismo. expected_changes los declara A y el porton de alcance los mide; certified_functional_paths los excluye a proposito porque ese si debe ser el diff exacto del commit certificado."
   ],
   "compuertas_exigidas": [
     "node scripts/certifications/promotion-migration-check.js --spec docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json --against commit --ref <candidato>",
@@ -229,6 +246,7 @@
     "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/control-de-mutacion-instrumento.json",
     "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/equivalencia-blob-candidato.txt",
     "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/guarda-de-tenant-presente.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/instrumentos-en-candidato.txt",
     "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-commit.json",
     "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-indice.json",
     "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json",
@@ -236,6 +254,9 @@
     "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-web-apuntadas.txt",
     "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/veredicto.md",
     "docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json",
-    "scripts/certifications/hr-mobile-identity-local.js"
+    "scripts/certifications/hr-mobile-identity-local.js",
+    "scripts/certifications/promotion-gates-runner.js",
+    "scripts/certifications/promotion-migration-check.js",
+    "scripts/test/promotion-replay-instruments.test.js"
   ]
 }
