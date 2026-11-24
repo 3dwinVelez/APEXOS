@@ -13,7 +13,7 @@
   },
   "base_commit": "b08699e3214a41f946cf3080b313cbfe637e33dd",
   "target_head": "b08699e3214a41f946cf3080b313cbfe637e33dd",
-  "certified_commit": "82664feed605c3744ab71be871d75ab9a7421e3e",
+  "certified_commit": "82664fee9947e01edbc91e86cb078d936e8e98ea",
   "candidate_tip": "La punta que se empuja es el commit de documentacion que trae estos dos manifiestos y el veredicto, encima del funcional 82664fee. El funcional es fast-forward sobre b08699e3 y no toca ninguna de las rutas que ese commit sirvio; la diferencia entre las dos capas esta escrita en deriva_declarada y no detras de un numero redondo. La re-medicion del replay sobre la punta queda en docs/qa/evidence/auth-session-path-20261124/ (regla 124 de apexos-qa: medir solo el certificado dejaria pasar una ruta carry revertida por el commit de docs).",
   "rebase_declarado": "El primer candidato (funcional 65b9dd7a) se anclo a 3baf8e4a y el scope gate lo rechazo: ALCANCE DE PROMOCION INVALIDO, el destino origin/main cambio desde el baseline aprobado. Main habia avanzado a b08699e3, un commit de documentacion de dos rutas (el brief del selfie web y su veredicto) ajeno a este paquete y sin traslape con ninguna de sus 51 rutas. El candidato se reconstruyo con reset --soft sobre el tip nuevo, se reverifico que las dos rutas del commit ajeno quedan intactas y se regeneraron el spec de replay, el inventario de blobs y las invariantes: 50 rutas funcionales mas 4 de documentos de promocion (los dos manifiestos, el veredicto y el replay de la punta). La regla 51 de apexos-git-guardian consigna el procedimiento: nunca re-anclar por merge ni por snapshot viejo, y volver a medir las invariantes despues de mover la base.",
   "promotion_branch": "codex/qa-monitor-latencia-sesion-main-20261124",
