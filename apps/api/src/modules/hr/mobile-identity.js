@@ -788,5 +788,8 @@ module.exports = {
   webIdentity,
   verifyPunchIdentity,
   publicPunchMetadata,
-  identityEvidenceOf
+  identityEvidenceOf,
+  // Reutilizados por shared-device-identity.js (celular compartido del camion).
+  publicKeyFrom,
+  normalizeSelfie
 };

@@ -1,0 +1,24 @@
+{
+  "environment": "LOCAL",
+  "status": "passed",
+  "started_at": "2026-11-24T03:06:36.666Z",
+  "checks": [
+    "registro de rostro con autorizacion biometrica: queda ACTIVO, sin autorizacion 400 y repetirlo 409",
+    "registro de huella propia: reto firmado por el servidor + llave ES256 queda activa y se lista",
+    "marcacion web: huella primero (firma v2) + selfie del mismo rostro -> huella verificada y rostro coincide; la firma cruda no se guarda",
+    "firma de otro tipo o de otro usuario se rechaza 403 FIRMA_NO_CORRESPONDE sin crear la marcacion",
+    "selfie de OTRA persona: la marcacion se registra (no se pierde la hora) pero queda SENALADA no_coincide",
+    "celular del camion: el administrador lo registra por placa y la tripulacion marca con su selfie -> device_verified",
+    "ingreso con huella: misma sesion que con clave y /auth/me responde a la persona",
+    "ingreso con huella: reto reusado, llave ajena y empresa vecina responden 401; sin sesion las rutas propias 401",
+    "aislamiento: la empresa vecina no ve rostros ni celulares de la otra",
+    "restablecer la huella es solo de administrador; tras restablecer, el ingreso con esa llave queda en 401"
+  ],
+  "measurements": {
+    "marcacion_con_huella_y_rostro_ms": 284,
+    "similitud_misma_persona": 0.952,
+    "similitud_otra_persona": 0.234,
+    "ingreso_con_huella_ms": 18
+  },
+  "finished_at": "2026-11-24T03:06:40.517Z"
+}
