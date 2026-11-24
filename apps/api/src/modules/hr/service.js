@@ -940,12 +940,18 @@ async function listOwnRoutes(tenantId, user) {
   return route ? [route] : [];
 }
 
-async function listRouteEventSummaries(tenantId) {
+async function listRouteEventSummaries(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const SUMMARY_LIMIT = 100;
+    // Sin fecha el resumen toma las 100 rutas mas recientes de TODO el historial del tenant,
+    // y con ellas las ventanas de dias que expande `readUnlinkedEvidence`. `date`/`from`/`to`
+    // fijan el dia que la pantalla ya tiene seleccionado; el control de truncamiento sigue
+    // siendo el mismo, solo que dentro del rango.
+    const range = boundedReportRange(query, { defaultToday: false });
     const [summaryRows, employees] = await Promise.all([
       prisma.timeRoute.findMany({
         select: { id: true, date: true, employees: true },
+        where: range ? { date: { gte: range.start, lt: range.end } } : {},
         orderBy: { date: "desc" },
         take: SUMMARY_LIMIT + 1
       }),
@@ -960,7 +966,7 @@ async function listRouteEventSummaries(tenantId) {
       limit: SUMMARY_LIMIT,
       returned: routes.length,
       hint: summaryTruncated
-        ? "El resumen cubre las 100 rutas mas recientes; acota el rango de fechas en el listado de horarios para revisar rutas antiguas."
+        ? `El resumen cubre las 100 rutas mas recientes${range ? " del rango consultado" : ""}; acota el rango de fechas en el listado de horarios para revisar rutas antiguas.`
         : ""
     };
     const routeIds = routes.map((route) => route.id);
@@ -983,9 +989,11 @@ async function listRouteEventSummaries(tenantId) {
       return { gte: from, lt: endOfDay(from) };
     });
 
-    const [punchGroups, activityGroups, closedGroups, evidenceRows, punchEvidenceRows, unlinkedPunches, unlinkedActivities] = await Promise.all([
+    const [punchTypeGroups, activityGroups, evidenceRows, punchEvidenceRows, unlinkedPunches, unlinkedActivities] = await Promise.all([
+      // Una sola agregacion por tipo reemplaza las dos sentencias que habia (total y salidas):
+      // cada viaje al pooler cuesta ~660 ms medidos y, sobre todo, una conexion del pool de 25.
       prisma.timePunch.groupBy({
-        by: ["route_id"],
+        by: ["route_id", "type"],
         where: { route_id: { in: routeIds } },
         _count: { _all: true },
         _max: { punched_at: true }
@@ -995,11 +1003,6 @@ async function listRouteEventSummaries(tenantId) {
         where: { route_id: { in: routeIds } },
         _count: { _all: true },
         _max: { occurred_at: true }
-      }),
-      prisma.timePunch.groupBy({
-        by: ["route_id"],
-        where: { route_id: { in: routeIds }, type: "salida" },
-        _count: { _all: true }
       }),
       prisma.activityEvidence.findMany({
         where: { activity: { route_id: { in: routeIds } } },
@@ -1016,6 +1019,26 @@ async function listRouteEventSummaries(tenantId) {
         take: 2000
       })
     ]);
+    // El contrato del constructor puro no cambia: del agregado por tipo se derivan el total de
+    // marcaciones y el conteo de salidas, que es lo que antes pedian dos sentencias separadas.
+    const punchGroups = [];
+    const closedGroups = [];
+    const punchIndex = new Map();
+    for (const row of punchTypeGroups) {
+      const routeId = Number(row.route_id);
+      const count = Number(row._count?._all || 0);
+      const max = row._max?.punched_at || null;
+      const existing = punchIndex.get(routeId);
+      if (existing) {
+        existing._count._all += count;
+        if (max && (!existing._max.punched_at || new Date(max) > new Date(existing._max.punched_at))) existing._max.punched_at = max;
+      } else {
+        const group = { route_id: row.route_id, _count: { _all: count }, _max: { punched_at: max } };
+        punchIndex.set(routeId, group);
+        punchGroups.push(group);
+      }
+      if (row.type === "salida") closedGroups.push({ route_id: row.route_id, _count: { _all: count } });
+    }
 
     return {
       generated_at: new Date().toISOString(),

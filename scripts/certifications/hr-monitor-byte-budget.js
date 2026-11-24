@@ -20,6 +20,15 @@ const path = require("node:path");
 //     deja margen para un pooler lento sin perdonar un binario dentro del listado.
 //   - Ningun listado puede traer un `data:...;base64,` de mas de 8 KB: el binario se pide por id
 //     a `/hr/monitor-evidence/:source/:id`, que es el unico camino que todavia lo transporta.
+//
+// El 2026-11-24 mostro que el corte de transporte no cerraba la demora: `event-summaries` ignoraba
+// la fecha pedida y aglomeraba el historico entero. Medido en produccion sobre el tenant del
+// cliente, mismo dia: 7.000 ms sin fecha contra ~500 ms con el dia fijado, 266 evidencias = 266
+// y 594 KB -> 16 KB. Por eso la tabla separa el camino con fecha (goberna) del que no la manda
+// (referencia exenta), y el selftest comprueba las dos direcciones y el cableado.
+//
+// Ojo con `--env-file`: Node se lo queda y aborta con codigo 9 si el archivo no existe, antes de
+// que corra este script. El camino largo (el del backfill) usa `--config` por esa razon.
 
 const BUDGETS = {
   listing_bytes: 4 * 1024 * 1024,
@@ -29,18 +38,44 @@ const BUDGETS = {
 
 const ENDPOINTS = [
   { key: "operations_map", label: "Mapa del dia", path: (date) => `/api/v1/hr/operations-map?date=${date}&minutes=30&footprint_days=30` },
-  { key: "event_summaries", label: "Contadores de eventos", path: () => "/api/v1/hr/routes/event-summaries" },
-  { key: "attendance_day", label: "Reporte de asistencia (un dia)", path: (date) => `/api/v1/hr/attendance?fecha_inicio=${date}&fecha_fin=${date}` }
+  // La pantalla de rutas fija el dia desde 2026-11-24, asi que el contador con fecha es el camino
+  // real del usuario y el que lleva presupuesto.
+  { key: "event_summaries_day", label: "Contadores de eventos (dia fijado)", path: (date) => `/api/v1/hr/routes/event-summaries?date=${date}` },
+  { key: "attendance_day", label: "Reporte de asistencia (un dia)", path: (date) => `/api/v1/hr/attendance?fecha_inicio=${date}&fecha_fin=${date}` },
+  // Exenta de veredicto: la misma ruta sin fecha sigue existiendo (otros consumidores la piden) y
+  // su peso historico es el del acote viejo. Medirla informa cuanto queda por migrar; dejarla
+  // gobernar el estado haria que la puerta diga "rojo" por un camino que la pantalla ya no toma,
+  // y un rojo que no se puede corregir en esta intervencion se termina perdonando a mano.
+  { key: "event_summaries_all", label: "Contadores de eventos (sin fecha, referencia)", path: () => "/api/v1/hr/routes/event-summaries", reference: true }
 ];
 
+// Las dos formas tienen que aterrizar en el mismo objeto. Con `--flag=valor` ignorado en silencio,
+// una corrida ordenada contra produccion leia `config/qa.env` y publicaba su evidencia como si
+// hubiera medido el otro ambiente: la puerta media bien pero sobre un destino equivocado.
 function argsFrom(argv) {
   const result = {};
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (!value.startsWith("--")) continue;
+    const separator = value.indexOf("=", 2);
+    if (separator !== -1) {
+      result[value.slice(2, separator)] = value.slice(separator + 1);
+      continue;
+    }
     result[value.slice(2)] = argv[index + 1] && !argv[index + 1].startsWith("--") ? argv[++index] : true;
   }
   return result;
+}
+
+// El ambiente se declara o no se mide. Mientras el predeterminado fue `config/qa.env`, una corrida
+// pedida con una forma que el analizador no entendia terminaba midiendo QA y publicando la evidencia
+// con el nombre del otro ambiente: la puerta media bien, sobre un destino equivocado.
+function declareEnvFile(args) {
+  const value = String(args["env-file"] || "").trim();
+  if (!value) {
+    throw new Error("Falta --env-file=config/<ambiente>.env: esta medicion nunca usa un ambiente predeterminado.");
+  }
+  return path.resolve(value);
 }
 
 function percentile(values, fraction) {
@@ -71,6 +106,7 @@ function inlinePayloadHits(value, found = [], label = "respuesta") {
 function evaluate(samples) {
   const failures = [];
   for (const sample of samples) {
+    if (sample.reference) continue;
     if (sample.bytes > BUDGETS.listing_bytes) {
       failures.push(`${sample.label}: ${sample.bytes} bytes superan el presupuesto de ${BUDGETS.listing_bytes}`);
     }
@@ -109,13 +145,22 @@ async function measureRemote({ apiUrl, email, password, date, samplesPerEndpoint
       const response = await fetch(`${apiUrl}${endpoint.path(date)}`, { headers: { Authorization: `Bearer ${token}` } });
       const text = await response.text();
       timings.push(Date.now() - started);
-      if (!response.ok) throw new Error(`${endpoint.label}: HTTP ${response.status}`);
+      if (!response.ok) {
+        // Una referencia caida se reporta, no tumba la corrida: lo que goberna son los caminos con
+        // presupuesto, y abortar por la exenta dejaria el veredicto sin evidencia.
+        if (endpoint.reference) {
+          measured.push({ key: endpoint.key, label: endpoint.label, reference: true, samples: index + 1, bytes, p50_ms: percentile(timings, 0.5), p95_ms: percentile(timings, 0.95), max_ms: Math.max(...timings), inline_payloads: inlinePayloads, error: `HTTP ${response.status}` });
+          break;
+        }
+        throw new Error(`${endpoint.label}: HTTP ${response.status}`);
+      }
       bytes = Math.max(bytes, Buffer.byteLength(text, "utf8"));
       inlinePayloads = inlinePayloads.concat(inlinePayloadHits(JSON.parse(text || "null"), [], endpoint.key));
     }
     measured.push({
       key: endpoint.key,
       label: endpoint.label,
+      reference: Boolean(endpoint.reference),
       samples: timings.length,
       bytes,
       p50_ms: percentile(timings, 0.5),
@@ -143,11 +188,50 @@ function selftest() {
   const leanFailures = evaluate([lean]);
   const slowFailures = evaluate([slow]);
   const heavyFailures = evaluate([heavyNoMarker]);
+  // El dia fijado (2026-11-24) es el camino real de la pantalla, asi que un contador por dia gordo
+  // o lento tiene que poner la puerta en rojo. La misma ruta sin fecha se mide pero no decide.
+  const dayHeavy = { key: "event_summaries_day", label: "Contadores por dia", bytes: 9 * 1024 * 1024, p95_ms: 7000, inline_payloads: [] };
+  const dayFailures = evaluate([dayHeavy]);
+  const refHeavy = evaluate([{ ...dayHeavy, key: "event_summaries_all", label: "Contadores sin fecha (referencia)", reference: true }]);
+  // La tabla se autoverifica: si la exencion se mueve a la ruta con fecha, la puerta deja de gobernar
+  // lo que el usuario ve sin que cambie ningun numero, y un rojo que nunca llega se perdona solo.
+  const dated = ENDPOINTS.find((endpoint) => endpoint.key === "event_summaries_day");
+  const undated = ENDPOINTS.find((endpoint) => endpoint.key === "event_summaries_all");
+  const wiringFailures = [];
+  if (!dated || dated.reference) wiringFailures.push("el contador por dia no goberna el veredicto");
+  if (dated && !/date=2026-11-24/.test(String(dated.path("2026-11-24")))) wiringFailures.push("el contador por dia no manda la fecha pedida");
+  if (!undated || !undated.reference) wiringFailures.push("la lectura sin fecha no esta marcada como referencia");
+  // La interfaz de argumentos tambien se autoverifica: si `--flag=valor` vuelve a caerse al
+  // suelo, la corrida de produccion volveria a medir QA sin avisar.
+  const parsed = argsFrom(["--env-file=config/production.env", "--samples=5", "--date", "2026-11-18", "--selftest"]);
+  const parseFailures = [];
+  if (parsed["env-file"] !== "config/production.env") parseFailures.push(`--env-file= se perdio (leo ${JSON.stringify(parsed["env-file"])})`);
+  if (parsed.samples !== "5") parseFailures.push(`--samples= se perdio (leo ${JSON.stringify(parsed.samples)})`);
+  if (parsed.date !== "2026-11-18") parseFailures.push(`--date sin valor no booleano se perdio (leo ${JSON.stringify(parsed.date)})`);
+  if (parsed.selftest !== true) parseFailures.push(`--selftest booleano se perdio (leo ${JSON.stringify(parsed.selftest)})`);
+  // El sentido rojo de la declaracion: sin --env-file el certificador tiene que abortar en vez de
+  // elegir un ambiente por su cuenta. Un control que solo sabe pasar no cierra la puerta.
+  const declareFailures = [];
+  let abortaSinDeclarar = false;
+  try {
+    declareEnvFile({});
+  } catch (error) {
+    abortaSinDeclarar = /Falta --env-file/.test(String(error.message));
+  }
+  if (!abortaSinDeclarar) declareFailures.push("sin --env-file no aborta: mediria un ambiente predeterminado");
+  if (declareEnvFile({ "env-file": "config/production.env" }) !== path.resolve("config/production.env")) {
+    declareFailures.push("con --env-file declarado no resuelve ese archivo");
+  }
   const cases = [
     { id: "gordo-rojo", ok: fatFailures.some((line) => /superan el presupuesto/.test(line)) && fatFailures.some((line) => /binario\(s\) inline/.test(line)), failures: fatFailures },
     { id: "anunciado-verde", ok: leanFailures.length === 0, failures: leanFailures },
     { id: "lento-rojo", ok: slowFailures.some((line) => /p95/.test(line)), failures: slowFailures },
-    { id: "volumen-rojo", ok: heavyFailures.some((line) => /superan el presupuesto/.test(line)), failures: heavyFailures }
+    { id: "volumen-rojo", ok: heavyFailures.some((line) => /superan el presupuesto/.test(line)), failures: heavyFailures },
+    { id: "dia-fijado-rojo", ok: dayFailures.some((line) => /superan el presupuesto/.test(line)) && dayFailures.some((line) => /p95/.test(line)), failures: dayFailures },
+    { id: "referencia-exenta", ok: refHeavy.length === 0, failures: refHeavy },
+    { id: "ruta-declarada", ok: wiringFailures.length === 0, failures: wiringFailures },
+    { id: "parseo-ambas-formas", ok: parseFailures.length === 0, failures: parseFailures },
+    { id: "ambiente-declarado-obligatorio", ok: declareFailures.length === 0, failures: declareFailures }
   ];
   return cases;
 }
@@ -181,7 +265,7 @@ async function main() {
     return;
   }
 
-  const envFile = path.resolve(String(args["env-file"] || "config/qa.env"));
+  const envFile = declareEnvFile(args);
   require("../load-env")(envFile);
   const environment = String(process.env.TARGET_ENV || process.env.APP_ENV || "").toLowerCase();
   if (!["qa", "production"].includes(environment)) {
@@ -192,6 +276,12 @@ async function main() {
   const credentials = resolveCredentials(args);
   const apiUrl = String(args["api-url"] || process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
   if (!apiUrl) throw new Error("Falta --api-url o NEXT_PUBLIC_API_URL en el ambiente declarado.");
+  // Un origen explicito no puede contradecir al archivo de ambiente: medir un ambiente y declarar
+  // el otro es la forma exacta en que esta puerta dejo de servir como evidencia.
+  const declared = String(process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+  if (declared && apiUrl !== declared) {
+    throw new Error(`El origen medido (${apiUrl}) no coincide con el del ambiente ${environment} (${declared}).`);
+  }
   const date = String(args.date || todayBogota());
   const samplesPerEndpoint = Math.min(5, Math.max(1, Number(args.samples || 3)));
 
@@ -200,6 +290,9 @@ async function main() {
   const report = {
     change_id: "hr-monitor-byte-budget",
     environment,
+    // La evidencia se autoatribuye: sin el archivo resuelto, una corrida puede decir "production"
+    // mientras el host cuenta otra historia.
+    env_file: path.relative(process.cwd(), envFile).replace(/\\/g, "/"),
     api_url: apiUrl.replace(/^https?:\/\/([^/]+).*$/, "$1"),
     date,
     generated_at: new Date().toISOString(),
@@ -211,6 +304,14 @@ async function main() {
       after: { bytes: 154 * 1024, ms: [940, 1060] },
       proof: "mismo dia, mismo tenant, mismos ids y mismo conteo de evidencias (27=27, 25=25)"
     },
+    // Segunda linea base, la del acote por dia (2026-11-24): el contador sin fecha leia todo el
+    // historico del tenant, asi que fijar el dia no bastaba si el backend seguia ignorando la fecha.
+    day_scope: {
+      source: "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
+      before: { ms_event_summaries: 7000, bytes: 594 * 1024 },
+      after: { ms_event_summaries: 500, bytes: 16 * 1024 },
+      proof: "mismo dia y tenant medidos el 2026-11-24; 266 evidencias = 266 antes y despues"
+    },
     measurements: measured,
     failures,
     status: failures.length ? "failed" : "passed"
@@ -219,8 +320,9 @@ async function main() {
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, `${JSON.stringify(report, null, 2)}\n`);
   for (const item of measured) {
-    console.log(`${item.label}: ${Math.round(item.bytes / 1024)} KB · p50 ${item.p50_ms} ms · p95 ${item.p95_ms} ms · binarios inline ${item.inline_payloads.length}`);
+    console.log(`${item.label}: ${Math.round(item.bytes / 1024)} KB · p50 ${item.p50_ms} ms · p95 ${item.p95_ms} ms · binarios inline ${item.inline_payloads.length}${item.reference ? ` · referencia sin veredicto${item.error ? ` (${item.error})` : ""}` : ""}`);
   }
+  console.log(`Destino declarado: ${environment} desde ${report.env_file} · ${report.api_url} · día ${date} · ${samplesPerEndpoint} muestra(s)`);
   if (failures.length) {
     console.error(`GATE DE PRESUPUESTO EN ROJO (${environment}):`);
     for (const line of failures) console.error(` - ${line}`);

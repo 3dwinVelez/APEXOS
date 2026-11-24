@@ -1,0 +1,33 @@
+{
+  "instrumento": "retiro de cuentas efimeras de certificacion en QA",
+  "ejecutado_en": "2026-11-24T18:04:13.246Z",
+  "ambiente": "QA (apexos-api-qa-production.up.railway.app, commit servido 3303a95532a3)",
+  "cuentas": [
+    {
+      "tenant": "fd3e2802",
+      "cuenta": "qa.monitor.employee.20261124180213@nyvora.test",
+      "objetivo": "user 846",
+      "metodo": "PATCH /api/v1/admin/users/:id/status",
+      "login_antes": 200,
+      "respuesta": 200,
+      "login_despues": 401
+    },
+    {
+      "tenant": "fd3e2802",
+      "cuenta": "qa.monitor.admin.20261124180213@nyvora.test",
+      "objetivo": "user 847",
+      "metodo": "admin.setUserActive (servicio del producto)",
+      "login_antes": 200,
+      "login_despues": 401
+    },
+    {
+      "tenant": "1d162ffd",
+      "cuenta": "qa.session.20261124175723@nyvora.test",
+      "objetivo": "user 845",
+      "metodo": "admin.setUserActive (servicio del producto)",
+      "login_antes": 200,
+      "login_despues": 401
+    }
+  ],
+  "lectura": "TODAS RETIRADAS"
+}

@@ -1,0 +1,96 @@
+{
+  "instrumento": "scripts/security/auth-session-sql-guard.js",
+  "ejecutado_en": "2026-11-24T15:30:39.966Z",
+  "ambiente": {
+    "env_file": "production.env",
+    "destino": {
+      "host": "aws-1-sa-east-1.pooler.supabase.com",
+      "port": "5432",
+      "base_de_datos": "postgres",
+      "pooler": true,
+      "sslmode": "require"
+    }
+  },
+  "transaccion": "BEGIN READ ONLY + PGOPTIONS default_transaction_read_only=on + statement_timeout 15s + lock_timeout 500ms",
+  "escrituras": 0,
+  "columnas_esperadas": [
+    "user",
+    "role",
+    "tenant",
+    "session"
+  ],
+  "sentencias": [
+    {
+      "nombre": "login_por_correo",
+      "ok": true,
+      "filas": 1,
+      "columnas": [
+        "user",
+        "role",
+        "tenant",
+        "session"
+      ],
+      "tipos": [
+        "jsonb",
+        "jsonb",
+        "jsonb",
+        "jsonb"
+      ],
+      "ms_servidor": 268,
+      "marcas": {
+        "ini": 1795534236129,
+        "ejecu": 1795534237061,
+        "fin": 1795534237329
+      },
+      "trae_hash": true,
+      "empresa": "52db0658-a184-4fa1-a47b-c90b184914c3",
+      "rol": "APEX_PLATFORM_SUPERADMIN",
+      "permisos": 9,
+      "sesion": null,
+      "ms_bloque": 1200,
+      "archivo": "apps/api/src/security/authorizationState.js",
+      "parametros": [
+        null,
+        "correo-anonimo",
+        8
+      ]
+    },
+    {
+      "nombre": "perfil_por_id",
+      "ok": true,
+      "filas": 1,
+      "columnas": [
+        "user",
+        "role",
+        "tenant",
+        "session"
+      ],
+      "tipos": [
+        "jsonb",
+        "jsonb",
+        "jsonb",
+        "jsonb"
+      ],
+      "ms_servidor": 269,
+      "marcas": {
+        "ini": 1795534237596,
+        "ejecu": 1795534238527,
+        "fin": 1795534238796
+      },
+      "trae_hash": true,
+      "empresa": "9a6ffc43-9aec-4b1b-8943-f098a4046b97",
+      "rol": "NYVORA Real Admin 202607141705",
+      "permisos": 4,
+      "sesion": "viva",
+      "ms_bloque": 1200,
+      "archivo": "apps/api/src/security/authorizationState.js",
+      "parametros": [
+        "11111111-1111-4111-8111-111111111111",
+        7
+      ]
+    }
+  ],
+  "veredicto": "SENTENCIAS_VALIDAS",
+  "nota": "ms_servidor es tiempo dentro de Postgres; el viaje de red lo mide Server-Timing (~660 ms por sentencia desde Railway)",
+  "anonimizacion": "los correos los elige la base con subconsulta y nunca se imprimen"
+}

@@ -1,0 +1,64 @@
+# Suites sobre el arbol candidato a main (rama local codex/qa-monitor-latencia-sesion-main-20261124, base 3baf8e4a)
+# ejecutado: 2026-11-24T13:31:26-05:00  node v22.23.1  NODE_PATH via el arbol principal (el worktree no tiene node_modules)
+
+## apps/api/test/auth-session-hardening.test.js
+# tests 11
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+
+## apps/api/test/auth-me-single-statement.test.js
+# tests 6
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+
+## apps/api/test/authorization-status-codes.test.js
+# tests 6
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 1
+
+## apps/api/test/hr-evidence-backfill-tool.test.js
+# tests 7
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+
+## apps/api/test/hr-list-truncation.test.js
+# tests 9
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+
+## apps/api/test/hr-monitor-evidence-columns.test.js
+# tests 16
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+
+## apps/api/test/hr-route-assignment-lock.test.js
+# tests 8
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+
+## apps/web/test/hr-monitor-refresh.test.mjs
+# tests 7
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+
+## selftest del instrumento de presupuesto
+OK   ambiente-declarado-obligatorio
+SELFTEST APROBADO: el gate falla con binario inline o latencia fuera de presupuesto y pasa con el aviso por referencia.
+(node:9180) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)

@@ -1,0 +1,449 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "monitor-latencia-sesion-20261124",
+  "estado": "AUTORIZADO_Y_EN_CURSO",
+  "creado": "2026-11-24T16:20:00-05:00",
+  "autorizado": "2026-11-24T12:30:00-05:00",
+  "target_branch": "develop",
+  "source_branch": "desarrollo",
+  "base_commits": {
+    "develop": "6b42b365",
+    "merge_base_desarrollo_develop": "36111a6ae1a18c59de0fc72c135bc890c011c1d7"
+  },
+  "certified_commit": "f3e85f1aff5cb600fdd6bc84e7a40dd0902e191c",
+  "candidate_tip": "el sha que se empuja es el del espejo final de este manifiesto, que es tip de origin/develop por fusion y solo difiere del arbol certificado 6a503dd6 en rutas docs/. Lo reporta ../evidence/auth-session-path-20261124/puertas-develop.json; el manifiesto no puede citar su propio sha porque viaja dentro del arbol que certifica",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "f3e85f1aff5cb600fdd6bc84e7a40dd0902e191c",
+    "replay_de_commits": [
+      "41134bf4",
+      "ba00d9f7",
+      "ce654d10",
+      "f3e85f1a",
+      "0a902366",
+      "8208d941",
+      "31a36e77",
+      "60a5ffb3",
+      "294313b1",
+      "0bd63873"
+    ],
+    "linaje": "el candidato registra el origen con git merge -s ours origin/desarrollo (544cc0f4), que anade el padre sin arrastrar el resto de la rama; despues absorbe por git merge --no-ff origin/develop (6a503dd6) la compuerta unica de selfie que la sesion concurrente promociono a develop mientras se armaba este candidato, y la fusion de service.js salio limpia: el candidato conserva los 6 locks de liquidacion de develop, sus 4 sitios acotados y cero referencias a webPunchSelfie",
+    "metodo": "fusion a tres vias por ruta sobre el tip de origin/develop (b59f286d primero, 6b42b365 despues de absorber el paquete del selfie) en una worktree despegada con merge-base 36111a6a; las demas rutas viajan byte a byte desde origin/desarrollo",
+    "no_incluidos": {
+      "134816de": "regla de idioma en AGENTS.md: es gobernanza de desarrollo; su texto ya vive en los blobs de .qoder/skills que si viajan",
+      "21a99f47": "paquete selfie de la sesion concurrente: ya no hace falta excluirlo, ese paquete entro a develop por su propia promocion (52a8d9a7 -> 6b42b365) y el candidato lo absorbio por fusion"
+    }
+  },
+  "change_intent": {
+    "summary": "La demora del monitor de Talento Humano era el viaje al pooler (~660 ms por sentencia) y no el peso del payload: el dia queda fijado en la pantalla, el camino de sesion (login, /auth/me, refresh, huella) se resuelve en una sentencia por lectura y el login deja de ser oraculo. Incluye la retro-integracion a desarrollo del guard de tenant de updateRoute (cd3a88e5) que desarrollo nunca recivio.",
+    "modules": [
+      "talento-humano",
+      "auth",
+      "rendimiento",
+      "platform-seguridad",
+      "qa-evidencia",
+      "agentes"
+    ]
+  },
+  "allowed_paths": [
+    ".qoder/skills/apexos-backend/SKILL.md",
+    ".qoder/skills/apexos-brief/SKILL.md",
+    ".qoder/skills/apexos-db-nube/SKILL.md",
+    ".qoder/skills/apexos-frontend/SKILL.md",
+    ".qoder/skills/apexos-git-guardian/SKILL.md",
+    ".qoder/skills/apexos-performance/SKILL.md",
+    ".qoder/skills/apexos-qa/SKILL.md",
+    ".qoder/skills/apexos-seguridad/SKILL.md",
+    ".qoder/skills/equipo-apexos/SKILL.md",
+    "agents/apexos-backend/SKILL.md",
+    "agents/apexos-brief/SKILL.md",
+    "agents/apexos-db-nube/SKILL.md",
+    "agents/apexos-frontend/SKILL.md",
+    "agents/apexos-git-guardian/SKILL.md",
+    "agents/apexos-performance/SKILL.md",
+    "agents/apexos-qa/SKILL.md",
+    "agents/apexos-seguridad/SKILL.md",
+    "agents/CHANGELOG.md",
+    "agents/equipo-apexos/SKILL.md",
+    "agents/registry.json",
+    "apps/api/src/modules/auth/service.js",
+    "apps/api/src/modules/hr/monitorEvidenceRows.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/security/authorizationState.js",
+    "apps/api/test/auth-me-single-statement.test.js",
+    "apps/api/test/auth-session-hardening.test.js",
+    "apps/api/test/auth-webauthn-login.test.js",
+    "apps/api/test/authorization-status-codes.test.js",
+    "apps/api/test/hr-evidence-backfill-tool.test.js",
+    "apps/api/test/hr-list-truncation.test.js",
+    "apps/api/test/hr-monitor-evidence-columns.test.js",
+    "apps/api/test/hr-route-assignment-lock.test.js",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/test/hr-monitor-refresh.test.mjs",
+    "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
+    "docs/PERFORMANCE_ANTI_PATTERNS.md",
+    "docs/project/talento-humano-implementacion-seguimiento.md",
+    "docs/qa/evidence/auth-session-path-20261124/candidato-develop.json",
+    "docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt",
+    "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json",
+    "docs/qa/evidence/auth-session-path-20261124/censo-correos-production.json",
+    "docs/qa/evidence/auth-session-path-20261124/censo-correos-qa.json",
+    "docs/qa/evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt",
+    "docs/qa/evidence/auth-session-path-20261124/replay-candidato-develop.json",
+    "docs/qa/evidence/auth-session-path-20261124/sentencias-production.json",
+    "docs/qa/evidence/auth-session-path-20261124/sentencias-qa.json",
+    "docs/qa/evidence/auth-session-path-20261124/suite-plataforma-candidato.json",
+    "docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json",
+    "docs/qa/evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json",
+    "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527496487.json",
+    "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json",
+    "docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json",
+    "docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json",
+    "scripts/certifications/hr-monitor-byte-budget.js",
+    "scripts/hr-evidence-backfill-storage.js",
+    "scripts/security/auth-email-collision-census.js",
+    "scripts/security/auth-session-sql-guard.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-backend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-brief/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-db-nube/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-frontend/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-performance/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-seguridad/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-backend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-brief/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-db-nube/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-frontend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-performance/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-seguridad/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/CHANGELOG.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/registry.json"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/auth/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/monitorEvidenceRows.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/security/authorizationState.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/auth-me-single-statement.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/auth-session-hardening.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/auth-webauthn-login.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/authorization-status-codes.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-evidence-backfill-tool.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-list-truncation.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-monitor-evidence-columns.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-route-assignment-lock.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-monitor-refresh.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/PERFORMANCE_ANTI_PATTERNS.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/talento-humano-implementacion-seguimiento.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/candidato-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-production.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-qa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-candidato-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-production.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-qa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/suite-plataforma-candidato.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527496487.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-monitor-byte-budget.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/hr-evidence-backfill-storage.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/security/auth-email-collision-census.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/security/auth-session-sql-guard.js"
+    }
+  ],
+  "origin_waivers": [
+    {
+      "file": "apps/api/src/modules/hr/service.js",
+      "reason": "fusion a tres vias: desarrollo trae el presupuesto de evidencia por referencia y el guard de tenant retro-integrado (31a36e77), y develop trae el paquete HR de cd3a88e5 y los modulos de liquidacion que nunca subieron a desarrollo. Copiar el blob de desarrollo revertiria el aislamiento de tenant; copiar el de develop perderia el paquete.",
+      "approval": "AUTORIZACION_EXPRESA_DEL_DUENIO_2026-11-24 para la promocion controlada con alineacion de las tres ramas; el hunk de desarrollo esta escrito, probado y certificado en desarrollo (suite 8/8 con control de mutacion 7/1)"
+    },
+    {
+      "file": "apps/api/src/modules/hr/routes.js",
+      "reason": "fusion a tres vias: una linea del acote por dia sobre un archivo cuyo contenido de develop incluye rutas del paquete HR no lanzadas en desarrollo.",
+      "approval": "AUTORIZACION_EXPRESA_DEL_DUENIO_2026-11-24; el blob resultante se verifico con node --check y con las suites del arbol candidato (70/70)"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+      "reason": "fusion a tres vias: el filtro por dia (desarrollo) y el mensaje del monitor de mallas (develop) conviven en el mismo parrafo del estado vacio. La primera union dejaba un ternario envuelto en llaves, JSX invalido; se corrigio en 228d1028 y el parseo TSX del candidato da 0 diagnosticos con control de mutacion que responde 1.",
+      "approval": "AUTORIZACION_EXPRESA_DEL_DUENIO_2026-11-24; verificado con typescript.createSourceFile sobre el arbol del candidato y con la suite web 7/7"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Marcaciones del dia sin perdida por acote (266 = 266) y evidencia por referencia",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json",
+        "../evidence/auth-session-path-20261124/candidato-develop.json",
+        "../../briefs/2026-11-24-monitor-marcaciones-latencia.md"
+      ]
+    },
+    {
+      "name": "Camino de sesion en una sentencia por lectura, con el SQL validado contra la base real",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/sentencias-qa.json",
+        "../evidence/auth-session-path-20261124/sentencias-production.json",
+        "../evidence/auth-session-path-20261124/suites-camino-sesion.json",
+        "../evidence/auth-session-path-20261124/candidato-develop.json"
+      ]
+    },
+    {
+      "name": "Login que no es oraculo: 401 uniforme, bcrypt paralelo, cero sesion ambigua, censo de correos por ambiente",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/censo-correos-qa.json",
+        "../evidence/auth-session-path-20261124/censo-correos-production.json"
+      ]
+    },
+    {
+      "name": "Aislamiento multi-tenant intacto tras leer por correo y al editar una malla ajena",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/suites-camino-sesion.json",
+        "../evidence/auth-session-path-20261124/candidato-develop.json",
+        "../evidence/auth-session-path-20261124/replay-candidato-develop.json"
+      ]
+    }
+  ],
+  "verificado_local": {
+    "arbol_candidato": "suitas API del paquete 70/70, suite web 7/7, auth-session-sql-guard --selftest 16/16, hr-monitor-byte-budget --selftest aprobado, node --check en las tres rutas JS de fusion, parseo TSX 0 diagnosticos con control de mutacion 1",
+    "replay": "promotion-migration-check contra el arbol del candidato (--against commit --ref HEAD --cwd <worktree>): 51/51 invariantes carry validas, 0 deletes, 0 edits por hunks. La corrida con --ref origin/develop rindio 51 rojos falsos porque ese ref selecciona el arbol medido, no la referencia; esa salida se descarto y no queda como evidencia",
+    "agents": "npm run agents:check OK (11 agentes y 11 documentos), agents:preflight OK, agents:coverage OK (apexos-backend 2.30.0, apexos-qa 2.111.0, apexos-brief 2.92.0, apexos-git-guardian 2.33.0)",
+    "guard": "auth-session-sql-guard.js --env-file qa y production -> SENTENCIAS_VALIDAS",
+    "censo": "QA COLISION_VIVA (7 correos / 550 usuarios / 27 empresas), Produccion SIN_COLISION (0 / 211 / 9), escrituras 0 en ambos"
+  },
+  "resuelto_bloqueo_de_replay": {
+    "hallazgo_original": "13 rutas del inventario tenian avance propio en origin/develop; copiar el archivo de desarrollo revertia trabajo promovido (cd3a88e5 en particular).",
+    "resolucion": "retro-integrado a desarrollo el guard de tenant con su prueba (31a36e77) y cargado el tip antes de congelar el candidato, para que el porton de origen compare contra el baseline real; 10 de las 13 rutas resultaron carry byte a byte y solo 3 quedan como fusion, cada una con su origin_waiver nominal.",
+    "metodo_prohibido_que_no_se_uso": "git checkout origin/desarrollo -- apps/api/src/modules/hr/service.js sobre el arbol de develop: habria borrado el aislamiento de tenant y los modulos de liquidacion"
+  },
+  "deriva_declarada": [
+    "origin/develop no tenia el arbol agents/** ni agents/registry.json: entran como A completos con el texto canonico de desarrollo, y el registry que viaja es el que declara los sha256 de esos blobs (agents:check verde en el arbol de trabajo)",
+    "AGENTS.md (regla de idioma) no entra en expected_changes: es gobernanza de la rama de trabajo",
+    "los dos instrumentos de compuerta (promotion-gates-runner y promotion-migration-check) ya no son deriva de este paquete: la sesion concurrente los promovio a develop dentro del suyo (6b42b365), y el blob del candidato es identico al de origin/desarrollo",
+    "el DESPUES end-to-end de latencia contra el artefacto desplegado se mide despues del push, con certify:auth-session y certify:hr-monitor-budget:qa sobre QA",
+    "la salida verbatim de las compuertas (docs/qa/evidence/auth-session-path-20261124/puertas-develop.json) queda versionada en desarrollo y no viaja dentro del candidato: correr la puerta exige el manifiesto, y el manifiesto no puede contener el archivo que la puerta produce sobre el arbol que el mismo manifiesto describe",
+    "la prueba 'fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante' queda roja en el candidato y ya lo estaba en origin/develop y origin/main: son 6 pg_advisory_xact_lock de los modulos de liquidacion (runPayrollLiquidation, runEmployeeTerminationLiquidacion y companeros) que nunca bajaron a desarrollo. El candidato conserva los 6 blobs de develop, no anade ninguno. Migrarlos al helper acotado es intervencion propia con su manifiesto, no se cuela aqui porque exigiria editar por hunks rutas declaradas carry.",
+    "la misma promocion queda condicionada a la sesion concurrente: el manifiesto web-selfie-cuatro-marcaciones-develop-20261124-scope.json tambien apunta a develop desde b59f286d y comparte una sola ruta (apps/api/src/modules/hr/service.js). El segundo que empuje rehace su candidato sobre el tip nuevo; nadie empuja a la fuerza.",
+    "el expediente del porton de replay medido sobre el arbol congelado (docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json, 51/51) queda en desarrollo y no viaja dentro del candidato por la misma razon que las puertas: el instrumento mide el arbol y escribe su salida sobre el, y un archivo no puede contener el informe de su propia medición. Si viaja una corrida anterior (replay-candidato-develop.json, medida sobre el tip pre-fusion 228d1028) como registro historico de por que se rehizo el candidato. Las dos corridas con --ref origin/develop se borraron: median el destino, no el candidato.",
+    "las suites del candidato se corrieron sobre el arbol de producto 6a503dd6. Cada commit que espeja docs/evidencia no mueve ninguna ruta de producto: se prueba con git diff --name-only 6a503dd6..<tip congelado> filtrado a apps/ y scripts/, que debe devolver vacio, y ese control queda en docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt (en desarrollo, no viaja). El espejo se rehace despues de cada edicion de manifiesto, por eso el sha servido no es 6a503dd6.",
+    "allowed_paths no puede declarar directorios a secas: validate-promotion-scope.js solo perdona el prefijo cuando la entrada termina en barra, y este manifiesto las declaraba sin ella, asi que el porton marcaba fuera de alcance las 61 rutas del paquete. Queda como el inventario exacto ruta por ruta, que es ademas la lectura estricta de rutas puntuales; la barra si la usa el manifiesto del selfie (docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/).",
+    "quedan en desarrollo y no viajan dentro del candidato las dos corridas posteriores a la congelacion: docs/qa/evidence/auth-session-path-20261124/puertas-develop-forma-roja.json (el rojo real de las dos compuertas por forma del manifiesto, que se conserva para que el expediente no empiece en el verde) y docs/qa/evidence/auth-session-path-20261124/replay-tip-congelado-develop.json (la corrida del porton sobre el sha que se empuja, que no puede viajar porque el sha se conoce despues de congelar el arbol)."
+  ],
+  "compuertas_exigidas": [
+    "node scripts/validate-promotion-scope.js docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json <candidato> origin/develop",
+    "npm run qa:preqa:evidence -- docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json",
+    "npm run qa:promotion:migration -- --spec docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json",
+    "autorizacion expresa e independiente del propietario para develop (la de desarrollo no cubre esta)"
+  ],
+  "approval": {
+    "status": "approved",
+    "approved_by": "dueno del proyecto (Edwin), 2026-11-24",
+    "authorization": "AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP: «procede con la promocion controlada de esta intervencion alineando las 3 ramas». Cubre el push del candidato a origin/develop y, tras la certificacion en QA, la pata develop -> main con su propio manifiesto de aprobacion. No cubre force push, borrado de ramas, migraciones remotas ni infraestructura."
+  }
+}

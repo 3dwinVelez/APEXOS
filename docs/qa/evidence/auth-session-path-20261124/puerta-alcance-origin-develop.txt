@@ -1,0 +1,18 @@
+comando: node scripts/validate-promotion-scope.js docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json f3e85f1a origin/develop
+fecha: 2026-11-24T16:02:08Z
+veredicto: ALCANCE DE PROMOCION INVALIDO
+rutas declaradas fuera de alcance: 1043
+
+primeras 12 (el resto son los 252 commits de desarrollo y los 119 de develop que no son de este paquete):
+M:.env.example
+ M:.gitignore
+ A:.qoder/skills/apexos-auditor-marcaciones/SKILL.md
+ A:.qoder/skills/apexos-auditor-nomina/SKILL.md
+ M:.qoder/skills/apexos-backend/SKILL.md
+ A:.qoder/skills/apexos-brief/SKILL.md
+ M:.qoder/skills/apexos-db-nube/SKILL.md
+ M:.qoder/skills/apexos-frontend/SKILL.md
+ M:.qoder/skills/apexos-git-guardian/SKILL.md
+ M:.qoder/skills/apexos-performance/SKILL.md
+ M:.qoder/skills/apexos-qa/SKILL.md
+ M:.qoder/skills/apexos-seguridad/SKILL.md

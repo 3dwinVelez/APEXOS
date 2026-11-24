@@ -6,7 +6,8 @@ const test = require("node:test");
 process.env.REDIS_DISABLED = "true";
 process.env.DISABLE_REDIS = "true";
 
-const { EVIDENCE_PRESENT_MIN_BYTES, PUNCH_COLUMNS, SELF_PUNCH_SELECT, readDayEvidencePunches, readPunchRowsProjected } = require("../src/modules/hr/monitorEvidenceRows");
+const { EVIDENCE_PRESENT_MIN_BYTES, EVIDENCE_SHRINK_MIN_BYTES, METADATA_SHRINK_MIN_BYTES, PUNCH_COLUMNS, SELF_PUNCH_SELECT, guardedEvidenceProjection, projectEvidence, readDayEvidencePunches, readPunchRowsProjected, readRouteEvidence, readRoutePunchEvidence, readUnlinkedEvidence } = require("../src/modules/hr/monitorEvidenceRows");
+const { punchEvidenceCount } = require("../src/modules/hr/punchEvidence");
 const serviceSource = fs.readFileSync(path.resolve(__dirname, "../src/modules/hr/service.js"), "utf8");
 
 // La lectura cruda del mapa de operaciones enumeraba sus columnas a mano. Si el schema
@@ -258,4 +259,70 @@ test("una marcacion sin soporte no anuncia evidencia", async () => {
   } finally {
     restore();
   }
+});
+
+// F-2 (2026-11-24): la proyeccion de `extra_evidence` se aplicaba a TODA fila leida, y abrir un
+// jsonb cuesta ~0,6 ms por fila aunque no haya nada que sacar. Medido en Produccion sobre las
+// 2.676 marcaciones del tenant del cliente: 58 filas con binario en `extra_evidence` y 337 ya
+// referenciadas, es decir que el barrido reescribia ~2.600 contenedores flacos para proteger 58.
+// Las tres lecturas por ruta del monitor quedan ahora bajo la misma guarda que `metadata`.
+test("las tres lecturas por ruta custodian la proyeccion de extra_evidence por tamano", async () => {
+  const captured = [];
+  const db = { $queryRaw: async (query) => { captured.push(query.sql); return []; } };
+  await readRouteEvidence(db, "nyvora", [7, 8]);
+  await readRoutePunchEvidence(db, "nyvora", 7);
+  await readUnlinkedEvidence(db, "nyvora", [{ start: new Date("2026-11-23T05:00:00Z"), end: new Date("2026-11-24T05:00:00Z") }]);
+  assert.equal(captured.length, 3, "una de las lecturas dejode emitir SQL");
+  for (const [index, sql] of captured.entries()) {
+    assert.match(sql, /pg_column_size\("TimePunch"\."extra_evidence"\) > \d+/, `la lectura ${index} perdio la guarda de tamano de la evidencia`);
+    assert.match(sql, /jsonb_set\("TimePunch"\."extra_evidence"/, `la lectura ${index} dejo de encoger la fila que si trae binario`);
+    assert.match(sql, /ELSE "TimePunch"\."extra_evidence" END/, `la lectura ${index} no devuelve crudo el contenedor flaco`);
+  }
+});
+
+test("la guarda delega la proyeccion y no vuelve a inventarse una segunda regla de stub", () => {
+  const cruda = require("../src/modules/hr/monitorEvidenceRows").evidenceProjection('"TimePunch"."extra_evidence"');
+  const custodiada = guardedEvidenceProjection('"TimePunch"."extra_evidence"');
+  assert.ok(custodiada.includes(cruda), "la guarda reescribe su propia proyeccion: dos reglas de stub pueden divergir");
+  assert.ok(/pg_column_size/.test(custodiada) && !/pg_column_size/.test(cruda), "la guarda dejode ser la capa de tamano");
+});
+
+test("el umbral de la guarda separa la referencia corta del binario real", () => {
+  // La referencia mas corta que escribe el producto mide 75 B (medido con pg_column_size, 2026-11-17)
+  // y una selfie real no baja de decenas de KB (188,9 MB entre 168 archivos, medido 2026-11-24).
+  assert.ok(EVIDENCE_SHRINK_MIN_BYTES > 75, `el umbral (${EVIDENCE_SHRINK_MIN_BYTES}) dejaria una referencia sin proyectar por tamano, no por forma`);
+  assert.ok(EVIDENCE_SHRINK_MIN_BYTES <= METADATA_SHRINK_MIN_BYTES, "la guarda de evidencia abrio antes que la de metadata: el mismo binario pagaria dos veces");
+  assert.ok(EVIDENCE_SHRINK_MIN_BYTES < 10240, `el umbral (${EVIDENCE_SHRINK_MIN_BYTES}) dejaria pasar fotos pequenas dentro del listado`);
+});
+
+// Lo que la pantalla muestra es un CONTEO. Si la guarda cambia el conteo, la optimizacion mintio:
+// este censo alimenta las dos formas (cruda y proyectada) con los repartos reales del contrato.
+// El caso `{base64:""}` es el que rompio la paridad primero: la huella convertia un contenedor
+// vacio en una cadena no vacia, `punchPhotoItems` le inventaba un data URL y el listado prometia
+// un archivo que `getMonitorEvidence` responde 404.
+test("proyectar o no proyectar deja el mismo conteo de evidencias", () => {
+  const formas = [
+    null, {}, [], { base64: "" },
+    { storage_path: "company/t/hr/extra-evidence/abc.jpg", name: "abc.jpg", type: "image/jpeg", base64: "" },
+    { base64_data: "data:image/jpeg;base64,QUJDRA" },
+    { base64_data: "data:image/jpeg;base64,QUJDRA", name: "punch.jpg", type: "image/jpeg" },
+    [{ base64_data: "data:image/png;base64,QUJD" }, { base64_data: "data:image/png;base64,QUJD" }],
+    [{ storage_path: "company/t/hr/extra-evidence/uno.jpg" }, { base64_data: "data:image/jpeg;base64,BZZZ" }],
+    "una-cadena", 12
+  ];
+  for (const value of formas) {
+    const crudo = punchEvidenceCount({ extra_evidence: value, metadata: {} });
+    const proyectado = punchEvidenceCount({ extra_evidence: projectEvidence(value), metadata: {} });
+    assert.equal(crudo, proyectado, `el conteo cambio para la forma ${JSON.stringify(value)}`);
+  }
+});
+
+test("la huella no se aplica a un binario vacio, en SQL ni en su espejo JS", () => {
+  const sql = require("../src/modules/hr/monitorEvidenceRows").evidenceProjection('"TimePunch"."extra_evidence"');
+  const guardas = sql.match(/jsonb_typeof\([^)]*\) = 'string' AND length\(coalesce\([^)]*, ''\)\) > 0/g) || [];
+  assert.ok(guardas.length >= 2, `la proyeccion dejo de exigir binario no vacio antes de estampar la huella (${guardas.length} guardas)`);
+  assert.equal(punchEvidenceCount({ extra_evidence: { base64: "" }, metadata: {} }), 0, "un contenedor vacio sigue anunciando evidencia");
+  assert.equal(punchEvidenceCount({ extra_evidence: projectEvidence({ base64: "" }), metadata: {} }), 0, "la huella revive un contenedor vacio");
+  // Con ruta declarada si cuenta: es la fila purgada por la fase C.2, que el lector re-resuelve.
+  assert.equal(punchEvidenceCount({ extra_evidence: { base64: "", storage_path: "company/t/hr/extra-evidence/x.jpg" }, metadata: {} }), 1);
 });
