@@ -1,0 +1,77 @@
+{
+  "change_id": "monitor-latencia-sesion-20261124-canon",
+  "descripcion": "Pre-QA del porton de contabilidad desarrollo -> develop: sube el canon del equipo que la pata main de la intervencion de latencia hizo avanzar, mas la evidencia de las cuatro puertas y los dos manifiestos del propio porton. Cero rutas de producto.",
+  "commit": "956f1811e713573f3bd76573f288b1ba2cb7cca0",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "nota_sha": "commit es el arbol de gobernanza certificado: 956f1811 deja apexos-git-guardian en 2.39.0 y apexos-qa en 2.118.0 con registry.json y CHANGELOG concordes. Sobre esa punta el porton anade exactamente las tres rutas nuevas del inventario (canon-gates.txt y los dos manifiestos), que forman parte del commit que las conmuta y no pueden citarse antes de existir. El sha que se empuja a develop, la salida verbatim del gate de alcance y la re-medicion post-push quedan consignados en agents/CHANGELOG.md de desarrollo.",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-24T14:24:00-05:00",
+    "authorization": "AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP: «procede con la promocion controlada de esta intervencion alineado las 3 ramas». El candidato no agrega funcionalidad desplegable: lleva el mismo arbol de producto ya en develop, por lo que el despliegue en QA no cambia el comportamiento del ambiente."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "detalle": "El canon que sube es el que el equipo usa: once agentes declarados en registry.json, once documentos verificados, y los dos SKILL.md que avanzaron (git-guardian 2.39.0 con la regla del canon entero y la re-medicion que no viaja; qa 2.118.0 con el cierre re-midiendo paridad por ruta).",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/canon-gates.txt",
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-develop.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "detalle": "El porton no puede traer producto por construccion: no es merge de ramas, es checkout puntual de nueve rutas nombradas sobre origin/develop. Ningun manifiesto, informe o evidencia ya publicada se reescribe, y ningun archivo se borra (allowed_deletions vacio).",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/canon-gates.txt",
+        "cierre-canon-develop-20261124-scope.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "detalle": "Las cuatro puertas del contexto vivo corren sobre el arbol del canon: agents:sync 11/11 sincronizados, agents:check 11 agentes y 11 documentos, agents:preflight Veredicto OK sin advertencias, agents:coverage OK para las rutas tocadas. Salida verbatim versionada.",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/canon-gates.txt"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "detalle": "Regresion del frente tocado: la paridad por ruta del cierre sigue medida con el instrumento versionado (51/51 contra origin/develop, 73/73 contra origin/main) y las compuertas del paquete de latencia corrieron verdes sobre el arbol que develop ya tiene.",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-develop.json",
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-main.json",
+        "../evidence/auth-session-path-20261124/puertas-develop.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "detalle": "Las suites de plataforma no se vuelven a correr porque el arbol de apps/ no cambia ni un byte respecto de 4381c08d, que ya paso API y web del paquete. Se cita la corrida que certifico ese arbol y el control de equivalencia del candidato.",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/suite-plataforma-candidato.json",
+        "../evidence/auth-session-path-20261124/suites-candidato-main.txt",
+        "../evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/agents/sync-agents.js",
+    "evidence": [
+      "../evidence/auth-session-path-20261124/canon-gates.txt"
+    ],
+    "nota": "El instrumento end-to-end de este porton es el par de compuertas versionadas: agents:check (canon contra registry) y qa:promotion:scope (inventario exacto contra el diff real, con blob verificado en origin/desarrollo). No hay flujo de negocio nuevo que certificar: el candidato no mueve rutas ejecutables."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/auth-session-path-20261124/replay-cierre-docs-develop.json",
+      "../evidence/auth-session-path-20261124/replay-arbol-candidato-main.json"
+    ],
+    "nota": "La re-medicion contra la punta ya publicada (--against commit --ref origin/develop) se corre despues del push y su resultado se consigna en agents/CHANGELOG.md: describe una punta que no existe dentro del commit que la describe."
+  }
+}
