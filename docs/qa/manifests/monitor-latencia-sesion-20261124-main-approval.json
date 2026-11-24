@@ -1,7 +1,7 @@
 {
   "change_id": "monitor-latencia-sesion-main-20261124",
-  "commit": "66d2765ad605c3744ab71be871d75ab9a7421e3e",
-  "tree_evaluated": "punta de codex/qa-monitor-latencia-sesion-main-20261124: replay puntual del paquete sobre origin/main b08699e3 (50 rutas funcionales) mas la capa de documentacion: los dos manifiestos, el veredicto y el reporte del replay. Ninguna ruta de producto cambia entre el commit certificado 66d2765a y la punta.",
+  "commit": "82664feed605c3744ab71be871d75ab9a7421e3e",
+  "tree_evaluated": "punta de codex/qa-monitor-latencia-sesion-main-20261124: replay puntual del paquete sobre origin/main b08699e3 (50 rutas funcionales) mas la capa de documentacion: los dos manifiestos, el veredicto y el reporte del replay. Ninguna ruta de producto cambia entre el commit certificado 82664fee y la punta.",
   "source_branch": "develop",
   "target_branch": "main",
   "environment": "QA",

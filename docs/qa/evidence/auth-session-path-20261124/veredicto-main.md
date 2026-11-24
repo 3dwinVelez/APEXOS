@@ -1,7 +1,7 @@
 # Veredicto de la pata `develop -> main` — paquete de latencia del monitor y camino de sesión
 
 Change id: `monitor-latencia-sesion-main-20261124`. Candidato: rama auxiliar local
-`codex/qa-monitor-latencia-sesion-main-20261124`, funcional `66d2765ad605c3744ab71be871d75ab9a7421e3e` sobre
+`codex/qa-monitor-latencia-sesion-main-20261124`, funcional `82664feed605c3744ab71be871d75ab9a7421e3e` sobre
 `origin/main b08699e3214a41f946cf3080b313cbfe637e33dd`.
 
 ## Por qué replay y no fusión
