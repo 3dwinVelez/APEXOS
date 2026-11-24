@@ -65,6 +65,7 @@
     }
   },
   "certification": {
+    "status": "passed",
     "script": "../../../scripts/certifications/hr-web-photo-battery.js",
     "evidence": [
       "../evidence/web-photo-battery-20261124/bateria-qa-despues.json"
@@ -72,6 +73,7 @@
     "notes": "La certificación end-to-end del flujo pedido es la batería sobre el ambiente desplegado: login del fixture, las cuatro marcaciones web en orden con su forma de foto, verificación de la hora real en la fila, del veredicto y del inline del jsonb por el cliente de Prisma del API, censo de rechazos por canal y retiro de las cuentas efímeras. El binario evaluado en QA es origin/develop c0fbb4b9c50c, desplegado y servido, y lo que sube a main es un candidato reconstruido sobre origin/main cuyas 13 rutas son byte a byte las mismas que existen en origin/desarrollo (13/13, con el delta por archivo medido contra el ancestro que main todavia conserva). El instrumento se niega a correr si el ambiente es producción y el censo final de Producción se hace por lectura, no corriendo la batería."
   },
   "regression_certification": {
+    "status": "passed",
     "script": "../../../scripts/certifications/promotion-migration-check.js",
     "evidence": [
       "../evidence/web-photo-battery-20261124/migraciones-candidato-develop.txt",
@@ -80,6 +82,7 @@
     "notes": "El instrumento versionado del control de migraciones confirma que el inventario no lleva archivos bajo apps/api/prisma/migrations ni toca schema.prisma: cero en ambas verificaciones. No hay nada que aplicar en la nube, así que el portón a main no exige ninguna migración remota. El candidato se re-medirá contra origin/main por archivo con el mismo instrumento antes de reportar el despliegue."
   },
   "model_company_certification": {
+    "status": "passed",
     "company": "NYVORA",
     "environment": "QA",
     "script": "../../../scripts/certifications/hr-web-photo-battery.js",
