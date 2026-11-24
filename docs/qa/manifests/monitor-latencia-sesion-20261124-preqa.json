@@ -68,7 +68,7 @@
   },
   "certification": {
     "status": "passed",
-    "script": "../../certifications/auth-session-readiness.js",
+    "script": "../../../scripts/certifications/auth-session-readiness.js",
     "evidence": [
       "../evidence/auth-session-path-20261124/sentencias-qa.json",
       "../evidence/auth-session-path-20261124/sentencias-production.json",
@@ -78,7 +78,7 @@
   },
   "regression_certification": {
     "status": "passed",
-    "script": "../../certifications/promotion-migration-check.js",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
     "evidence": [
       "../evidence/auth-session-path-20261124/replay-candidato-develop.json",
       "../evidence/auth-session-path-20261124/suite-plataforma-candidato.json"
