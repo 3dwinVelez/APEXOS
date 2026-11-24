@@ -1,0 +1,131 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "cero-rechazos-foto-web-bateria-20261124",
+  "creado": "2026-11-24T16:35:00-05:00",
+  "autorizado": "dueño del proyecto (Edwin), 2026-11-24: «procede a implementar y certificar 0 rechazos y aplica tus sugerencias para evitar mas inconvenientes con mi autorizacion y alinea todos los ambientes». Preguntado por el alcance respondió «Las tres ramas, completas» y por los ambientes «QA y Produccion». La firma de la pata funcional de QA la puso él mismo con la orden de hoy.",
+  "target_branch": "main",
+  "source_branch": "develop",
+  "promotion_branch": "codex/qa-cero-rechazos-foto-web-main-20261124",
+  "base_commits": {
+    "main": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+    "develop": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+    "desarrollo": "25f8b32e"
+  },
+  "base_commit": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+  "target_head": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+  "certified_commit": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+  "candidate_source": {
+    "branch": "develop",
+    "commit": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+    "blobs_de_origen": "origin/desarrollo @ 25f8b32e (los nueve archivos llevados son byte a byte los mismos que ya corrieron y fueron certificados en QA)",
+    "nota": "main está a cientos de commits de develop, así que el transporte no es un merge: es replay puntual de doce rutas sobre origin/main. Las tres rutas contables que nacen en el candidato (este manifiesto, el de aprobación y porton-main.json) se espejan en origin/desarrollo y se empujan antes de correr el gate, de modo que el portón verifique cada blob contra la punta viva de desarrollo y no haya que declarar ningún waiver."
+  },
+  "naturaleza": "Portón funcional a producción: el cambio que deja de rechazar la foto de validación grande en la marcación web, degradando solo cuando el tamaño es la única causa del veredicto. Dos rutas ejecutables de API, un instrumento de certificación, un brief y seis reportes de evidencia. Ninguna ruta de esquema, ninguna ruta de apps/web, ninguna de infraestructura.",
+  "change_intent": {
+    "modules": ["talento-humano", "certificaciones-qa", "documentacion-qa"],
+    "summary": "Que la JPEG real de cámara de 3 MB (3.197.152 bytes) y la PNG de 2,4 MB (2.497.157 bytes) dejen de costarle la hora al operario que marca desde el navegador, sin ensanchar la clase aceptada: video, PDF, SVG, texto y alfabeto inválido siguen rechazándose con su código y la fila degradada no guarda los bytes dentro del jsonb. Inventario exacto: doce rutas. Cero rutas bajo packages/, infra/ o apps/web."
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/mobile-identity.js" },
+    { "status": "M", "file": "apps/api/test/hr-evidence-resilience.test.js" },
+    { "status": "A", "file": "scripts/certifications/hr-web-photo-battery.js" },
+    { "status": "A", "file": "docs/briefs/2026-11-24-cero-rechazos-foto-web-bateria.md" },
+    { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/bateria-qa-antes.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/bateria-qa-despues.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/porton-develop.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/porton-main.json" },
+    { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/migraciones-candidato-develop.txt" },
+    { "status": "A", "file": "docs/qa/evidence/web-photo-battery-20261124/suites-plataforma-candidato.json" },
+    { "status": "A", "file": "docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json" },
+    { "status": "A", "file": "docs/qa/manifests/cero-rechazos-foto-web-main-20261124-approval.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/test/hr-evidence-resilience.test.js",
+    "scripts/certifications/hr-web-photo-battery.js",
+    "docs/briefs/2026-11-24-cero-rechazos-foto-web-bateria.md",
+    "docs/qa/evidence/web-photo-battery-20261124/bateria-qa-antes.json",
+    "docs/qa/evidence/web-photo-battery-20261124/bateria-qa-despues.json",
+    "docs/qa/evidence/web-photo-battery-20261124/porton-develop.json",
+    "docs/qa/evidence/web-photo-battery-20261124/porton-main.json",
+    "docs/qa/evidence/web-photo-battery-20261124/migraciones-candidato-develop.txt",
+    "docs/qa/evidence/web-photo-battery-20261124/suites-plataforma-candidato.json",
+    "docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json",
+    "docs/qa/manifests/cero-rechazos-foto-web-main-20261124-approval.json"
+  ],
+  "allowed_deletions": [],
+  "origin_waivers": [],
+  "protected_capabilities": [
+    {
+      "name": "RBAC y aislamiento de tenant intactos",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/porton-main.json"
+      ],
+      "notes": "El portón no toca middleware/rbac.js ni ningún route de administración. La batería opera dentro de un solo tenant (NYVORA en QA), crea sus propios usuarios efímeros con rol Empleado y los retira por el endpoint administrativo; cero escrituras fuera de esas filas."
+    },
+    {
+      "name": "La hora de una foto válida nunca se pierde y un archivo prohibido sigue rechazándose",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/bateria-qa-despues.json",
+        "../evidence/web-photo-battery-20261124/bateria-qa-antes.json"
+      ],
+      "notes": "Mesa completa sobre el binario desplegado: 34/34 controles sobre 15 formas. Las dos piernas del defecto pasaron de 400 con hora no asentada a 200 con fila degradada, EVIDENCIA_SUPERA_LIMITE y foto_inline false; las cuatro formas prohibidas siguen en 400 con su código y el reenvío del navegador recupera la hora."
+    },
+    {
+      "name": "Esquema y migraciones sin tocar",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/migraciones-candidato-develop.txt"
+      ],
+      "notes": "Cero rutas bajo apps/api/prisma/migrations y cero rutas de schema.prisma en el inventario. No hay nada que aplicar en la nube y por lo tanto no se pide ninguna migración remota."
+    },
+    {
+      "name": "El replay no revierte trabajo de main",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/porton-main.json"
+      ],
+      "notes": "Medida de la regla 111 de apexos-brief 2.98.0: el blob de origin/main en mobile-identity.js es idéntico al del antepasado 8208d941 (f9e8ea27) y el de la suite también (26d814c1), así que main no tiene ni una línea propia que se pueda perder. Además 20 líneas añadidas, 0 inexistentes en origin/desarrollo, y 84/84 pruebas del frente verdes sobre el árbol del candidato."
+    }
+  ],
+  "compuertas_exigidas": [
+    "node --test sobre el árbol del candidato (seis suites del frente): 84 pruebas, 84 pasan, con NODE_PATH al node_modules del árbol principal y sin copiar node_modules dentro del worktree",
+    "npm run qa:promotion:scope -- docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json <punta-candidato> origin/main",
+    "npm run qa:approval:evidence -- docs/qa/manifests/cero-rechazos-foto-web-main-20261124-approval.json",
+    "node scripts/git-governance-guard.js promote develop-to-main con su bandera de autorización, desde el árbol limpio del candidato",
+    "git tag de respaldo sobre origin/main antes de empujar y git push --dry-run con el sha de cuarenta caracteres",
+    "verificación de Producción por lectura después del despliegue: /health.commit, ausencia del delta en el binario servido y censo de rechazos; la batería no se corre en Producción porque escribe"
+  ],
+  "deriva_declarada": [
+    "El canon del equipo no viaja a main: origin/main no trae agents/** y sus .qoder/skills siguen su propia contabilidad, como en los portones previos de esta rama.",
+    "apps/web no viaja: el reenvío sin foto del navegador (retry_without_photo / detachEvidence / hrOfflineMarking.ts) no existe en main ni en develop. Es frente propio de apexos-frontend con su brief y su certificación en navegador (brief §10).",
+    "No se relaja la escalera de marcaciones ni la ventana de diferidas de 24 horas: el dictamen del auditor lo rechaza (brief §6).",
+    "La bandera HR_EVIDENCE_INLINE_MAX_BYTES sigue sin declararse en ningún ambiente; pendiente de infraestructura con dueño (apexos-performance).",
+    "El sha final que se empuja a main, la salida verbatim del gate de alcance y la lectura de /health post-despliegue se consignan en el portón de contabilidad siguiente de origin/desarrollo: describen una punta que no existe dentro del commit que la describe."
+  ],
+  "verificado_local": {
+    "fecha_hora_local": "2026-11-24T16:35:00-05:00",
+    "rama_trabajo": "desarrollo",
+    "puntas": {
+      "origin/main": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+      "origin/develop": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+      "origin/desarrollo": "25f8b32e"
+    },
+    "rutas_inventario": 12,
+    "rutas_producto_en_el_diff": 3,
+    "suites_sobre_el_arbol_candidato": "84/84 (hr-evidence-resilience, hr-single-selfie-gate, hr-mobile-identity, hr-punch-mobile-evidence, hr-evidence-storage-gate, security-evidence-upload)",
+    "paridad_por_blob": "9/9 rutas llevadas idénticas a origin/desarrollo, 0 distintas, 0 waivers"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main",
+    "approved_by": "dueño del proyecto (Edwin)",
+    "approved_at": "2026-11-24T16:35:00-05:00",
+    "authorization_flags": {
+      "direct_push_to_main": true
+    },
+    "nota": "La bandera de push a main cubre exclusivamente las doce rutas de este inventario. No autoriza force push, rebase, migraciones remotas, infraestructura, borrado de ramas ajenas ni cambios de configuración en Railway/Supabase."
+  }
+}

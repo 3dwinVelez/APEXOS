@@ -1,0 +1,94 @@
+{
+  "change_id": "cero-rechazos-foto-web-bateria-20261124-main",
+  "commit": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+  "tree_evaluated": "25f8b32e",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "passed",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main",
+    "approved_by": "dueño del proyecto (Edwin)",
+    "approved_at": "2026-11-24T16:35:00-05:00",
+    "authorization_flags": {
+      "direct_push_to_main": true
+    },
+    "notes": "Orden literal del 2026-11-24: «procede a implementar y certificar 0 rechazos y aplica tus sugerencias para evitar mas inconvenientes con mi autorizacion y alinea todos los ambientes», con alcance «Las tres ramas, completas» y ambientes «QA y Produccion» elegidos por él en la pregunta de alcance; la firma funcional de QA la puso él mismo con esa orden. La autorización cubre únicamente las doce rutas del manifiesto de alcance y no autoriza force push, rebase de ramas compartidas, migraciones remotas, cambios de infraestructura/Railway/Supabase, ni el transporte de apps/web, que no está en este inventario. El sha exacto que se empuja a main y la lectura de /health del ambiente servido se consignan en el portón de contabilidad siguiente de origin/desarrollo."
+  },
+  "scope_manifest": "cero-rechazos-foto-web-main-20261124-scope.json",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/bateria-qa-despues.json",
+        "../evidence/web-photo-battery-20261124/porton-main.json"
+      ],
+      "notes": "Mesa de dieciséis formas de foto (cuatro tipos de marcación, entrada / inicio de almuerzo / fin de almuerzo / salida) corrida contra el build desplegado en QA: 34/34 controles sobre el árbol que lleva los mismos blobs que se promueven. Las dos piernas del defecto (JPEG de 3.197.152 bytes y PNG de 2.497.157 bytes, ambas declaradas image/jpeg o image/png) pasaron de 400 con la hora no asentada a 200 con fila degradada EVIDENCIA_SUPERA_LIMITE y foto_inline false. Las cuatro marcaciones completas recuperan su hora por el reenvío del navegador. La pata de main se midió sobre el árbol del candidato: 84/84 (sesenta y cuatro de la batería del frente más veinte y del gate de selfie móvil) y el control de las once formas prohibidas."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/bateria-qa-despues.json",
+        "../evidence/web-photo-battery-20261124/porton-main.json"
+      ],
+      "notes": "El control negativo demuestra que no se ensanchó la clase aceptada: MP4, PDF, SVG sin declararse imagen, texto plano y base64 con alfabeto inválido siguen en 400 con su código y, en los cuatro tipos, sin fila creada. La degradación solo aplica cuando el tamaño es la única causa del veredicto (soloEsGrande). Sobre el árbol del candidato, el blob de mobile-identity.js en origin/main es idéntico al del antepasado (f9e8ea27), así que la condición nueva entra sobre el mismo código que ya servía y no puede interactuar con fix propio alguno."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/porton-develop.json",
+        "../evidence/web-photo-battery-20261124/porton-main.json",
+        "../evidence/web-photo-battery-20261124/suites-plataforma-candidato.json"
+      ],
+      "notes": "Los instrumentos que sostienen el portón viajan versionados en el propio inventario: scripts/certifications/hr-web-photo-battery.js (seis por tres matrices de formas de foto, lectura de la fila, censo de rechazos por canal y retiro de las cuentas efímeras por el endpoint administrativo) y scripts/validate-promotion-scope-v2.js con el control de origen de blobs y waivers nombrados. Los tres reportes del portón también: porton-develop.json, porton-main.json y suites-plataforma-candidato.json."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/suites-plataforma-candidato.json",
+        "../evidence/web-photo-battery-20261124/porton-main.json"
+      ],
+      "notes": "Regresión del frente sobre el árbol del candidato: hr-evidence-resilience, hr-single-selfie-gate, hr-mobile-identity, hr-punch-mobile-evidence, hr-evidence-storage-gate y security-evidence-upload = 84 pruebas, 84 pasan, con NODE_PATH al node_modules del árbol principal y sin copiar node_modules dentro del worktree. La suite que cubre la misma ruta de código ya venía 91/91 sobre el árbol de desarrollo. El registro de marcación del otro canal (móvil/firmado) y la compuerta de almacenamiento del jsonb no cambiaron de comportamiento."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/suites-plataforma-candidato.json"
+      ],
+      "notes": "Suite completa de la plataforma: corrida y aprobada sobre el árbol de desarrollo, que es el que aporta los blobs que se promueven (desarrollo 8.641 + control 3/3 + agentes 46/46; apps/web 2.271). Se declara sin rodeos que en el worktree del candidato no se puede repetir la suite completa: exige la base de datos de infraestructura en 127.0.0.1:54320 levantada y este portón no levanta infraestructura (así lo dice scripts/performance/lib/ensure-running.js:111-115). Las tres pruebas del backfill que sí cubren esta ruta se ejecutan contra config/qa.env, archivo no versionado que solo existe en el checkout principal, y por eso corren 91/91 en el árbol de desarrollo y faltan en un worktree limpio. Ningún resultado se copia como promesa: en el árbol del candidato se ejecutó de nuevo lo que sí corre sin base local y dio 84/84."
+    }
+  },
+  "certification": {
+    "script": "../../../scripts/certifications/hr-web-photo-battery.js",
+    "evidence": [
+      "../evidence/web-photo-battery-20261124/bateria-qa-despues.json"
+    ],
+    "notes": "La certificación end-to-end del flujo pedido es la batería sobre el ambiente desplegado: login del fixture, las cuatro marcaciones web en orden con su forma de foto, verificación de la hora real en la fila, del veredicto y del inline del jsonb por el cliente de Prisma del API, censo de rechazos por canal y retiro de las cuentas efímeras. El binario evaluado es origin/develop c0fbb4b9c50c, desplegado y servido en QA, cuyos blobs son los mismos que el candidato de main (verificado por hash: 9/9 idénticos). El instrumento se niega a correr si el ambiente es producción y el censo final de Producción se hace por lectura, no corriendo la batería."
+  },
+  "regression_certification": {
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/web-photo-battery-20261124/migraciones-candidato-develop.txt",
+      "../evidence/web-photo-battery-20261124/porton-main.json"
+    ],
+    "notes": "El instrumento versionado del control de migraciones confirma que el inventario no lleva archivos bajo apps/api/prisma/migrations ni toca schema.prisma: cero en ambas verificaciones. No hay nada que aplicar en la nube, así que el portón a main no exige ninguna migración remota. El candidato se re-medirá contra origin/main por archivo con el mismo instrumento antes de reportar el despliegue."
+  },
+  "model_company_certification": {
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-web-photo-battery.js",
+    "evidence": [
+      "../evidence/web-photo-battery-20261124/bateria-qa-despues.json",
+      "../evidence/web-photo-battery-20261124/bateria-qa-antes.json"
+    ],
+    "notes": "La empresa modelo es la única con flujo de marcaciones activo y es la que usa el instrumento: hr-web-photo-battery.js localiza el tenant por nombre NYVORA y aborta si no existe. El ANTES quedó archivado en QA con la firma del binario 26dbc258: 26/34 y las piernas 8 y 9 (JPEG real de cámara y PNG de 2,4 MB) cayendo en los cuatro tipos con 400 SELFIE_INVALIDA, selfie_rechazada y hora no asentada. El DESPUÉS sobre el árbol con la condición corregida: 34/34, con las dos piernas degradando a 200 sin hora perdida, las cuatro formas prohibidas rechazando en 400 y el reenvío del navegador recuperando las cuatro marcaciones."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+    "trigger": "Un operario web vuelve a perder la hora de una marcación por culpa del veredicto de la foto con el nuevo binario servido; el censo por lectura muestra rechazos nuevos con código EVIDENCIA_SUPERA_LIMITE que no degradan (foto_inline true en una fila degradada); o la verificación por lectura en Producción muestra que el delta de mobile-identity.js no está en el chunk servido.",
+    "notes": "Revert controlado de la punta nueva de main contra e4595dce, sin force push ni reset --hard, y re-integración por el mismo camino. La reversión es limpia y verificable: el blob de mobile-identity.js en origin/main es byte a byte el del antepasado común (f9e8ea27) y el de la suite también (26d814c1), así que revertir devuelve exactamente el árbol que ya estaba servido y no quita ningún fix propio de main porque no existe ninguno en estas dos rutas. El portón no trae migraciones, así que no hay nada que deshacer en la base. La fila degradada escrita durante la ventana nueva conserva su hora y su veredicto; no se borra ni se re-procesa."
+  }
+}

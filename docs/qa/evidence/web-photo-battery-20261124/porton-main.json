@@ -1,0 +1,59 @@
+{
+  "instrumento": "portón de promoción desarrollo -> main (cero rechazos foto web)",
+  "fecha_local": "2026-11-24T16:35:00-05:00",
+  "candidate_ref": "codex/qa-cero-rechazos-foto-web-main-20261124",
+  "target_head": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+  "source_head": "25f8b32e",
+  "antepasado_comun_relevante": "8208d9417ba6e1aff03bb5529bd5ec6aac074a0b",
+  "rutas_inventario": 12,
+  "rutas_producto": [
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/test/hr-evidence-resilience.test.js",
+    "scripts/certifications/hr-web-photo-battery.js"
+  ],
+  "medicion_previa_al_replay": {
+    "regla": "la regla 111 de apexos-brief 2.98.0: medir lo que el destino cambió en ese archivo antes de afirmar que el replay es seguro",
+    "apps/api/src/modules/hr/mobile-identity.js": "blob de origin/main = f9e8ea27bb32e92920d25983ed2db899d5d5538f, idéntico al del antepasado 8208d941 => main tiene +0 líneas propias",
+    "apps/api/test/hr-evidence-resilience.test.js": "blob de origin/main = 26d814c12b4f866b1b77e75c44367adaa303afd7, idéntico al del antepasado => main tiene +0 líneas propias",
+    "presencia_de_la_compuerta_web": "origin/main ya trae WEB_SELFIE_REQUIRED_TYPES (5 menciones) y no trae el fix (0 menciones de soloEsGrande): el único delta es este cambio",
+    "conclusion": "replay limpio por archivo, sin fusión a tres vías y sin revertir trabajo ajeno"
+  },
+  "control_de_lineas_huerfanas": {
+    "mobile-identity.js": "20 líneas añadidas, 0 inexistentes en el blob de origin/desarrollo (25f8b32e); 6 retiradas",
+    "hr-evidence-resilience.test.js": "71 líneas añadidas, 7 retiradas, mismo delta numérico que el portón de develop",
+    "instruccion": "toda línea añadida del candidato existe textualmente en origin/desarrollo; ningún hunk nació en la rama de destino"
+  },
+  "suites_sobre_el_arbol_de_main": [
+    { "grupo": "hr-evidence-resilience + hr-single-selfie-gate + hr-mobile-identity", "pruebas": 64, "pasan": 64, "fallan": 0 },
+    { "grupo": "hr-punch-mobile-evidence + hr-evidence-storage-gate + security-evidence-upload", "pruebas": 20, "pasan": 20, "fallan": 0 },
+    {
+      "grupo": "hr-evidence-backfill-tool",
+      "estado": "no corrió en este árbol",
+      "motivo": "exige config/qa.env, que está fuera del control de versiones y no existe dentro del worktree; se corrió verde (dentro del grupo de 91/91) en el árbol que sí lo tiene y ninguna de sus pruebas toca las rutas de este portón"
+    },
+    { "nota_de_ambiente": "las suites se ejecutaron con NODE_PATH al node_modules del árbol principal; nunca se copió ni se enlazó node_modules dentro del worktree" }
+  ],
+  "paridad_por_blob": {
+    "metodo": "git rev-parse :<ruta> del candidato contra git rev-parse 25f8b32e:<ruta>",
+    "rutas_llevadas": 9,
+    "blobs_distintos": 0
+  },
+  "certificacion_funcional_en_qa": {
+    "archivo": "bateria-qa-despues.json",
+    "veredicto": "34/34 controles sobre 15 formas",
+    "ambiente": "QA desplegado desde develop @ c0fbb4b9c50c, anclado por /health.commit",
+    "hallazgos": [
+      "jpeg-real-de-3-mb (3.197.152 bytes) y png-real-de-2_4-mb (2.497.157 bytes): 200 con la hora asentada, evidence_status degraded, EVIDENCIA_SUPERA_LIMITE y foto_inline false",
+      "jpeg-en-el-tope-justo (2.097.152 bytes exactos): 200 disponible",
+      "cinco formas con etiqueta mentirosa: 200",
+      "video/PDF/svg-declarado-imagen/texto plano: 400 con su código, y el reenvío del navegador recupera la hora en las cuatro (200, desprendidas identity_photo)",
+      "cero 5xx, peor escritura 1.804 ms, 15 cuentas efímeras retiradas por endpoint (login tras retiro 401)"
+    ],
+    "control_de_mutacion": "node scripts/certifications/hr-web-photo-battery.js --selftest -> 15/15 con tres mutaciones obligadas al rojo"
+  },
+  "produccion_no_se_toca_con_la_bateria": "La batería escribe. Producción se verifica por artefacto servido y lectura: /health.commit, censo de rechazos y ausencia del defecto en el binario. Ningún payload hostil se envía a la base de clientes reales.",
+  "deriva_declarada": [
+    "El canon del equipo no viaja a main: origin/main no trae agents/** en absoluto y sus .qoder/skills siguen su propia contabilidad, igual que en los portones previos de esta rama. La contabilidad de esta intervención vive en origin/desarrollo y origin/develop.",
+    "El reenvío sin foto del navegador no viaja: apps/web no aparece en este inventario. Medido, main (y develop) no tienen retry_without_photo ni detachEvidence ni hrOfflineMarking.ts; es frente propio de apexos-frontend con su brief (ver §10 del brief)."
+  ]
+}
