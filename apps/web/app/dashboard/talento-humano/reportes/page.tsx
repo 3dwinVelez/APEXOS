@@ -19,7 +19,7 @@ type Punch = { employee_id?: number | string | null; id: number; user_name: stri
 // API anterior al despliegue guardaba la selfie en `base64`; la actual, en
 // `base64_data`. Se leen ambas. `storage_path`/`has_base64_data` anuncian el
 // archivo ya rescatado al almacen: los bytes se piden por id al monitor.
-type PunchIdentityMetadata = { identity_verification?: { status?: string }; identity_photo?: { base64_data?: string; base64?: string; type?: string; has_base64_data?: boolean; storage_path?: string } };
+type PunchIdentityMetadata = { identity_verification?: { status?: string; face_match?: { status?: string; similarity?: number | null }; fingerprint?: { status?: string } }; identity_photo?: { base64_data?: string; base64?: string; type?: string; has_base64_data?: boolean; storage_path?: string } };
 type Attendance = { user_name: string; next_type: string | null; punches: Punch[] };
 type WorkActivity = { id: number; employee_id?: number | string; user_id?: string; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number | string; vehicle_plate?: string; evidence?: HrTimelinePhoto[]; metadata?: { supplied_user_name?: string; employee_code?: string; employee_name?: string; identity_aliases?: string[] } };
 type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number };
@@ -137,6 +137,25 @@ function hour(value?: string) {
   if (!value) return "--";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value.slice(0, 5) : date.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+}
+
+// Maestro de rostros: la marcacion no se rechaza si la selfie no coincide; se senala aqui.
+function faceMatchNote(punch: { metadata?: PunchIdentityMetadata | null }) {
+  const finger = punch.metadata?.identity_verification?.fingerprint?.status;
+  const fingerNote = finger === "verificada" ? "Huella verificada" : finger === "no_presentada" ? "SIN HUELLA" : "";
+  const faceNote = faceOnlyNote(punch);
+  return [faceNote, fingerNote].filter(Boolean).join(" · ");
+}
+
+function faceOnlyNote(punch: { metadata?: PunchIdentityMetadata | null }) {
+  const match = punch.metadata?.identity_verification?.face_match;
+  if (!match?.status) return "";
+  const pct = typeof match.similarity === "number" ? ` (similitud ${Math.round(match.similarity * 100)}%)` : "";
+  if (match.status === "coincide") return `Rostro verificado${pct}`;
+  if (match.status === "no_coincide") return `ROSTRO NO COINCIDE${pct}`;
+  if (match.status === "suplantacion") return "POSIBLE SUPLANTACION (foto de foto o pantalla)";
+  if (match.status === "sin_rostro" || match.status === "varios_rostros") return "Selfie sin un rostro claro";
+  return "";
 }
 
 function punchSelfie(punch: Punch) {
@@ -545,7 +564,7 @@ export default function HrReportsPage() {
         return activityAliases.some((alias) => userAliases.has(alias)) || Boolean(activity.route_id && String(activity.route_id) === String(sorted[0]?.route_id));
       });
       const events = [
-        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, userName: punch.user_name || employeeName(employee, userName), gps: gps(punch), accuracy: punch.accuracy_meters, detail: punch.late_minutes ? `${punch.late_minutes} min de retardo` : punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: punchEvidenceCount(punch), evidence: punchTimelineEvidence(punch), selfie: punchSelfie(punch), identityVerified: punch.metadata?.identity_verification?.status === "verified" })),
+        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, userName: punch.user_name || employeeName(employee, userName), gps: gps(punch), accuracy: punch.accuracy_meters, detail: [faceMatchNote(punch), punch.late_minutes ? `${punch.late_minutes} min de retardo` : punch.extra_minutes ? `${punch.extra_minutes} min extra` : ""].filter(Boolean).join(" · "), alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: punchEvidenceCount(punch), evidence: punchTimelineEvidence(punch), selfie: punchSelfie(punch), identityVerified: punch.metadata?.identity_verification?.status === "verified" })),
         ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, userName: activity.user_name || employeeName(employee, userName), gps: gps(activity), accuracy: activity.accuracy_meters, detail: activity.observation || "", alert: null, evidenceCount: activity.evidence?.length || 0, evidence: (activity.evidence || []).map(photo => ({ ...photo, source: "activity" as const })) }))
       ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
       const punchAlerts = reportPunchAlerts(entry, exit, route);

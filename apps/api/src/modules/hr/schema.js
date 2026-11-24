@@ -93,6 +93,76 @@ const biometricEnrollmentSchema = {
   }
 };
 
+// Registro del celular compartido de un camion (llave WebAuthn ES256). El navegador
+// entrega la llave publica en SPKI (getPublicKey) y los datos del autenticador.
+const sharedDeviceRegistrationSchema = {
+  body: {
+    type: "object",
+    required: ["device_id", "credential_id", "public_key", "public_key_algorithm", "client_data_json", "authenticator_data", "rp_id", "vehicle_plate"],
+    properties: {
+      device_id: { type: "string", minLength: 8, maxLength: 128 },
+      credential_id: { type: "string", minLength: 16, maxLength: 1024 },
+      public_key: { type: "string", minLength: 40, maxLength: 1024 },
+      public_key_algorithm: { type: "integer" },
+      client_data_json: { type: "string", minLength: 20, maxLength: 4096 },
+      authenticator_data: { type: "string", minLength: 40, maxLength: 4096 },
+      rp_id: { type: "string", minLength: 1, maxLength: 253 },
+      vehicle_plate: { type: "string", minLength: 3, maxLength: 12 },
+      label: { type: "string", maxLength: 80 },
+      device_model: { type: "string", maxLength: 120 }
+    }
+  }
+};
+
+// Marcacion desde el celular compartido: la marcacion normal + la persona que marca.
+// La firma WebAuthn viaja en metadata.identity y la selfie en identity_photo.
+const crewPunchSchema = {
+  body: {
+    ...punchSchema.body,
+    required: ["employee_id", "type", "punched_at", "idempotency_key", "identity_photo", "metadata"]
+  }
+};
+
+// Registro del rostro propio (maestro de rostros). La foto viaja como data URL.
+const faceEnrollmentSchema = {
+  body: {
+    type: "object",
+    required: ["photo", "consent_accepted", "consent_version"],
+    properties: {
+      consent_accepted: { type: "boolean" },
+      consent_version: { type: "string", maxLength: 40 },
+      photo: {
+        type: "object",
+        required: ["base64"],
+        properties: {
+          base64: { type: "string", minLength: 100 },
+          name: { type: "string", maxLength: 120 },
+          type: { type: "string", maxLength: 40 },
+          size: { type: "integer" }
+        }
+      },
+      client_check: { type: "object" }
+    }
+  }
+};
+
+// Registro de la huella propia (WebAuthn). La llave publica viaja en SPKI.
+const personalWebauthnSchema = {
+  body: {
+    type: "object",
+    required: ["credential_id", "public_key", "public_key_algorithm", "client_data_json", "authenticator_data", "rp_id"],
+    properties: {
+      credential_id: { type: "string", minLength: 16, maxLength: 1024 },
+      public_key: { type: "string", minLength: 40, maxLength: 1024 },
+      public_key_algorithm: { type: "integer" },
+      client_data_json: { type: "string", minLength: 20, maxLength: 4096 },
+      authenticator_data: { type: "string", minLength: 40, maxLength: 4096 },
+      rp_id: { type: "string", minLength: 1, maxLength: 253 },
+      device_label: { type: "string", maxLength: 120 }
+    }
+  }
+};
+
 const routeSchema = {
   body: {
     type: "object",
@@ -830,6 +900,10 @@ const terminationManualAdjustmentSchema = {
 
 module.exports = {
   terminationManualAdjustmentSchema,
+  personalWebauthnSchema,
+  faceEnrollmentSchema,
+  sharedDeviceRegistrationSchema,
+  crewPunchSchema,
   scheduleSchema,
   punchSchema,
   biometricEnrollmentSchema,

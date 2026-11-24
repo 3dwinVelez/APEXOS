@@ -2817,11 +2817,21 @@ async function createPunch(tenantId, input, user, options = {}) {
   // El ambito lo fija el servidor, no el payload: un cliente de la ruta administrativa
   // no puede declararse self-service para esquivar la novedad de ajuste manual.
   const ownScope = options.scope === "own";
+  // Celular compartido del camion: el empleado lo fija el servidor tras verificar la
+  // firma del celular y la malla del dia (createCrewPunch). Se comporta como self-service:
+  // no acepta employee_id del payload ni genera la novedad de ajuste manual.
+  const sharedScope = options.scope === "shared_device";
+  const selfServiceScope = ownScope || sharedScope;
   const punchLockDeadlineAt = Date.now() + contentionLockWaitMs;
   const idempotencyKey = String(input.idempotency_key || input.metadata?.idempotency_key || "").trim().slice(0, 120) || null;
   const attemptPunch = async (tx) => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
-    const currentEmployee = user?.id ? await tx.employee.findFirst({
+    const currentEmployee = sharedScope
+      ? await tx.employee.findFirst({
+        where: { tenant_id: tenantId, id: Number(options.employeeId), active: true },
+        include: { user: { select: { name: true, email: true } } }
+      })
+      : user?.id ? await tx.employee.findFirst({
       where: ownScope
         ? { tenant_id: tenantId, user_id: user.id, active: true }
         : { tenant_id: tenantId, OR: [{ user_id: user.id }, { user: { email: user.email || "" } }] },
@@ -2833,7 +2843,7 @@ async function createPunch(tenantId, input, user, options = {}) {
     // propia ficha del admin, dejando la correccion y la novedad AJUSTE_MANUAL_MARCACION
     // sobre la persona equivocada sin error visible. Ahora falla explicitamente para que el
     // error se capture en el punto de origen en lugar de corromper el destino de la marca.
-    const declaredEmployeeId = !ownScope && input.employee_id != null && input.employee_id !== ""
+    const declaredEmployeeId = !selfServiceScope && input.employee_id != null && input.employee_id !== ""
       ? Number(input.employee_id)
       : null;
     if (declaredEmployeeId != null && !Number.isInteger(declaredEmployeeId)) {
@@ -2848,7 +2858,7 @@ async function createPunch(tenantId, input, user, options = {}) {
     if (declaredEmployeeId != null && !declaredEmployee) {
       throw validationError(`El empleado ${input.employee_id} no existe o no pertenece a tu organizacion.`, 404, "EMPLEADO_NO_ENCONTRADO");
     }
-    const employee = declaredEmployee || currentEmployee || (!ownScope ? await findEmployee(input) : null);
+    const employee = declaredEmployee || currentEmployee || (!selfServiceScope ? await findEmployee(input) : null);
     if (!employee) throw employeeAssociationRequired();
     const type = normalizePunchType(input.type || input.tipo_marca);
     const inputRouteId = operationalRouteNumericId(input);
@@ -3071,7 +3081,8 @@ async function createPunch(tenantId, input, user, options = {}) {
     const otherDayPunch = startOfDay(punchedAt).toISOString().slice(0, 10) !== startOfDay().toISOString().slice(0, 10);
     // Una correccion que salto la escalera es tan auditable como una de otro dia: sin novedad, el
     // eslabon agregado a posteriori quedaba invisible para el supervisor y sin autor.
-    if (!ownScope && (otherDayPunch || correction)) {
+    // Celular compartido (selfServiceScope) se trata como marcacion propia: sin novedad manual.
+    if (!selfServiceScope && (otherDayPunch || correction)) {
       await recordManualAdjustmentNovelty(tx, {
         tenantId,
         employeeId: employee.id,
@@ -3312,7 +3323,14 @@ async function createOwnPunch(tenantId, user, input) {
       throw validationError("Este telefono esta registrado para mas de un empleado. Pide a un administrador que restablezca el registro de quien no es dueño del telefono.", 403, "DISPOSITIVO_COMPARTIDO");
     }
   }
-  const { identity: _signature, identity_photo: _photo, ...metadata } = input.metadata || {};
+  // Maestro de rostros: la selfie se compara con el rostro registrado y la marcacion
+  // queda SENALADA si no coincide. Nunca la rechaza (ver faceMatchForPunch).
+  // Huella propia (WebAuthn): firma invalida -> rechazo; ausente -> se senala.
+  const fingerprint = await fingerprintForPunch(tenantId, employee, user, input);
+  if (fingerprint && identity.identity_verification) identity.identity_verification = { ...identity.identity_verification, fingerprint };
+  const faceMatch = await faceMatchForPunch(tenantId, employee.id, identity.identity_photo);
+  if (faceMatch && identity.identity_verification) identity.identity_verification = { ...identity.identity_verification, face_match: faceMatch };
+  const { identity: _signature, identity_photo: _photo, webauthn: _webauthn, ...metadata } = input.metadata || {};
   const verifiedInput = { ...input, metadata: { ...metadata, ...identity } };
   return createPunch(tenantId, ownOperationalInput(verifiedInput, employee, user), user, { scope: "own" });
 }
@@ -3375,6 +3393,453 @@ async function resetEmployeeBiometric(tenantId, user, employeeId, input = {}) {
     });
     return { ok: true, employee_id: id, previous };
   });
+}
+
+// ------------------------------------------------------------------------------------
+// Maestro de celulares compartidos (camion con un celular y dos empleados).
+// La firma WebAuthn prueba el celular; la selfie prueba la persona; la tripulacion
+// sale de las mallas de HOY con la placa del celular. Ver shared-device-identity.js.
+// ------------------------------------------------------------------------------------
+const sharedDeviceIdentity = require("./shared-device-identity");
+
+function assertSharedDeviceAdmin(user) {
+  // Mismo criterio que resetEmployeeBiometric: hr:write lo trae el rol generico en QA.
+  if (!(user?.role?.name === "APEX_ADMIN" || isAdministrativeRole(user?.role))) {
+    throw validationError("Solo un administrador puede registrar o revocar celulares de marcacion.", 403, "CELULAR_ADMIN_REQUERIDO");
+  }
+}
+
+function sharedDeviceWebauthnConfig() {
+  const config = sharedDeviceIdentity.webauthnConfig();
+  if (!config.allowedOrigins.length || !config.allowedRpIds.length) {
+    throw validationError("El servidor no tiene configurados WEBAUTHN_ORIGINS y WEBAUTHN_RP_IDS.", 503, "WEBAUTHN_NO_CONFIGURADO");
+  }
+  return config;
+}
+
+// Lo que ve la interfaz: nunca la llave publica.
+function publicSharedDevice(device) {
+  if (!device) return null;
+  const { public_key: _key, ...rest } = device;
+  return rest;
+}
+
+async function createSharedDeviceChallenge(tenantId, user) {
+  assertSharedDeviceAdmin(user);
+  sharedDeviceWebauthnConfig();
+  return sharedDeviceIdentity.issueRegistrationChallenge({ tenantId, userId: user.id, secret: process.env.JWT_SECRET });
+}
+
+async function registerSharedDevice(tenantId, user, input = {}) {
+  assertSharedDeviceAdmin(user);
+  const record = sharedDeviceIdentity.verifyRegistration({
+    input,
+    tenantId,
+    user,
+    secret: process.env.JWT_SECRET,
+    ...sharedDeviceWebauthnConfig()
+  });
+  return prisma.runWithTenant(tenantId, async () => {
+    const existing = await prisma.hrSharedDevice.findFirst({ where: { tenant_id: tenantId, device_id: record.device_id } });
+    if (existing?.active) {
+      throw validationError(`Este celular ya esta registrado para la placa ${existing.vehicle_plate}. Revocalo antes de registrarlo de nuevo.`, 409, "CELULAR_YA_REGISTRADO");
+    }
+    const data = {
+      ...record,
+      active: true,
+      enrolled_by: user.id,
+      enrolled_at: new Date(),
+      revoked_by: null,
+      revoked_at: null,
+      revoke_reason: null,
+      last_used_at: null
+    };
+    const saved = existing
+      ? await prisma.hrSharedDevice.update({ where: { id: existing.id }, data })
+      : await prisma.hrSharedDevice.create({ data: { tenant_id: tenantId, ...data } });
+    return publicSharedDevice(saved);
+  });
+}
+
+async function listSharedDevices(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const rows = await prisma.hrSharedDevice.findMany({
+      where: { tenant_id: tenantId, ...(query.active === "true" ? { active: true } : {}) },
+      orderBy: [{ active: "desc" }, { vehicle_plate: "asc" }, { id: "desc" }],
+      take: 500
+    });
+    return rows.map(publicSharedDevice);
+  });
+}
+
+async function revokeSharedDevice(tenantId, user, id, input = {}) {
+  assertSharedDeviceAdmin(user);
+  const deviceRowId = optionalNumericId(id);
+  if (!deviceRowId) throw validationError("Celular invalido.", 400, "CELULAR_INVALIDO");
+  return prisma.runWithTenant(tenantId, async () => {
+    const device = await prisma.hrSharedDevice.findFirst({ where: { id: deviceRowId, tenant_id: tenantId } });
+    if (!device) throw validationError("Celular no encontrado.", 404, "CELULAR_NO_ENCONTRADO");
+    if (!device.active) return publicSharedDevice(device);
+    const saved = await prisma.hrSharedDevice.update({
+      where: { id: device.id },
+      data: {
+        active: false,
+        revoked_by: user?.id || null,
+        revoked_at: new Date(),
+        revoke_reason: String(input.reason || "").trim().slice(0, 200) || null
+      }
+    });
+    return publicSharedDevice(saved);
+  });
+}
+
+async function findActiveSharedDevice(tenantId, deviceId) {
+  const device = await prisma.runWithTenant(tenantId, () => prisma.hrSharedDevice.findFirst({
+    where: { tenant_id: tenantId, device_id: String(deviceId || ""), active: true }
+  }));
+  if (!device) {
+    throw validationError("Este celular no esta registrado o fue revocado. Pide a talento humano que lo registre.", 403, "CELULAR_NO_REGISTRADO");
+  }
+  return device;
+}
+
+const sharedDevicePlateKey = (value) => String(value || "").toUpperCase().replace(/\s+/g, "");
+
+// Tripulacion del celular para un dia: empleados con malla operativa ese dia en la
+// misma placa. Se resuelve con el mismo cruce de alias que usa la marcacion propia.
+async function sharedDeviceCrew(tenantId, device, day = new Date()) {
+  const dayStart = startOfDay(day);
+  const routes = (await listRoutes(tenantId, { date: dayStart.toISOString().slice(0, 10) }))
+    .filter((route) => routeIsOperational(route) && sharedDevicePlateKey(route.vehicle_plate) === sharedDevicePlateKey(device.vehicle_plate));
+  if (!routes.length) return [];
+  const employees = await prisma.runWithTenant(tenantId, () => prisma.employee.findMany({
+    where: { tenant_id: tenantId, active: true },
+    include: { user: { select: safeUserSelect } },
+    take: 2000
+  }));
+  const crew = new Map();
+  const sorted = [...routes].sort((a, b) => Number(b.id) - Number(a.id));
+  for (const route of sorted) {
+    for (const employee of employees) {
+      if (crew.has(employee.id) || !routeAssignedToEmployee(route, employee)) continue;
+      crew.set(employee.id, {
+        employee,
+        route: {
+          id: route.id,
+          start_time: route.start_time,
+          end_time: route.end_time,
+          tolerance_minutes: route.tolerance_minutes,
+          vehicle_plate: route.vehicle_plate
+        },
+        route_ids: sorted.filter((r) => routeAssignedToEmployee(r, employee)).map((r) => Number(r.id))
+      });
+    }
+  }
+  return Array.from(crew.values());
+}
+
+async function getSharedDeviceCrewToday(tenantId, user, deviceId) {
+  const device = await findActiveSharedDevice(tenantId, deviceId);
+  const crew = await sharedDeviceCrew(tenantId, device);
+  const dayStart = startOfDay();
+  const punches = crew.length
+    ? await prisma.runWithTenant(tenantId, () => prisma.timePunch.findMany({
+      where: {
+        tenant_id: tenantId,
+        employee_id: { in: crew.map((member) => member.employee.id) },
+        date: { gte: dayStart, lt: endOfDay(dayStart) }
+      },
+      orderBy: { punched_at: "asc" },
+      select: { employee_id: true, type: true, time: true, punched_at: true }
+    }))
+    : [];
+  return {
+    device: publicSharedDevice(device),
+    date: dayStart.toISOString().slice(0, 10),
+    crew: crew.map(({ employee, route }) => {
+      const own = punches.filter((punch) => punch.employee_id === employee.id);
+      return {
+        employee_id: employee.id,
+        name: employeeDisplayName(employee) || employeeUserName(employee),
+        user_name: employeeUserName(employee),
+        is_current_user: Boolean(user?.id && employee.user_id === user.id),
+        route,
+        punches: own.map((punch) => ({ type: punch.type, time: punch.time, punched_at: punch.punched_at })),
+        next_type: nextPunchType(own)
+      };
+    })
+  };
+}
+
+async function createCrewPunch(tenantId, user, deviceId, input = {}) {
+  const device = await findActiveSharedDevice(tenantId, deviceId);
+  const employeeId = optionalNumericId(input.employee_id);
+  if (!employeeId) throw validationError("Selecciona la persona que marca.", 400, "EMPLEADO_REQUERIDO");
+  const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
+  const member = (await sharedDeviceCrew(tenantId, device, punchedAt)).find((entry) => entry.employee.id === employeeId);
+  if (!member) {
+    throw validationError(`La persona no tiene malla ese dia en el vehiculo ${device.vehicle_plate}.`, 403, "EMPLEADO_FUERA_DE_TRIPULACION");
+  }
+  const requestedRouteId = optionalNumericId(input.route_id);
+  if (requestedRouteId && !member.route_ids.includes(requestedRouteId)) {
+    throw validationError("La malla indicada no corresponde a este vehiculo.", 403, "HORARIO_AJENO_DENEGADO");
+  }
+  const routeInput = { ...input, route_id: requestedRouteId || member.route.id };
+  // Ventana de marcacion diferida, malla del dia y malla activa: mismas reglas que la
+  // marcacion propia, evaluadas para la persona que marca (no para quien tiene la sesion).
+  await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, member.employee, routeInput));
+
+  const verification = await sharedDeviceIdentity.verifyCrewAssertion({
+    device,
+    employeeId,
+    input,
+    ...sharedDeviceWebauthnConfig()
+  });
+  await prisma.runWithTenant(tenantId, () => prisma.hrSharedDevice.update({
+    where: { id: device.id },
+    data: { sign_count: verification.sign_count, last_used_at: new Date() }
+  }));
+
+  const { identity: _signature, identity_photo: _photo, ...metadata } = input.metadata || {};
+  const { identity_photo: _topPhoto, ...rest } = routeInput;
+  const crewInput = {
+    ...rest,
+    employee_id: employeeId,
+    user_name: employeeUserName(member.employee),
+    vehicle_plate: input.vehicle_plate || device.vehicle_plate,
+    metadata: {
+      ...metadata,
+      source: sharedDeviceIdentity.SHARED_DEVICE_SOURCE,
+      shared_device_session_user_id: user?.id || null,
+      current_user_only: false,
+      ...verification.metadata
+    }
+  };
+  return createPunch(tenantId, crewInput, user, { scope: "shared_device", employeeId });
+}
+
+// ------------------------------------------------------------------------------------
+// Maestro de rostros (varios empleados en el mismo celular). Cada empleado registra su
+// rostro una vez; cada selfie de marcacion se compara con el y la marcacion queda
+// SENALADA si no coincide (nunca se rechaza por el rostro). Ver face-identity.js.
+// ------------------------------------------------------------------------------------
+const faceIdentity = require("./face-identity");
+const faceConsent = require("./face-consent");
+const MAX_FACE_PHOTO_BYTES = 2 * 1024 * 1024;
+
+async function findActiveFaceEnrollment(tenantId, employeeId) {
+  return prisma.runWithTenant(tenantId, () => prisma.hrFaceEnrollment.findFirst({
+    where: { tenant_id: tenantId, employee_id: employeeId, active: true },
+    orderBy: { id: "desc" }
+  }));
+}
+
+async function getOwnFaceEnrollment(tenantId, user) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  const enrollment = await findActiveFaceEnrollment(tenantId, employee.id);
+  const config = faceIdentity.faceConfig();
+  return {
+    enrolled: Boolean(enrollment),
+    enrolled_at: enrollment?.enrolled_at || null,
+    model: enrollment?.model || faceIdentity.FACE_MODEL,
+    // El embedding PROPIO viaja al celular para comparar la selfie sin senal.
+    embedding: enrollment?.embedding || null,
+    match_threshold: config.matchThreshold,
+    consent: { version: faceConsent.FACE_CONSENT_VERSION, text: faceConsent.FACE_CONSENT_TEXT }
+  };
+}
+
+async function enrollOwnFace(tenantId, user, input = {}) {
+  if (input.consent_accepted !== true || input.consent_version !== faceConsent.FACE_CONSENT_VERSION) {
+    throw validationError("Debes aceptar la autorizacion de datos biometricos vigente para registrar tu rostro.", 400, "CONSENTIMIENTO_REQUERIDO");
+  }
+  const employee = await getCurrentEmployee(tenantId, user);
+  if (await findActiveFaceEnrollment(tenantId, employee.id)) {
+    throw validationError("Ya tienes un rostro registrado. Para cambiarlo, pide a un administrador que restablezca el registro.", 409, "ROSTRO_YA_REGISTRADO");
+  }
+  const photo = input.photo && typeof input.photo === "object" ? input.photo : null;
+  if (!photo?.base64 && !photo?.base64_data) throw validationError("Toma la foto de tu rostro.", 400, "FOTO_REQUERIDA");
+  // normalizeSelfie es asincronica (decodifica con sharp) y puede rechazar o degradar la foto.
+  const normalized = await mobileIdentity.normalizeSelfie(photo, { maxBytes: MAX_FACE_PHOTO_BYTES });
+  if (normalized.hard_rejection) throw normalized.hard_rejection;
+  const stored = normalized.stored;
+  if (!stored?.has_base64_data || !stored.base64_data) {
+    throw validationError("No se pudo leer la foto. Toma otra de frente, con buena luz, en JPG o PNG.", 422, "FOTO_NO_LEGIBLE");
+  }
+  const analysis = await faceIdentity.enrollmentFromImage(faceIdentity.dataUrlBytes(stored.base64_data));
+  if (!analysis.ok) throw validationError(analysis.message, 422, analysis.code);
+  const now = new Date();
+  const saved = await prisma.runWithTenant(tenantId, () => prisma.hrFaceEnrollment.create({
+    data: {
+      tenant_id: tenantId,
+      employee_id: employee.id,
+      user_id: user?.id || null,
+      embedding: analysis.embedding,
+      model: analysis.model,
+      reference_photo: stored,
+      consent_version: faceConsent.FACE_CONSENT_VERSION,
+      consent_text_sha256: faceConsent.FACE_CONSENT_SHA256,
+      consent_at: now,
+      active: true,
+      enrolled_by: user?.id || null,
+      enrolled_at: now
+    }
+  }));
+  return {
+    enrolled: true,
+    enrolled_at: saved.enrolled_at,
+    model: saved.model,
+    embedding: saved.embedding,
+    match_threshold: faceIdentity.faceConfig().matchThreshold,
+    antispoof: analysis.antispoof,
+    liveness: analysis.liveness
+  };
+}
+
+async function resetEmployeeFace(tenantId, user, employeeId, input = {}) {
+  if (!(user?.role?.name === "APEX_ADMIN" || isAdministrativeRole(user?.role))) {
+    throw validationError("Solo un administrador puede restablecer el rostro registrado.", 403, "ROSTRO_RESTABLECER_DENEGADO");
+  }
+  const id = optionalNumericId(employeeId);
+  if (!id) throw validationError("Empleado invalido.", 400, "EMPLEADO_INVALIDO");
+  return prisma.runWithTenant(tenantId, async () => {
+    const employee = await prisma.employee.findFirst({ where: { id, tenant_id: tenantId } });
+    if (!employee) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
+    const enrollment = await prisma.hrFaceEnrollment.findFirst({ where: { tenant_id: tenantId, employee_id: id, active: true }, orderBy: { id: "desc" } });
+    if (!enrollment) return { ok: true, employee_id: id, previous: null };
+    await prisma.hrFaceEnrollment.update({
+      where: { id: enrollment.id },
+      data: { active: false, revoked_by: user?.id || null, revoked_at: new Date(), revoke_reason: String(input.reason || "").trim().slice(0, 200) || null }
+    });
+    return { ok: true, employee_id: id, previous: { enrolled_at: enrollment.enrolled_at } };
+  });
+}
+
+async function listFaceEnrollments(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const rows = await prisma.hrFaceEnrollment.findMany({
+      where: { tenant_id: tenantId, active: true },
+      orderBy: { enrolled_at: "desc" },
+      take: 1000
+    });
+    const employees = rows.length
+      ? await prisma.employee.findMany({ where: { tenant_id: tenantId, id: { in: rows.map((r) => r.employee_id) } }, include: { user: { select: safeUserSelect } } })
+      : [];
+    const byId = new Map(employees.map((e) => [e.id, e]));
+    // Sin embedding: el monitor no lo necesita.
+    return rows.map((row) => ({
+      id: row.id,
+      employee_id: row.employee_id,
+      employee_name: employeeDisplayName(byId.get(row.employee_id)) || `Empleado ${row.employee_id}`,
+      employee_code: byId.get(row.employee_id)?.code || null,
+      reference_photo: row.reference_photo,
+      model: row.model,
+      consent_version: row.consent_version,
+      consent_at: row.consent_at,
+      enrolled_at: row.enrolled_at
+    }));
+  });
+}
+
+// Evalua la selfie de una marcacion contra el rostro registrado. Nunca lanza.
+async function faceMatchForPunch(tenantId, employeeId, storedPhoto) {
+  try {
+    if (!storedPhoto?.base64_data) return null;
+    const enrollment = await findActiveFaceEnrollment(tenantId, employeeId);
+    if (!enrollment) return { status: "sin_registro" };
+    return await faceIdentity.evaluateSelfie({
+      enrolledEmbedding: enrollment.embedding,
+      selfieBuffer: faceIdentity.dataUrlBytes(storedPhoto.base64_data)
+    });
+  } catch (error) {
+    return { status: "no_disponible", reason: String(error?.message || error).slice(0, 160) };
+  }
+}
+
+// ------------------------------------------------------------------------------------
+// Huella propia (WebAuthn) para marcar desde el navegador. Junto con el rostro: la
+// huella firma la marcacion (celular + llave del usuario) y el rostro prueba la persona.
+// Firma invalida = manipulacion -> se RECHAZA. Huella ausente -> se SENALA.
+// ------------------------------------------------------------------------------------
+const personalWebauthn = require("./personal-webauthn");
+
+async function activeWebauthnCredentials(tenantId, employeeId) {
+  return prisma.runWithTenant(tenantId, () => prisma.hrWebauthnCredential.findMany({
+    where: { tenant_id: tenantId, employee_id: employeeId, active: true },
+    orderBy: { id: "desc" }
+  }));
+}
+
+async function getOwnWebauthn(tenantId, user) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  const creds = await activeWebauthnCredentials(tenantId, employee.id);
+  return {
+    enrolled: creds.length > 0,
+    credentials: creds.map((c) => ({ credential_id: c.credential_id, rp_id: c.rp_id, device_label: c.device_label, enrolled_at: c.enrolled_at }))
+  };
+}
+
+async function createOwnWebauthnChallenge(tenantId, user) {
+  await getCurrentEmployee(tenantId, user);
+  sharedDeviceWebauthnConfig();
+  return sharedDeviceIdentity.issueRegistrationChallenge({ tenantId, userId: user.id, secret: process.env.JWT_SECRET });
+}
+
+async function registerOwnWebauthn(tenantId, user, input = {}) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  const record = personalWebauthn.verifyPersonalRegistration({
+    input,
+    tenantId,
+    user,
+    secret: process.env.JWT_SECRET,
+    ...sharedDeviceWebauthnConfig()
+  });
+  return prisma.runWithTenant(tenantId, async () => {
+    const existing = await prisma.hrWebauthnCredential.findFirst({ where: { tenant_id: tenantId, credential_id: record.credential_id } });
+    if (existing) throw validationError("Esta llave de huella ya esta registrada.", 409, "HUELLA_YA_REGISTRADA");
+    const saved = await prisma.hrWebauthnCredential.create({
+      data: { tenant_id: tenantId, employee_id: employee.id, user_id: user.id, ...record, active: true, enrolled_at: new Date() }
+    });
+    return { enrolled: true, credential_id: saved.credential_id, rp_id: saved.rp_id, enrolled_at: saved.enrolled_at };
+  });
+}
+
+async function resetEmployeeWebauthn(tenantId, user, employeeId, input = {}) {
+  if (!(user?.role?.name === "APEX_ADMIN" || isAdministrativeRole(user?.role))) {
+    throw validationError("Solo un administrador puede restablecer las huellas registradas.", 403, "HUELLA_RESTABLECER_DENEGADO");
+  }
+  const id = optionalNumericId(employeeId);
+  if (!id) throw validationError("Empleado invalido.", 400, "EMPLEADO_INVALIDO");
+  return prisma.runWithTenant(tenantId, async () => {
+    const employee = await prisma.employee.findFirst({ where: { id, tenant_id: tenantId } });
+    if (!employee) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
+    const creds = await prisma.hrWebauthnCredential.findMany({ where: { tenant_id: tenantId, employee_id: id, active: true } });
+    for (const c of creds) {
+      await prisma.hrWebauthnCredential.update({
+        where: { id: c.id },
+        data: { active: false, revoked_by: user?.id || null, revoked_at: new Date(), revoke_reason: String(input.reason || "").trim().slice(0, 200) || null }
+      });
+    }
+    return { ok: true, employee_id: id, revoked: creds.length };
+  });
+}
+
+// Huella de una marcacion web. Lanza si la firma presentada es invalida.
+async function fingerprintForPunch(tenantId, employee, user, input) {
+  if (input.metadata?.source === mobileIdentity.MOBILE_SOURCE) return null; // la app nativa tiene su propia firma
+  const creds = await activeWebauthnCredentials(tenantId, employee.id);
+  const presented = input.metadata?.webauthn;
+  if (!presented) return { status: creds.length ? "no_presentada" : "sin_registro" };
+  const config = sharedDeviceIdentity.webauthnConfig();
+  if (!config.allowedOrigins.length || !config.allowedRpIds.length) return { status: "no_verificable", reason: "WEBAUTHN_NO_CONFIGURADO" };
+  const credential = creds.find((c) => c.credential_id === String(presented.credential_id || ""));
+  // La selfie no va en la firma (se toma despues de la huella): la valida el rostro.
+  const result = personalWebauthn.verifyPersonalAssertion({ credential, user, input, ...config });
+  await prisma.runWithTenant(tenantId, () => prisma.hrWebauthnCredential.update({
+    where: { id: credential.id },
+    data: { sign_count: result.sign_count, last_used_at: new Date() }
+  }));
+  return result.fingerprint;
 }
 
 async function createGpsPing(tenantId, input) {
@@ -8300,6 +8765,20 @@ module.exports = {
   saveTerminationDayReview: terminationDayReviews.save,
   addTerminationManualAdjustment: terminationManualAdjustments.add,
   cancelTerminationManualAdjustment: terminationManualAdjustments.cancel,
+  getOwnWebauthn,
+  createOwnWebauthnChallenge,
+  registerOwnWebauthn,
+  resetEmployeeWebauthn,
+  getOwnFaceEnrollment,
+  enrollOwnFace,
+  resetEmployeeFace,
+  listFaceEnrollments,
+  createSharedDeviceChallenge,
+  registerSharedDevice,
+  listSharedDevices,
+  revokeSharedDevice,
+  getSharedDeviceCrewToday,
+  createCrewPunch,
   __setRouteLockWaitMsForTests: setRouteLockWaitMsForTests,
   __setContentionLockWaitMsForTests: setContentionLockWaitMsForTests,
   __monthlyOrdinaryHoursForDate: monthlyOrdinaryHoursForDate,

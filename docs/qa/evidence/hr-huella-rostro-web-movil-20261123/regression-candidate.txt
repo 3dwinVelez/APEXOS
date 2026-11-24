@@ -1,0 +1,27 @@
+# Regresion del candidato a9e9ec1a sobre origin/develop e5985f72
+# 2026-11-24T03:07:20Z  DISABLE_REDIS=true  node --test --test-timeout=60000
+
+## apps/api: test/hr-*.test.js test/auth-*.test.js test/security-*.test.js
+not ok 122 - fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante
+not ok 272 - editar malla adquiere lock y excluye la malla editada del chequeo de solapamiento
+# tests 404
+# pass 402
+# fail 2
+
+## Las 2 fallas anteriores existen igual en origin/develop sin este cambio:
+not ok 6 - fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante
+not ok 12 - editar malla adquiere lock y excluye la malla editada del chequeo de solapamiento
+# tests 15
+# pass 13
+# fail 2
+
+## apps/web: hr-face-enrollments-page, hr-shared-devices-page, hr-marking-*, hr-map-no-inline-evidence
+# tests 29
+# pass 29
+# fail 0
+
+## apps/web tsc --noEmit: exit 0 (candidato completo, node_modules por enlace temporal)
+
+## Las 2 fallas (pg_advisory_xact_lock en hr-marking-concurrency y lock de malla) son de origin/develop:
+- mismo mensaje en el candidato y en origin/develop e5985f72;
+- lineas con locks agregadas por el candidato en apps/api/src: 0 (git diff origin/develop HEAD | grep advisory|FOR UPDATE|LOCK).

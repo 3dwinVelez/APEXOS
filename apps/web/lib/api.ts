@@ -300,7 +300,11 @@ function shouldBlockHrWriteFallback(path: string, method: string) {
   // novedad GPS_INACTIVO_SIN_SENAL. Si un 409/422 cayera al respaldo, la pantalla mostraria
   // exito sin marcacion real y la cola offline perderia el motivo que debe mostrar al operario.
   const hrSelfServiceWrite = pathname.startsWith("/api/v1/hr/self/");
-  return method !== "GET" && (criticalWritePaths.has(pathname) || hrRouteDetailWrite || hrSelfServiceWrite);
+  // Maestro de celulares del camion y sus marcaciones: solo existen en la API operativa.
+  const hrSharedDeviceWrite = pathname.startsWith("/api/v1/hr/shared-devices");
+  // Maestro de rostros: el restablecimiento solo existe en la API operativa.
+  const hrFaceWrite = /^\/api\/v1\/hr\/employees\/[^/]+\/face-enrollment$/.test(pathname);
+  return method !== "GET" && (criticalWritePaths.has(pathname) || hrRouteDetailWrite || hrSelfServiceWrite || hrSharedDeviceWrite || hrFaceWrite);
 }
 
 async function refreshSessionToken() {

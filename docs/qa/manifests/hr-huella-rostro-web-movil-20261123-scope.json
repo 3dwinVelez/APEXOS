@@ -1,0 +1,277 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-huella-rostro-web-movil-20261123",
+  "base_commit": "e5985f72199cf7b0db8c7c90ececa1c63b1063a6",
+  "base_commits": {
+    "develop": "e5985f72199cf7b0db8c7c90ececa1c63b1063a6"
+  },
+  "target_head": "e5985f72199cf7b0db8c7c90ececa1c63b1063a6",
+  "certified_commit": "2c489966c603ab621d9f322c9d6e8d4a4cc555b8",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-huella-rostro-develop-20261123",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "2c489966c603ab621d9f322c9d6e8d4a4cc555b8",
+    "commits": [
+      "62d3291b",
+      "7dd9293a",
+      "f715186c",
+      "dc015f5b",
+      "3900f562 (adaptacion a normalizeSelfie asincronica)"
+    ],
+    "reconstruction": "Un solo commit funcional (certificado) sobre origin/develop con el arbol identico al de la reconstruccion por cherry-pick -x de los commits de huella, rostro y celular del camion sobre origin/develop; conflictos resueltos conservando ambos lados y adaptacion a normalizeSelfie asincronica. No viaja nada mas de desarrollo."
+  },
+  "certified_functional_paths": [
+    "apps/api/package.json",
+    "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql",
+    "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql",
+    "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/src/modules/auth/routes.js",
+    "apps/api/src/modules/auth/schema.js",
+    "apps/api/src/modules/auth/service.js",
+    "apps/api/src/modules/hr/face-consent.js",
+    "apps/api/src/modules/hr/face-identity.js",
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/personal-webauthn.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/shared-device-identity.js",
+    "apps/api/test/auth-webauthn-login.test.js",
+    "apps/api/test/hr-deferred-marking-offline.test.js",
+    "apps/api/test/hr-face-identity.test.js",
+    "apps/api/test/hr-personal-webauthn.test.js",
+    "apps/api/test/hr-shared-device-identity.test.js",
+    "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/test/hr-face-enrollments-page.test.mjs",
+    "apps/web/test/hr-shared-devices-page.test.mjs",
+    "docs/qa/evidence/hr-huella-rostro-web-movil-20261123/local-certification.json",
+    "docs/qa/evidence/hr-huella-rostro-web-movil-20261123/regression-candidate.txt",
+    "package-lock.json",
+    "scripts/certifications/hr-huella-rostro-web-movil-local.js"
+  ],
+  "change_intent": {
+    "summary": "Huella del usuario (WebAuthn) y rostro registrado para marcar desde la web movil, ingreso con huella y celular compartido del camion, con sus tablas, monitores y pruebas.",
+    "modules": [
+      "hr",
+      "auth"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/package.json",
+    "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql",
+    "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql",
+    "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/src/modules/auth/routes.js",
+    "apps/api/src/modules/auth/schema.js",
+    "apps/api/src/modules/auth/service.js",
+    "apps/api/src/modules/hr/face-consent.js",
+    "apps/api/src/modules/hr/face-identity.js",
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/personal-webauthn.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/shared-device-identity.js",
+    "apps/api/test/auth-webauthn-login.test.js",
+    "apps/api/test/hr-deferred-marking-offline.test.js",
+    "apps/api/test/hr-face-identity.test.js",
+    "apps/api/test/hr-personal-webauthn.test.js",
+    "apps/api/test/hr-shared-device-identity.test.js",
+    "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/test/hr-face-enrollments-page.test.mjs",
+    "apps/web/test/hr-shared-devices-page.test.mjs",
+    "docs/qa/evidence/hr-huella-rostro-web-movil-20261123/local-certification.json",
+    "docs/qa/evidence/hr-huella-rostro-web-movil-20261123/regression-candidate.txt",
+    "docs/qa/manifests/hr-huella-rostro-web-movil-20261123-preqa.json",
+    "docs/qa/manifests/hr-huella-rostro-web-movil-20261123-scope.json",
+    "package-lock.json",
+    "scripts/certifications/hr-huella-rostro-web-movil-local.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/auth/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/auth/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/auth/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/face-consent.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/face-identity.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/personal-webauthn.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/shared-device-identity.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/auth-webauthn-login.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-deferred-marking-offline.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-face-identity.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-personal-webauthn.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-shared-device-identity.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/rostros/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-face-enrollments-page.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-shared-devices-page.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-huella-rostro-web-movil-20261123/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-huella-rostro-web-movil-20261123/regression-candidate.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-huella-rostro-web-movil-20261123-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-huella-rostro-web-movil-20261123-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "package-lock.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-huella-rostro-web-movil-local.js"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Marcacion web con huella primero y selfie validada por el rostro registrado; firma ajena rechazada sin escribir",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-huella-rostro-web-movil-20261123/local-certification.json"
+      ]
+    },
+    {
+      "name": "Ingreso con huella con la misma sesion que /auth/login; reto de un solo uso, llave ajena y empresa vecina en 401",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-huella-rostro-web-movil-20261123/local-certification.json"
+      ]
+    },
+    {
+      "name": "Aislamiento multi-tenant y restablecer huella solo administrador",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-huella-rostro-web-movil-20261123/local-certification.json"
+      ]
+    },
+    {
+      "name": "Marcacion de la app nativa, novedad manual, escalera y evidencia degradada sin regresion",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-huella-rostro-web-movil-20261123/regression-candidate.txt"
+      ]
+    }
+  ]
+}
