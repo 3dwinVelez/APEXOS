@@ -322,16 +322,80 @@ test("el tope de bytes sigue rechazando y nombra el limite que disparo", async (
   assert.equal(error.details.byte_length, big.length);
 });
 
-test("el canal web usa su propio tope de 2 MB y lo nombra", async () => {
+test("el canal web degrada la imagen real que pasa su tope de 2 MB y nombra el limite", async () => {
   const cap = identity.WEB_IDENTITY_PHOTO_MAX_BYTES;
   assert.equal(cap, 2 * 1024 * 1024);
   const big = Buffer.concat([await realJpeg(4, 4), Buffer.alloc(cap, 1)]);
-  await assert.rejects(async () => identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch({ bytes: big }), now: NOW }), (error) => {
-    assert.equal(error.code, "VALIDACION", error.code);
-    assert.equal(error.details.evidence_failure_code, EVIDENCE_FAILURE_CODES.oversize);
-    assert.match(error.message, new RegExp(String(cap)));
-    return true;
-  });
+  const outcome = await identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch({ bytes: big }), now: NOW });
+  const photo = outcome.identity_photo;
+  assert.equal(outcome.identity_verification.status, "photo_only", JSON.stringify(outcome.identity_verification));
+  assert.equal(outcome.identity_verification.channel, "web");
+  assert.equal(outcome.identity_verification.evidence_status, "degraded");
+  assert.equal(outcome.identity_verification.evidence_failure_code, EVIDENCE_FAILURE_CODES.oversize);
+  assert.equal(photo.evidence_status, "degraded");
+  assert.equal(photo.evidence_failure_code, EVIDENCE_FAILURE_CODES.oversize);
+  assert.equal(photo.max_bytes, cap);
+  assert.equal(photo.byte_length, big.length);
+  // El tope existe para no llenar la base: la fila degradada NO puede arrastrar los bytes.
+  assert.equal(photo.has_base64_data, false);
+  assert.equal(photo.evidence_inline, false);
+  assert.ok(!photo.base64_data && !photo.base64, "la fila degradada guardo el payload");
+  // La huella digital si queda: es lo unico que le dice al supervisor que habia una foto.
+  assert.match(photo.sha256, /^[0-9a-f]{64}$/);
+  assert.equal(photo.sniffed_mime, "image/jpeg");
+});
+
+test("la clase prohibida sigue costando la marcacion aunque pase el tope de 2 MB", async () => {
+  // Control negativo obligatorio: si el tamano degradara por encima de la clase, un video de
+  // 3 MB entraria como "foto en revision" y la excepcion del canal web se convierte en puerta.
+  const cap = identity.WEB_IDENTITY_PHOTO_MAX_BYTES;
+  const video = Buffer.concat([Buffer.from("ftypisom", "latin1"), Buffer.alloc(cap, 1)]);
+  for (const [label, bytes, type] of [
+    ["video", video, "video/mp4"],
+    ["pdf", Buffer.concat([Buffer.from("%PDF-1.4", "latin1"), Buffer.alloc(cap, 1)]), "application/pdf"],
+    ["texto", Buffer.concat([Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'/>", "latin1"), Buffer.alloc(cap, 1)]), "image/svg+xml"]
+  ]) {
+    let error = null;
+    try {
+      await identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch({ bytes, type }), now: NOW });
+    } catch (cause) {
+      error = cause;
+    }
+    assert.ok(error, `${label}: la clase prohibida dejo de rechazarse`);
+    assert.equal(error.code, "VALIDACION", `${label}: llego ${error.code}: ${error.message}`);
+    assert.equal(error.statusCode, 400, `${label}: el rechazo dejo de ser 400`);
+  }
+  // El alfabeto invalido no se puede construir desde `Buffer`: `webPunch` codifica los bytes y
+  // el resultado siempre es base64 legitimo. Aqui la cadena cruda es el payload, que es justo
+  // lo que llega cuando un cliente manda basura.
+  let alfabeto = null;
+  try {
+    await identity.verifyPunchIdentity({
+      employee: { metadata: {} },
+      user,
+      input: {
+        user_name: "Tecnico", type: "entrada", metadata: { source: "web" },
+        identity_photo: { name: "selfie.jpg", type: "image/jpeg", size: 4096, base64: "data:image/jpeg;base64,!!!!no-es-base64!!!!" }
+      },
+      now: NOW
+    });
+  } catch (cause) {
+    alfabeto = cause;
+  }
+  assert.ok(alfabeto, "alfabeto invalido: el payload ilegable dejo de rechazarse");
+  assert.equal(alfabeto.code, "VALIDACION", `alfabeto invalido: llego ${alfabeto.code}: ${alfabeto.message}`);
+});
+
+test("la app firmada conserva el rechazo duro por tamano: su tope cubre la firma", async () => {
+  // La excepcion es del canal web. En la app la firma EC cierra sobre el sha256 de los bytes
+  // recibidos; degradar dejaria una marcacion `verified` sin evidencia que mostrar.
+  const key = deviceKey();
+  const cap = identity.identityPhotoByteCap();
+  const big = Buffer.concat([await realJpeg(4, 4), Buffer.alloc(cap, 1)]);
+  await rejectsCode(
+    () => identity.verifyPunchIdentity({ employee: enrolledEmployee(key), user, input: mobilePunch(key, { bytes: big }), now: NOW }),
+    "VALIDACION"
+  );
 });
 
 test("la compuerta del almacen y la de la selfie afirman lo mismo sobre el mismo payload", async () => {
