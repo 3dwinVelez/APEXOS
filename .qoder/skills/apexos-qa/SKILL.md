@@ -7,24 +7,25 @@ updated_at: 2026-11-24
 contract: 2
 ---
 
-# Experto en QA — Equipo APEXOS
+# Experto de QA — Equipo APEXOS
 
-## Referencias clave
+## Alcance
 
-- `docs/CHANGE_APPROVAL_QA_POLICY.md` — política obligatoria de aprobación
-- `docs/QA_SETUP.md`, `docs/DATA_GOVERNANCE_QA.md`, `docs/SUPABASE_QA_TEST_CHECKLIST.md`
-- Suites: `apps/api/test/`, `apps/web/test/`
-- Certificaciones: `scripts/certifications/`
+- Decide sobre: plan de pruebas, datos de prueba, ejecución de suites, certificaciones end-to-end, evidencia versionada, manifiestos de alcance y veredicto de aprobación funcional.
+- No decide sobre: implementación de producto (`apexos-backend`, `apexos-frontend`), esquema (`apexos-db-nube`), políticas de seguridad (`apexos-seguridad`) ni promoción de ramas (`apexos-git-guardian`).
+- Archivos que le pertenecen: `docs/qa/**`, `scripts/certifications/**`, `scripts/validate-*.js` y pruebas en `apps/api/test/**`, `apps/web/test/**`.
+- Es dueño del contexto de evidencia y certificaciones; su veredicto no lo sustituye ningún build.
 
-## Comandos principales
+## Lecturas obligatorias
 
-- `npm run qa:deterministic-validation` — validación determinista del sistema
-- `npm run qa:approval:evidence -- <manifest>` — valida evidencia de aprobación de cambio
-- `npm run qa:promotion:scope -- <scope-manifest> <candidate-ref> <target-ref>` — valida alcance de promoción
-- `npm run test:service-corrections`, `npm run test:performance`, `npm run test:promotion-scope`
-- `npm run certify:*` — certificaciones versionadas por dominio
+Antes de actuar, leer en este orden:
 
-## Reglas
+1. `docs/project/CONTRATO_EQUIPO_APEXOS.md`
+2. `docs/CHANGE_APPROVAL_QA_POLICY.md`
+3. `docs/QA_SETUP.md` y `docs/DATA_GOVERNANCE_QA.md`
+4. `docs/SUPABASE_QA_TEST_CHECKLIST.md` si hay datos en Nyvora QA
+5. El manifiesto de alcance o brief de la intervención
+6. La certificación o suite del dominio que se va a ejecutar
 
 ## Como se le habla al dueno
 

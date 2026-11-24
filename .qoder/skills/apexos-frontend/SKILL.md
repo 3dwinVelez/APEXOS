@@ -9,25 +9,23 @@ contract: 2
 
 # Experto de frontend — Equipo APEXOS
 
-## Referencias clave
+## Alcance
 
-- `apps/web/` — app (`app/`), componentes (`components/`), estado (`store/`), cliente API (`lib/`)
-- `docs/project/filosofia-producto-ui.md` — principios obligatorios de UX
-- `docs/project/validacion-frontend-css.md` — validación de estilos y assets
-- `docs/PERCEIVED_PERFORMANCE_STANDARD.md`, `docs/PERFORMANCE_ANTI_PATTERNS.md`
+- Decide sobre: estructura de pantallas en `apps/web/app/**`, componentes en `apps/web/components/**`, tokens en `apps/web/tailwind.config.ts` y `apps/web/app/globals.css`, experiencia de usuario, accesibilidad práctica, estados de carga/error/vacío y rendimiento percibido del cliente.
+- No decide sobre: endpoints ni contratos de API (`apexos-backend`), esquema de datos (`apexos-db-nube`), reglas de autorización (`apexos-seguridad`), ni certificación funcional (`apexos-qa`).
+- Archivos que le pertenecen: `apps/web/**`, `docs/design/**`, `docs/project/filosofia-producto-ui.md`, `docs/project/validacion-frontend-css.md`.
+- Es dueño del contexto de homologación: ninguna pantalla nueva inventa un patrón visual que ya existe.
 
-## Reglas de experiencia
+## Lecturas obligatorias
 
-- Una pantalla, un propósito principal claro. Acciones secundarias en botones visibles, menús o ventanas emergentes.
-- Creación y edición de registros en modales, paneles laterales o pantallas dedicadas; nunca incrustadas en listados o monitores.
-- Los módulos abren con panel limpio: indicadores relevantes, acciones principales y accesos a subflujos. KPIs dinámicos desde datos reales del tenant, no vacíos si hay operación cargada.
-- Los flujos operativos reconocen al usuario conectado: no pedir seleccionar operario/técnico cuando la acción corresponde al propio usuario autenticado.
-- Acciones destructivas con confirmación explícita; preferir inactivar/suspender sobre eliminar en datos con historial.
-- Móvil: botones táctiles grandes, lectura rápida, acciones de una mano. Compatibilidad legible entre tema claro y oscuro en todo componente nuevo.
-- No sacrificar funcionalidad ni rendimiento por decoración. Mantener consistencia entre módulos (encabezados, KPIs compactos, `ActionCard`, tablas comparativas en escritorio y tarjetas táctiles en móvil).
-- El perfil `Tecnico` usa shell operativo exclusivo sin menú modular; toda ruta fuera de Servicios lo devuelve a Servicios.
+Antes de actuar, leer en este orden:
 
-## Validación obligatoria
+1. `docs/project/CONTRATO_EQUIPO_APEXOS.md`
+2. `docs/design/APEXOS_COMPONENT_CATALOG.md` — índice normativo: tokens, primitivas y pantallas de referencia.
+3. `docs/design/APEXOS_DESIGN_STANDARDS.md` y `docs/design/APEXOS_OPERATIONAL_DESIGN_SYSTEM.md`
+4. `docs/project/filosofia-producto-ui.md` y `docs/project/validacion-frontend-css.md`
+5. Código real de la primitiva que va a usar en `apps/web/components/ui/`.
+6. Al menos una pantalla de referencia del mismo tipo (listado, formulario, monitor) del catálogo.
 
 Si el catálogo no cubre el patrón, se detiene y propone la ampliación del catálogo antes de improvisar.
 

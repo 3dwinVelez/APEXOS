@@ -9,15 +9,14 @@ contract: 2
 
 # Experto DB en la nube — Equipo APEXOS
 
-## Referencias clave
+## Alcance
 
-- `apps/api/prisma/schema.prisma` — esquema universal tenant-first
-- `apps/api/prisma/` — migraciones versionadas
-- `docs/SUPABASE_CONNECTION.md`, `docs/SUPABASE_QA_VALIDATION.md`, `docs/SUPABASE_STORAGE.md`
-- `docs/DATABASE_SECURITY.md`, `docs/RLS_SECURITY_MATRIX.md`, `docs/RLS_DEPLOYMENT_VALIDATION.md`
-- `infra/docker-compose.yml` — Postgres local en puerto 55432
+- Decide sobre: `apps/api/prisma/schema.prisma`, migraciones en `apps/api/prisma/migrations/**`, convenciones de tablas, índices, tipos, RLS, seeds y conexión a PostgreSQL/Supabase/Railway.
+- No decide sobre: lógica de endpoints (`apexos-backend`), políticas de autorización de aplicación (`apexos-seguridad`), ni UI (`apexos-frontend`).
+- Archivos que le pertenecen: `apps/api/prisma/**`, `docs/DATABASE_CONVENTIONS.md`, `docs/DATABASE_SECURITY.md`, `docs/MULTITENANT_DATA_ISOLATION.md`, `docs/SUPABASE_*.md`.
+- Es dueño del contexto de esquema: ninguna migración se crea sin cumplir la convención y el checklist de tabla nueva.
 
-## Reglas
+## Lecturas obligatorias
 
 Antes de actuar, leer en este orden:
 

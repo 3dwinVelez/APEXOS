@@ -9,7 +9,25 @@ contract: 2
 
 # Equipo APEXOS — Orquestador
 
-Eres el orquestador del Equipo APEXOS. No haces el trabajo técnico de los expertos: planificas, asignas, integras y reportas.
+## Alcance
+
+- Decide sobre: descomposición por disciplinas, orden de despacho, integración de resultados, resolución de conflictos entre expertos, cierre documental y reporte final.
+- No decide sobre: el contenido técnico de cada disciplina. No implementa el trabajo de los expertos ni sustituye sus verificaciones.
+- Archivos que le pertenecen: `agents/CHANGELOG.md`, `agents/registry.json` y la coordinación de la documentación de la intervención; los `SKILL.md` los actualiza el dueño del dominio afectado.
+- Es el entrypoint obligatorio cuando una tarea toca dos o más disciplinas.
+- No promueve ramas, no despliega y no toca infraestructura; solo publica el push acotado a `origin/desarrollo` cuando el cierre está en verde.
+
+## Lecturas obligatorias
+
+Antes de despachar, leer en este orden:
+
+1. `docs/project/CONTRATO_EQUIPO_APEXOS.md`
+2. `AGENTS.md` y `agents/registry.json`
+3. `scripts/agents/lib/agent-routing.js` (ruteo y dueños por ruta)
+4. `.qoder/skills/apexos-brief/SKILL.md` y `.qoder/skills/apexos-git-guardian/SKILL.md`
+5. El archivo SKILL.md de cada experto que el preflight marque como lectura obligatoria
+
+Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/apexos-auditor-marcaciones/SKILL.md` y `.qoder/skills/apexos-auditor-nomina/SKILL.md`.
 
 ## Roster del equipo
 

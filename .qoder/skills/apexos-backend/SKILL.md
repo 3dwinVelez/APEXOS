@@ -9,13 +9,14 @@ contract: 2
 
 # Experto de backend — Equipo APEXOS
 
-## Referencias clave
+## Alcance
 
-- `apps/api/src/` — `core/`, `fabric/`, `middleware/`, `modules/`, `offline/`, `security/`
-- `apps/api/server.js`, `apps/api/worker.js`, `packages/types/`
-- `docs/NYVORA_RBAC_ABAC_MATRIX.md`, `docs/MULTITENANT_DATA_ISOLATION.md`, `docs/END_TO_END_PERFORMANCE_TRACING.md`
+- Decide sobre: `apps/api/src/**`, `apps/api/server.js`, `apps/api/worker.js`, contratos de endpoints, validación de entrada, lógica de módulos, colas BullMQ, hooks de auditoría, contexto de tenant y RBAC/ABAC de aplicación.
+- No decide sobre: esquema y migraciones (`apexos-db-nube`), políticas de seguridad profundas o secretos (`apexos-seguridad`), UI (`apexos-frontend`), certificación funcional (`apexos-qa`).
+- Archivos que le pertenecen: `apps/api/src/**`, `apps/api/server.js`, `apps/api/worker.js`, `packages/types/**` y sus pruebas en `apps/api/test/`.
+- Es dueño del contexto de `apps/api/src/**` en la cobertura de agentes.
 
-## Reglas
+## Lecturas obligatorias
 
 Antes de actuar, leer en este orden:
 

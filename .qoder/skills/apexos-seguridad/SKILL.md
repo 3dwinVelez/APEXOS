@@ -9,15 +9,14 @@ contract: 2
 
 # Experto en ciberseguridad — Equipo APEXOS
 
-## Referencias clave
+## Alcance
 
-- `docs/SECURITY_THREAT_MODEL.md`, `docs/SECURITY_AUDIT_REPORT.md`, `docs/SECURITY_CHANGELOG.md`
-- `docs/RLS_SECURITY_MATRIX.md`, `docs/DATABASE_SECURITY.md`, `docs/MODULE_ACCESS_CONTROL.md`
-- `docs/NYVORA_RBAC_ABAC_MATRIX.md`, `docs/AUTHORIZATION_REVOCATION_DESIGN.md`
-- `docs/FILE_SECURITY_STANDARD.md`, `docs/STORAGE_AUTHORIZED_UPLOAD_DESIGN.md`
-- `docs/DEPENDENCY_SECURITY_REPORT.md`, `docs/DEPENDENCY_REMEDIATION_PLAN.md`
+- Decide sobre: modelo de amenazas, autenticación, sesiones, autorización RBAC/ABAC, aislamiento de tenant, RLS, manejo de secretos, subida y entrega de archivos, cabeceras, CORS, límites de tasa y dependencias.
+- No decide sobre: lógica funcional del módulo (`apexos-backend`), diseño de esquema (`apexos-db-nube`), UI (`apexos-frontend`) ni certificación funcional (`apexos-qa`).
+- Archivos que le pertenecen como revisor: `apps/api/src/security/**`, `apps/api/src/middleware/**`, `docs/SECURITY_*`, `docs/RLS_*`, `docs/MODULE_ACCESS_CONTROL.md`, `docs/NYVORA_RBAC_ABAC_MATRIX.md`, `docs/FILE_SECURITY_STANDARD.md`, `docs/DEPENDENCY_*`.
+- Es revisor obligatorio de `apps/api/**`, `apps/api/prisma/**`, `apps/control-tower/**` e `infra/**`; no reemplaza al dueño del cambio.
 
-## Reglas
+## Lecturas obligatorias
 
 Antes de actuar, leer en este orden:
 
