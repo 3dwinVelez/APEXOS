@@ -1,0 +1,79 @@
+{
+  "change_id": "cero-rechazos-foto-web-bateria-20261124",
+  "descripcion": "Pre-QA del portón desarrollo -> develop: sube el fix que deja de rechazar la foto de validación grande en la marcación web (degrada solo cuando el tamaño es la única causa del veredicto), el instrumento hostil de quince formas, el baseline ANTES medido en QA sobre el ambiente viejo y el canon del equipo con los cinco controles nuevos. Tres rutas de producto, ninguna de esquema.",
+  "commit": "d2a0d52464f0a32abbea3a8d0c7c4eaa88ec1e3b",
+  "target_head": "7df8240a1b1ba11550c20c19db39c8fe5c53cf7b",
+  "promotion_branch": "codex/qa-cero-rechazos-foto-web-develop-20261124",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "nota_sha": "commit es la punta de origin/desarrollo de la que salen, byte a byte, las diecisiete rutas llevadas del candidato (paridad por blob: 17/17 idénticas, 0 distintas, 0 waivers, medida en porton-develop.json). Sobre esa punta el candidato agrega las cinco rutas contables que nacen aquí: este manifiesto, el de alcance, el reporte del portón, el corte de migraciones y el reporte de suites. El sha de cuarenta caracteres que se empuja a develop, la salida verbatim del gate de alcance y la re-medición post-push quedan consignados en agents/CHANGELOG.md de desarrollo en el portón siguiente: describen una punta que no puede existir dentro del commit que la describe.",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "dueño del proyecto (Edwin)",
+    "approved_at": "2026-11-24T16:25:00-05:00",
+    "authorization": "AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP: «procede a implementar y certificar 0 rechazos y aplica tus sugerencias para evitar mas inconvenientes con mi autorizacion y alinea todos los ambientes», con el alcance respondido «Las tres ramas, completas» y los ambientes «QA y Produccion». El dueño aceptó que la firma QA la ponga él mismo con la orden de hoy. Esta autorización habilita el despliegue del candidato en QA para la corrida DESPUÉS; no autoriza main, force push, rebase de ramas permanentes, migraciones remotas ni infraestructura."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "detalle": "Cuatro casos de contrato en la suite versionada hr-evidence-resilience.test.js: el tope sigue rechazando cuando le toca y lo nombra; la web degrada una JPEG real de 3 MB (3.197.152 bytes) indicando el límite y asentando la hora; una clase prohibida sigue costando la marcación incluso por encima del tope; la app móvil firmada conserva el rechazo duro de tamaño. Delante: hr-single-selfie-gate y hr-mobile-identity, que son las dos compuertas del canal web.",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/suites-plataforma-candidato.json",
+        "../evidence/web-photo-battery-20261124/porton-develop.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "detalle": "El rechazo conserva su código machine-readable y el detalle saneable (max_bytes y byte_length) en el error de evidencia. Eso es exactamente lo que faltaba en campo: catorce filas de un mismo operario decían «400 (sin código) (sin detalle)» y eran indistinguibles de una secuencia incorrecta. La batería verifica el código devuelto pierna por pierna, no solo el código HTTP.",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/bateria-qa-antes.json",
+        "../evidence/web-photo-battery-20261124/porton-develop.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "detalle": "Instrumento nuevo scripts/certifications/hr-web-photo-battery.js: quince formas hostiles, una pierna por forma, cuenta efímera por pierna (asentando entrada para que la escala de marcaciones no decida lo que se mide), retiro por endpoint, control de mutación con tres mutaciones forzadas y selftest de quince casos. Se niega a correr contra config/production.env: escribe únicamente en QA.",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/bateria-qa-antes.json",
+        "../evidence/web-photo-battery-20261124/porton-develop.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "detalle": "Regresión del frente: siete suites (evidence-resilience, single-selfie-gate, mobile-identity, punch-mobile-evidence, evidence-storage-gate, security-evidence-upload, evidence-backfill-tool) = 91 pruebas, 91 pasan. Compuerta local del frente de selfie hr-mobile-identity-local.js = 55/55. Gobernanza del canon que sube (npm run test:agents) = 46/46. En el worktree del candidato la misma corrida de siete suites da 88/91 y las tres caídas están atribuidas caso por caso a la ausencia de config/qa.env en el árbol nuevo, no a una línea modificada.",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/suites-plataforma-candidato.json",
+        "../evidence/web-photo-battery-20261124/porton-develop.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "detalle": "Se certifica con el frente completo de evidencia y selfie (91/91), la compuerta local end-to-end (55/55) y las suites de gobernanza (46/46), sobre el árbol cuyo blob es idéntico al del candidato. Límite declarado, no maquillado: la suite completa de apps/api requiere una base local viva y en este puesto respondió «Can't reach database server at localhost:54320», así que no se presenta como ejecutada. El único archivo ejecutable de producto que cambia es apps/api/src/modules/hr/mobile-identity.js; apps/web, apps/api/prisma, scripts/performance, packages/ e infra/ no reciben ninguna ruta en este portón.",
+      "evidence": [
+        "../evidence/web-photo-battery-20261124/suites-plataforma-candidato.json",
+        "../evidence/web-photo-battery-20261124/migraciones-candidato-develop.txt"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-mobile-identity-local.js",
+    "evidence": [
+      "../evidence/web-photo-battery-20261124/porton-develop.json",
+      "../evidence/web-photo-battery-20261124/bateria-qa-antes.json"
+    ],
+    "nota": "Certificación local completa del flujo: 55/55 contra un API levantado en el puesto, más el baseline ANTES ya medido en el ambiente QA desplegado (32/32 veredicto, 15 piernas, 21 escrituras sobre 3303a95532a3) con las dos piernas del defecto en rojo: 400 EVIDENCIA_SUPERA_LIMITE y hora no asentada. El instrumento end-to-end del ambiente desplegado es la corrida --espera=despues de la misma batería, que exige el deploy de develop en Railway: por eso qa_status sigue pending. Si el DESPUÉS no queda verde, la promoción a main no se autoriza."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/web-photo-battery-20261124/migraciones-candidato-develop.txt",
+      "../evidence/web-photo-battery-20261124/porton-develop.json"
+    ],
+    "nota": "Corte de migraciones medido sobre el índice del candidato: 0 rutas bajo apps/api/prisma/migrations y 0 rutas de schema.prisma, así que la cadena que contraste el instrumento es exactamente la que origin/develop ya tiene y ninguna migración nueva viaja con este portón. La re-medición post-push (--against commit --ref origin/develop) se corre después del empuje y su salida se consigna en agents/CHANGELOG.md: describe una punta que no existe dentro del commit que la describe."
+  }
+}

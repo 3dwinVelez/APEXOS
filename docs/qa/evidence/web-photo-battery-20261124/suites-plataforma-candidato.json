@@ -1,0 +1,44 @@
+{
+  "instrumento": "regresión de plataformas del portón cero-rechazos-foto-web-develop-20261124",
+  "fecha_local": "2026-11-24T16:20:00-05:00",
+  "arbol_de_los_archivos_certificados": "origin/desarrollo @ d2a0d52464f0a32abbea3a8d0c7c4eaa88ec1e3b, que es blob a byte el árbol del candidato en las diecisiete rutas llevadas (ver paridad_por_blob en porton-develop.json: 17/17 idénticas, 0 distintos)",
+  "corridas_ejecutadas": [
+    {
+      "nombre": "frente de evidencia y selfie (siete suites)",
+      "comando": "node --test apps/api/test/hr-evidence-resilience.test.js apps/api/test/hr-single-selfie-gate.test.js apps/api/test/hr-mobile-identity.test.js apps/api/test/hr-punch-mobile-evidence.test.js apps/api/test/hr-evidence-storage-gate.test.js apps/api/test/security-evidence-upload.test.js apps/api/test/hr-evidence-backfill-tool.test.js",
+      "pruebas": 91,
+      "pasan": 91,
+      "fallan": 0
+    },
+    {
+      "nombre": "compuerta local del frente de selfie (certificación end-to-end contra API local)",
+      "comando": "node scripts/certifications/hr-mobile-identity-local.js",
+      "pruebas": 55,
+      "pasan": 55,
+      "fallan": 0
+    },
+    {
+      "nombre": "suites de gobernanza del canon que sube en este portón",
+      "comando": "npm run test:agents",
+      "pruebas": 46,
+      "pasan": 46,
+      "fallan": 0,
+      "alcance": "agents-preflight, agents-contract, agents-coverage, agents-versioning"
+    },
+    {
+      "nombre": "las mismas siete suites del frente, corridas dentro del worktree del candidato",
+      "comando": "node --test (siete suites) con NODE_PATH al node_modules del árbol principal",
+      "pruebas": 91,
+      "pasan": 88,
+      "fallan": 3,
+      "atribucion": "las tres fallas son de hr-evidence-backfill-tool y devuelven `no existe config/qa.env para el ambiente qa`: el worktree nuevo no trae ese archivo porque está fuera del control de versiones. No es un rojo de producto y ninguna de las tres toca las líneas modificadas por este portón."
+    }
+  ],
+  "no_ejecutada_y_por_que": {
+    "corrida": "node --test apps/api/test/*.test.js apps/api/test/*.mjs (suite completa de API)",
+    "estado": "no se presenta como ejecutada",
+    "motivo": "la suite completa exige una base de datos local viva; en este puesto la conexión devolvió `Can't reach database server at localhost:54320` y las pruebas dependientes de base caen por ambiente, no por código. Se reporta el límite en vez de maquillar un verde.",
+    "cobertura_alternativa": "el único archivo ejecutable de producto que cambia es mobile-identity.js y su frente directo está certificado por las 91+55 de arriba; apps/web, apps/api/prisma y scripts/performance no reciben ninguna ruta en este portón (0 rutas bajo packages/ e infra/)."
+  },
+  "control_de_equivalencia": "la suite que ejercita el fix (hr-evidence-resilience.test.js, cuatro casos: tope que sigue rechazando, JPEG real de 3 MB degradada con la hora asentada, clase prohibida que sigue costando la marcación y app firmada con rechazo duro) corre verde en los dos árboles."
+}

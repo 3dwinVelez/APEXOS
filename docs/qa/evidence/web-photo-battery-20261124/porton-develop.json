@@ -1,0 +1,81 @@
+{
+  "instrumento": "porton de promocion desarrollo -> develop (cero rechazos foto web)",
+  "fecha_local": "2026-11-24T15:46:00-05:00",
+  "candidate_ref": "codex/qa-cero-rechazos-foto-web-develop-20261124",
+  "target_head": "7df8240a1b1b",
+  "source_head": "d2a0d52464f0",
+  "antepasado_comun": "8208d9417ba6e1aff03bb5529bd5ec6aac074a0b",
+  "rutas_inventario": 22,
+  "rutas_llevadas_de_desarrollo": 17,
+  "rutas_nacidas_en_el_candidato": [
+    "docs/qa/evidence/web-photo-battery-20261124/porton-develop.json",
+    "docs/qa/evidence/web-photo-battery-20261124/migraciones-candidato-develop.txt",
+    "docs/qa/evidence/web-photo-battery-20261124/suites-plataforma-candidato.json",
+    "docs/qa/manifests/cero-rechazos-foto-web-develop-20261124-scope.json",
+    "docs/qa/manifests/cero-rechazos-foto-web-develop-20261124-preqa.json"
+  ],
+  "rutas_producto": [
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/test/hr-evidence-resilience.test.js",
+    "scripts/certifications/hr-web-photo-battery.js"
+  ],
+  "rutas_documentacion": [
+    "docs/briefs/2026-11-24-cero-rechazos-foto-web-bateria.md",
+    "docs/qa/evidence/web-photo-battery-20261124/bateria-qa-antes.json"
+  ],
+  "rutas_canon": 12,
+  "medicion_previa_al_replay": {
+    "regla": "un replay por archivo se ofrece despues de medir el diff del destino en ese archivo contra el antepasado comun",
+    "apps/api/src/modules/hr/mobile-identity.js": "origin/develop +0 -0 lineas propias",
+    "apps/api/test/hr-evidence-resilience.test.js": "origin/develop +0 -0 lineas propias",
+    "agents/CHANGELOG.md": "0 lineas de origin/develop ausentes en el canon que sube",
+    "agents/registry.json": "las 11 lineas propias de develop son exactamente los version/sha256 anteriores a este bump y un updated_at 2026-11-25 del agente apexos-qa, todos superados por esta corrida",
+    "conclusion": "el replay por blob no revierte trabajo ajeno"
+  },
+  "paridad_por_blob": {
+    "metodo": "git rev-parse :<ruta> del candidato contra git rev-parse d2a0d524:<ruta>",
+    "rutas_comparadas": 17,
+    "blobs_distintos": 0
+  },
+  "suites_arbol_principal": {
+    "comando": "node --test test/hr-evidence-resilience.test.js test/hr-single-selfie-gate.test.js test/hr-mobile-identity.test.js test/hr-punch-mobile-evidence.test.js test/hr-evidence-storage-gate.test.js test/security-evidence-upload.test.js test/hr-evidence-backfill-tool.test.js",
+    "pruebas": 91,
+    "pasan": 91,
+    "fallan": 0,
+    "extra": "npm run test:agents -> 46/46 (cuatro suites de gobernanza del canon que sube en este porton)"
+  },
+  "suites_arbol_candidato": {
+    "comando": "el mismo grupo de siete suites, corrido dentro del worktree del candidato con NODE_PATH al node_modules del arbol principal (nunca se copio ni se enlazo node_modules dentro del worktree)",
+    "pruebas": 91,
+    "pasan": 88,
+    "fallan": 3,
+    "fallas": [
+      "hr-evidence-backfill-tool: sin ambiente declarado no hay corrida, y el modo por defecto es dry",
+      "hr-evidence-backfill-tool: --keep-inline solo existe sobre una escritura declarada",
+      "hr-evidence-backfill-tool: el tenant y la rama se validan antes de leer configuracion"
+    ],
+    "atribucion": "Las tres caen por ambiente, no por producto: el worktree nuevo no trae `config/qa.env` porque esa ruta esta fuera del control de versiones y la herramienta la exige antes de decidir. El mensaje real que devolvio fue `no existe config/qa.env para el ambiente qa`. Las mismas tres pruebas pasan 91/91 en el arbol que si tiene el archivo, y ninguna de las tres toca una linea modificada por este porton (mobile-identity.js y su suite llegan byte a byte identicos, blob 0 diferencias).",
+    "control_de_equivalencia": "la suite que si exercita el fix (hr-evidence-resilience, 4 casos) corre verde en los dos arboles"
+  },
+  "puertas_canon": {
+    "agents:sync": "11 agentes y 11 documentos sincronizados",
+    "agents:check": "OK: 11 agentes y 11 documentos verificados",
+    "agents:preflight": "OK_CON_ADVERTENCIAS (rutas sin agente asignado: artefactos temporales de otras sesiones, no de este porton)",
+    "agents:coverage": "OK: contexto del equipo actualizado para todas las rutas"
+  },
+  "baseline_antes_en_qa": {
+    "archivo": "bateria-qa-antes.json",
+    "veredicto": "32/32 APROBADO",
+    "piernas": 15,
+    "escrituras": 21,
+    "commit_servido": "3303a95532a3",
+    "el_binario_servido_contiene_el_fix": false,
+    "piernas_con_defecto": [
+      "jpeg-real-de-3-mb",
+      "png-real-de-2_4-mb"
+    ],
+    "detalle": "las dos fotos reales por encima del tope devolvieron 400 EVIDENCIA_SUPERA_LIMITE con la hora NO asentada; jpeg-en-el-tope-justo (2.097.152 bytes exactos) paso 200 con la hora"
+  },
+  "despues_pendiente": "La corrida --espera=despues exige el ambiente QA desplegado desde develop. Su evidencia (bateria-qa-despues.json) no puede viajar dentro de este commit porque describe una punta que todavia no existe; se versiona en el porton de contabilidad siguiente.",
+  "suite_completa_no_ejecutada": "node --test apps/api/test/*.test.js *.mjs exige base local viva; en este puesto devolvio Can't reach database server at localhost:54320. Se declara el limite en suites-plataforma-candidato.json en lugar de presentar la corrida como hecha."
+}
