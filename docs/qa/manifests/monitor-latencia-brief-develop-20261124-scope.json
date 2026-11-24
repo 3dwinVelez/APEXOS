@@ -28,18 +28,45 @@
     {
       "status": "A",
       "file": "docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/brief-develop-diff.txt"
     }
   ],
   "allowed_deletions": [],
   "allowed_paths": [
     "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
-    "docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json"
+    "docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json",
+    "docs/qa/evidence/auth-session-path-20261124/brief-develop-diff.txt"
   ],
   "origin_waivers": [],
   "protected_capabilities": [
-    "El arbol de producto de develop no se mueve: 0 rutas bajo apps/ y 0 bajo scripts/ en el diff neto.",
-    "El texto del brief que sube es el blob de origin/desarrollo, medido archivo por archivo, y es el mismo que sirvio main.",
-    "Ningun manifiesto de promocion existente se reescribe: solo se anade este."
+    {
+      "name": "Cero rutas de producto y de instrumentacion en el diff",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/brief-develop-diff.txt"
+      ],
+      "notes": "git diff --name-only origin/develop..punta filtrado por ^(apps|scripts)/ devolvio 0 rutas. El diff neto son tres rutas bajo docs/: el brief, este manifiesto y la evidencia de la medici."
+    },
+    {
+      "name": "El brief que sube es el blob canonico de desarrollo y el mismo que sirve main",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/brief-develop-diff.txt"
+      ],
+      "notes": "b04d2d7c0b6b49aec719323488ac604c57ca3368 en las tres ramas, medido con git rev-parse por rama. Contra la version de develop son 122 lineas anadidas y 0 quitadas."
+    },
+    {
+      "name": "Ningun manifiesto de promocion existente se reescribe",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/replay-arbol-candidato-main.json",
+        "../evidence/auth-session-path-20261124/candidato-main.txt"
+      ],
+      "notes": "El inventario del diff neto solo declara una ruta M (el brief) y dos A. Los manifiestos de la pata develop y de la pata main quedan byte a byte como estaban."
+    }
   ],
   "compuertas_exigidas": [
     "npm run qa:promotion:scope -- docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json <punta> origin/develop",
