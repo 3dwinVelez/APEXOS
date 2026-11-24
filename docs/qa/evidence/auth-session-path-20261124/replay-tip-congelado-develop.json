@@ -1,11 +1,11 @@
 {
   "instrumento": "promotion-migration-check",
-  "ejecutado_en": "2026-11-24T17:31:12.820Z",
+  "ejecutado_en": "2026-11-24T17:38:34.628Z",
   "cwd": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-workflow\\develop-cand-1795537505",
   "spec": "docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json",
   "base_ref": "origin/develop",
   "origin_ref": "origin/desarrollo",
-  "contra": "commit bb2b29f6f672dbc1e080789f4b34f491d6705aea",
+  "contra": "commit 3303a95532a35603f53f1eced0300f4febb0eab3",
   "label": "invariantes del replay",
   "passed": true,
   "total": 51,
@@ -22,8 +22,8 @@
     {
       "tipo": "carry",
       "file": ".qoder/skills/apexos-brief/SKILL.md",
-      "esperado": "ed0d74fdc0e0941ab635a8f4f569e18eaea205fe",
-      "actual": "ed0d74fdc0e0941ab635a8f4f569e18eaea205fe",
+      "esperado": "3567512d5a390863875be158dc47febc87c14f37",
+      "actual": "3567512d5a390863875be158dc47febc87c14f37",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -46,8 +46,8 @@
     {
       "tipo": "carry",
       "file": ".qoder/skills/apexos-git-guardian/SKILL.md",
-      "esperado": "95137ba03fd15ee25721716f5ceedc9b1c7d9d30",
-      "actual": "95137ba03fd15ee25721716f5ceedc9b1c7d9d30",
+      "esperado": "c7a69c1dc250d2aeb2f95e49ff6025cce95a8093",
+      "actual": "c7a69c1dc250d2aeb2f95e49ff6025cce95a8093",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -86,8 +86,8 @@
     {
       "tipo": "carry",
       "file": "agents/CHANGELOG.md",
-      "esperado": "e19f5d9b9f5db4948d047a4243da43cbed9f60f3",
-      "actual": "e19f5d9b9f5db4948d047a4243da43cbed9f60f3",
+      "esperado": "f12a1e0bcb203831ee80232d6f3572c2f527cd4d",
+      "actual": "f12a1e0bcb203831ee80232d6f3572c2f527cd4d",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -102,8 +102,8 @@
     {
       "tipo": "carry",
       "file": "agents/apexos-brief/SKILL.md",
-      "esperado": "ed0d74fdc0e0941ab635a8f4f569e18eaea205fe",
-      "actual": "ed0d74fdc0e0941ab635a8f4f569e18eaea205fe",
+      "esperado": "3567512d5a390863875be158dc47febc87c14f37",
+      "actual": "3567512d5a390863875be158dc47febc87c14f37",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -126,8 +126,8 @@
     {
       "tipo": "carry",
       "file": "agents/apexos-git-guardian/SKILL.md",
-      "esperado": "95137ba03fd15ee25721716f5ceedc9b1c7d9d30",
-      "actual": "95137ba03fd15ee25721716f5ceedc9b1c7d9d30",
+      "esperado": "c7a69c1dc250d2aeb2f95e49ff6025cce95a8093",
+      "actual": "c7a69c1dc250d2aeb2f95e49ff6025cce95a8093",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -166,8 +166,8 @@
     {
       "tipo": "carry",
       "file": "agents/registry.json",
-      "esperado": "b8c128027ec90c65984e96cbb3c9820e6970604a",
-      "actual": "b8c128027ec90c65984e96cbb3c9820e6970604a",
+      "esperado": "a4249db8bd7487b2ef2cf9f5273d2509ad4dbd76",
+      "actual": "a4249db8bd7487b2ef2cf9f5273d2509ad4dbd76",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -278,8 +278,8 @@
     {
       "tipo": "carry",
       "file": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
-      "esperado": "242d754a225507ca048c5d724b277c1bf3bc7f9f",
-      "actual": "242d754a225507ca048c5d724b277c1bf3bc7f9f",
+      "esperado": "f372f601bd98878b7f5f6d3b045f9dd7aa194db0",
+      "actual": "f372f601bd98878b7f5f6d3b045f9dd7aa194db0",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -382,8 +382,8 @@
     {
       "tipo": "carry",
       "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json",
-      "esperado": "15b8a93649b00863fe0f19c887259bdaff076e00",
-      "actual": "15b8a93649b00863fe0f19c887259bdaff076e00",
+      "esperado": "5ed5033de94241605e6ec215682491b39bc2ba86",
+      "actual": "5ed5033de94241605e6ec215682491b39bc2ba86",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
