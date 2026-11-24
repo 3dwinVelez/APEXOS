@@ -1,0 +1,112 @@
+{
+  "change_id": "hr-huella-rostro-web-movil-20261123",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-huella-rostro-develop-20261123",
+  "target_head": "e5985f72199cf7b0db8c7c90ececa1c63b1063a6",
+  "commit": "2c489966c603ab621d9f322c9d6e8d4a4cc555b8",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-huella-rostro-web-movil-20261123/local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-huella-rostro-web-movil-20261123/local-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-huella-rostro-web-movil-20261123/local-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-huella-rostro-web-movil-20261123/regression-candidate.txt"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-huella-rostro-web-movil-20261123/regression-candidate.txt"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-huella-rostro-web-movil-local.js",
+    "evidence": [
+      "../evidence/hr-huella-rostro-web-movil-20261123/local-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-huella-rostro-web-movil-local.js",
+    "evidence": [
+      "../evidence/hr-huella-rostro-web-movil-20261123/regression-candidate.txt"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario: sube los cambios a develop",
+    "approved_at": "2026-11-24T03:09:15.562Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "remote_migration": false
+    },
+    "statement": "sube los cambios a develop",
+    "branch_authorization": "Rama auxiliar nueva codex/qa-hr-huella-rostro-develop-20261123 autorizada por el dueño (\"Sí, rama y PR\"); entra a develop por PR.",
+    "migration_authorization": "Las 3 migraciones nuevas en la base de QA las aplica el dueño o Edwin ANTES de fusionar el PR; el agente no ejecuta migraciones remotas."
+  },
+  "execution": {
+    "functional_commit": "2c489966c603ab621d9f322c9d6e8d4a4cc555b8",
+    "certification": {
+      "environment": "LOCAL",
+      "status": "passed",
+      "started_at": "2026-11-24T03:06:36.666Z",
+      "checks": [
+        "registro de rostro con autorizacion biometrica: queda ACTIVO, sin autorizacion 400 y repetirlo 409",
+        "registro de huella propia: reto firmado por el servidor + llave ES256 queda activa y se lista",
+        "marcacion web: huella primero (firma v2) + selfie del mismo rostro -> huella verificada y rostro coincide; la firma cruda no se guarda",
+        "firma de otro tipo o de otro usuario se rechaza 403 FIRMA_NO_CORRESPONDE sin crear la marcacion",
+        "selfie de OTRA persona: la marcacion se registra (no se pierde la hora) pero queda SENALADA no_coincide",
+        "celular del camion: el administrador lo registra por placa y la tripulacion marca con su selfie -> device_verified",
+        "ingreso con huella: misma sesion que con clave y /auth/me responde a la persona",
+        "ingreso con huella: reto reusado, llave ajena y empresa vecina responden 401; sin sesion las rutas propias 401",
+        "aislamiento: la empresa vecina no ve rostros ni celulares de la otra",
+        "restablecer la huella es solo de administrador; tras restablecer, el ingreso con esa llave queda en 401"
+      ],
+      "measurements": {
+        "marcacion_con_huella_y_rostro_ms": 284,
+        "similitud_misma_persona": 0.952,
+        "similitud_otra_persona": 0.234,
+        "ingreso_con_huella_ms": 18
+      },
+      "finished_at": "2026-11-24T03:06:40.517Z"
+    },
+    "regression": {
+      "status": "passed",
+      "api": "hr-*, auth-*, security-*: 402/404; las 2 fallas (pg_advisory_xact_lock y lock de malla) son identicas en origin/develop sin este cambio y el candidato agrega 0 lineas con locks",
+      "web": "29/29 (hr-face-enrollments-page, hr-shared-devices-page, hr-marking-*, hr-map-no-inline-evidence)",
+      "typecheck": "apps/web tsc --noEmit: exit 0"
+    },
+    "local_database": {
+      "environment": "LOCAL",
+      "source_database_modified": true,
+      "notes": "La base local estaba creada con db push: se sincronizo con npm run db:push y se alineo AuthorizationSession.id a UUID como en la migracion 20260727042000_authorization_versions. Sin escrituras remotas."
+    },
+    "qa_preconditions": [
+      "Aplicar en la base de QA: 20261121230000_hr_shared_devices, 20261122060000_hr_face_enrollments, 20261122120000_hr_webauthn_credentials (idempotentes) ANTES de fusionar: createOwnPunch consulta hr_webauthn_credentials.",
+      "Variables de la API de QA: WEBAUTHN_ORIGINS y WEBAUTHN_RP_IDS con el dominio de la web movil (ya configuradas por el dueño el 2026-11-23)."
+    ],
+    "preservation": "Conserva la novedad manual por otro dia o correccion de escalera (combinada con selfServiceScope), la degradacion de evidencia y la correccion administrativa en reportes, la marcacion de la app nativa (apexos-movil) y el login por correo y clave (mismo startSession)."
+  }
+}
