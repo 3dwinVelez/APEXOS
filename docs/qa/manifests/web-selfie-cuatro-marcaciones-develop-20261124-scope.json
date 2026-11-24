@@ -1,0 +1,262 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "web-selfie-cuatro-marcaciones-develop-20261124",
+  "target_branch": "develop",
+  "source_branch": "desarrollo",
+  "base_commits": {
+    "develop": "b59f286dd1d05ed29a6e040c2d7027dd1b55cf17"
+  },
+  "certified_commit": "52a8d9a799e5acb7b2707871791206c1355a7f39",
+  "candidate_tip": "el tip del candidato es el commit de los dos manifiestos; el blob de las 18 rutas certificadas no cambia despues de el commit certificado",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "52a8d9a799e5acb7b2707871791206c1355a7f39",
+    "replay_sobre": "origin/develop b59f286dd1d05ed29a6e040c2d7027dd1b55cf17",
+    "origen_del_contenido": "origin/desarrollo 5b87e9ea para los cuatro carry de producto, los tres instrumentos de promocion y el brief/spec/evidencia; develop conserva sus 305 lineas propias en service.js",
+    "metodo": "replay por invariantes, no por archivo ni por rama: cuatro carry byte a byte desde origin/desarrollo, dos borrados de rutas que nunca existieron en desarrollo, un hunkeo de una linea en service.js con excepcion nominal de origen"
+  },
+  "change_intent": {
+    "summary": "La marcacion web vuelve a tener una sola compuerta de identidad: se retira webPunchSelfie.js, nacida en develop sin origen en desarrollo, que rechazaba por etiqueta-vs-bytes antes de que la guarda resiliente decidiera, y mobile-identity.js pasa a exigir selfie en las cuatro marcaciones de la web (entrada, inicio_almuerzo, fin_almuerzo, salida) sin ensanchar el conjunto firmado del telefono.",
+    "modules": [
+      "talento-humano",
+      "auth",
+      "qa-evidencia"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/api/test/hr-single-selfie-gate.test.js",
+    "apps/api/test/hr-web-punch-selfie.test.js",
+    "scripts/certifications/hr-mobile-identity-local.js",
+    "docs/briefs/2026-11-24-web-selfie-cuatro-marcaciones-porton-origen.md",
+    "docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json",
+    "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-scope.json",
+    "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-preqa.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/"
+  ],
+  "allowed_deletions": [
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-web-punch-selfie.test.js"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "D",
+      "file": "apps/api/src/modules/hr/webPunchSelfie.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-mobile-identity.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-single-selfie-gate.test.js"
+    },
+    {
+      "status": "D",
+      "file": "apps/api/test/hr-web-punch-selfie.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-24-web-selfie-cuatro-marcaciones-porton-origen.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/control-de-mutacion-instrumento.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/equivalencia-blob-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/guarda-de-tenant-presente.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/instrumentos-en-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-commit.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-indice.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-api-apuntadas.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-web-apuntadas.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/veredicto.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-mobile-identity-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/promotion-gates-runner.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/promotion-migration-check.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/promotion-replay-instruments.test.js"
+    }
+  ],
+  "origin_waivers": [
+    {
+      "file": "apps/api/src/modules/hr/service.js",
+      "reason": "El blob de desarrollo no se puede llevar: el diff desarrollo<->develop en este archivo es de 331 anadidas y 305 eliminadas, lineas propias de la rama que incluyen la guarda de tenant de updateRoute (cd3a88e5, HORARIO_NO_ENCONTRADO en service.js:1576-1577). El replay quita UNA linea del require de la compuerta alterna y no anade ninguna: git diff --numstat origin/develop HEAD = 0 anadidas / 1 eliminada, medido en invariantes-replay-commit.json y en guarda-de-tenant-presente.txt.",
+      "approval": "Edwin (dueno de APEXOS), orden del 2026-11-24 de alinear las tres ramas sin romper nada mas"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Las cuatro marcaciones de la web entran con selfie y ninguna foto real se rechaza por etiqueta",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/veredicto.md"
+      ]
+    },
+    {
+      "name": "Una sola compuerta de identidad: el motivo SELFIE_INVALIDA no vuelve a dictaminarse fuera de mobile-identity.js",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-api-apuntadas.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json"
+      ]
+    },
+    {
+      "name": "La firma del telefono no se ensancha: SELFIE_REQUIRED_TYPES sigue en entrada y salida, el almuerzo firmado sigue entrando sin foto",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-api-apuntadas.txt"
+      ]
+    },
+    {
+      "name": "El reenvio sin foto de la cola del navegador registra la hora con su novedad, no la pierde",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json"
+      ]
+    },
+    {
+      "name": "Aislamiento de tenant y autorizacion intactos en el arbol publicado (updateRoute conserva su guarda, sin sesion la API responde 401)",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/guarda-de-tenant-presente.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json"
+      ]
+    },
+    {
+      "name": "Regresion de suites del frente en el arbol del candidato",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-api-apuntadas.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-web-apuntadas.txt"
+      ]
+    },
+    {
+      "name": "El replay sigue siendo el replay: carry byte a byte, delete ausente, edit con cero lineas anadidas",
+      "status": "passed",
+      "evidence": [
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-commit.json",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-indice.json",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/equivalencia-blob-candidato.txt",
+        "../evidence/web-selfie-cuatro-marcaciones-develop-20261124/control-de-mutacion-instrumento.json"
+      ]
+    }
+  ],
+  "verificado_local": {
+    "certificador": "55/55 en el arbol del candidato con node_modules propio, base local 127.0.0.1:55442/apexos_cand_dev y su foto real por sharp",
+    "api_apuntadas": "105 pruebas en 9 archivos, 105 pasan, 0 fallan",
+    "web_apuntadas": "34 pruebas en 5 archivos, 34 pasan, 0 fallan",
+    "invariantes_de_replay": "7/7 contra el indice y 7/7 contra el commit c1f858f2",
+    "control_de_mutacion": "3 derivas (anadir linea en hunk, tocar archivo llevado, revivir borrado) las tres rojas"
+  },
+  "deriva_declarada": [
+    "agents/** y .qoder/skills/** no viajan: origin/develop no tiene el arbol de agentes; el contexto vivo de este frente se versiona en desarrollo",
+    "scripts/certifications/promotion-gates-runner.js y promotion-migration-check.js no viajan: son gobernanza de desarrollo y las compuertas se corren desde ese arbol; el manifiesto los cita por comando, no por blob",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx no se toca: el cliente de develop ya pide foto en los cuatro tipos y manda identity_photo en la raiz; el escape hatch retry_without_photo sigue viviendo solo en desarrollo y queda como pendiente del frente de frontend",
+    "suite-api.txt del intento con npm --workspace apps/api test se descarto como evidencia: develop no declara script test en apps/api; la suite se corrio apuntada y eso es lo que se versiona",
+    "los dos manifiestos viajan en un commit posterior al certified_commit: el manifiesto no puede citarse a si mismo. expected_changes los declara A y el porton de alcance los mide; certified_functional_paths los excluye a proposito porque ese si debe ser el diff exacto del commit certificado."
+  ],
+  "compuertas_exigidas": [
+    "node scripts/certifications/promotion-migration-check.js --spec docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json --against commit --ref <candidato>",
+    "npm run qa:promotion:scope -- <este manifiesto> <candidato> origin/develop",
+    "npm run qa:preqa:evidence -- docs/qa/manifests/web-selfie-cuatro-marcaciones-develop-20261124-preqa.json",
+    "node scripts/git-governance-guard.js ci-promotion <candidato> origin/develop develop codex/qa-web-selfie-cuatro-marcaciones-develop-20261124",
+    "las cinco, versionadas por scripts/certifications/promotion-gates-runner.js desde el arbol de desarrollo"
+  ],
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-24T11:00:00-05:00",
+    "instruction": "procede con los cambios y alinear todas las ramas con esta desicion e implementa en cada una de ellas los ajustes necesarios sin romper nada mas necesito que estos ajustes esten en todas las ramas verificadas y probadas que no existiran rechazos",
+    "authorization": "Alcance desarrollo -> develop con manifiesto de pre-QA local; la orden del dia incluye QA y Produccion. No cubre force push, reescritura de historia, borrado de ramas ajenos al frente ni migraciones remotas no declaradas."
+  },
+  "target_head": "b59f286dd1d05ed29a6e040c2d7027dd1b55cf17",
+  "promotion_branch": "codex/qa-web-selfie-cuatro-marcaciones-develop-20261124",
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/api/test/hr-single-selfie-gate.test.js",
+    "apps/api/test/hr-web-punch-selfie.test.js",
+    "docs/briefs/2026-11-24-web-selfie-cuatro-marcaciones-porton-origen.md",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/control-de-mutacion-instrumento.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/equivalencia-blob-candidato.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/guarda-de-tenant-presente.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/instrumentos-en-candidato.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-commit.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/invariantes-replay-indice.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/local-certification.json",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-api-apuntadas.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/suites-web-apuntadas.txt",
+    "docs/qa/evidence/web-selfie-cuatro-marcaciones-develop-20261124/veredicto.md",
+    "docs/qa/specs/web-selfie-cuatro-marcaciones-develop-20261124.replay.json",
+    "scripts/certifications/hr-mobile-identity-local.js",
+    "scripts/certifications/promotion-gates-runner.js",
+    "scripts/certifications/promotion-migration-check.js",
+    "scripts/test/promotion-replay-instruments.test.js"
+  ]
+}
