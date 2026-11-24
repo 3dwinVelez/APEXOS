@@ -87,11 +87,12 @@
     "llevadas_de_origin_desarrollo": 9
   },
   "suites_sobre_el_arbol_candidato": {
-    "hr-evidence-resilience_mas_hr-single-selfie-gate": "64 pruebas, 64 pasan, 0 fallos",
-    "hr-mobile-identity_mas_hr-punch-mobile-evidence_mas_hr-evidence-storage-gate_mas_security-evidence-upload": "20 pruebas, 20 pasan, 0 fallos",
-    "node scripts/certifications/hr-mobile-identity-selftest.js": "6/6 (la compuerta alterna sigue en su sitio)",
-    "ejecucion": "NODE_PATH al node_modules del árbol principal, dentro del worktree, sin copiar ni enlazar node_modules dentro de él.",
-    "suite_backfill": "La de hr-evidence-backfill-tool (27) no corre en el candidato: pide config/qa.env, archivo no versionado que solo existe en el checkout principal. Es la única diferencia con el 91/91 del árbol de desarrollo y está declarada, no ocultada."
+    "corrida_1": "hr-evidence-resilience (20) + hr-single-selfie-gate (4) + hr-mobile-identity (40) = 64 pruebas, 64 pasan, 0 fallos",
+    "corrida_2": "hr-punch-mobile-evidence (5) + hr-evidence-storage-gate (7) + security-evidence-upload (8) = 20 pruebas, 20 pasan, 0 fallos",
+    "total": "84 pruebas, 84 pasan sobre el arbol final del candidato",
+    "selftest_de_la_compuerta_alterna": "NO CORRE EN EL CANDIDATO: el instrumento no existe en origin/main y no entra en el inventario de trece rutas, asi que no se puede afirmar 6/6 sobre este arbol. La compuerta alterna queda cubierta por hr-single-selfie-gate (4/4 sobre el arbol del candidato) y por el control de mutacion del propio instrumento en origin/desarrollo.",
+    "suite_backfill": "La de hr-evidence-backfill-tool (27) no corre en el candidato: pide config/qa.env, archivo no versionado que solo existe en el checkout principal. Es la única diferencia con el 91/91 del árbol de desarrollo y está declarada, no ocultada.",
+    "ejecucion": "NODE_PATH al node_modules del árbol principal, dentro del worktree, sin copiar ni enlazar node_modules dentro de él."
   },
   "pendiente_con_dueno": [
     "El sha final del candidato (después de la segunda committida con las 13 rutas), la salida verbatim del gate de alcance en modo replay, la del gate de aprobación, la del guardián de gobernanza y la lectura de /health de Producción después del empuje: se consignan en el commit de contabilidad de origin/desarrollo que sigue al push, porque describen una punta que no puede existir dentro del commit que la describe.",
