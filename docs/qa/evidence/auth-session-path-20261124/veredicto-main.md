@@ -30,9 +30,10 @@ Change id: `monitor-latencia-sesion-main-20261124`. Candidato: rama auxiliar loc
 
 Invariante del replay (`npm run qa:promotion:migration`, `--against index` sobre las 54 rutas del índice):
 **73/73 válidas** — 49 `carry` (48 desde `origin/desarrollo` y 1 desde `origin/develop`) y 24 `delete` de rutas
-ajenas que siguen ausentes en lo que se publica. El reporte viaja en `replay-arbol-candidato-main.json`; la
-re-medición contra la punta commiteada (`--against commit`) es `replay-punta-main.json`, salida declarada que
-no puede viajar en el commit que describe y se sube con la evidencia del DESPUÉS.
+ajenas que siguen ausentes en lo que se publica. El reporte viaja en `replay-arbol-candidato-main.json`. La
+re-medición contra la punta commiteada (`--against commit`) mide el árbol ya publicado, así que no puede viajar
+dentro del commit que describe: se corre despues de cada push y su resultado queda en el registro de
+`agents/CHANGELOG.md` de `desarrollo`, que no promociona por diseño.
 
 Fusión medida en `invariantes-replay-main.json`:
 
@@ -109,3 +110,26 @@ CERT_ENVIRONMENT=production CERT_API_URL=https://apexos-api-prod-production.up.r
   CERT_EXPECTED_COMMIT=cf2adc59d44693f368418fb20cb66a06a388daa3 \
   CERT_PROBE_PATH=/api/v1/hr/routes/event-summaries?date=2026-11-24 npm run certify:auth-session
 ```
+
+## Cierre contable: la evidencia del DESPUÉS sube a `develop` y a `main`
+
+El push funcional se llevó la capa de documentación del replay pero no el DESPUÉS medido en Producción ni las
+secciones 16 y 17 del brief. Re-medido el árbol publicado con el propio instrumento
+(`npm run qa:promotion:migration -- --spec=docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json
+--against=commit --ref=cf2adc59d44693f368418fb20cb66a06a388daa3`), la corrida devolvió **71/73 válidas** y los
+dos rotos son documentación de esta intervención, no producto:
+
+| Ruta | Blob publicado en `cf2adc59` | Blob en `origin/desarrollo` |
+|---|---|---|
+| `docs/briefs/2026-11-24-monitor-marcaciones-latencia.md` | `b04d2d7c0b6b` | `c10dbb19fa96` |
+| `docs/qa/evidence/auth-session-path-20261124/veredicto-main.md` | `0b7e455fa8cc` | `87774ee8dab5` |
+
+La capa de cierre sube esas dos rutas más la evidencia que las respalda
+(`despues-produccion.json`, `despues-auth-produccion.json`, `sondeo-produccion.txt`, los dos reportes de
+puertas de develop y el diff del brief), los dos manifiestos de la pata `develop -> main` y el spec de replay.
+Inventario exacto medido ruta por ruta: **14 rutas contra `origin/main` y 26 contra `origin/develop`**, todas
+bajo `docs/`; el filtro `^(apps|scripts|packages|infra)/` sobre el diff neto devuelve **0** en los dos lados y
+cada blob queda igual al de `origin/desarrollo`. Los dos reportes de invariantes del cierre
+(`replay-cierre-docs-main.json`, `replay-cierre-docs-develop.json`) se corren con `--against index` sobre el
+índice ya armado de cada candidato, que es la forma versionada de medir el árbol que se publica sin que el
+reporte tenga que contener su propio commit.
