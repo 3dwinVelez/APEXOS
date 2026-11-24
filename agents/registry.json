@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.90.1",
+      "version": "2.91.0",
       "updated_at": "2026-11-24",
-      "sha256": "7764391a52f613ba8c9b241a778898550232cc4caa4dda038dd14e28339d1f84",
+      "sha256": "18294375db8e703570d99077262167588082f31c0d52e09c2bcd89a7542ecb1a",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
