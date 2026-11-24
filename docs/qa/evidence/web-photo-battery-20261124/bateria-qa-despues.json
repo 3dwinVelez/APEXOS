@@ -1,0 +1,1356 @@
+{
+  "certification": "hr-web-photo-battery",
+  "version": 1,
+  "ambiente": "QA",
+  "instruccion": "Catorce formas de foto del canal web contra el API desplegado, una promesa por pierna",
+  "generado_en": "2026-11-24T21:05:05.574Z",
+  "env_file": "config/qa.env",
+  "api_host": "apexos-api-qa-production.up.railway.app",
+  "script_sha256": "a0d7d8c23b95776c91364495689c27f9f476dac32bdc8a7e4c2ec60869c6d6d3",
+  "dia_operativo": "2026-11-24",
+  "run": "4304891",
+  "tope_web_bytes": 2097152,
+  "compromiso": {
+    "fix_de_referencia": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+    "servidor_lee": "git merge-base --is-ancestor"
+  },
+  "formas": [
+    {
+      "nombre": "jpeg-honesto",
+      "declarado": "image/jpeg",
+      "promesa": "hora",
+      "codigo": null,
+      "bytes": 36856
+    },
+    {
+      "nombre": "jpeg-declarado-png",
+      "declarado": "image/png",
+      "promesa": "hora",
+      "codigo": null,
+      "bytes": 36856
+    },
+    {
+      "nombre": "png-declarado-jpeg",
+      "declarado": "image/jpeg",
+      "promesa": "hora",
+      "codigo": null,
+      "bytes": 12420
+    },
+    {
+      "nombre": "webp-declarado-gif",
+      "declarado": "image/gif",
+      "promesa": "hora",
+      "codigo": null,
+      "bytes": 40124
+    },
+    {
+      "nombre": "mime-en-mayusculas",
+      "declarado": "IMAGE/JPEG",
+      "promesa": "hora",
+      "codigo": null,
+      "bytes": 36856
+    },
+    {
+      "nombre": "base64-con-saltos",
+      "declarado": "image/jpeg",
+      "promesa": "hora",
+      "codigo": null,
+      "bytes": 36856
+    },
+    {
+      "nombre": "jpeg-en-el-tope-justo",
+      "declarado": "image/jpeg",
+      "promesa": "hora",
+      "codigo": null,
+      "bytes": 2097152
+    },
+    {
+      "nombre": "jpeg-real-de-3-mb",
+      "declarado": "image/jpeg",
+      "promesa": "hora",
+      "codigo": null,
+      "bytes": 3197152
+    },
+    {
+      "nombre": "png-real-de-2_4-mb",
+      "declarado": "image/png",
+      "promesa": "hora",
+      "codigo": null,
+      "bytes": 2497157
+    },
+    {
+      "nombre": "archivo-que-no-decodifica",
+      "declarado": "image/jpeg",
+      "promesa": "hora",
+      "codigo": null,
+      "bytes": 900
+    },
+    {
+      "nombre": "gif-real",
+      "declarado": "image/gif",
+      "promesa": "hora",
+      "codigo": null,
+      "bytes": 79886
+    },
+    {
+      "nombre": "video-mp4",
+      "declarado": "video/mp4",
+      "promesa": "rechazo",
+      "codigo": "EVIDENCIA_CLASE_RECHAZADA",
+      "bytes": 612
+    },
+    {
+      "nombre": "pdf",
+      "declarado": "application/pdf",
+      "promesa": "rechazo",
+      "codigo": "EVIDENCIA_CLASE_RECHAZADA",
+      "bytes": 609
+    },
+    {
+      "nombre": "svg-declarado-imagen",
+      "declarado": "image/svg+xml",
+      "promesa": "rechazo",
+      "codigo": "EVIDENCIA_TIPO_DECLARADO_RECHAZADO",
+      "bytes": 695
+    },
+    {
+      "nombre": "texto-plano",
+      "declarado": "text/plain",
+      "promesa": "rechazo",
+      "codigo": "EVIDENCIA_TIPO_DECLARADO_RECHAZADO",
+      "bytes": 647
+    }
+  ],
+  "cheques": [
+    {
+      "name": "health_ancla_el_commit_servido",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "c0fbb4b9c50c",
+        "contiene_el_fix": true
+      }
+    },
+    {
+      "name": "el_ambiente_servido_coincide_con_la_espera",
+      "ok": true,
+      "detail": {
+        "espera": "despues",
+        "contiene_el_fix": true
+      }
+    },
+    {
+      "name": "pata_jpeg-honesto",
+      "ok": true,
+      "detail": {
+        "prometido": "hora",
+        "codigo_prometido": null,
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "fallos": []
+      }
+    },
+    {
+      "name": "pata_jpeg-declarado-png",
+      "ok": true,
+      "detail": {
+        "prometido": "hora",
+        "codigo_prometido": null,
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "fallos": []
+      }
+    },
+    {
+      "name": "pata_png-declarado-jpeg",
+      "ok": true,
+      "detail": {
+        "prometido": "hora",
+        "codigo_prometido": null,
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "fallos": []
+      }
+    },
+    {
+      "name": "pata_webp-declarado-gif",
+      "ok": true,
+      "detail": {
+        "prometido": "hora",
+        "codigo_prometido": null,
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "fallos": []
+      }
+    },
+    {
+      "name": "pata_mime-en-mayusculas",
+      "ok": true,
+      "detail": {
+        "prometido": "hora",
+        "codigo_prometido": null,
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "fallos": []
+      }
+    },
+    {
+      "name": "pata_base64-con-saltos",
+      "ok": true,
+      "detail": {
+        "prometido": "hora",
+        "codigo_prometido": null,
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "fallos": []
+      }
+    },
+    {
+      "name": "pata_jpeg-en-el-tope-justo",
+      "ok": true,
+      "detail": {
+        "prometido": "hora",
+        "codigo_prometido": null,
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "fallos": []
+      }
+    },
+    {
+      "name": "pata_jpeg-real-de-3-mb",
+      "ok": true,
+      "detail": {
+        "prometido": "hora",
+        "codigo_prometido": null,
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "fallos": []
+      }
+    },
+    {
+      "name": "pata_png-real-de-2_4-mb",
+      "ok": true,
+      "detail": {
+        "prometido": "hora",
+        "codigo_prometido": null,
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "fallos": []
+      }
+    },
+    {
+      "name": "pata_archivo-que-no-decodifica",
+      "ok": true,
+      "detail": {
+        "prometido": "hora",
+        "codigo_prometido": null,
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "fallos": []
+      }
+    },
+    {
+      "name": "pata_gif-real",
+      "ok": true,
+      "detail": {
+        "prometido": "hora",
+        "codigo_prometido": null,
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "fallos": []
+      }
+    },
+    {
+      "name": "pata_video-mp4",
+      "ok": true,
+      "detail": {
+        "prometido": "rechazo",
+        "codigo_prometido": "EVIDENCIA_CLASE_RECHAZADA",
+        "observado": "rechazo",
+        "status": 400,
+        "code": "EVIDENCIA_CLASE_RECHAZADA",
+        "fallos": []
+      }
+    },
+    {
+      "name": "reenvio_sin_foto_video-mp4",
+      "ok": true,
+      "detail": {
+        "esperado": "hora",
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "desprendidas": [
+          "identity_photo"
+        ]
+      }
+    },
+    {
+      "name": "pata_pdf",
+      "ok": true,
+      "detail": {
+        "prometido": "rechazo",
+        "codigo_prometido": "EVIDENCIA_CLASE_RECHAZADA",
+        "observado": "rechazo",
+        "status": 400,
+        "code": "EVIDENCIA_CLASE_RECHAZADA",
+        "fallos": []
+      }
+    },
+    {
+      "name": "reenvio_sin_foto_pdf",
+      "ok": true,
+      "detail": {
+        "esperado": "hora",
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "desprendidas": [
+          "identity_photo"
+        ]
+      }
+    },
+    {
+      "name": "pata_svg-declarado-imagen",
+      "ok": true,
+      "detail": {
+        "prometido": "rechazo",
+        "codigo_prometido": "EVIDENCIA_TIPO_DECLARADO_RECHAZADO",
+        "observado": "rechazo",
+        "status": 400,
+        "code": "EVIDENCIA_TIPO_DECLARADO_RECHAZADO",
+        "fallos": []
+      }
+    },
+    {
+      "name": "reenvio_sin_foto_svg-declarado-imagen",
+      "ok": true,
+      "detail": {
+        "esperado": "hora",
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "desprendidas": [
+          "identity_photo"
+        ]
+      }
+    },
+    {
+      "name": "pata_texto-plano",
+      "ok": true,
+      "detail": {
+        "prometido": "rechazo",
+        "codigo_prometido": "EVIDENCIA_TIPO_DECLARADO_RECHAZADO",
+        "observado": "rechazo",
+        "status": 400,
+        "code": "EVIDENCIA_TIPO_DECLARADO_RECHAZADO",
+        "fallos": []
+      }
+    },
+    {
+      "name": "reenvio_sin_foto_texto-plano",
+      "ok": true,
+      "detail": {
+        "esperado": "hora",
+        "observado": "hora",
+        "status": 200,
+        "code": null,
+        "desprendidas": [
+          "identity_photo"
+        ]
+      }
+    },
+    {
+      "name": "ninguna_respuesta_lleva_codigo_de_la_compuerta_alterna",
+      "ok": true,
+      "detail": {
+        "codigos": [
+          "EVIDENCIA_CLASE_RECHAZADA",
+          "EVIDENCIA_TIPO_DECLARADO_RECHAZADO"
+        ]
+      }
+    },
+    {
+      "name": "ningun_5xx_en_toda_la_bateria",
+      "ok": true,
+      "detail": {
+        "peor": 400
+      }
+    },
+    {
+      "name": "las_filas_degradadas_no_guardan_los_bytes",
+      "ok": true,
+      "detail": {
+        "con_bytes": []
+      }
+    },
+    {
+      "name": "toda_fila_available_puede_mostrarse",
+      "ok": true,
+      "detail": {
+        "ciegas": []
+      }
+    },
+    {
+      "name": "las_tres_imagenes_de_dos_megas_no_cuestan_la_jornada",
+      "ok": true,
+      "detail": {
+        "detalle": [
+          {
+            "forma": "jpeg-en-el-tope-justo",
+            "status": 200,
+            "code": null
+          },
+          {
+            "forma": "jpeg-real-de-3-mb",
+            "status": 200,
+            "code": null
+          },
+          {
+            "forma": "png-real-de-2_4-mb",
+            "status": 200,
+            "code": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_fila_de_cada_forma_coincide_con_lo_prometido",
+      "ok": true,
+      "detail": {
+        "detalle": [
+          {
+            "forma": "jpeg-honesto",
+            "estado": "available",
+            "codigo": null,
+            "esperaba": "available",
+            "esperaba_codigo": null
+          },
+          {
+            "forma": "jpeg-en-el-tope-justo",
+            "estado": "available",
+            "codigo": null,
+            "esperaba": "available",
+            "esperaba_codigo": null
+          },
+          {
+            "forma": "jpeg-real-de-3-mb",
+            "estado": "degraded",
+            "codigo": "EVIDENCIA_SUPERA_LIMITE",
+            "esperaba": "degraded",
+            "esperaba_codigo": "EVIDENCIA_SUPERA_LIMITE"
+          },
+          {
+            "forma": "png-real-de-2_4-mb",
+            "estado": "degraded",
+            "codigo": "EVIDENCIA_SUPERA_LIMITE",
+            "esperaba": "degraded",
+            "esperaba_codigo": "EVIDENCIA_SUPERA_LIMITE"
+          },
+          {
+            "forma": "archivo-que-no-decodifica",
+            "estado": "degraded",
+            "codigo": "EVIDENCIA_NO_DECODIFICABLE",
+            "esperaba": "degraded",
+            "esperaba_codigo": "EVIDENCIA_NO_DECODIFICABLE"
+          },
+          {
+            "forma": "gif-real",
+            "estado": "degraded",
+            "codigo": "EVIDENCIA_NO_DECODIFICABLE",
+            "esperaba": "degraded",
+            "esperaba_codigo": "EVIDENCIA_NO_DECODIFICABLE"
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_que_no_cabe_degrada_sin_guardar_los_bytes",
+      "ok": true,
+      "detail": {
+        "detalle": [
+          {
+            "forma": "jpeg-real-de-3-mb",
+            "evidencia_status": "degraded",
+            "byte_length_guardado": 3197152,
+            "foto_inline": false
+          },
+          {
+            "forma": "png-real-de-2_4-mb",
+            "evidencia_status": "degraded",
+            "byte_length_guardado": 2497157,
+            "foto_inline": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "lo_que_el_navegador_no_pinta_degrada_y_no_cuesta_la_jornada",
+      "ok": true,
+      "detail": {
+        "detalle": [
+          {
+            "forma": "archivo-que-no-decodifica",
+            "observado": "hora",
+            "evidencia_status": "degraded",
+            "evidencia_failure_code": "EVIDENCIA_NO_DECODIFICABLE"
+          },
+          {
+            "forma": "gif-real",
+            "observado": "hora",
+            "evidencia_status": "degraded",
+            "evidencia_failure_code": "EVIDENCIA_NO_DECODIFICABLE"
+          }
+        ]
+      }
+    },
+    {
+      "name": "las_cinco_formas_con_etiqueta_mentirosa_entran",
+      "ok": true,
+      "detail": {
+        "detalle": [
+          {
+            "forma": "jpeg-declarado-png",
+            "status": 200
+          },
+          {
+            "forma": "png-declarado-jpeg",
+            "status": 200
+          },
+          {
+            "forma": "webp-declarado-gif",
+            "status": 200
+          },
+          {
+            "forma": "mime-en-mayusculas",
+            "status": 200
+          },
+          {
+            "forma": "base64-con-saltos",
+            "status": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "lo_que_no_es_una_imagen_sigue_rechazandose",
+      "ok": true,
+      "detail": {
+        "detalle": [
+          {
+            "forma": "video-mp4",
+            "code": "EVIDENCIA_CLASE_RECHAZADA"
+          },
+          {
+            "forma": "pdf",
+            "code": "EVIDENCIA_CLASE_RECHAZADA"
+          },
+          {
+            "forma": "svg-declarado-imagen",
+            "code": "EVIDENCIA_TIPO_DECLARADO_RECHAZADO"
+          },
+          {
+            "forma": "texto-plano",
+            "code": "EVIDENCIA_TIPO_DECLARADO_RECHAZADO"
+          }
+        ]
+      }
+    },
+    {
+      "name": "todo_rechazo_puede_reenviarse_sin_perder_la_hora",
+      "ok": true,
+      "detail": {
+        "detalle": [
+          {
+            "forma": "video-mp4",
+            "reenvio": "hora",
+            "status": 200
+          },
+          {
+            "forma": "pdf",
+            "reenvio": "hora",
+            "status": 200
+          },
+          {
+            "forma": "svg-declarado-imagen",
+            "reenvio": "hora",
+            "status": 200
+          },
+          {
+            "forma": "texto-plano",
+            "reenvio": "hora",
+            "status": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "toda_escritura_dentro_del_presupuesto",
+      "ok": true,
+      "detail": {
+        "peor": 1804,
+        "presupuesto_ms": 30000
+      }
+    },
+    {
+      "name": "operarios_y_cuentas_efimeras_retiradas",
+      "ok": true,
+      "detail": {
+        "usuarios": 15,
+        "fichas": 15,
+        "admin": "sin_rol",
+        "admin_retirado": 200,
+        "login_tras_retiro": 401
+      }
+    }
+  ],
+  "tiempos": [
+    {
+      "ruta": "/health",
+      "method": "GET",
+      "status": 200,
+      "ms": 416
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 697
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 1655
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 473
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 1074
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 470
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 986
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 471
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 1025
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 463
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 1014
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 481
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 1008
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 474
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 1804
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 552
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 1075
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 463
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 987
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 455
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 870
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 447
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 851
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 444
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 400,
+      "ms": 452
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 848
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 449
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 400,
+      "ms": 429
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 848
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 448
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 400,
+      "ms": 431
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 850
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 477
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 400,
+      "ms": 418
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 200,
+      "ms": 854
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 485
+    },
+    {
+      "ruta": "/api/v1/admin/users/896/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 1080
+    },
+    {
+      "ruta": "/api/v1/admin/users/897/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 1047
+    },
+    {
+      "ruta": "/api/v1/admin/users/898/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 1003
+    },
+    {
+      "ruta": "/api/v1/admin/users/899/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 991
+    },
+    {
+      "ruta": "/api/v1/admin/users/900/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 993
+    },
+    {
+      "ruta": "/api/v1/admin/users/901/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 996
+    },
+    {
+      "ruta": "/api/v1/admin/users/902/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 1002
+    },
+    {
+      "ruta": "/api/v1/admin/users/903/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 990
+    },
+    {
+      "ruta": "/api/v1/admin/users/904/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 988
+    },
+    {
+      "ruta": "/api/v1/admin/users/905/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 985
+    },
+    {
+      "ruta": "/api/v1/admin/users/906/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 985
+    },
+    {
+      "ruta": "/api/v1/admin/users/907/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 1012
+    },
+    {
+      "ruta": "/api/v1/admin/users/908/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 987
+    },
+    {
+      "ruta": "/api/v1/admin/users/909/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 982
+    },
+    {
+      "ruta": "/api/v1/admin/users/910/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 988
+    },
+    {
+      "ruta": "/api/v1/admin/users/911/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 905
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 401,
+      "ms": 259
+    }
+  ],
+  "ids": {
+    "usuarios": [
+      896,
+      897,
+      898,
+      899,
+      900,
+      901,
+      902,
+      903,
+      904,
+      905,
+      906,
+      907,
+      908,
+      909,
+      910,
+      911
+    ],
+    "empleados": [
+      744,
+      745,
+      746,
+      747,
+      748,
+      749,
+      750,
+      751,
+      752,
+      753,
+      754,
+      755,
+      756,
+      757,
+      758
+    ]
+  },
+  "presupuesto_ms": 30000,
+  "despliegue": {
+    "status": 200,
+    "commit_servido": "c0fbb4b9c50c",
+    "el_binario_servido_contiene_el_fix": true
+  },
+  "piernas": [
+    {
+      "forma": "jpeg-honesto",
+      "declarado": "image/jpeg",
+      "bytes": 36856,
+      "promesa": "hora",
+      "mentiroso": false,
+      "grande": false,
+      "evidencia_esperada": "available",
+      "codigo_en_fila_esperado": null,
+      "status": 200,
+      "code": null,
+      "observado": "hora",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": "available",
+      "evidencia_failure_code": null,
+      "byte_length_guardado": null,
+      "foto_inline": true,
+      "ruta_almacen": null,
+      "hora_asentada": true
+    },
+    {
+      "forma": "jpeg-declarado-png",
+      "declarado": "image/png",
+      "bytes": 36856,
+      "promesa": "hora",
+      "mentiroso": true,
+      "grande": false,
+      "evidencia_esperada": null,
+      "codigo_en_fila_esperado": null,
+      "status": 200,
+      "code": null,
+      "observado": "hora",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": "available",
+      "evidencia_failure_code": null,
+      "byte_length_guardado": null,
+      "foto_inline": true,
+      "ruta_almacen": null,
+      "hora_asentada": true
+    },
+    {
+      "forma": "png-declarado-jpeg",
+      "declarado": "image/jpeg",
+      "bytes": 12420,
+      "promesa": "hora",
+      "mentiroso": true,
+      "grande": false,
+      "evidencia_esperada": null,
+      "codigo_en_fila_esperado": null,
+      "status": 200,
+      "code": null,
+      "observado": "hora",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": "available",
+      "evidencia_failure_code": null,
+      "byte_length_guardado": null,
+      "foto_inline": true,
+      "ruta_almacen": null,
+      "hora_asentada": true
+    },
+    {
+      "forma": "webp-declarado-gif",
+      "declarado": "image/gif",
+      "bytes": 40124,
+      "promesa": "hora",
+      "mentiroso": true,
+      "grande": false,
+      "evidencia_esperada": null,
+      "codigo_en_fila_esperado": null,
+      "status": 200,
+      "code": null,
+      "observado": "hora",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": "available",
+      "evidencia_failure_code": null,
+      "byte_length_guardado": null,
+      "foto_inline": true,
+      "ruta_almacen": null,
+      "hora_asentada": true
+    },
+    {
+      "forma": "mime-en-mayusculas",
+      "declarado": "IMAGE/JPEG",
+      "bytes": 36856,
+      "promesa": "hora",
+      "mentiroso": true,
+      "grande": false,
+      "evidencia_esperada": null,
+      "codigo_en_fila_esperado": null,
+      "status": 200,
+      "code": null,
+      "observado": "hora",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": "available",
+      "evidencia_failure_code": null,
+      "byte_length_guardado": null,
+      "foto_inline": true,
+      "ruta_almacen": null,
+      "hora_asentada": true
+    },
+    {
+      "forma": "base64-con-saltos",
+      "declarado": "image/jpeg",
+      "bytes": 36856,
+      "promesa": "hora",
+      "mentiroso": true,
+      "grande": false,
+      "evidencia_esperada": null,
+      "codigo_en_fila_esperado": null,
+      "status": 200,
+      "code": null,
+      "observado": "hora",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": "available",
+      "evidencia_failure_code": null,
+      "byte_length_guardado": null,
+      "foto_inline": true,
+      "ruta_almacen": null,
+      "hora_asentada": true
+    },
+    {
+      "forma": "jpeg-en-el-tope-justo",
+      "declarado": "image/jpeg",
+      "bytes": 2097152,
+      "promesa": "hora",
+      "mentiroso": false,
+      "grande": true,
+      "evidencia_esperada": "available",
+      "codigo_en_fila_esperado": null,
+      "status": 200,
+      "code": null,
+      "observado": "hora",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": "available",
+      "evidencia_failure_code": null,
+      "byte_length_guardado": null,
+      "foto_inline": true,
+      "ruta_almacen": null,
+      "hora_asentada": true
+    },
+    {
+      "forma": "jpeg-real-de-3-mb",
+      "declarado": "image/jpeg",
+      "bytes": 3197152,
+      "promesa": "hora",
+      "mentiroso": false,
+      "grande": true,
+      "evidencia_esperada": "degraded",
+      "codigo_en_fila_esperado": "EVIDENCIA_SUPERA_LIMITE",
+      "status": 200,
+      "code": null,
+      "observado": "hora",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": "degraded",
+      "evidencia_failure_code": "EVIDENCIA_SUPERA_LIMITE",
+      "byte_length_guardado": 3197152,
+      "foto_inline": false,
+      "ruta_almacen": null,
+      "hora_asentada": true
+    },
+    {
+      "forma": "png-real-de-2_4-mb",
+      "declarado": "image/png",
+      "bytes": 2497157,
+      "promesa": "hora",
+      "mentiroso": false,
+      "grande": true,
+      "evidencia_esperada": "degraded",
+      "codigo_en_fila_esperado": "EVIDENCIA_SUPERA_LIMITE",
+      "status": 200,
+      "code": null,
+      "observado": "hora",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": "degraded",
+      "evidencia_failure_code": "EVIDENCIA_SUPERA_LIMITE",
+      "byte_length_guardado": 2497157,
+      "foto_inline": false,
+      "ruta_almacen": null,
+      "hora_asentada": true
+    },
+    {
+      "forma": "archivo-que-no-decodifica",
+      "declarado": "image/jpeg",
+      "bytes": 900,
+      "promesa": "hora",
+      "mentiroso": false,
+      "grande": false,
+      "evidencia_esperada": "degraded",
+      "codigo_en_fila_esperado": "EVIDENCIA_NO_DECODIFICABLE",
+      "status": 200,
+      "code": null,
+      "observado": "hora",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": "degraded",
+      "evidencia_failure_code": "EVIDENCIA_NO_DECODIFICABLE",
+      "byte_length_guardado": 900,
+      "foto_inline": false,
+      "ruta_almacen": null,
+      "hora_asentada": true
+    },
+    {
+      "forma": "gif-real",
+      "declarado": "image/gif",
+      "bytes": 79886,
+      "promesa": "hora",
+      "mentiroso": false,
+      "grande": false,
+      "evidencia_esperada": "degraded",
+      "codigo_en_fila_esperado": "EVIDENCIA_NO_DECODIFICABLE",
+      "status": 200,
+      "code": null,
+      "observado": "hora",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": "degraded",
+      "evidencia_failure_code": "EVIDENCIA_NO_DECODIFICABLE",
+      "byte_length_guardado": 79886,
+      "foto_inline": false,
+      "ruta_almacen": null,
+      "hora_asentada": true
+    },
+    {
+      "forma": "video-mp4",
+      "declarado": "video/mp4",
+      "bytes": 612,
+      "promesa": "rechazo",
+      "mentiroso": false,
+      "grande": false,
+      "evidencia_esperada": null,
+      "codigo_en_fila_esperado": null,
+      "status": 400,
+      "code": "EVIDENCIA_CLASE_RECHAZADA",
+      "observado": "rechazo",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": null,
+      "evidencia_failure_code": null,
+      "byte_length_guardado": null,
+      "foto_inline": false,
+      "ruta_almacen": null,
+      "hora_asentada": false,
+      "reenvio": {
+        "status": 200,
+        "code": null,
+        "observado": "hora",
+        "desprendidas": [
+          "identity_photo"
+        ],
+        "clave": "bat-4304891-11-sin"
+      }
+    },
+    {
+      "forma": "pdf",
+      "declarado": "application/pdf",
+      "bytes": 609,
+      "promesa": "rechazo",
+      "mentiroso": false,
+      "grande": false,
+      "evidencia_esperada": null,
+      "codigo_en_fila_esperado": null,
+      "status": 400,
+      "code": "EVIDENCIA_CLASE_RECHAZADA",
+      "observado": "rechazo",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": null,
+      "evidencia_failure_code": null,
+      "byte_length_guardado": null,
+      "foto_inline": false,
+      "ruta_almacen": null,
+      "hora_asentada": false,
+      "reenvio": {
+        "status": 200,
+        "code": null,
+        "observado": "hora",
+        "desprendidas": [
+          "identity_photo"
+        ],
+        "clave": "bat-4304891-12-sin"
+      }
+    },
+    {
+      "forma": "svg-declarado-imagen",
+      "declarado": "image/svg+xml",
+      "bytes": 695,
+      "promesa": "rechazo",
+      "mentiroso": false,
+      "grande": false,
+      "evidencia_esperada": null,
+      "codigo_en_fila_esperado": null,
+      "status": 400,
+      "code": "EVIDENCIA_TIPO_DECLARADO_RECHAZADO",
+      "observado": "rechazo",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": null,
+      "evidencia_failure_code": null,
+      "byte_length_guardado": null,
+      "foto_inline": false,
+      "ruta_almacen": null,
+      "hora_asentada": false,
+      "reenvio": {
+        "status": 200,
+        "code": null,
+        "observado": "hora",
+        "desprendidas": [
+          "identity_photo"
+        ],
+        "clave": "bat-4304891-13-sin"
+      }
+    },
+    {
+      "forma": "texto-plano",
+      "declarado": "text/plain",
+      "bytes": 647,
+      "promesa": "rechazo",
+      "mentiroso": false,
+      "grande": false,
+      "evidencia_esperada": null,
+      "codigo_en_fila_esperado": null,
+      "status": 400,
+      "code": "EVIDENCIA_TIPO_DECLARADO_RECHAZADO",
+      "observado": "rechazo",
+      "cumple": true,
+      "fallos": [],
+      "evidencia_status": null,
+      "evidencia_failure_code": null,
+      "byte_length_guardado": null,
+      "foto_inline": false,
+      "ruta_almacen": null,
+      "hora_asentada": false,
+      "reenvio": {
+        "status": 200,
+        "code": null,
+        "observado": "hora",
+        "desprendidas": [
+          "identity_photo"
+        ],
+        "clave": "bat-4304891-14-sin"
+      }
+    }
+  ],
+  "condicion_almacenamiento": {
+    "inline": [
+      "jpeg-honesto",
+      "jpeg-declarado-png",
+      "png-declarado-jpeg",
+      "webp-declarado-gif",
+      "mime-en-mayusculas",
+      "base64-con-saltos",
+      "jpeg-en-el-tope-justo"
+    ],
+    "en_almacen": [],
+    "nota": "available con los bytes dentro de la fila = la barrera de disco del plan de choque esta apagada en este ambiente (HR_EVIDENCE_INLINE_MAX_BYTES no declarado). No es un fallo de esta bateria; es el pendiente del ambiente, con dueno."
+  },
+  "veredicto": {
+    "total": 34,
+    "pasaron": 34,
+    "fallaron": 0,
+    "piernas": 15,
+    "peticiones_escritas": 19,
+    "espera": "despues",
+    "estado": "APROBADO"
+  }
+}

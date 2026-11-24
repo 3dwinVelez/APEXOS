@@ -1,0 +1,4 @@
+Medicion del porton cero-rechazos-foto-web-develop-20261124 contra origin/develop @ 7df8240a1b1ba11550c20c19db39c8fe5c53cf7b
+Comando: git diff --cached --name-only | grep -cE "prisma/migrations"        => 0
+Comando: git diff --cached --name-only | grep -cE "schema.prisma"            => 0
+Rutas de esquema en el indice del candidato: 0. El porton no aplica ni declara migraciones, por lo que promotion-migration-check no tiene ninguna cadena que contrastar en este diff: la cadena de apps/api/prisma/migrations es byte a byte la que origin/develop ya tiene (git diff --cached --name-only no devuelve ninguna ruta bajo ese directorio).

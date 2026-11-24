@@ -396,8 +396,11 @@ function hardOversizeRejection(inspection, { field, maxBytes }) {
 //
 // CUATRO salidas posibles: `stored` con la evidencia disponible, `stored` degradada con el
 // motivo, o `hard_rejection` (el unico que cuesta la marcacion). Un problema de formato o de
-// renderizado NUNCA pierde la jornada: degrada la evidencia y avisa. Video, PDF, texto, SVG,
-// alfabeto invalido o un payload por encima del tope real si se rechazan.
+// renderizado NUNCA pierde la jornada: degrada la evidencia y avisa. Video, PDF, texto, SVG y
+// un alfabeto invalido si se rechazan. El tamano depende del canal: en la app firmada un
+// payload por encima del tope se rechaza (la firma cierra sobre esos bytes y guardar una
+// fila sin ellos dejaria un `verified` sin evidencia); en la web degrada, porque alli el tope
+// es de almacen y la clase ya fue aceptada antes de medir.
 //
 // LA REGLA QUE GOBIERNA AQUI: se persisten LOS BYTES RECIBIDOS, verbatim, en su base64
 // canonico (`normalizeBase64Payload`). El servidor NO transcodifica. La razon no es de
@@ -406,7 +409,7 @@ function hardOversizeRejection(inspection, { field, maxBytes }) {
 // cambiaria el hash almacenado y rebajaran TODA marcacion normal de la app a
 // `verified_evidence_degraded`. sharp solo se usa para DECIDIR si el visor la pinta y para
 // rechazar entrada hostil (animada, bombas de descompresion), nunca para reescribir.
-async function normalizeSelfie(photo, { maxBytes = identityPhotoByteCap(), field = "identity_photo", persistDegradedPayload = false } = {}) {
+async function normalizeSelfie(photo, { maxBytes = identityPhotoByteCap(), field = "identity_photo", persistDegradedPayload = false, oversizeDegrades = false } = {}) {
   const inspection = inspectSelfiePayload(photo, { maxBytes, field });
   // Cadena canonica (normalizada de transporte, sin re-codificar): es lo unico que sale del
   // servidor, tanto en la fila disponible como en la degradada del canal movil.
@@ -424,7 +427,17 @@ async function normalizeSelfie(photo, { maxBytes = identityPhotoByteCap(), field
     const detail = { ...inspection.failure, field, max_bytes: inspection.max_bytes, evidence_failure_code: inspection.failure.code };
     // El tope manda sobre la degradacion: un archivo grande rechazo no puede acabar guardado.
     const oversize = hardOversizeRejection(inspection, { field, maxBytes });
-    if (oversize) return { hard_rejection: oversize, detail: oversize.details };
+    if (oversize) {
+      // La excepcion del canal web cubre UN solo motivo: que haya una imagen de clase aceptada
+      // que no cabe en el almacen. Si el veredicto trajo otra causa -clase prohibida, tipo
+      // declarado, alfabeto ilegable- el rechazo duro manda aunque el payload tambien sea
+      // grande, porque si no un video de 3 MB entraria disfrazado de foto en revision.
+      const soloEsGrande = detail.evidence_failure_code === EVIDENCE_FAILURE_CODES.oversize;
+      if (!(oversizeDegrades && soloEsGrande)) return { hard_rejection: oversize, detail: oversize.details };
+      // Se degrada mas abajo, en el mismo camino que ya conserva la huella digital y no persiste
+      // los bytes: un payload de 2 MB en `jsonb` es exactamente lo que costo el disgusto de
+      // disco del 2026-11-18.
+    }
     // Solo la CLASE desconocida se rescata: una foto declarada como foto cuyo olfato no
     // reconocemos (TIFF, BMP) es una imagen que el visor no pinta, degrada con los bytes
     // firmados. Un alfabeto invalido o un tipo declarado prohibido, en cambio, son un fallo
@@ -575,8 +588,9 @@ async function webIdentity({ input, type, now }) {
     };
   }
   // Desde la web la foto pasa por la camara del navegador y pesa mas que la
-  // que optimiza la app; el tope es el de cualquier evidencia de marcacion.
-  const normalized = await normalizeSelfie(photo, { maxBytes: WEB_IDENTITY_PHOTO_MAX_BYTES });
+  // que optimiza la app; el tope es el de cualquier evidencia de marcacion. Un payload que
+  // pasa de ese tope es una imagen real que no cabe en el almacen: degrada, no rechaza.
+  const normalized = await normalizeSelfie(photo, { maxBytes: WEB_IDENTITY_PHOTO_MAX_BYTES, oversizeDegrades: true });
   if (normalized.hard_rejection) throw normalized.hard_rejection;
   const outcome = evidenceOutcomeOf(normalized);
   return {
