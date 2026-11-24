@@ -57,9 +57,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.29.1",
+      "version": "2.30.0",
       "updated_at": "2026-11-24",
-      "sha256": "1d3ffd288ab609bf8ca7aaf0dc8afdacdb4f722a4d1a783154cc44cccaae5283",
+      "sha256": "42f7a33d75eabdf5931bcbd10c35abcad286bd3e55209e9aacaabbb76fe1d977",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
