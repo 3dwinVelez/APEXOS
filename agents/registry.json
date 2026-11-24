@@ -57,9 +57,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.27.0",
+      "version": "2.28.0",
       "updated_at": "2026-11-24",
-      "sha256": "61d5d5e1cbd607cffa129a0e2864136c8695bcc5a02f0c53049e9d843086d288",
+      "sha256": "3c104dafd9984eba3b3678516f58b469c1fc55cfa942eb3a9adfd46321e195f9",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -94,15 +94,16 @@
         "congestion-prisma-503-con-retry-after",
         "cuenta-inactiva-sigue-siendo-administrable",
         "clave-publica-en-esquema-con-forma",
-        "lenguaje-cercano-al-dueno"
+        "lenguaje-cercano-al-dueno",
+        "camino-sesion-una-sentencia-por-lectura"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.86.0",
+      "version": "2.87.0",
       "updated_at": "2026-11-24",
-      "sha256": "596f37dc66bce366ab9269e3b8820f6ac488574bf7ad9f6785fd7bb7510d7bdc",
+      "sha256": "37a871c02d4740090007b9c87e757eda5f5908d7d5f6a2bbbca46f36f9859efc",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -166,7 +167,8 @@
         "lo-que-se-afirma-del-instrumento-se-pasa-en-limpio",
         "pendiente-con-dependencia-de-despliegue",
         "particion-de-residuo-con-tres-duenos",
-        "lenguaje-cercano-al-dueno"
+        "lenguaje-cercano-al-dueno",
+        "instrumento-nuevo-entra-al-inventario"
       ]
     },
     {
@@ -294,9 +296,9 @@
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.24.0",
+      "version": "2.25.0",
       "updated_at": "2026-11-24",
-      "sha256": "482bb4dcf7308f2ce85d50ab6e5e6ecfee2c227ab89d64984dacd08e8d358681",
+      "sha256": "70e07b5a04478232d590c2dd16aaa55eb0d1af8bdf0b94a02c4cc2e9da572137",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -323,15 +325,16 @@
         "torre-historia-medida-por-monitor",
         "sonda-transporte-con-lector-del-producto",
         "latencia-se-mide-en-ambiente-desplegado",
-        "lenguaje-cercano-al-dueno"
+        "lenguaje-cercano-al-dueno",
+        "sql-capturado-y-validado-contra-la-base"
       ]
     },
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.106.0",
+      "version": "2.107.0",
       "updated_at": "2026-11-24",
-      "sha256": "ed611376e63829cc745d3fc7bd5eceba920cf65a8fca998957ec4be4138300c6",
+      "sha256": "a993164149866a3f18e48698dea7931a48278d3d142e0b80cfa59996cf7618eb",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -422,15 +425,16 @@
         "asercion-del-arnes-que-puede-fallar-demostrada-en-rojo",
         "cero-de-campo-se-desambigua",
         "antes-y-despues-de-la-corrida-de-escritura",
-        "lenguaje-cercano-al-dueno"
+        "lenguaje-cercano-al-dueno",
+        "rojo-del-arnes-se-atribuye-y-se-cura"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.39.0",
+      "version": "2.40.0",
       "updated_at": "2026-11-24",
-      "sha256": "782c93c2a4f7610ee31050bd0e82a674cbca7e126e4d642dea05391bf510ab0a",
+      "sha256": "99ac7ba9476d98899bba3c09e4bddbda4e0c5b14f3ca615b5f835abf91742b0a",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -470,15 +474,16 @@
         "detalle-proveedor-no-va-en-el-cuerpo",
         "ampliar-lectura-conserva-tenant-y-login",
         "identificador-declarado-no-es-identidad",
-        "lenguaje-cercano-al-dueno"
+        "lenguaje-cercano-al-dueno",
+        "login-no-es-oraculo-de-correos"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.62.0",
+      "version": "2.63.0",
       "updated_at": "2026-11-24",
-      "sha256": "821288adeeddddbe78b3c48c5e518c298ba61bcbf054c0c7224da6fc8a6eca66",
+      "sha256": "319f0b756f4e336a0340a04e381ce56e26391439745933cc97643d77a169d1e8",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -529,7 +534,8 @@
         "vacio-declarado-convertido-en-instrumento-versionado",
         "tres-estados-de-la-telemetria",
         "residuo-de-despliegue-cuantificado-en-campo",
-        "lenguaje-cercano-al-dueno"
+        "lenguaje-cercano-al-dueno",
+        "residuo-declarado-se-cierra-en-el-mismo-paquete"
       ]
     }
   ],
