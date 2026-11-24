@@ -73,3 +73,20 @@ Lo que sí queda abierto, con dueño y condición exacta: aceptar el salto de `s
 - Ninguna promoción por archivo puede afirmarse sin medir antes si el destino tiene trabajo propio en ese archivo. La medida va en el manifiesto.
 - Un instrumento que reproduce un flujo del cliente tiene que copiar la forma literal del cliente; si el instrumento y el cliente difieren, el rojo es del instrumento hasta que se demuestre lo contrario.
 - «Cero rechazos» nunca se certifica borrando los rechazos legítimos: se certifica que ningún rechazo válido pierde la hora.
+- Ningún blob promocionado puede existir primero en la rama de destino. El portón de alcance lo verifica contra `origin/desarrollo` y cualquier nacida fuera de ahí exige un waiver nominal, no un directorio amplio.
+
+## 9. Publicación y DESPUÉS medido
+
+| Rama | Punta | Cómo viajó | Compuertas |
+|---|---|---|---|
+| `desarrollo` | `7c75bbc5` | origen del cambio (tres commits: `7adf35f2`, `c50eb33e`, `d2a0d524` + contabilidad) | suites del frente 91/91, compuerta local 55/55, gobernanza 46/46 |
+| `develop` | `c0fbb4b9` | replay puntual de 22 rutas sobre `7df8240a` (fast-forward, tag `backup/precierre-cero-rechazos-develop-20261124`) | `ALCANCE DE PROMOCION VALIDO: cero-rechazos-foto-web-bateria-20261124 (22 rutas, origen verificado contra origin/desarrollo)`, `AUTORIZACION PRE-QA VALIDA`, guardián de gobernanza exit 0 |
+| QA desplegado | `c0fbb4b9c50c` | Railway, verificado por `/health.commit` | batería hostil `--espera=despues`: **34/34 controles sobre 15 formas**, sin 5xx, peor escritura 1.804 ms |
+
+El DESPUÉS (`docs/qa/evidence/web-photo-battery-20261124/bateria-qa-despues.json`) cierra exactamente las dos piernas que estaban rotas: la JPEG de 3.197.152 bytes y la PNG de 2.497.157 bytes entran con `status 200`, la hora asentada, la fila marcada `degraded` con `EVIDENCIA_SUPERA_LIMITE` y **los bytes fuera de la fila** (`foto_inline:false`). La clase prohibida sigue costando el rechazo con su código (`video-mp4`/`pdf` → `EVIDENCIA_CLASE_RECHAZADA`; `svg-declarado-imagen`/`texto-plano` → `EVIDENCIA_TIPO_DECLARADO_RECHAZADO`) y el reenvío fiel del navegador recupera la hora en las cuatro (`status 200`, `desprendidas:["identity_photo"]`). El control de mutación del instrumento (`--selftest`) sigue verde: 15 casos con tres mutaciones obligadas al rojo.
+
+## 10. Exposición que esta intervención no cierra, con dueño
+
+El navegador desplegado en `develop` y `main` **no hace el reenvío sin foto**. Medido, no deducido: `retry_without_photo` y `detachEvidence` no existen en ninguna ruta de `apps/web` de `origin/develop` ni de `origin/main`, y sí existen en `origin/desarrollo`. La brecha no es de dos líneas: `apps/web/lib/hrOfflineMarking.ts` (502 líneas) no existe en esas ramas y `marcacion/page.tsx` difiere en 561 líneas añadidas / 141 quitadas.
+
+Consecuencia honesta: el fix de servidor quita de en medio la causa real del campo (la foto grande), y por eso la hora ya no se pierde por tamaño en ninguna rama en cuanto suba. Pero si el rechazo lo provoca una clase o un tipo prohibido, el cliente desplegado todavía no tiene cómo recuperarla. Eso viaja como frentes separados —`apexos-frontend` con su propio brief, su certificación en navegador y su manifiesto de 2 rutas de `apps/web`—, no como un añadido a este portón, porque ampliar el alcance con el argumento de "aprovechar el viaje" es exactamente el patrón que rompió la plataforma.
