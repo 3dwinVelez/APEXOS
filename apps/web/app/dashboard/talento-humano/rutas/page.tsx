@@ -51,6 +51,10 @@ const ROUTES_LIST_LIMIT = 500;
 // es solo el respaldo del que no tiene el evento; a 5s multiplicaba las lecturas pesadas de malla y
 // empujaba la transaccion contra el statement_timeout del servidor.
 const ROUTES_BACKSTOP_POLL_MS = 30_000;
+// Cada evidencia precargada baja el binario completo del archivo. Sin tope, un horario con
+// decenas de eventos lanza todas las descargas a la vez y la ultima llega despues del corte
+// de 20 s del cliente, asi que la pantalla se queda sin fotos teniendo el servidor la data.
+const EVIDENCE_FETCH_CONCURRENCY = 4;
 const ROUTE_BUSY_ERROR_CODE = "ROUTE_ASSIGNMENT_BUSY";
 type MonitorSnapshot = { at: number; failed: boolean };
 
@@ -479,7 +483,7 @@ export default function RoutesPlanningPage() {
   const [query, setQuery] = useState("");
   const [kindFilter, setKindFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState(initialDate);
   const [loadedEvidence, setLoadedEvidence] = useState<Record<string, MonitorEvidence[]>>({});
   const [loadingEvidence, setLoadingEvidence] = useState<Record<string, boolean>>({});
   const [evidenceErrors, setEvidenceErrors] = useState<Record<string, string>>({});
@@ -503,20 +507,21 @@ export default function RoutesPlanningPage() {
   const lightboxDialogRef = useRef<HTMLDivElement | null>(null);
 
   const loadRoutes = useCallback(async () => {
-    let latest: TimeRoute[] | null = null;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const data = await api<TimeRoute[]>(`/api/v1/hr/routes?limit=${ROUTES_LIST_LIMIT}`, { cache: "no-store" }).catch(() => null);
+    // El dia se baja del servidor: antes se pedian 500 horarios de todo el historial para
+    // filtrarlos en el navegador, y cada apertura pagaba ese recorrido.
+    const target = `/api/v1/hr/routes?limit=${ROUTES_LIST_LIMIT}${dateFilter ? `&date=${encodeURIComponent(dateFilter)}` : ""}`;
+    // El reintento ciego de tres pasadas estaba atado a la lista vacia. Con el dia fijado una
+    // lista vacia es la respuesta correcta de un dia sin horarios, no un fallo que reintentar:
+    // solo se vuelve a intentar cuando la peticion no devolvio ninguna lista.
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const data = await api<TimeRoute[]>(target, { cache: "no-store" }).catch(() => null);
       if (Array.isArray(data)) {
-        latest = data;
-        if (data.length) {
-          setRoutes(data);
-          return;
-        }
+        setRoutes(data);
+        return;
       }
-      if (attempt < 2) await new Promise((resolve) => window.setTimeout(resolve, 500));
+      if (attempt === 0) await new Promise((resolve) => window.setTimeout(resolve, 500));
     }
-    if (latest) setRoutes(latest);
-  }, []);
+  }, [dateFilter]);
 
   const loadReferenceData = useCallback(async () => {
     const [employeeData, vehicleData, masterData] = await Promise.all([
@@ -572,7 +577,7 @@ export default function RoutesPlanningPage() {
 
   const loadEventSummaries = useCallback(async () => {
     try {
-      const data = await api<RouteEventSummaryResponse>("/api/v1/hr/routes/event-summaries", { cache: "no-store" });
+      const data = await api<RouteEventSummaryResponse>(`/api/v1/hr/routes/event-summaries${dateFilter ? `?date=${encodeURIComponent(dateFilter)}` : ""}`, { cache: "no-store" });
       setEventSummaries(data.routes || []);
       setSummariesTruncation(data.truncation || null);
       setSummariesSnapshot({ at: Date.now(), failed: false });
@@ -580,13 +585,18 @@ export default function RoutesPlanningPage() {
       // Preserve the latest valid counters until the next short refresh, con su hora visible.
       setSummariesSnapshot((current) => ({ at: current.at, failed: true }));
     }
-  }, []);
+  }, [dateFilter]);
 
   useEffect(() => {
-    void loadRoutes();
     void loadReferenceData();
+  }, [loadReferenceData]);
+
+  // El dia fijado es la unidad de refresco: cambiarlo vuelve a pedir listado y resumen, pero no
+  // los maestros, que no dependen de la fecha.
+  useEffect(() => {
+    void loadRoutes();
     void loadEventSummaries();
-  }, [loadEventSummaries, loadReferenceData, loadRoutes]);
+  }, [loadEventSummaries, loadRoutes]);
 
   useEffect(() => {
     const refreshVisible = () => {
@@ -664,6 +674,20 @@ export default function RoutesPlanningPage() {
       setLoadingEvidence((current) => ({ ...current, [event.id]: false }));
     }
   }, [loadingEvidence]);
+
+  const evidenceQueue = useRef({ running: 0, waiting: [] as Array<() => void> });
+  const queueTimelineEvidence = useCallback((event: TimelineEvent) => {
+    const gate = evidenceQueue.current;
+    const start = () => {
+      gate.running += 1;
+      void loadTimelineEvidence(event).finally(() => {
+        gate.running -= 1;
+        gate.waiting.shift()?.();
+      });
+    };
+    if (gate.running < EVIDENCE_FETCH_CONCURRENCY) start();
+    else gate.waiting.push(start);
+  }, [loadTimelineEvidence]);
 
   async function openCreateModal(route?: RouteMonitor) {
     loadReferenceData();
@@ -1004,10 +1028,10 @@ export default function RoutesPlanningPage() {
     for (const event of visibleTimeline) {
       const summary = event.evidence?.[0];
       if (summary?.available && summary.id != null && !loadedEvidence[event.id] && !loadingEvidence[event.id] && !evidenceErrors[event.id]) {
-        void loadTimelineEvidence(event);
+        queueTimelineEvidence(event);
       }
     }
-  }, [evidenceErrors, loadTimelineEvidence, loadedEvidence, loadingEvidence, selectedRoute, visibleTimeline]);
+  }, [evidenceErrors, loadedEvidence, loadingEvidence, queueTimelineEvidence, selectedRoute, visibleTimeline]);
 
   const lightboxItems = useMemo(() => visibleTimeline.flatMap((event) => {
     const items = (loadedEvidence[event.id]?.length ? loadedEvidence[event.id] : event.evidence || []) as MonitorEvidence[];
@@ -1219,7 +1243,7 @@ export default function RoutesPlanningPage() {
             </tbody>
           </table>
         </div>
-        {!filteredRoutes.length ? <div className="p-10 text-center"><Filter className="mx-auto text-content-subtle" size={28} /><p className="mt-3 text-sm font-semibold">No hay horarios con estos filtros</p><p className="mt-1 text-sm text-content-muted">{onMallasPath ? "Revisa los filtros o crea una jornada en Programación." : "Limpia los filtros o crea una nueva asignacion."}</p></div> : null}
+        {!filteredRoutes.length ? <div className="p-10 text-center"><Filter className="mx-auto text-content-subtle" size={28} /><p className="mt-3 text-sm font-semibold">No hay horarios con estos filtros</p><p className="mt-1 text-sm text-content-muted">{dateFilter ? `La pantalla esta fijada al ${dateFilter}. Elige otra fecha o quita el filtro para ver todo el historial.` : {onMallasPath ? "Revisa los filtros o crea una jornada en Programación." : "Limpia los filtros o crea una nueva asignacion."}}</p></div> : null}
       </section>
 
       {modal ? (

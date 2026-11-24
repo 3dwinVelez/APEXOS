@@ -1,0 +1,37 @@
+{
+  "instrumento": "node --test (runner nativo de Node 22), corrido archivo por archivo",
+  "ejecutado_en": "2026-11-24T15:51:24Z",
+  "rama": "desarrollo",
+  "motivo": "El CHANGELOG y tres SKILL.md del paquete publicaron «suite de auth 50/50» y «--selftest 15/15». Recontado honesto: 44 pruebas en siete archivos y 16 controles. Esta es la evidencia que sustituye esa cifra; los textos de los controles se corrigieron con bump parche en la misma intervención (apexos-backend 2.29.1, apexos-qa 2.108.1, apexos-performance 2.25.1).",
+  "comando_base": "node --test --test-force-exit apps/api/test/<archivo>.test.js",
+  "bandera": "AUTH_STATUS_INTEGRATION=1 habilita la sexta prueba de authorization-status-codes.test.js, que omite sin ella por diseño (levantar el servidor real)",
+  "archivos": [
+    { "archivo": "apps/api/test/auth-session-hardening.test.js", "sin_bandera": { "pruebas": 11, "pasan": 11, "fallan": 0, "omitidas": 0 }, "con_bandera": { "pruebas": 11, "pasan": 11, "fallan": 0, "omitidas": 0 } },
+    { "archivo": "apps/api/test/auth-webauthn-login.test.js", "sin_bandera": { "pruebas": 7, "pasan": 7, "fallan": 0, "omitidas": 0 }, "con_bandera": { "pruebas": 7, "pasan": 7, "fallan": 0, "omitidas": 0 } },
+    { "archivo": "apps/api/test/authorization-status-codes.test.js", "sin_bandera": { "pruebas": 6, "pasan": 5, "fallan": 0, "omitidas": 1 }, "con_bandera": { "pruebas": 6, "pasan": 6, "fallan": 0, "omitidas": 0 } },
+    { "archivo": "apps/api/test/auth-me-single-statement.test.js", "sin_bandera": { "pruebas": 6, "pasan": 6, "fallan": 0, "omitidas": 0 }, "con_bandera": { "pruebas": 6, "pasan": 6, "fallan": 0, "omitidas": 0 } },
+    { "archivo": "apps/api/test/authorization-observe.test.js", "sin_bandera": { "pruebas": 6, "pasan": 6, "fallan": 0, "omitidas": 0 }, "con_bandera": { "pruebas": 6, "pasan": 6, "fallan": 0, "omitidas": 0 } },
+    { "archivo": "apps/api/test/security-authorization-revocation.test.js", "sin_bandera": { "pruebas": 5, "pasan": 5, "fallan": 0, "omitidas": 0 }, "con_bandera": { "pruebas": 5, "pasan": 5, "fallan": 0, "omitidas": 0 } },
+    { "archivo": "apps/api/test/supabase-auth-mirror.test.js", "sin_bandera": { "pruebas": 3, "pasan": 3, "fallan": 0, "omitidas": 0 }, "con_bandera": { "pruebas": 3, "pasan": 3, "fallan": 0, "omitidas": 0 } }
+  ],
+  "total_camino_sesion": {
+    "sin_bandera": { "pruebas": 44, "pasan": 43, "fallan": 0, "omitidas": 1 },
+    "con_bandera": { "pruebas": 44, "pasan": 44, "fallan": 0, "omitidas": 0 },
+    "cifra_publicada_corregida": "50/50 era falso: el total medido es 44"
+  },
+  "guard": {
+    "comando": "node scripts/security/auth-session-sql-guard.js --selftest",
+    "salida": "[guard:selftest] 16/16 controles",
+    "cifra_publicada_corregida": "15/15 era falso: el guard reporta 16 controles con sus negativos"
+  },
+  "suite_api_completa": {
+    "pruebas": 1414,
+    "pasan": 1410,
+    "fallan": 1,
+    "omitidas": 3,
+    "rojo_unico": "apps/api/test/hr-face-identity.test.js",
+    "causa": "Cannot find module '@vladmandic/human' (paquete declarado en apps/api/package.json 3.3.6, no instalado en este puesto)",
+    "atribucion": "corrido aislado 14 pruebas / 13 pasan / 1 falla; ajeno al diff de sesión"
+  },
+  "veredicto": "CAMINO_SESION_44_44_CON_BANDERA Y 43_1_OMITIDA SIN ELLA; GUARD 16_16; API 1_ROJO AMBIENTAL ATRIBUIDO"
+}

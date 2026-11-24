@@ -1,0 +1,89 @@
+{
+  "instrumento": "scripts/security/auth-email-collision-census.js",
+  "ejecutado_en": "2026-11-24T15:32:13.020Z",
+  "ambiente": {
+    "env_file": "qa.env",
+    "etiqueta": "qa",
+    "destino": {
+      "host": "aws-1-us-east-2.pooler.supabase.com",
+      "port": "5432",
+      "base_de_datos": "postgres",
+      "pooler": true,
+      "sslmode": "sin-declarar"
+    }
+  },
+  "transaccion": "BEGIN READ ONLY + PGOPTIONS default_transaction_read_only=on + statement_timeout 15s + lock_timeout 500ms",
+  "escrituras": 0,
+  "medicion": {
+    "empresas": 27,
+    "usuarios": 550,
+    "correos_distintos": 541,
+    "muestras_anonimas": [
+      {
+        "empresas": 4,
+        "correo_hash": "2eadd0fd390f"
+      },
+      {
+        "empresas": 2,
+        "correo_hash": "2aad1ee53919"
+      },
+      {
+        "empresas": 2,
+        "correo_hash": "56a53f564d60"
+      },
+      {
+        "empresas": 2,
+        "correo_hash": "8ddd240a0d02"
+      },
+      {
+        "empresas": 2,
+        "correo_hash": "3b32aeca8ccd"
+      }
+    ],
+    "usuarios_inactivos": 419,
+    "muestras_activas_anonimas": [
+      {
+        "activos": 4,
+        "empresas": 4,
+        "correo_hash": "2eadd0fd390f"
+      },
+      {
+        "activos": 2,
+        "empresas": 2,
+        "correo_hash": "2aad1ee53919"
+      },
+      {
+        "activos": 2,
+        "empresas": 2,
+        "correo_hash": "56a53f564d60"
+      },
+      {
+        "activos": 2,
+        "empresas": 2,
+        "correo_hash": "8ddd240a0d02"
+      },
+      {
+        "activos": 2,
+        "empresas": 2,
+        "correo_hash": "3b32aeca8ccd"
+      },
+      {
+        "activos": 2,
+        "empresas": 2,
+        "correo_hash": "9a0ab98e8224"
+      },
+      {
+        "activos": 2,
+        "empresas": 2,
+        "correo_hash": "972212694503"
+      }
+    ],
+    "correos_en_varias_empresas": 7,
+    "correos_en_varias_empresas_activos": 7,
+    "empresas_del_correo_mas_compartido": 4,
+    "empresas_del_correo_activo_mas_compartido": 4,
+    "correos_repetidos_dentro_de_la_misma_empresa": 0
+  },
+  "veredicto": "COLISION_VIVA",
+  "anonimizacion": "solo conteos y left(md5(correo),12); la consulta no devuelve correos ni ids"
+}

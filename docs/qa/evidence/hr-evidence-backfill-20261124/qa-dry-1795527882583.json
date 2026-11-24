@@ -1,0 +1,67 @@
+{
+  "change_id": "hr-evidence-backfill-c1",
+  "environment": "qa",
+  "project_ref": "jbirkghkekuifgfsgquq",
+  "mode": "dry",
+  "bytes_inline_retirados": false,
+  "bucket": "operational-evidence",
+  "ramas": [
+    "extra",
+    "identity"
+  ],
+  "tenant": "todos",
+  "despues_de_id": 0,
+  "limite": 5,
+  "started_at": "2026-11-24T13:44:39.517Z",
+  "reglas": [
+    "la subida solo se confirma re-descargando el objeto y comparando SHA-256",
+    "el sondeo de candidatas des-tosta en el servidor pero no transfiere el binario: lo que mato las corridas anteriores fue el viaje por el pooler",
+    "la referencia y la bandera de rescate se escriben en la misma sentencia que retira el base64",
+    "el sondeo de candidatas nunca lee el binario: se baja de a una fila al subir"
+  ],
+  "conteo": {
+    "candidatas": 10,
+    "sin_bytes": 6,
+    "procesadas": 0,
+    "subidas_verificadas": 0,
+    "bytes_inline": 42102
+  },
+  "omitidas": {
+    "binario_no_decodificable": 0,
+    "objeto_no_releible": 0,
+    "objeto_no_coincide": 0,
+    "subida_rechazada": 0,
+    "forma_no_objeto": 0
+  },
+  "omitidas_detalle": [],
+  "muestra_verificada": [],
+  "piloto_ids": [],
+  "tablas": {
+    "TimePunch": {
+      "bytes_antes": 2203648,
+      "bytes_despues": 2203648,
+      "delta_bytes": 0,
+      "nota": "dry-run: la tabla no cambia"
+    },
+    "extra": {
+      "rama": "extra",
+      "candidatas": 5,
+      "con_bytes": 0,
+      "subidas": 0,
+      "verificadas": 0,
+      "bytes_inline": 0,
+      "mas_grande_despues": 0
+    },
+    "identity": {
+      "rama": "identity",
+      "candidatas": 5,
+      "con_bytes": 4,
+      "subidas": 0,
+      "verificadas": 0,
+      "bytes_inline": 42102,
+      "mas_grande_despues": 0
+    }
+  },
+  "terminado_en": "2026-11-24T13:44:42.582Z",
+  "duracion_ms": 3065
+}

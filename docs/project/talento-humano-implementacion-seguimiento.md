@@ -65,8 +65,33 @@ Este documento lleva el control de avance por fases. La ruta completa no autoriz
 - [x] Rechazar vigencias superpuestas por codigo, empresa y pais.
 - [ ] Integrar resolucion completa de conceptos en el procesamiento real de jornadas.
 
+## Lectura del monitor de marcaciones (estado 2026-11-24)
+
+El peso del monitor ya no está en el binario: medido en Producción, las tres lecturas del panel
+responden entre 0 y 7 KB. Lo que cuesta es el número de viajes al pooler por petición.
+
+- `/hr/routes/event-summaries` acota por la fecha que la pantalla tiene seleccionada
+  (`boundedReportRange`). Sin fecha sigue siendo válido —devuelve las 100 rutas más recientes de
+  todo el historial y lo declara en `truncation.hint`— pero es camino de referencia, no del usuario.
+- `TimePunch` se agrega una sola vez por `route_id, type`; el total y las salidas se derivan en
+  memoria. Antes eran dos sentencias para el mismo escaneo.
+- La proyección de evidencia solo reescribe la columna cuando pesa más de 4096 bytes
+  (`guardedEvidenceProjection`); las filas ligeras se devuelven tal cual. Una fila con
+  `base64: ""` cuenta como cero evidencias, no como una.
+- El binario se pide por id a `/hr/monitor-evidence/:source/:id`. En Producción quedan 256 MB de
+  TOAST en 2.679 filas (170 `metadata` y 58 `extra_evidence` por encima de 4 KB): se retiran con la
+  Fase C.1 (`scripts/hr-evidence-backfill-storage.js`), que exige autorización del dueño.
+- El piso también estaba en un handler, no en la base: `/auth/me` releía usuario, rol, permisos y
+  tenant en cuatro sentencias cuando la única sentencia del snapshot de autorización ya los trae
+  para el middleware. Hoy comparten `readAuthorizationSnapshot`
+  (`apps/api/src/security/authorizationState.js`), y esa lectura es la que abre cada pantalla.
+- No hay índice en `TimePunch.route_id` y no hace falta: el `EXPLAIN` del agregado lee 333 buffers
+  con coste 358. Añadir índices sería atacar el problema equivocado.
+- La pantalla de rutas abre fijada en el día de hoy; otras fechas se piden bajo demanda.
+
 ## Ultima actualizacion
 
-- Fecha: 2026-09-17
+- Fecha: 2026-11-24
 - Rama de trabajo: `desarrollo`
-- Nota: no se ha ejecutado certificacion end-to-end de promocion.
+- Nota: no se ha ejecutado certificacion end-to-end de promocion. El `DESPUES` del presupuesto de
+  reloj queda pendiente de desplegar; ver `docs/briefs/2026-11-24-monitor-marcaciones-latencia.md`.
