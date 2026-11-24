@@ -33,12 +33,15 @@ que cada `delete` este efectivamente borrado, y que cada `edit` aplique **exacta
 | autocontrol del arnes de campo | `hr-web-selfie-field.js --selftest` en este arbol | **10/10, cuatro rojos obligatorios** (`selftest-instrumento.txt`) |
 | QA en campo (DESPUES) | `hr-web-selfie-field.js` contra `https://qa.apexos.com.co` | **13/13**, ancla al API servido `6b42b365a64e`; las cuatro piernas HTTP 200 asentadas, tres con `evidence_status:available` y `verificacion:photo_only`, el reenvio sin foto con `not_verified`; cero `SELFIE_INVALIDA` |
 | Produccion antes del despliegue | mismo arnes con `--espera=defecto` sobre lo que Produccion sirve hoy | **10/10 con el defecto reproducido**, ancla al API servido `e68eed4c63f4`: las dos etiquetas mentirosas devuelven HTTP 400 `SELFIE_INVALIDA` y **no escriben fila** (`foto_guardada:false`). Las otras dos piernas se registran como informativas porque el operario efimero no tiene secuencia previa ni selfie: 409 `MARCACION_FUERA_DE_SECUENCIA` y 400 `SELFIE_REQUERIDA`, codigos que no son de formato |
+| Produccion despues del despliegue | mismo arnes con `--espera=arreglo`, ancla leida del propio `/health` | **13/13 APROBADO**, ancla al API servido `45809d87d61d`: las cuatro piernas devuelven **HTTP 200 con la hora asentada**, cero respuestas con codigo de la compuerta alterna (`codigos:[]`), las tres fotos reales quedan `evidence_status:available`, el reenvio sin foto asienta la hora con `verificacion:not_verified` y su novedad `EVIDENCIA_CLASE_RECHAZADA`, el dia se lee con las cuatro piernas (4 filas de 4 esperadas), la escritura mas lenta costo **6.553 ms** dentro del presupuesto de 30.000 y la cuenta efimera quedo retirada (login **401** despues) (`produccion-despues.json`) |
 
-Las dos corridas de campo usan el mismo arnes versionado: el `script_sha256` que registran
-`campo-qa.json` y `produccion-antes.json` (`13a70fc92b4f...`) es el sha256 del archivo que esta en el commit
+Las tres corridas de campo usan el mismo arnes versionado: el `script_sha256` que registran
+`campo-qa.json`, `produccion-antes.json` y `produccion-despues.json` (`13a70fc92b4f...`) es el sha256 del archivo que esta en el commit
 certificado, medido en `instrumentos-en-candidato.txt`. Lo unico que cambia entre ellas es el ambiente, y el
 arnes ancla cada corrida al commit que ese ambiente sirve. La diferencia no es interpretacion: HTTP 400 con
-cero filas escritas en Produccion frente a HTTP 200 con la evidencia colgada en QA.
+cero filas escritas en Produccion antes del despliegue, frente a HTTP 200 con la evidencia colgada despues
+en el mismo ambiente. El `--fix-commit` del ANTES fue `52a8d9a7` (el certificado en develop) y del DESPUES
+`26dbc258` (el certificado en main), y el arnes verifico por ancestralidad que el binario servido lo contiene.
 
 ## Rojos que no son de este frente, declarados con su dueno
 
@@ -73,9 +76,11 @@ cero filas escritas en Produccion frente a HTTP 200 con la evidencia colgada en 
 
 ## Pendientes con dueno
 
-1. **Duena — Produccion**: confirmar el despliegue del commit promovido por `/health` y, una vez servido,
-   correr el DESPUES en campo con `hr-web-selfie-field.js --espera=arreglo`. Sin esa corrida, la promesa de
-   que no habra rechazos queda certificada en el codigo que se despliega y en el ambiente QA que ya lo sirve,
-   pero no todavia en Produccion.
+1. **CERRADO el 2026-11-24 (duena — Produccion)**: `/health` del API de Produccion devolvio
+   `commit 45809d87d61d` y sobre ese binario se corrio el DESPUES con
+   `hr-web-selfie-field.js --env-file=config/production.env --espera=arreglo --fix-commit=26dbc258`:
+   **13/13**, cero `SELFIE_INVALIDA`, las cuatro piernas asentadas y la cuenta efimera retirada. La
+   promesa de que no habra rechazos por formato de foto ya no esta solo en el codigo desplegado ni en
+   QA: esta medida en Produccion (`produccion-despues.json`).
 2. **Backend con QA**: los dos rojos pre-existentes de arriba, cada uno en su propio corte.
 3. **Base de datos en la nube**: la cadena de migraciones de main que no arranca desde cero.
