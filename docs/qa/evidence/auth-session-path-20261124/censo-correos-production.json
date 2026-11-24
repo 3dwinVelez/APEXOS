@@ -1,0 +1,32 @@
+{
+  "instrumento": "scripts/security/auth-email-collision-census.js",
+  "ejecutado_en": "2026-11-24T15:32:14.343Z",
+  "ambiente": {
+    "env_file": "production.env",
+    "etiqueta": "production",
+    "destino": {
+      "host": "aws-1-sa-east-1.pooler.supabase.com",
+      "port": "5432",
+      "base_de_datos": "postgres",
+      "pooler": true,
+      "sslmode": "require"
+    }
+  },
+  "transaccion": "BEGIN READ ONLY + PGOPTIONS default_transaction_read_only=on + statement_timeout 15s + lock_timeout 500ms",
+  "escrituras": 0,
+  "medicion": {
+    "empresas": 9,
+    "usuarios": 211,
+    "correos_distintos": 211,
+    "muestras_anonimas": [],
+    "usuarios_inactivos": 30,
+    "muestras_activas_anonimas": [],
+    "correos_en_varias_empresas": 0,
+    "correos_en_varias_empresas_activos": 0,
+    "empresas_del_correo_mas_compartido": 1,
+    "empresas_del_correo_activo_mas_compartido": 1,
+    "correos_repetidos_dentro_de_la_misma_empresa": 0
+  },
+  "veredicto": "SIN_COLISION",
+  "anonimizacion": "solo conteos y left(md5(correo),12); la consulta no devuelve correos ni ids"
+}

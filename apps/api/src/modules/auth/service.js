@@ -126,15 +126,27 @@ async function registerTenant(input, fastify) {
 async function login(input, fastify, request = {}) {
   const email = String(input.email || "").toLowerCase();
   assertLoginAllowed(email, request.ip);
-  const user = await prisma.user.findFirst({
-    where: { email },
-    include: { role: { include: { permissions: true } } }
-  });
 
-  // bcrypt corre siempre y la respuesta es la misma para correo inexistente,
-  // clave incorrecta y usuario desactivado: el login no puede ser un oraculo.
-  const matches = await bcrypt.compare(String(input.password || ""), user?.password || DUMMY_PASSWORD_HASH);
-  if (!user || !matches || !user.active) {
+  // El indice unico de `User` es (tenant_id, email), asi que el mismo correo puede vivir en varias
+  // empresas y en QA vive (7 correos medidos el 2026-11-24, uno de ellos activo en 4). `findFirst`
+  // escogia una fila al azar: metia al usuario en la empresa equivocada o le negaba el acceso a quien
+  // si estaba activo en otra. Todas las filas del correo salen de UNA sentencia.
+  const candidatos = await authorizationState.readAuthorizationSnapshotsByEmail(email);
+
+  // bcrypt corre siempre, y contra cada fila del correo en paralelo para que el tiempo no delate cual
+  // coincidio. Sin `DUMMY_PASSWORD_HASH` un correo inexistente respondia mas rapido que uno real y el
+  // login se volvia un oraculo de correos.
+  const hashes = candidatos.length ? candidatos.map((c) => c.user.password) : [DUMMY_PASSWORD_HASH];
+  const resultados = await Promise.all(hashes.map((hash) => bcrypt.compare(String(input.password || ""), hash)));
+  const coinciden = candidatos.filter((c, i) => resultados[i]);
+  const admitidas = coinciden.filter((c) => c.user.active && c.tenant?.active);
+
+  // Todo lo demas responde el MISMO 401 con el MISMO trabajo: ni la clave correcta de una cuenta
+  // inactiva, ni un empate entre empresas, le dicen al que llama que ese correo existe.
+  if (admitidas.length !== 1) {
+    if (admitidas.length > 1) {
+      authorizationState.noteAuthEvent("login_correo_ambiguo", "LOGIN_CORREO_AMBIGUO", null, { cuentas: admitidas.length });
+    }
     registerLoginFailure(email, request.ip);
     const err = new Error("No fue posible iniciar sesion con esas credenciales.");
     err.statusCode = 401;
@@ -142,19 +154,20 @@ async function login(input, fastify, request = {}) {
   }
 
   registerLoginSuccess(email, request.ip);
-  return startSession(user);
+  return startSession(admitidas[0].user, admitidas[0].tenant);
 }
 
-// Sesion de un usuario ya autenticado (clave o huella): misma respuesta en ambos casos.
-async function startSession(user) {
+// Sesion de un usuario ya autenticado (clave o huella): misma respuesta en ambos casos. `tenant`
+// llega de la misma sentencia que trajó al usuario; pedirlo aparte era un viaje mas al pooler.
+async function startSession(user, tenant = null) {
   await prisma.user.update({ where: { id: user.id }, data: { last_login: new Date() } });
-  const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
-  const session = await authorizationState.createSession(user, tenant);
-  const claims = { id: user.id, tenant_id: user.tenant_id, role: user.role, sid: session.id, uv: user.authorization_version, tv: tenant.authorization_version };
+  const company = tenant || await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
+  const session = await authorizationState.createSession(user, company);
+  const claims = { id: user.id, tenant_id: user.tenant_id, role: user.role, sid: session.id, uv: user.authorization_version, tv: company.authorization_version };
   const token = jwt.sign(claims, { expiresIn: "8h" });
   const refresh = jwt.sign({ ...claims, role: undefined, type: "refresh" }, { expiresIn: "30d" });
 
-  return { token, refresh, tenant: publicTenant(tenant), user: publicUser(user) };
+  return { token, refresh, tenant: publicTenant(company), user: publicUser(user) };
 }
 
 // ---------------------------------------------------------------- ingreso con huella
@@ -186,10 +199,10 @@ async function fingerprintLogin(input = {}, fastify, request = {}) {
       where: { tenant_id: tenantId, credential_id: String(input.credential_id || ""), active: true }
     });
     const verified = personalWebauthn.verifyLoginAssertion({ credential, userId, input, ...config });
-    const user = await prisma.user.findFirst({
-      where: { id: userId, tenant_id: tenantId },
-      include: { role: { include: { permissions: true } } }
-    });
+    // El reto ya trae la empresa firmada por el servidor: se contrasta contra la fila leida, como
+    // hacia el `where { id, tenant_id }`, pero en la misma sentencia que da rol, permisos y empresa.
+    const perfil = await authorizationState.readAuthorizationSnapshot(userId);
+    const user = perfil.user && perfil.user.tenant_id === tenantId ? perfil.user : null;
     if (!user || !user.active) {
       const err = new Error("No fue posible entrar con tu huella. Entra con tu correo y clave.");
       err.statusCode = 401;
@@ -198,7 +211,7 @@ async function fingerprintLogin(input = {}, fastify, request = {}) {
     }
     await prisma.hrWebauthnCredential.update({ where: { id: credential.id }, data: { sign_count: verified.sign_count, last_used_at: new Date() } });
     registerLoginSuccess(guardKey, request.ip);
-    return startSession(user);
+    return startSession(user, perfil.tenant);
   } catch (error) {
     if (error.statusCode === 401) registerLoginFailure(guardKey, request.ip);
     throw error;
@@ -229,15 +242,10 @@ async function refresh(input, fastify) {
     throw err;
   }
   const authorization = await authorizationState.validateAuthorization(payload);
-  const user = await prisma.user.findUnique({
-    where: { id: payload.id },
-    include: { role: { include: { permissions: true } } }
-  });
-  if (!user || !user.active) {
-    const err = new Error("Usuario no disponible");
-    err.statusCode = 401;
-    throw err;
-  }
+  // `validateAuthorization` ya leyo usuario, rol, permisos y tenant en la sentencia del snapshot y ya
+  // rechazo al inexistente, al inactivo y a la empresa cerrada (USER_REVOKED / TENANT_REVOKED /
+  // AUTHORIZATION_STATE_MISSING se rechazan siempre, no solo con enforcement). Volverlos a traer con
+  // `include` eran tres viajes mas al pooler por datos ya resueltos arriba.
 
   // Un refresh viejo solo se puede distinguir de uno revocado por logout si se
   // mira por que se revoco la sesion. En modo observar se registra y se sigue;
@@ -253,9 +261,11 @@ async function refresh(input, fastify) {
     );
   }
 
+  // Solo la identidad que necesita `rotateSession`: el resto del perfil ya lo trajo el snapshot.
+  const titular = { id: authorization.id, tenant_id: authorization.tenant_id };
   const claims = {
-    id: user.id,
-    tenant_id: user.tenant_id,
+    id: authorization.id,
+    tenant_id: authorization.tenant_id,
     uv: authorization.authorization_user_version,
     tv: authorization.authorization_tenant_version
   };
@@ -266,14 +276,14 @@ async function refresh(input, fastify) {
   // dias; lo que se mide es el intento, no una sesion nueva.
   if (sessionRevoked) {
     return {
-      token: jwt.sign({ ...claims, role: user.role, sid: payload.sid }, { expiresIn: "8h" }),
+      token: jwt.sign({ ...claims, role: authorization.role, sid: payload.sid }, { expiresIn: "8h" }),
       refresh: input.refresh
     };
   }
 
-  const rotated = await authorizationState.rotateSession(user, authorization, payload.sid);
+  const rotated = await authorizationState.rotateSession(titular, authorization, payload.sid);
   return {
-    token: jwt.sign({ ...claims, role: user.role, sid: rotated.id }, { expiresIn: "8h" }),
+    token: jwt.sign({ ...claims, role: authorization.role, sid: rotated.id }, { expiresIn: "8h" }),
     refresh: jwt.sign({ ...claims, sid: rotated.id, type: "refresh", jti: randomUUID() }, { expiresIn: "30d" })
   };
 }

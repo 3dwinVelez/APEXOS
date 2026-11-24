@@ -2,7 +2,10 @@
 
 - **ID**: `2026-11-24-monitor-marcaciones-latencia`
 - **Fecha**: `2026-11-24`
-- **Rama activa**: `desarrollo` (HEAD `8bb324c0`, sincronizado con `origin/desarrollo`)
+- **Rama activa**: `desarrollo` (la primera ronda cerró en `8bb324c0`/`134816de`; §13 se escribe sobre el
+  tip de `origin/desarrollo` del 2026-11-24)
+- **Prompt de la segunda ronda** (§13): "procede con lo que hace falta y garantizame que todo quede
+  implementado bajo las mejores practicas recomendables y lo que buscamos con la herramienta"
 - **Prompt crudo**: "lo que necesitamos reparar el la demora en la carga de los datos es bastante demorado, los horarios en si cargan su proprio peso lo que debemos identificar es como mejorar la experiencia de usuario, adicionalmente mejorar esas consultas frente a la base de datos que no podemos permitirnos que se persivan lentas.. para el caso de los horarios no se se me ocurre predefinir un filtro fijado de cada dia asi no tarda en cargar los datos del mismo dia y el usuario busca bajo demanda otra fecha puede ser una ayuda no se que tan funcional sea, identifica cual es el real problema y corrigelo de raiz monta un plan de intervencion completa para corregir todo lo que pueda estar fallando en cuanto a conexiones o consultas lentas entre las pantallas y la base o el api propia de apexos"
 
 ## 1. Veredicto de diagnóstico (medido, no inferido)
@@ -106,10 +109,11 @@ del servicio alcanzable desde otro camino; (c) la proyección queda **idéntica*
 `User.id` y `role_id` son `Int`, `tenant_id` es `String` y `preferences`/`active_modules` son `Json`,
 así que `to_jsonb` devuelve lo mismo que Prisma y no hay `BigInt` que rompa la serialización.
 
-Queda declarado, sin tocar: `refresh()` (`apps/api/src/modules/auth/service.js:231-235`) repite el
-mismo `include` inmediatamente después de `validateAuthorization`. Es la misma corrección, pero
-refresca una vez por sesión, no por pantalla; meterlo acá habría ampliado el diff del camino de
-sesión sin medición que lo pida.
+Quedaba declarado, sin tocar en T2: `refresh()` (`apps/api/src/modules/auth/service.js`) repetía el
+mismo `include` inmediatamente después de `validateAuthorization`, y `login()` resolvía el correo con
+un `findFirst` sobre un índice que no es global. **Se cerró el mismo día en una segunda ronda de esta
+intervención — ver §13—**, después de verificar contra el tip que el cliente renueva la sesión al
+abrir (no una vez por sesión, como aquí se supuso) y con el censo de correos ya medido.
 
 ### T3 — Sacar el binario de la base (pide autorización de escritura en la nube)
 
@@ -164,6 +168,32 @@ entregadas. Mientras tanto el acceso operativo correcto es `www.apexos.com.co`.
 | `M` | `agents/**` y `agents/registry.json` | regenerados por `npm run agents:sync` |
 | `M` | `agents/CHANGELOG.md` | entrada de la intervención |
 
+### Alcance de la segunda ronda (§13, camino de sesión)
+
+| Estado | Archivo | Qué cambia |
+|---|---|---|
+| `M` | `apps/api/src/security/authorizationState.js` | snapshot dividido en `..._BODY` + `AUTHORIZATION_SNAPSHOT`; nace `readAuthorizationSnapshotsByEmail`; se exporta `noteAuthEvent` |
+| `M` | `apps/api/src/modules/auth/service.js` | `login()` decide sobre el conjunto de filas del correo (bcrypt paralelo, 401 uniforme, cero sesión ambigua), `refresh()` y `fingerprintLogin()` resuelven el perfil en la sentencia del snapshot |
+| `M` | `apps/api/test/auth-session-hardening.test.js` | fixture multicuenta + 4 controles nuevos: 1 lectura por login, empate → mismo 401 sin crear sesión con métrica, inactiva no tapa la activa, `refresh` en 1 sentencia con claim `role` intacto |
+| `M` | `apps/api/test/auth-webauthn-login.test.js` | mock del snapshot + contadores: 1 lectura de perfil, 0 `include`, 0 lectura suelta de empresa |
+| `M` | `apps/api/test/authorization-status-codes.test.js` | `DISABLE_REDIS` en el require (rojo ambiental que tapaba el contrato 401/403) |
+| `A` | `scripts/security/auth-email-collision-census.js` | censo de solo lectura de correos en varias empresas, veredicto `COLISION_VIVA`/`SIN_COLISION`, control positivo por construcción, `--account-emails` |
+| `A` | `scripts/security/auth-session-sql-guard.js` | guarda que captura las sentencias del código y las ejecuta `PREPARE`/`EXECUTE`/`\gdesc` contra la base del ambiente, con `--selftest` de 16 controles y negativos |
+| — | `scripts/security/recovery-readiness.js` | **no cambia**: los dos instrumentos nuevos reusan el `parseEnv` que ya exporta (verificado con `grep module.exports`), para no sumar un lector de `.env` al repo |
+| `A` | `docs/qa/evidence/auth-session-path-20261124/censo-correos-{qa,production}.json` | censo por ambiente con `escrituras: 0` |
+| `A` | `docs/qa/evidence/auth-session-path-20261124/sentencias-{qa,production}.json` | forma (4 columnas), filas y `ms_servidor` de cada sentencia |
+| `A` | `docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json` | reconteo de los 7 archivos en dos modalidades (44/44 con `AUTH_STATUS_INTEGRATION=1`, 43 + 1 omitida sin ella), `--selftest` 16/16 y la atribución del único rojo de API |
+| `M` | `docs/PERFORMANCE_ANTI_PATTERNS.md` | cuatro filas nuevas: `findFirst` por correo, recompra en el handler, SQL copiado en el fixture y «0 filas» aceptado como verde |
+| `M` | `docs/briefs/2026-11-24-monitor-marcaciones-latencia.md` | §13, criterios 9-13, evidencia y autorizaciones |
+| `M` | `.qoder/skills/apexos-backend/SKILL.md` | regla 43 (`2.27.0 → 2.28.0`) y parche de errata (`2.29.0 → 2.29.1`: 44, no 50) |
+| `M` | `.qoder/skills/apexos-seguridad/SKILL.md` | regla 54 (`2.39.0 → 2.40.0`) y regla 56 (`2.41.0 → 2.42.0`): el contrato de ingreso se certifica con `AUTH_STATUS_INTEGRATION=1` y la cifra declara sus omitidas |
+| `M` | `.qoder/skills/apexos-performance/SKILL.md` | regla 33 (`2.24.0 → 2.25.0`) y parche de errata (`2.25.0 → 2.25.1`: 16/16, no 15/15) |
+| `M` | `.qoder/skills/apexos-qa/SKILL.md` | regla 118 (`2.106.0 → 2.107.0`) y parche de errata (`2.108.0 → 2.108.1`: 44, no 50) |
+| `M` | `.qoder/skills/equipo-apexos/SKILL.md` | regla 74 (`2.62.0 → 2.63.0`) |
+| `M` | `.qoder/skills/apexos-brief/SKILL.md` | regla 100 (`2.86.0 → 2.87.0`) y regla 102 (`2.88.0 → 2.89.0`, pasada de cierre): la evidencia posterior recalcula el inventario y cada cifra tiene artefacto |
+| `M` | `.qoder/skills/apexos-git-guardian/SKILL.md` | regla 47 (`2.31.0 → 2.32.0`): residual del mismo blob viaja en el mismo manifiesto, stage por ruta con dos sesiones vivas y cifra sin artefacto = defecto de gobernanza |
+| `M` | `agents/registry.json` + `agents/**` | controles nuevos y espejos regenerados por `npm run agents:sync` |
+
 ### Módulos (`change_intent.modules`)
 
 - `talento-humano`
@@ -179,10 +209,10 @@ entregadas. Mientras tanto el acceso operativo correcto es `www.apexos.com.co`.
 
 - No se promociona a `develop` ni a `main`, no se despliega, no se ejecuta DDL ni escritura en la
   nube. T3 y T5 quedan con su autorización pendiente y declarada.
-- No se toca `refresh()` ni `login()`, aunque repiten el mismo `include` del snapshot: `refresh` paga
-  el extra una vez por sesión y no por pantalla, y ampliar el diff del camino de sesión sin medición
-  que lo pida sería exactamente el tipo de cambio transversal que el gobierno de ramas prohíbe. Queda
-  escrito en T2 como siguiente candado.
+- ~~No se toca `refresh()` ni `login()`.~~ **Corregido el mismo día:** sí se tocaron, en la segunda
+  ronda de esta intervención (§13). La exclusión se había escrito asumiendo que `refresh` pagaba el
+  extra «una vez por sesión» —el cliente lo llama al abrir, no una vez— y antes de medir los correos
+  con colisión. El alcance sigue siendo el mismo camino (`auth`), no un módulo nuevo.
 - No se habilita `HR_EVIDENCE_STORAGE_ENABLED` en ningún ambiente.
 - No se añaden índices: el plan medido cuesta 358 y lee 333 buffers.
 - No se toca `apps/control-tower/**`.
@@ -216,11 +246,44 @@ entregadas. Mientras tanto el acceso operativo correcto es `www.apexos.com.co`.
    guardas de `apps/web/test/hr-monitor-refresh.test.mjs` (7/7) y por `next build`, no por un clic.
    Se remide en QA al desplegar.
 
+### Criterios de la segunda ronda — camino de sesión completo (§13)
+
+9. `node --test apps/api/test/auth-session-hardening.test.js` → **11/11** (conseguido): `login` paga
+   **exactamente 1 lectura** al snapshot y cero lecturas sueltas de empresa; el empate entre dos
+   empresas activas responde **el mismo 401 con el mismo texto**, **no crea sesión** (`created.length
+   === 0`) y suma 1 a `LOGIN_CORREO_AMBIGUO`; la fila inactiva **no tapa** la empresa activa (entra
+   por la activa y no ensucia la métrica); `refresh` decide en **1 sentencia** y conserva el claim
+   `role`.
+10. `node --test apps/api/test/auth-webauthn-login.test.js` → **7/7**.
+    `apps/api/test/authorization-status-codes.test.js` corre **6 pruebas y la sexta está en gates por
+    diseño**: sin `AUTH_STATUS_INTEGRATION=1` pasa 5 y **omite 1** (es la que levanta el servidor real);
+    con la bandera → **6/6, 0 omitidas** (conseguido, medido el 2026-11-24). El camino de sesión completo
+    son **siete archivos = 44 pruebas, 44 pasan con `AUTH_STATUS_INTEGRATION=1`** (11 + 7 + 6 + 6 + 6 + 5 + 3);
+    sin la bandera son 43 pasan y 1 omitida. **No son 50**: el conteo publicado en los `SKILL.md` de
+    backend/QA decía 50/50 y era un error de quien escribió el control, no del arnés — el texto quedó
+    corregido en la pasada de cierre (§11) y este artefacto es el que lo respalda.
+11. `node scripts/security/auth-email-collision-census.js --env-file config/qa.env|production.env` →
+    veredicto con `escrituras: 0` y el conteo de correos compartidos (conseguido: QA
+    `COLISION_VIVA` 7 correos / 550 usuarios / 27 empresas, Producción `SIN_COLISION` 0 / 211 / 9).
+12. `node scripts/security/auth-session-sql-guard.js --selftest` → **16/16** y
+    `--env-file=config/qa.env|production.env` → **`SENTENCIAS_VALIDAS`** con las cuatro columnas
+    (`user`,`role`,`tenant`,`session`), `filas > 0` y `ms_servidor` consignado (conseguido: QA 2 filas
+    / 242 ms y 1 fila / 164 ms; Producción 1 fila / 268 ms y 1 fila / 269 ms).
+13. Ninguna cuenta de certificación (`config/*.env`) puede quedar fuera por este cambio: **censo
+    ad hoc de las 9 cuentas de correo usadas por los arneses → 0 colisiones**, probado como control
+    positivo del census (una cuenta en 2 empresas dispara `COLISION_VIVA`).
+
 ## 6. Evidencia y certificación exigida
 
 - Pruebas unitarias y de contrato de las secciones anteriores + suites completas de API y web al cierre.
-- **Suite de API completa** (`DISABLE_REDIS=true node --test --test-force-exit --test-concurrency=4
-  test/*.test.js`): **1.404 pruebas, 1.400 pasan, 1 falla, 3 omitidas**. La única falla es
+- **Suite de API completa al cierre de la segunda ronda** (§13): **1.414 pruebas, 1.410 pasan, 1 falla,
+  3 omitidas**. El único rojo vuelve a ser `hr-face-identity.test.js` por `Cannot find module
+  '@vladmandic/human'` (corrido aislado: 14 pruebas / 13 pasan / 1 falla) — hueco de dependencia local,
+  ajeno a este diff. El diff de sesión no añadió ni un rojo: 1.404 → 1.414 pruebas son las
+  10 pruebas nuevas del paquete (`auth-session-hardening` +4, `auth-webauthn-login` +3 y los tres
+  controles contadores, `authorization-status-codes` sigue en 6).
+- **Suite de API de la primera ronda** (`DISABLE_REDIS=true node --test --test-force-exit --test-concurrency=4
+  test/*.test.js`): **1.404 pruebas, 1.400 pasan, 1 falla, 3 omitidas**. La única falla era
   `hr-face-identity.test.js:255` — *humo: el modelo real (Human wasm)* — por `Cannot find module
   '@vladmandic/human'`: el paquete está declarado en `apps/api/package.json` (`3.3.6`) pero no instalado
   en este puesto. Es hueco de dependencia local, no fallo de producto ni de este cambio (la ruta no toca
@@ -232,6 +295,22 @@ entregadas. Mientras tanto el acceso operativo correcto es `www.apexos.com.co`.
   `transport-master-access`, `transport-vehicle-master-catalogs`) se reprodujeron **exactamente iguales**
   en un worktree despegado en el HEAD limpio `8bb324c0`, así que son preexistentes y ajenas a este diff.
 - `npm run certify:hr-monitor-budget:selftest` y `npm run certify:hr-auth-latency:production`.
+- **Censo de correos compartidos** (§13): `docs/qa/evidence/auth-session-path-20261124/censo-correos-qa.json`
+  (`COLISION_VIVA`: 27 empresas, 550 usuarios, **7 correos en varias empresas**, uno activo en 4, 419
+  usuarios inactivos) y `censo-correos-production.json` (`SIN_COLISION`: 9 empresas, 211 usuarios, 0
+  colisiones). Ambos con `escrituras: 0` y la transacción declarada de solo lectura en el servidor.
+- **Guard del SQL de sesión** (§13): `sentencias-qa.json` y `sentencias-production.json` — las dos
+  sentencias que el código manda de verdad, ejecutadas `PREPARE`/`EXECUTE` contra cada base, con
+  `\gdesc` de las cuatro columnas, `ms_servidor` y conteo de filas (QA 2 filas en la lectura por
+  correo: es la colisión real del censo, no un fixture).
+- **Reconteo de suites del camino de sesión** (§13):
+  `docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json` — los siete archivos corridos
+  archivo por archivo en dos modalidades (con y sin `AUTH_STATUS_INTEGRATION=1`), el `--selftest` del guard
+  y la atribución del único rojo de la suite de API. Nace para sustituir la cifra «50/50» que quedó escrita
+  en los controles commiteados de esta corrida.
+- **Regla transversal de los dos instrumentos**: el `psql -c` del puesto pierde el `read only` del
+  `BEGIN` explícito (lo manda como una sola consulta simple), así que el piso de solo lectura ahora lo
+  pone el servidor con `PGOPTIONS=-c default_transaction_read_only=on` en los dos guardas.
 - `npm run certify:hr-monitor-budget:production` contra el ambiente desplegado → `presupuesto-antes.json`.
 - Dry-runs del backfill (`qa-dry-*.json`, `prod-dry-*.json`) con `escrituras: 0`.
 - `certification_status`: **`local_passed_qa_pending`**. La puerta end-to-end del monitor queda
@@ -280,10 +359,11 @@ entregadas. Mientras tanto el acceso operativo correcto es `www.apexos.com.co`.
 ## 10. Autorizaciones requeridas
 
 - [x] Trabajar en `desarrollo` y publicar con `git push origin desarrollo` (autorización permanente acotada).
-- [ ] Promoción `desarrollo → develop` (**T1 + T2**, con `apps/api/src/security/authorizationState.js`
+- [ ] Promoción `desarrollo → develop` (**T1 + T2 + §13**, con `apps/api/src/security/authorizationState.js`
       y `apps/api/src/modules/auth/service.js` dentro del inventario exacto: son el camino de sesión y
       no pueden colarse como transversales) con manifiesto de alcance v2, `qa:promotion:scope`,
-      `qa:preqa:evidence` y despliegue en QA.
+      `qa:preqa:evidence` y despliegue en QA. §13 **no se promociona aparte**: es el mismo módulo `auth`
+      y las mismas dos rutas de producto, y separarlo produciría dos candidatos que tocan el mismo blob.
 - [ ] Promoción `develop → main` con `qa:approval:evidence` y aprobación funcional de QA.
 - [ ] Habilitar `HR_EVIDENCE_STORAGE_ENABLED` en QA/Producción (variables de Railway/Supabase).
 - [ ] Ejecutar el backfill C.1 con `--execute --pilot` y luego la purga C.2 y `VACUUM` C.3 en la nube.
@@ -317,6 +397,54 @@ entregadas. Mientras tanto el acceso operativo correcto es `www.apexos.com.co`.
 - [ ] Sin secretos ni artefactos locales en el diff
 - [ ] Documentación y agentes actualizados en el mismo commit
 
+### Cierre de la segunda ronda (§13)
+
+- **Preflight**: `npm run agents:preflight -- --paths "apps/api/src/modules/auth/service.js,
+  apps/api/src/security/authorizationState.js,apps/api/test/auth-session-hardening.test.js,
+  apps/api/test/auth-webauthn-login.test.js,apps/api/test/authorization-status-codes.test.js,
+  scripts/security/auth-email-collision-census.js,scripts/security/auth-session-sql-guard.js,
+  docs/qa/evidence/auth-session-path-20261124,docs/briefs/2026-11-24-monitor-marcaciones-latencia.md,
+  docs/PERFORMANCE_ANTI_PATTERNS.md,agents/CHANGELOG.md"` → **`Veredicto: OK`**, ruteando siete dueños:
+  `equipo-apexos`, `apexos-brief`, `apexos-git-guardian`, `apexos-backend`, `apexos-seguridad`,
+  `apexos-performance`, `apexos-qa`. Los siete `SKILL.md` fueron lectura obligatoria antes de editar.
+- **Agentes actualizados y publicados**: `apexos-backend` `2.27.0 → 2.28.0` (regla 43), `apexos-seguridad`
+  `2.39.0 → 2.40.0` (regla 54), `apexos-performance` `2.24.0 → 2.25.0` (regla 33), `apexos-qa`
+  `2.106.0 → 2.107.0` (regla 118), `equipo-apexos` `2.62.0 → 2.63.0` (regla 74) y `apexos-brief`
+  `2.86.0 → 2.87.0` (regla 100). Los seis son **minor**: control nuevo, rol intacto. Controles
+  registrados en `agents/registry.json`: `camino-sesion-una-sentencia-por-lectura`,
+  `login-no-es-oraculo-de-correos`, `sql-capturado-y-validado-contra-la-base`,
+  `rojo-del-arnes-se-atribuye-y-se-cura`, `residuo-declarado-se-cierra-en-el-mismo-paquete`,
+  `instrumento-nuevo-entra-al-inventario`.
+- **Control de `apexos-git-guardian`: declarado pendiente y publicado en la pasada de cierre.** El ruteo con
+  `agents/CHANGELOG.md` sumó a `apexos-git-guardian`, y el hallazgo le pertenece: **un residual cerrado sobre
+  el mismo blob del paquete ya inventariado viaja en ese manifiesto, no como segundo candidato**
+  (`auth/service.js` y `authorizationState.js` ya estaban en el inventario de T2; dos candidatos sobre el
+  mismo archivo reproducen el tip que no es el certificado), junto con que el índice se arma **por ruta
+  nombrada** cuando hay dos sesiones vivas y que una cifra sin artefacto es un defecto de gobernanza. No se
+  subió en la primera pasada porque `npm run agents:sync` abortaba con el árbol ajeno sucio (la sesión
+  concurrente del paquete selfie tenía sin commitear las reglas 44/119/55/60, y bumpiar un `SKILL.md` ajeno
+  para destrabar el sync propio está prohibido). En cuanto esa sesión publicó `21a99f47`, el árbol quedó
+  limpio y la regla salió como **`2.31.0 → 2.32.0`, control `residual-mismo-blob-mismo-manifiesto`**.
+- **Errata de las cifras, aplicada también en el texto del control.** Los `SKILL.md` decían «suite de auth
+  completo **50/50** en siete archivos» (`apexos-backend` regla 43 y `apexos-qa` regla 118) y «`--selftest` →
+  **15/15**» (`apexos-performance` regla 33). Recontado archivo por archivo (artefacto
+  `docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json`), el camino de sesión son **44
+  pruebas y 44 pasan con `AUTH_STATUS_INTEGRATION=1`** (11 + 7 + 6 + 6 + 6 + 5 + 3; sin la bandera,
+  `authorization-status-codes` aporta 5 + 1 omitida por diseño) y el guard reporta **16/16 controles**. Los
+  tres se arreglaron con bump **parche** (`2.29.0 → 2.29.1`, `2.108.0 → 2.108.1`, `2.25.0 → 2.25.1`):
+  corregir una cifra no suma control, y un bump inflado falsearía el historial del agente.
+- **Dos controles nuevos que `agents:coverage` exigió al reconsolidar el ruteo.** `apexos-seguridad`
+  `2.41.0 → 2.42.0` (regla 56: un contrato de ingreso se certifica con la prueba de servidor real levantada
+  y la cifra publicada declara sus omitidas) y `apexos-brief` `2.88.0 → 2.89.0` (regla 102: la evidencia que
+  nace después de publicado el alcance recalcula el inventario `A/M/D` y toda cifra del brief tiene un
+  artefacto que la reproduce). La cobertura volvió a `BLOQUEADO` con ellos en `in-sync` aunque hubieran
+  bumpiado horas antes en la misma intervención: **la frescura se mide contra `origin/desarrollo`, y ese ya
+  contenía el bump previo**. Controles añadidos a mano en `agents/registry.json`:
+  `residual-mismo-blob-mismo-manifiesto`, `contrato-con-prueba-de-servidor-real`,
+  `cifra-de-brief-con-artefacto-reproducible`.
+- **No se toca** en esta ronda: `apexos-frontend` (ninguna pantalla cambió), `apexos-db-nube` (ningún
+  esquema ni migración) y los dos auditores (dictamen, no dueños de este diff).
+
 ## 12. Cómo se le habla al dueño (instrucción expresa del 2026-11-24)
 
 El dueño pidió, después de cerrar la intervención de latencia: **«de ahora en adelante háblame en lenguaje
@@ -343,4 +471,88 @@ es una regla de idioma y registro del equipo, y por eso se versionó.
 - **Lo que NO cambia:** el nivel de exigencia. «Cambió cómo se cuenta, no qué se mide»: sigue siendo obligatorio
   medir antes de afirmar, certify con instrumento versionado, evidencia en `docs/qa/evidence/**` y no promover sin
   autorización. Una respuesta amable nunca puede sustituir un rojo declarado.
+
+## 13. Segunda ronda: el camino de sesión cerrado (2026-11-24, pedido «procede con lo que hace falta»)
+
+**Qué se pidió y cómo se interpretó.** Después del cierre publicado (`134816de`) el dueño dijo:
+*«procede con lo que hace falta y garantizame que todo quede implementado bajo las mejores prácticas
+recomendables y lo que buscamos con la herramienta»*. Con `AGENTS.md` delante, eso autoriza **seguir en
+`desarrollo`** y cerrar los residuales que la propia intervención declaró; no autoriza promover,
+desplegar, encender banderas, correr el backfill ni tocar DNS. Los residuales se clasificaron antes de
+tocar nada: **construibles por el equipo** (el camino de sesión) y **del dueño** (promoción, bandera +
+C.1/C.2/C.3, ápice en el registrador, el clic en navegador con la sesión del operario intacta).
+
+### 13.1 El pendiente que no estaba medido: ¿un correo puede pertenecer a varias empresas?
+
+`login()` resolvía la identidad con una lectura **suelta** por correo. En este esquema eso no es un
+detalle de estilo: el único índice único de `User` es `@@unique([tenant_id, email])`, así que **la misma
+dirección puede existir en varias empresas**, y sobre un índice así «la primera fila que aparezca» es una
+decisión al azar. Antes de tocar el código se midió con un instrumento nuevo y de solo lectura,
+`scripts/security/auth-email-collision-census.js`:
+
+| Ambiente | Veredicto | Empresas | Usuarios | Correos en varias empresas | Detalle |
+|---|---|---|---|---|---|
+| QA | `COLISION_VIVA` | 27 | 550 | **7** | uno activo en **4** empresas; 419 usuarios inactivos |
+| Producción | `SIN_COLISION` | 9 | 211 | **0** | el riesgo es latente, no teórico |
+
+Tres consecuencias que corrigieron el enfoque: (a) **la multiplicidad hay que manejarla, no
+simplemente rechazarla** —un 401 del tipo «tu correo está en varias empresas» sería un aviso de
+existencia y cerraría el ingreso de esas 7 personas—; (b) el desempate se hace **con la clave**, que es
+lo único que distingue a la persona; si la clave no desempata, salida uniforme; (c) se verificó el
+riesgo operativo del cambio: **las 9 cuentas de correo que usan los arneses de certificación no
+colisionan** (una colisión ahí habría roto certificaciones de HR, transporte, torre, marketing y
+comercio en silencio, con el mismo 401 y sin pista).
+
+### 13.2 Lo que se cambió (tres cosas, no dos)
+
+| Archivo / función | Antes | Después |
+|---|---|---|
+| `apps/api/src/security/authorizationState.js` | `AUTHORIZATION_SNAPSHOT` atado a `where u.id = cast($2 as int4)` | se divide en `AUTHORIZATION_SNAPSHOT_BODY` + `AUTHORIZATION_SNAPSHOT`; nace `readAuthorizationSnapshotsByEmail(email, limite = 8)` con la **misma** proyección de cuatro columnas, `where lower(u.email) = $2 order by u.id limit cast($3 as int)` |
+| `login()` en `apps/api/src/modules/auth/service.js` | lectura suelta de correo + `bcrypt` sobre la fila elegida al azar | **1 sentencia** con todas las filas del correo; `bcrypt.compare` **en paralelo** contra cada hash (o `DUMMY_PASSWORD_HASH` si no hay filas, para que el login no sea un oráculo de correos); `admitidas = coinciden && user.active && tenant.active`; si `admitidas.length !== 1` → **el mismo 401 con el mismo texto, cero sesión creada**, y `LOGIN_CORREO_AMBIGUO` se telemetrya solo cuando coinciden más de una admitida |
+| `refresh()` en el mismo archivo | snapshot (vía `validateAuthorization`) **+ 3 lecturas** de usuario/rol/empresa | **1 sentencia**: `rotateSession` recibe `{ id, tenant_id }` y el claim `role` sale del payload que `validateAuthorization` ya devolvió. La guarda `!user || !user.active` que se quitó está **subsumida**: `USER_REVOKED`, `TENANT_REVOKED` y `AUTHORIZATION_STATE_MISSING` se rechazan siempre, no solo con enforcement |
+| `fingerprintLogin()` en el mismo archivo | snapshot **+ 4 lecturas** (`findFirst` con `include` de rol) | **1 sentencia**, y el contraste de empresa que hacía el `where { id, tenant_id }` se hace sobre el perfil del snapshot |
+
+### 13.3 El guard que valida el SQL contra la base real
+
+`scripts/security/auth-session-sql-guard.js` carga `security/authorizationState.js` con `core/prisma`
+stubbeado en `require.cache` para **capturar las sentencias que el código manda** (si mañana cambia el
+SQL, cambia lo que se verifica; una copia en el fixture se oxida sin avisar) y las ejecuta
+`PREPARE` + `EXECUTE` + `\gdesc` dentro de `BEGIN READ ONLY` contra el ambiente del `--env-file`.
+Evidencia en `docs/qa/evidence/auth-session-path-20261124/`:
+
+- **QA** `SENTENCIAS_VALIDAS` — `login_por_correo` **2 filas / 242 ms**, `perfil_por_id` 1 fila / 164 ms.
+  Dos filas no son un defecto: es el correo con colisión real que la propia base escogió para probar.
+- **Producción** `SENTENCIAS_VALIDAS` — 1 fila / 268 ms y 1 fila / 269 ms, con la sesión viva resuelta
+  dentro de la lectura por id.
+- Con los valores **del fixture** (`muestra@apexos.test` y un UUID sintético) ambas dan 0 filas — por eso
+  el instrumento elige los valores dentro de la transacción con `\gset` y exige `filas > 0`.
+
+Tres trampas de psql quedaron escritas en el propio archivo, porque son las que producen un falso verde:
+`EXECUTE` no acepta parámetros que sean subconsulta; `-R` es separador de **registros** (con él las
+cuatro columnas del snapshot se volvían una línea ilegible y el parseo contaba 0 filas) → es `-F`; y
+`psql -c` manda el bloque como una sola consulta simple, así que el `read only` del `BEGIN` explícito se
+pierde con un aviso → el piso lo pone el servidor con `PGOPTIONS=-c default_transaction_read_only=on`,
+medida que también se aplicó al censo. El `--selftest` del guard (16 controles) incluye los negativos:
+un `update` inyectado en el script debe rechazarlo el guard y una columna perdida del snapshot debe
+declarar la sentencia inválida.
+
+### 13.4 El rojo del arnés que no era de este cambio (y por eso se curó igual)
+
+`apps/api/test/authorization-status-codes.test.js` llegó rojo con `REDIS_URL is required`. Atribución en
+tres pasos: `git stash push` **solo mis archivos** → sigue rojo; `git worktree` despegado en HEAD (que
+**no trae `config/*.env`**, aviso para la próxima atribución) → mismo rojo; y la traza apunta al `require`
+de `middleware/tenancy` → `core/tenantCache` → `fabric/redisConfig`. Rojo **ambiental y preexistente**,
+que además tapaba el contrato 401/403 que ese archivo protege, así que se curó en el mismo paquete con
+`process.env.DISABLE_REDIS = "true"` y su comentario del porqué. Un rojo del arnés que solo se declara y
+se deja, vuelve a tapar el rojo real siguiente.
+
+### 13.5 Lo que queda después de esta ronda
+
+- **Promoción** de T1 + T2 + §13 a `develop` y luego a `main`: **dueño**. El manifiesto v2 tiene que
+  declarar el módulo `auth` y el inventario exacto de este §13 (dos `src`, tres `test`, dos
+  `scripts/security`, cuatro JSON de evidencia, brief, anti-patrones y los seis `SKILL.md` + `agents/`).
+- **`DESPUÉS` sobre el artefacto servido** (`certify:hr-auth-latency` y la puerta de presupuesto contra
+  QA): **`apexos-performance` + `apexos-qa`**. Esta máquina no puede certificar el binario desplegado.
+- **Clic en navegador** con la cuenta de prueba y la sesión del operario intacta: **dueño**.
+- **Bandera `HR_EVIDENCE_STORAGE_ENABLED` + C.1/C.2/C.3** y **ápice DNS**: **dueño**, sin cambio desde §10.
 

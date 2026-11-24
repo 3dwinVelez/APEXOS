@@ -57,9 +57,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.29.0",
+      "version": "2.29.1",
       "updated_at": "2026-11-24",
-      "sha256": "aa9a99f838a16b3c4f12a37afd3026ee8e255914726628c6efa420d52d495f90",
+      "sha256": "1d3ffd288ab609bf8ca7aaf0dc8afdacdb4f722a4d1a783154cc44cccaae5283",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.88.0",
+      "version": "2.89.0",
       "updated_at": "2026-11-24",
-      "sha256": "d06fa111d40a202908b516312fc3fedcf64bf4b0277404c15fdf34b0da818fbf",
+      "sha256": "65a174722d77a7f68cd371c3939ca205d25544688f51557ca92cb6dfbe1194cc",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -170,7 +170,8 @@
         "particion-de-residuo-con-tres-duenos",
         "lenguaje-cercano-al-dueno",
         "instrumento-nuevo-entra-al-inventario",
-        "brief-de-contingencia-con-normas-mecanicas"
+        "brief-de-contingencia-con-normas-mecanicas",
+        "cifra-de-brief-con-artefacto-reproducible"
       ]
     },
     {
@@ -258,9 +259,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.31.0",
+      "version": "2.32.0",
       "updated_at": "2026-11-24",
-      "sha256": "2a15294f689777808c4f9a2df68cb5a7963217ad1b33e1748009fbc13007ec8c",
+      "sha256": "1fb7b0871e6d6c7052cf7d14738629e6901ac727aa9a748109b5dbe9752faa53",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -294,15 +295,16 @@
         "barrido-con-causa-identificada",
         "evidencia-de-corrida-sin-identidad-con-firma-del-manifiesto",
         "lenguaje-cercano-al-dueno",
-        "porton-de-origen-por-blob"
+        "porton-de-origen-por-blob",
+        "residual-mismo-blob-mismo-manifiesto"
       ]
     },
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.25.0",
+      "version": "2.25.1",
       "updated_at": "2026-11-24",
-      "sha256": "70e07b5a04478232d590c2dd16aaa55eb0d1af8bdf0b94a02c4cc2e9da572137",
+      "sha256": "6546cdd5ef08e5ca2411f6909b86d03f937eaac8d0ca4d343e093c4056e37a7a",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -336,9 +338,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.108.0",
+      "version": "2.108.1",
       "updated_at": "2026-11-24",
-      "sha256": "b2680eee37e9920b86eb15917cdc32e34d2d0e6835330ec4c2f555b962a7e10a",
+      "sha256": "7f837f6d416a570d0ebeb22de276058fdfbef11fe5c47b583a3924c9a25ac83d",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -437,9 +439,9 @@
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.41.0",
+      "version": "2.42.0",
       "updated_at": "2026-11-24",
-      "sha256": "5757a38ce80e90fd581562a44c6e4482fecd06d4d8f71abe1c2df640eedc5d90",
+      "sha256": "c064347f2988f8cb0dc1444ca8356daffd0ce6c15202ef811aa08f135888934d",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -481,7 +483,8 @@
         "identificador-declarado-no-es-identidad",
         "lenguaje-cercano-al-dueno",
         "login-no-es-oraculo-de-correos",
-        "cuatro-marcaciones-sin-firma-necesitan-cara"
+        "cuatro-marcaciones-sin-firma-necesitan-cara",
+        "contrato-con-prueba-de-servidor-real"
       ]
     },
     {

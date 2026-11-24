@@ -93,7 +93,7 @@ async function createSession(user, tenant, expiresInDays = 30) {
 // compara como Date, asi que se normalizan aqui: sin este paso una sesion vencida no se veria vencida.
 // `user` es palabra reservada en Postgres: los alias van entrecomillados o la sentencia revienta
 // en 42601 antes de llegar a decidir nada.
-const AUTHORIZATION_SNAPSHOT = `
+const AUTHORIZATION_SNAPSHOT_BODY = `
   select to_jsonb(u) as "user",
     case when r.id is null then null
          else to_jsonb(r) || jsonb_build_object('permissions', coalesce(perms.perm_rows, '[]'::jsonb))
@@ -104,7 +104,9 @@ const AUTHORIZATION_SNAPSHOT = `
   left join "Role" r on r.id = u.role_id
   left join lateral (select jsonb_agg(to_jsonb(p)) as perm_rows from "Permission" p where p.role_id = r.id) perms on true
   left join "Tenant" t on t.id = u.tenant_id
-  left join "AuthorizationSession" s on s.id = cast(__SID__ as uuid) and s.user_id = u.id
+  left join "AuthorizationSession" s on s.id = cast(__SID__ as uuid) and s.user_id = u.id`;
+
+const AUTHORIZATION_SNAPSHOT = `${AUTHORIZATION_SNAPSHOT_BODY}
   where u.id = cast(__UID__ as int4)
   limit 1`;
 
@@ -114,6 +116,16 @@ function dateOrNull(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function mapSnapshotRow(row) {
+  return {
+    user: row?.user ? { ...row.user, role: row.role || null } : null,
+    tenant: row?.tenant || null,
+    session: row?.session
+      ? { ...row.session, revoked_at: dateOrNull(row.session.revoked_at), expires_at: dateOrNull(row.session.expires_at) }
+      : null
+  };
+}
+
 // Lee el estado vivo de autorizacion en UNA sentencia. `validateAuthorization` decide con ella y
 // quien necesite el perfil (por ejemplo `/auth/me`) la reusa: cada viaje al pooler cuesta ~660 ms
 // desde Railway, asi que volver a traer usuario+rol+permisos+tenant por otra via pagaba cuatro
@@ -121,19 +133,30 @@ function dateOrNull(value) {
 async function readAuthorizationSnapshot(userId, sid = null) {
   // El sid viene de una columna uuid creada por el propio sistema, asi que se pasa tal cual: un
   // valor mal formado hace fallar el cast y el middleware responde 401, igual que hoy.
-  const sessionParam = sid ? String(sid) : null;
   const rows = await prisma.$queryRawUnsafe(
     AUTHORIZATION_SNAPSHOT.replace("__SID__", "$1").replace("__UID__", "$2"),
-    sessionParam,
+    sid ? String(sid) : null,
     Number(userId)
   );
-  const row = rows[0] || null;
-  const user = row?.user ? { ...row.user, role: row.role || null } : null;
-  const tenant = row?.tenant || null;
-  const session = row?.session
-    ? { ...row.session, revoked_at: dateOrNull(row.session.revoked_at), expires_at: dateOrNull(row.session.expires_at) }
-    : null;
-  return { user, tenant, session };
+  return mapSnapshotRow(rows[0] || null);
+}
+
+// El unico indice unico de `User` es (tenant_id, email): el mismo correo PUEDE existir en varias
+// empresas, y en QA existe (medido el 2026-11-24: 7 correos en 2 o 4 empresas activas cada uno; en
+// Produccion 0). Un `findFirst` por correo elegia una fila al azar, que es la manera silenciosa de
+// entrar a la empresa equivocada o de negar el acceso a quien si esta activo en otra. Esta lectura
+// trae todas las filas del correo en UNA sentencia, con su empresa, para decidir sin adivinar.
+async function readAuthorizationSnapshotsByEmail(email, limite = 8) {
+  const filas = await prisma.$queryRawUnsafe(
+    `${AUTHORIZATION_SNAPSHOT_BODY.replace("__SID__", "$1")}
+      where lower(u.email) = $2
+      order by u.id
+      limit cast($3 as int)`,
+    null,
+    String(email || "").toLowerCase(),
+    Number(limite) || 1
+  );
+  return filas.map(mapSnapshotRow);
 }
 
 async function validateAuthorization(payload) {
@@ -208,6 +231,7 @@ module.exports = {
   rotateSession,
   validateAuthorization,
   readAuthorizationSnapshot,
+  readAuthorizationSnapshotsByEmail,
   revokeSession,
   revokeAllUserSessions,
   revokeRoleUsers

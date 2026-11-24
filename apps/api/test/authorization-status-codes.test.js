@@ -2,6 +2,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const http = require("node:http");
 
+// `middleware/tenancy` trae `core/tenantCache`, que exige REDIS_URL al cargarse si Redis esta
+// habilitado. Sin esta linea el archivo muere en el require y el rojo dice «REDIS_URL is required»
+// en vez de hablar del contrato de codigos que aqui se protege (igual que sus hermanos de suite).
+process.env.DISABLE_REDIS = "true";
+
 const tenancyMiddleware = require("../src/middleware/tenancy");
 const { requireAnyAdminCapability, requirePhysicalDeleteGrant } = require("../src/middleware/rbac");
 const { selectMembership } = require("../src/security/supabaseAuth");

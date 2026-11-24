@@ -102,14 +102,26 @@ function loadAuth(state) {
   };
   const previous = Object.fromEntries(Object.entries(paths).map(([k, p]) => [k, require.cache[p]]));
   const prisma = {
+    // `fingerprintLogin` resuelve el perfil por el snapshot de autorizacion (UNA sentencia que ya
+    // trae rol, permisos y empresa), como el resto del camino autenticado. El mock reproduce esa
+    // lectura y cuenta los viajes: si alguien vuelve al `findFirst` + `include` de 4 sentencias,
+    // la prueba lo ve.
+    async $queryRawUnsafe(_sql, sid, uid) {
+      state.snapshotReads += 1;
+      const u = state.user;
+      if (!u || u.id !== uid) return [];
+      const { role, ...columns } = u;
+      return [{ user: columns, role: role || null, tenant: state.tenant, session: null }];
+    },
     user: {
       async findFirst({ where }) {
+        state.includeReads += 1;
         const u = state.user;
         return u && u.id === where.id && u.tenant_id === where.tenant_id ? u : null;
       },
       async update({ data }) { Object.assign(state.user, data); return state.user; }
     },
-    tenant: { async findUnique() { return state.tenant; } },
+    tenant: { async findUnique() { state.tenantReads += 1; return state.tenant; } },
     hrWebauthnCredential: {
       async findFirst({ where }) {
         return state.creds.find((c) => c.tenant_id === where.tenant_id && c.credential_id === where.credential_id && c.active === where.active) || null;
@@ -142,7 +154,10 @@ function authState(key, user = {}) {
     tenant: { id: TENANT, name: "Empresa A", active: true, authorization_version: 1, active_modules: [], config: {} },
     creds: [credential(key)],
     credUpdates: [],
-    sessions: []
+    sessions: [],
+    snapshotReads: 0,
+    includeReads: 0,
+    tenantReads: 0
   };
 }
 
@@ -169,6 +184,10 @@ test("servicio: entrar con la huella devuelve la misma sesion que el correo y la
     assert.equal(jwt.verify(r.refresh).type, "refresh");
     assert.ok(state.user.last_login instanceof Date);
     assert.equal(state.credUpdates.length, 1);
+    // Una sola lectura de perfil (el snapshot) y ninguna lectura suelta de la empresa.
+    assert.equal(state.snapshotReads, 1, `el ingreso con huella pagó ${state.snapshotReads} sentencias de perfil`);
+    assert.equal(state.includeReads, 0, "el ingreso con huella sigue leyendo el perfil con include");
+    assert.equal(state.tenantReads, 0, "la empresa ya venia en la sentencia del perfil");
   } finally {
     loaded.restore();
   }
