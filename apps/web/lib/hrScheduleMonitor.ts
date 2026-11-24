@@ -28,6 +28,7 @@ export type ScheduleMonitorEvidence = {
   base64_data?: string;
   file_name?: string;
   file_url?: string;
+  storage_path?: string;
   has_base64_data?: boolean;
   available?: boolean;
   items?: ScheduleMonitorEvidence[];
@@ -42,19 +43,28 @@ export function scheduleMonitorPunchEvidence(row: {
     photo_name?: unknown;
   } | null;
 }): ScheduleMonitorEvidence {
-  const items = punchPhotoItems(row).map(({ base64_data, file_url, file_name }) => ({
-    ...(base64_data ? { base64_data } : {}), ...(file_url ? { file_url } : {}), file_name
+  const items = punchPhotoItems(row).map(({ base64_data, file_url, file_name, storage_path }) => ({
+    ...(base64_data ? { base64_data } : {}), ...(file_url ? { file_url } : {}), ...(storage_path ? { storage_path } : {}), file_name
   }));
   return items.length ? { ...items[0], ...(items.length > 1 ? { items } : {}) } : {};
 }
 
+// Un resumen del monitor anuncia el archivo sin llevarlo (los bytes se piden por id). La
+// pantalla solo pregunta por las evidencias que prometen contenido, URL o una ruta ya
+// rescatada en el almacen. Compartida entre el mapa del dia y el monitor de rutas para
+// que las dos decidan igual.
+export function scheduleMonitorHasEvidenceFile(item?: ScheduleMonitorEvidence | null): item is ScheduleMonitorEvidence {
+  return Boolean(item && (item.base64_data || item.file_url || item.has_base64_data || item.storage_path));
+}
+
 export function scheduleMonitorPunchEvidenceSummary(row: Parameters<typeof scheduleMonitorPunchEvidence>[0] & { id?: string | number }) {
   const evidence = scheduleMonitorPunchEvidence(row);
-  if (!evidence.base64_data && !evidence.file_url) return {};
+  if (!evidence.base64_data && !evidence.file_url && !evidence.storage_path) return {};
   return {
     ...(row.id != null ? { id: row.id } : {}),
     ...(evidence.file_name ? { file_name: evidence.file_name } : {}),
     ...(evidence.file_url ? { file_url: evidence.file_url } : {}),
+    ...(evidence.storage_path ? { storage_path: evidence.storage_path } : {}),
     has_base64_data: Boolean(evidence.base64_data),
     available: true
   };

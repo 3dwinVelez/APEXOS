@@ -1,0 +1,190 @@
+{
+  "medido_en": "2026-11-23T16:38:21.928Z",
+  "ambiente": "produccion",
+  "escrituras": 0,
+  "instrumento": "sonda de solo lectura sobre el almaceno de Produccion",
+  "pregunta": "las seis salidas del 23-11 (emps 503, 491, 483, 547, 531 a las 14:00 y 495 a las 13:00 CO) van por ruta con placa: el API exige kilometraje_dia. Que fuente lo entrega, y hace falta que alguien lo escriba por administracion?",
+  "fuentes_de_odometro_en_el_sistema": {
+    "rutas_de_las_seis_sin_placa": [],
+    "rutas_de_las_seis_con_placa": 6,
+    "vehiculos_registrados": 6,
+    "vehiculos_con_odometro_distinto_de_cero": 0,
+    "checklists_preoperativos_filas_ventana_18_24": 0,
+    "checklists_con_odometro_inicial": 0,
+    "eventos_de_viaje_ventana": 0,
+    "eventos_de_bloqueo_de_ruta_total": 0
+  },
+  "canal_del_operario_hoy": {
+    "salidas_aceptadas_del_dia": 5,
+    "salidas_aceptadas_con_placa": 1,
+    "salidas_con_placa_y_odometro_entrada_por_canal_propio": 1,
+    "ejemplo": [
+      {
+        "empleado": 539,
+        "ruta": 383,
+        "placa": true,
+        "hora_colombia": "10:18",
+        "odometro_registrado": true,
+        "correccion_administrativa": false
+      },
+      {
+        "empleado": 554,
+        "ruta": null,
+        "placa": false,
+        "hora_colombia": "10:40",
+        "odometro_registrado": false,
+        "correccion_administrativa": false
+      },
+      {
+        "empleado": 555,
+        "ruta": null,
+        "placa": false,
+        "hora_colombia": "10:51",
+        "odometro_registrado": false,
+        "correccion_administrativa": false
+      },
+      {
+        "empleado": 556,
+        "ruta": null,
+        "placa": false,
+        "hora_colombia": "10:54",
+        "odometro_registrado": false,
+        "correccion_administrativa": false
+      },
+      {
+        "empleado": 557,
+        "ruta": null,
+        "placa": false,
+        "hora_colombia": "11:05",
+        "odometro_registrado": false,
+        "correccion_administrativa": false
+      }
+    ]
+  },
+  "jornadas_de_los_seis_en_ventana": [
+    {
+      "empleado": 491,
+      "tipo": "salida",
+      "filas": 5
+    },
+    {
+      "empleado": 483,
+      "tipo": "fin_almuerzo",
+      "filas": 5
+    },
+    {
+      "empleado": 483,
+      "tipo": "entrada",
+      "filas": 6
+    },
+    {
+      "empleado": 495,
+      "tipo": "entrada",
+      "filas": 5
+    },
+    {
+      "empleado": 483,
+      "tipo": "salida",
+      "filas": 5
+    },
+    {
+      "empleado": 503,
+      "tipo": "inicio_almuerzo",
+      "filas": 1
+    },
+    {
+      "empleado": 547,
+      "tipo": "fin_almuerzo",
+      "filas": 4
+    },
+    {
+      "empleado": 503,
+      "tipo": "fin_almuerzo",
+      "filas": 1
+    },
+    {
+      "empleado": 495,
+      "tipo": "fin_almuerzo",
+      "filas": 3
+    },
+    {
+      "empleado": 547,
+      "tipo": "inicio_almuerzo",
+      "filas": 4
+    },
+    {
+      "empleado": 531,
+      "tipo": "fin_almuerzo",
+      "filas": 5
+    },
+    {
+      "empleado": 531,
+      "tipo": "salida",
+      "filas": 5
+    },
+    {
+      "empleado": 531,
+      "tipo": "inicio_almuerzo",
+      "filas": 5
+    },
+    {
+      "empleado": 491,
+      "tipo": "inicio_almuerzo",
+      "filas": 5
+    },
+    {
+      "empleado": 495,
+      "tipo": "inicio_almuerzo",
+      "filas": 4
+    },
+    {
+      "empleado": 483,
+      "tipo": "inicio_almuerzo",
+      "filas": 5
+    },
+    {
+      "empleado": 531,
+      "tipo": "entrada",
+      "filas": 6
+    },
+    {
+      "empleado": 547,
+      "tipo": "entrada",
+      "filas": 6
+    },
+    {
+      "empleado": 491,
+      "tipo": "fin_almuerzo",
+      "filas": 5
+    },
+    {
+      "empleado": 491,
+      "tipo": "entrada",
+      "filas": 6
+    },
+    {
+      "empleado": 503,
+      "tipo": "entrada",
+      "filas": 6
+    },
+    {
+      "empleado": 495,
+      "tipo": "salida",
+      "filas": 3
+    },
+    {
+      "empleado": 547,
+      "tipo": "salida",
+      "filas": 2
+    }
+  ],
+  "veredicto": {
+    "se_pueden_pre_escribir_por_el_canal_administrativo": false,
+    "por_que": "ningun registro del sistema contiene el odometro de esas seis rutas: Vehicle.mileage en 0, cero checklists preoperativos, cero eventos de viaje y cero de bloqueo. Escribirlo a mano seria inventar un dato que alimenta combustible y PYG.",
+    "cierran_solas_a_su_hora": true,
+    "por_que_cierran": "la medicion del propio dia muestra el canal del operario cerrando una jornada con placa y su odometro (fuente apexos-mobile, sin bandera administrativa): el dato lo reporta el conductor al cierre, que es el unico dueno posible de la lectura fisica. La escalera ya no las bloquea porque la excepcion administrativa esta desplegada en Produccion.",
+    "comando_por_si_alguna_no_cierra": "node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/production.env --date=2026-11-23 --rescate --sin-nombres --output=<ruta>",
+    "dueno": "operacion (lectura fisica del odometro por conductor), despues Talento Humano si la hora difiere del horario"
+  },
+  "sin_nombres": true
+}

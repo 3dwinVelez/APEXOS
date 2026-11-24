@@ -1,0 +1,2430 @@
+{
+  "format": "apexos-technical-alert-silence-qa-v1",
+  "started_at": "2026-11-19T14:27:37.156Z",
+  "environment": "QA",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "frontend_url": "https://apexos-web-qa-production.up.railway.app",
+  "run_id": "20261119142737",
+  "deployed_commit": "9c82fca1a392",
+  "expected_commit": "",
+  "model_company": "NYVORA",
+  "users": [
+    {
+      "email": "qa.silence.admin.20261119142737@silence-qa.test",
+      "tenant": "NYVORA",
+      "role": "Administrador de empresa"
+    },
+    {
+      "email": "qa.silence.limit.20261119142737@silence-qa.test",
+      "tenant": "NYVORA",
+      "role": "Empleado"
+    },
+    {
+      "email": "qa.silence.other.20261119142737@silence-qa.test",
+      "tenant": "Diana vargas",
+      "role": "Analista contable"
+    }
+  ],
+  "scenarios": {
+    "feliz_nyvora_admin": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nTalento Humano\n\nAdministracion de jornadas\n\nAsignar horarios\n\nConsulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo.\n\nNuevo horario\nConsulta de horarios\n\nCompara fecha, jornada, personas y estado antes de abrir o editar un horario.\n\n31 de 31 visibles\nActualizar\n\nHORARIOS\n\n31\n\nEn el listado actual\n\nACTIVOS\n\n12\n\nSin cerrar ni cancelar\n\nPERSONAS\n\n31\n\nAsignadas en total\n\nADM / OP\n\n31 / 0\n\nPor tipo de jornada\n\nSEGUIMIENTO\n\n65%\n\nHorarios con eventos\n\nSIN PERSONAS\n\n0\n\nTodas con equipo\n\nTodos los tipos\nAdministrativos\nOperativos\nTodos los estados\nActivos\nCerrados\nCancelados\n\n31 registros\n\n▥ Columnas\nID HORARIO\tFECHA Y JORNADA\tTIPO Y UBICACION\tPERSONAS\tESTADO\tACCIONES\n\n\n399\n\nHorario\n\n\t\n\n2026-11-19\n\n00:18 - 01:13 · 15 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261119051818@nyvora.test\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n400\n\nHorario\n\n\t\n\n2026-11-19\n\n00:23 - 01:18 · 15 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261119052329@nyvora.test\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n401\n\nHorario\n\n\t\n\n2026-11-19\n\n00:26 - 01:21 · 15 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nEmpleado evidencia 20261119052614\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n402\n\nHorario\n\n\t\n\n2026-11-19\n\n00:52 - 01:47 · 15 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nEmpleado evidencia 20261119055257\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n392\n\nHorario\n\n\t\n\n2026-11-17\n\n00:01 - 00:02 · 0 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261117191928@nyvora.test\n\n\tSin eventos\n\nInactive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n391\n\nHorario\n\n\t\n\n2026-11-17\n\n00:01 - 00:02 · 0 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261117191702@nyvora.test\n\n\tSin eventos\n\nInactive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n394\n\nHorario\n\n\t\n\n2026-11-17\n\n14:01 - 15:16 · 5 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261117192139@nyvora.test\n\n\tSin eventos\n\nInactive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n393\n\nHorario\n\n\t\n\n2026-11-17\n\n14:15 - 15:15 · 5 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261117192050@nyvora.test\n\n\tSin eventos\n\nInactive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n395\n\nHorario\n\n\t\n\n2026-11-17\n\n14:22 - 15:17 · 15 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261117192232@nyvora.test\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n396\n\nHorario\n\n\t\n\n2026-11-17\n\n14:26 - 15:21 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.gate.fixed.20261117192613@nyvora.test\n\n\tEn seguimiento\n\nInactive · 1 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n397\n\nHorario\n\n\t\n\n2026-11-17\n\n14:27 - 15:22 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.gate.fixed.20261117192705@nyvora.test\n\n\tCerrado\n\nClosed · 4 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n398\n\nHorario\n\n\t\n\n2026-11-17\n\n14:29 - 15:24 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.gate.fixed.20261117192938@nyvora.test\n\n\tCerrado\n\nClosed · 4 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n303\n\nHorario\n\n\t\n\n2026-09-21\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260921105218\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n301\n\nHorario\n\n\t\n\n2026-09-21\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260921085915\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n300\n\nHorario\n\n\t\n\n2026-09-20\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789961427894\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n298\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789843255642\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n297\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789843195754\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n296\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789843074385\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n295\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789843052264\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n288\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789839318539\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n287\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789839287097\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n272\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789794175244\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n275\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260919uxfixes\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n270\n\nHorario\n\n\t\n\n2026-09-18\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260918231424\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n269\n\nHorario\n\n\t\n\n2026-09-18\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260918231402\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n268\n\nHorario\n\n\t\n\n2026-09-18\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260918231313\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n266\n\nHorario\n\n\t\n\n2026-09-18\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789763769474\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n265\n\nHorario\n\n\t\n\n2026-09-18\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789763747186\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n2\n\nHorario\n\n\t\n\n2026-08-13\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260814DYN01\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n3\n\nHorario\n\n\t\n\n2026-08-13\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260814DYN02\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n4\n\nHorario\n\n\t\n\n2026-08-13\n\n08:00 - 17:00 · 15 min",
+        "ms": 8729,
+        "dataRequests": 5,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\n\nCONTROL OPERATIVO GPS\n\nMapa en vivo de rutas y marcaciones\nEn vivo\nHistorico\nRefresco 25s\nActualizar\n\n4\n\nRutas\n\n4\n\nEquipo\n\n0\n\nOnline\n\n4\n\nSin GPS\n\nTodas las rutas\nSin vehiculo - Horario 399\nSin vehiculo - Horario 400\nSin vehiculo - Horario 401\nSin vehiculo - Horario 402\nTodos los usuarios\nEmpleado evidencia 20261119051818\nEmpleado evidencia 20261119052329\nEmpleado evidencia 20261119052614\nEmpleado evidencia 20261119055257\nTodo\nVivo\nOff\nSin GPS\n4 persona(s)\nActualizado 9:28:22 a.m.\nEmpleado evidencia 20261119051818\nSin vehiculo · Ruta 399\nhace 9h\n--\n00:19 · Sin GPS\nEmpleado evidencia 20261119052329\nSin vehiculo · Ruta 400\nhace 9h\n--\n00:24 · Sin GPS\nEmpleado evidencia 20261119052614\nSin vehiculo · Ruta 401\nhace 9h\n--\n00:27 · Sin GPS\nEmpleado evidencia 20261119055257\nSin vehiculo · Ruta 402\nhace 9h\n--\n00:53 · Sin GPS\nI\nA\nR\nC\nI\nA\nR\nC\nI\nA\nR\nC\nI\nA\nR\nC\n1\n2\n3\n4\n+\n-\nSiguiendo\nRastreo en vivo activo\n\nOpenStreetMap · Zoom 13\n\n4.71100, -74.07210\n\nIngreso / actividad\nAlmuerzo\nRetorno\nCierre\n\nRuta entre marcaciones\n\nSin ubicaciones GPS para mostrar\n\nLas personas con horario asignado apareceran aqui cuando marquen o envien senal GPS.",
+        "ms": 8276,
+        "dataRequests": 1,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\n\nM-26 · Operación de campo\n\nServicios\n\nHay 13 servicio(s) que requieren seguimiento operativo.\n\nCENTRO OPERATIVO DE SERVICIOS\n\nÓrdenes listas para gestionar\n\nFiltra, abre y ejecuta sin salir del monitor.\n\nNueva orden\nSolicitudes de servicios externas\nReferencias\nReportes\nAtención prioritaria\n\nServicios abiertos, en proceso o con novedad.\n\n13 por atender\n\nOS-00015 · Certificacion Nyvora\n\nNYV-QA-EVIDENCE · 22 de ago\n\nPendiente\n\nOS-00014 · Certificacion Nyvora\n\nNYV-QA-EVIDENCE · 22 de ago\n\nPendiente\n\nOS-00013 · Certificacion edicion APEXOS\n\nNYV-QA-EVIDENCE · 22 de ago\n\nPendiente\n\nOS-00012 · Certificacion QA APEXOS\n\nQA-PRODUCTS-1787357455808-1 · 22 de ago\n\nPendiente\n\nOS-00011 · Certificacion Nyvora\n\nNYV-QA-EVIDENCE · 21 de ago\n\nPendiente\n\nOS-00008 · Certificacion Nyvora\n\nNYV-QA-EVIDENCE · 14 de ago\n\nPendiente\nConsulta de órdenes\n\nEncuentra y prioriza trabajo sin recargar la pantalla.\n\nActualizado 09:28 a. m.\nActualizar datos\nTodas 18\nAgendado 0\nPendiente 13\nEn curso 0\nInspeccion 0\nEjecucion 0\nCerrada 0\nNo ejecutada 0\nCancelada 5\nRango de fecha programada\nDesde\nHasta\nAgenda\nCualquier fecha\nProgramadas hoy\nVencidas abiertas\nProximas\nSin programar\nTodos los tipos\nmontaje\nTodos los tecnicos\nSin tecnico asignado\nNYV-QA-CORR-TEC - NYVORA Tecnico Certificacion\nEvidencia y novedades\nCon evidencia\nSin evidencia\nCon novedades\nTodas las solicitudes\nSolicitudes externas / agendado\nMas recientes primero\nPrioridad operativa\nFecha mas cercana\nFecha mas lejana\nConsecutivo mayor\nOrdenes de servicio\n\n18 visible(s) · 18 cargada(s) de 18 resultado(s)\n\nSelecciona una orden para consultar o continuar el servicio.\n\nDescargar Excel\n\n18 registros\n\n▥ Columnas\nORDEN Y ESTADO\tCLIENTE Y UBICACION\tSERVICIO\tAGENDA\tINGRESO\tSOPORTES\tACCION\nOS-00018\nCancelada\n\t\n\nCertificacion correccion maestra\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n26 de ago\n\nAgenda registrada\n\n-57 dias habiles\n\n\t\n\n26 de ago de 2026 04:23 p. m.\n\n\t\n0 foto\n2 nov.\n\t\nCorregir\nEditarVer detalle\n\nOS-00017\nCancelada\n\t\n\nCertificacion correccion maestra\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n26 de ago\n\nAgenda registrada\n\n-57 dias habiles\n\n\t\n\n26 de ago de 2026 04:04 p. m.\n\n\t\n0 foto\n2 nov.\n\t\nCorregir\nEditarVer detalle\n\nOS-00016\nCancelada\n\t\n\nCertificacion correccion maestra\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n22 de ago\n\nAgenda registrada\n\n-60 dias habiles\n\n\t\n\n22 de ago de 2026 09:14 a. m.\n\n\t\n0 foto\n2 nov.\n\t\nCorregir\nEditarVer detalle\n\nOS-00015\nPendiente\nVencida\n\t\n\nCertificacion Nyvora\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n22 de ago\n\nRequiere atencion\n\n-60 dias habiles\n\n\t\n\n21 de ago de 2026 08:26 p. m.\n\n\t\n1 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00014\nPendiente\nVencida\n\t\n\nCertificacion Nyvora\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n22 de ago\n\nRequiere atencion\n\n-60 dias habiles\n\n\t\n\n21 de ago de 2026 08:11 p. m.\n\n\t\n1 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00013\nPendiente\nVencida\n\t\n\nCertificacion edicion APEXOS\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n22 de ago\n\nRequiere atencion\n\n-60 dias habiles\n\n\t\n\n21 de ago de 2026 07:11 p. m.\n\n\t\n0 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00012\nPendiente\nVencida\n\t\n\nCertificacion QA APEXOS\n\nDireccion controlada QA\n\n3000000000\n\n\t\n\nmontaje\n\nQA-PRODUCTS-1787357455808-1 · Producto QA 1\n\n\t\n\n22 de ago\n\nRequiere atencion\n\n-60 dias habiles\n\n\t\n\n21 de ago de 2026 07:10 p. m.\n\n\t\n2 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00011\nPendiente\nVencida\n\t\n\nCertificacion Nyvora\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n21 de ago\n\nRequiere atencion\n\n-60 dias habiles\n\n\t\n\n21 de ago de 2026 06:51 p. m.\n\n\t\n1 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00010\nCancelada\n\t\n\nCertificacion correccion maestra\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n20 de ago\n\nAgenda registrada\n\n-61 dias habiles\n\n\t\n\n20 de ago de 2026 06:00 p. m.\n\n\t\n0 foto\n2 nov.\n\t\nCorregir\nEditarVer detalle\n\nOS-00009\nCancelada\n\t\n\nCertificacion correccion maestra\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n20 de ago\n\nAgenda registrada\n\n-61 dias habiles\n\n\t\n\n20 de ago de 2026 05:45 p. m.\n\n\t\n0 foto\n2 nov.\n\t\nCorregir\nEditarVer detalle\n\nOS-00008\nPendiente\nVencida\n\t\n\nCertificacion Nyvora\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n14 de ago\n\nRequiere atencion\n\n-66 dias habiles\n\n\t\n\n13 de ago de 2026 08:41 p. m.\n\n\t\n1 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00007\nPendiente\nVencida\n\t\n\nCertificacion Nyvora\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n14 de ago\n\nRequiere atencion\n\n-66 dias habiles\n\n\t\n\n13 de ago de 2026 08:04 p. m.\n\n\t\n1 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00006\nPendiente\nVencida\n\t\n\nCertificacion Nyvora\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n13 de ago\n\nRequiere atencion\n\n-66 dias habiles\n\n\t\n\n13 de ago de 2026 05:30 p. m.\n\n\t\n1 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00005\nPendiente\nVencida\n\t\n\nCertificacion Nyvora\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n13 de ago\n\nRequiere atencion\n\n-66 dias habiles\n\n\t\n\n13 de ago de 2026 05:29 p. m.\n\n\t\n1 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00004\nPendiente\nVencida\n\t\n\nCertificacion Nyvora\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n13 de ago\n\nRequiere atencion\n\n-66 dias habiles\n\n\t\n\n13 de ago de 2026 04:37 p. m.\n\n\t\n1 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00003\nPendiente\nVencida\n\t\n\nCertificacion Nyvora\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n13 de ago\n\nRequiere atencion\n\n-66 dias habiles\n\n\t\n\n13 de ago de 2026 04:28 p. m.\n\n\t\n1 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00002\nPendiente\nVencida\n\t\n\nCertificacion Nyvora\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n13 de ago\n\nRequiere atencion\n\n-66 dias habiles\n\n\t\n\n13 de ago de 2026 04:19 p. m.\n\n\t\n0 foto\n0 nov.\n\t\nCorregir\nEditarIniciar\n\nOS-00001\nPendiente\nVencida\n\t\n\nCertificacion Nyvora\n\nDireccion QA controlada\n\n3000000000\n\n\t\n\nmontaje\n\nNYV-QA-EVIDENCE · NYVORA Evidencia Administrativa Certificable\n\n\t\n\n13 de ago\n\nRequiere atencion\n\n-66 dias habiles\n\n\t\n\n13 de ago de 2026 04:16 p. m.\n\n\t\n0 foto\n0 nov.\n\t\nCorregir\nEditarIniciar",
+        "ms": 8314,
+        "dataRequests": 5,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\n\nCONTROL DE FLOTA\n\nMonitoreo en vivo\n\nMapa OpenStreetMap, análisis Turf.js, ETA, geocercas y desviaciones. Actualización cada 15 segundos.\n\nactive\n\n0\n\nwith signal\n\n0\n\nstale\n\n0\n\nwithout signal\n\n0\n\ninside geofence\n\n0\n\noff route\n\n0\n\nalerts\n\n0\n\n+\n−\n Leaflet | © OpenStreetMap contributors\nAlertas activas\n\nSin alertas.",
+        "ms": 8280,
+        "dataRequests": 1,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Admin 20261119142737 · NYVORA\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nAcciones frecuentes\n\nRealiza tus tareas principales en un solo clic.\n\nPriorizadas para tu perfil\nNueva venta\nRegistra un pedido de cliente\nNueva compra\nCrea una orden a proveedor\nRecibir mercancía\nRegistra la recepción de una compra\nCrear producto\nAgrega un artículo o servicio\nAjustar inventario\nRegistra una corrección de existencias\nNuevo servicio\nPrograma una orden de servicio\nMis módulos\n\nHabilitados para tu empresa y perfil.\n\n9\nInventario\nOperación\nCompras\nOperación\nVentas\nComercial\nTalento humano\nPersonas\nApex Heart\nControl gerencial\nContabilidad\nFinanzas\nTransporte\nLogística\nServicios\nOperación de campo\nComercio\nComercial",
+        "ms": 8255,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ],
+    "tormenta_500_nyvora_admin": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nTalento Humano\n\nAdministracion de jornadas\n\nAsignar horarios\n\nConsulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo.\n\nNuevo horario\nConsulta de horarios\n\nCompara fecha, jornada, personas y estado antes de abrir o editar un horario.\n\n0 de 0 visibles\nActualizar\n\nHORARIOS\n\n0\n\nEn el listado actual\n\nACTIVOS\n\n0\n\nSin cerrar ni cancelar\n\nPERSONAS\n\n0\n\nAsignadas en total\n\nADM / OP\n\n0 / 0\n\nPor tipo de jornada\n\nSEGUIMIENTO\n\n0%\n\nHorarios con eventos\n\nSIN PERSONAS\n\n0\n\nTodas con equipo\n\nTodos los tipos\nAdministrativos\nOperativos\nTodos los estados\nActivos\nCerrados\nCancelados\nLos contadores de eventos no se pudieron refrescar: aun no hay lectura de este dia. La pantalla reintenta sola.\n\n0 registros\n\n▥ Columnas\nID HORARIO\tFECHA Y JORNADA\tTIPO Y UBICACION\tPERSONAS\tESTADO\tACCIONES\n\nNo hay horarios con estos filtros\n\nLimpia los filtros o crea una nueva asignacion.",
+        "ms": 8294,
+        "dataRequests": 7,
+        "stormRequests": 7,
+        "telemetryPosts": 7,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\n\nCONTROL OPERATIVO GPS\n\nMapa en vivo de rutas y marcaciones\nEn vivo\nHistorico\nRefresco 25s\nActualizar\nNo fue posible cargar esta información en este momento. La aplicación sigue funcionando: vuelve a intentar en unos segundos. Referencia para soporte: qa-silence-500-20261119142737.\n\n0\n\nRutas\n\n0\n\nEquipo\n\n0\n\nOnline\n\n0\n\nSin GPS\n\nTodas las rutas\nTodos los usuarios\nTodo\nVivo\nOff\nSin GPS\n0 persona(s)\n--\n\nNo hay personas para el filtro seleccionado.\n\n+\n-\nSiguiendo\nRastreo en vivo activo\n\nOpenStreetMap · Zoom 13\n\n4.71100, -74.07210\n\nIngreso / actividad\nAlmuerzo\nRetorno\nCierre\n\nRuta entre marcaciones\n\nSin ubicaciones GPS para mostrar\n\nLas personas con horario asignado apareceran aqui cuando marquen o envien senal GPS.",
+        "ms": 8319,
+        "dataRequests": 1,
+        "stormRequests": 1,
+        "telemetryPosts": 1,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\n\nM-26 · Operación de campo\n\nServicios\n\nLa operacion de servicios no tiene pendientes criticos en este momento.\n\nCENTRO OPERATIVO DE SERVICIOS\n\nÓrdenes listas para gestionar\n\nFiltra, abre y ejecuta sin salir del monitor.\n\nNueva orden\nSolicitudes de servicios externas\nReferencias\nReportes\nNo fue posible cargar esta información en este momento. La aplicación sigue funcionando: vuelve a intentar en unos segundos. Referencia para soporte: qa-silence-500-20261119142737.\nAtención prioritaria\n\nServicios abiertos, en proceso o con novedad.\n\n0 por atender\n\nSin servicios abiertos para atender.\n\nConsulta de órdenes\n\nEncuentra y prioriza trabajo sin recargar la pantalla.\n\nActualizado 09:29 a. m.\nActualizar datos\nTodas 0\nAgendado 0\nPendiente 0\nEn curso 0\nInspeccion 0\nEjecucion 0\nCerrada 0\nNo ejecutada 0\nCancelada 0\nRango de fecha programada\nDesde\nHasta\nAgenda\nCualquier fecha\nProgramadas hoy\nVencidas abiertas\nProximas\nSin programar\nTodos los tipos\nTodos los tecnicos\nSin tecnico asignado\nEvidencia y novedades\nCon evidencia\nSin evidencia\nCon novedades\nTodas las solicitudes\nSolicitudes externas / agendado\nMas recientes primero\nPrioridad operativa\nFecha mas cercana\nFecha mas lejana\nConsecutivo mayor\nOrdenes de servicio\n\n0 visible(s) · 0 cargada(s) de 0 resultado(s)\n\nSelecciona una orden para consultar o continuar el servicio.\n\nDescargar Excel\n\nNo encontramos ordenes con estos filtros\n\nAjusta la busqueda o limpia los filtros activos.",
+        "ms": 8298,
+        "dataRequests": 5,
+        "stormRequests": 5,
+        "telemetryPosts": 5,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\n\nCargando monitoreo TMS...\n\nNo fue posible cargar esta información en este momento. La aplicación sigue funcionando: vuelve a intentar en unos segundos. Referencia para soporte: qa-silence-500-20261119142737. El panel reintentara solo en unos segundos.",
+        "ms": 8298,
+        "dataRequests": 1,
+        "stormRequests": 1,
+        "telemetryPosts": 1,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Admin 20261119142737 · NYVORA\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nAcciones frecuentes\n\nRealiza tus tareas principales en un solo clic.\n\nPriorizadas para tu perfil\nNueva venta\nRegistra un pedido de cliente\nNueva compra\nCrea una orden a proveedor\nRecibir mercancía\nRegistra la recepción de una compra\nCrear producto\nAgrega un artículo o servicio\nAjustar inventario\nRegistra una corrección de existencias\nNuevo servicio\nPrograma una orden de servicio\nMis módulos\n\nHabilitados para tu empresa y perfil.\n\n9\nInventario\nOperación\nCompras\nOperación\nVentas\nComercial\nTalento humano\nPersonas\nApex Heart\nControl gerencial\nContabilidad\nFinanzas\nTransporte\nLogística\nServicios\nOperación de campo\nComercio\nComercial",
+        "ms": 8417,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ],
+    "tormenta_429_nyvora_admin": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nTalento Humano\n\nAdministracion de jornadas\n\nAsignar horarios\n\nConsulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo.\n\nNuevo horario\nConsulta de horarios\n\nCompara fecha, jornada, personas y estado antes de abrir o editar un horario.\n\n0 de 0 visibles\nActualizar\n\nHORARIOS\n\n0\n\nEn el listado actual\n\nACTIVOS\n\n0\n\nSin cerrar ni cancelar\n\nPERSONAS\n\n0\n\nAsignadas en total\n\nADM / OP\n\n0 / 0\n\nPor tipo de jornada\n\nSEGUIMIENTO\n\n0%\n\nHorarios con eventos\n\nSIN PERSONAS\n\n0\n\nTodas con equipo\n\nTodos los tipos\nAdministrativos\nOperativos\nTodos los estados\nActivos\nCerrados\nCancelados\nLos contadores de eventos no se pudieron refrescar: aun no hay lectura de este dia. La pantalla reintenta sola.\n\n0 registros\n\n▥ Columnas\nID HORARIO\tFECHA Y JORNADA\tTIPO Y UBICACION\tPERSONAS\tESTADO\tACCIONES\n\nNo hay horarios con estos filtros\n\nLimpia los filtros o crea una nueva asignacion.",
+        "ms": 8377,
+        "dataRequests": 7,
+        "stormRequests": 7,
+        "telemetryPosts": 7,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\n\nCONTROL OPERATIVO GPS\n\nMapa en vivo de rutas y marcaciones\nEn vivo\nHistorico\nRefresco 25s\nActualizar\nLa respuesta tardó demasiado. Vuelve a intentar en unos segundos.\n\n0\n\nRutas\n\n0\n\nEquipo\n\n0\n\nOnline\n\n0\n\nSin GPS\n\nTodas las rutas\nTodos los usuarios\nTodo\nVivo\nOff\nSin GPS\n0 persona(s)\n--\n\nNo hay personas para el filtro seleccionado.\n\n+\n-\nSiguiendo\nRastreo en vivo activo\n\nOpenStreetMap · Zoom 13\n\n4.71100, -74.07210\n\nIngreso / actividad\nAlmuerzo\nRetorno\nCierre\n\nRuta entre marcaciones\n\nSin ubicaciones GPS para mostrar\n\nLas personas con horario asignado apareceran aqui cuando marquen o envien senal GPS.",
+        "ms": 8266,
+        "dataRequests": 1,
+        "stormRequests": 1,
+        "telemetryPosts": 1,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\n\nM-26 · Operación de campo\n\nServicios\n\nLa operacion de servicios no tiene pendientes criticos en este momento.\n\nCENTRO OPERATIVO DE SERVICIOS\n\nÓrdenes listas para gestionar\n\nFiltra, abre y ejecuta sin salir del monitor.\n\nNueva orden\nSolicitudes de servicios externas\nReferencias\nReportes\nLa respuesta tardó demasiado. Vuelve a intentar en unos segundos.\nAtención prioritaria\n\nServicios abiertos, en proceso o con novedad.\n\n0 por atender\n\nSin servicios abiertos para atender.\n\nConsulta de órdenes\n\nEncuentra y prioriza trabajo sin recargar la pantalla.\n\nActualizado 09:29 a. m.\nActualizar datos\nTodas 0\nAgendado 0\nPendiente 0\nEn curso 0\nInspeccion 0\nEjecucion 0\nCerrada 0\nNo ejecutada 0\nCancelada 0\nRango de fecha programada\nDesde\nHasta\nAgenda\nCualquier fecha\nProgramadas hoy\nVencidas abiertas\nProximas\nSin programar\nTodos los tipos\nTodos los tecnicos\nSin tecnico asignado\nEvidencia y novedades\nCon evidencia\nSin evidencia\nCon novedades\nTodas las solicitudes\nSolicitudes externas / agendado\nMas recientes primero\nPrioridad operativa\nFecha mas cercana\nFecha mas lejana\nConsecutivo mayor\nOrdenes de servicio\n\n0 visible(s) · 0 cargada(s) de 0 resultado(s)\n\nSelecciona una orden para consultar o continuar el servicio.\n\nDescargar Excel\n\nNo encontramos ordenes con estos filtros\n\nAjusta la busqueda o limpia los filtros activos.",
+        "ms": 8292,
+        "dataRequests": 5,
+        "stormRequests": 5,
+        "telemetryPosts": 5,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\n\nCargando monitoreo TMS...\n\nLa respuesta tardó demasiado. Vuelve a intentar en unos segundos. El panel reintentara solo en unos segundos.",
+        "ms": 8273,
+        "dataRequests": 1,
+        "stormRequests": 1,
+        "telemetryPosts": 1,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Admin 20261119142737 · NYVORA\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nAcciones frecuentes\n\nRealiza tus tareas principales en un solo clic.\n\nPriorizadas para tu perfil\nNueva venta\nRegistra un pedido de cliente\nNueva compra\nCrea una orden a proveedor\nRecibir mercancía\nRegistra la recepción de una compra\nCrear producto\nAgrega un artículo o servicio\nAjustar inventario\nRegistra una corrección de existencias\nNuevo servicio\nPrograma una orden de servicio\nMis módulos\n\nHabilitados para tu empresa y perfil.\n\n9\nInventario\nOperación\nCompras\nOperación\nVentas\nComercial\nTalento humano\nPersonas\nApex Heart\nControl gerencial\nContabilidad\nFinanzas\nTransporte\nLogística\nServicios\nOperación de campo\nComercio\nComercial",
+        "ms": 8272,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ],
+    "red_cortada_nyvora_admin": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nTalento Humano\n\nAdministracion de jornadas\n\nAsignar horarios\n\nConsulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo.\n\nNuevo horario\nConsulta de horarios\n\nCompara fecha, jornada, personas y estado antes de abrir o editar un horario.\n\n0 de 0 visibles\nActualizar\n\nHORARIOS\n\n0\n\nEn el listado actual\n\nACTIVOS\n\n0\n\nSin cerrar ni cancelar\n\nPERSONAS\n\n0\n\nAsignadas en total\n\nADM / OP\n\n0 / 0\n\nPor tipo de jornada\n\nSEGUIMIENTO\n\n0%\n\nHorarios con eventos\n\nSIN PERSONAS\n\n0\n\nTodas con equipo\n\nTodos los tipos\nAdministrativos\nOperativos\nTodos los estados\nActivos\nCerrados\nCancelados\nLos contadores de eventos no se pudieron refrescar: aun no hay lectura de este dia. La pantalla reintenta sola.\n\n0 registros\n\n▥ Columnas\nID HORARIO\tFECHA Y JORNADA\tTIPO Y UBICACION\tPERSONAS\tESTADO\tACCIONES\n\nNo hay horarios con estos filtros\n\nLimpia los filtros o crea una nueva asignacion.",
+        "ms": 8284,
+        "dataRequests": 7,
+        "stormRequests": 7,
+        "telemetryPosts": 7,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\n\nCONTROL OPERATIVO GPS\n\nMapa en vivo de rutas y marcaciones\nEn vivo\nHistorico\nRefresco 25s\nActualizar\nNo fue posible conectar con el servicio. Revisa tu conexion e intenta de nuevo: tu informacion no se perdio.\n\n0\n\nRutas\n\n0\n\nEquipo\n\n0\n\nOnline\n\n0\n\nSin GPS\n\nTodas las rutas\nTodos los usuarios\nTodo\nVivo\nOff\nSin GPS\n0 persona(s)\n--\n\nNo hay personas para el filtro seleccionado.\n\n+\n-\nSiguiendo\nRastreo en vivo activo\n\nOpenStreetMap · Zoom 13\n\n4.71100, -74.07210\n\nIngreso / actividad\nAlmuerzo\nRetorno\nCierre\n\nRuta entre marcaciones\n\nSin ubicaciones GPS para mostrar\n\nLas personas con horario asignado apareceran aqui cuando marquen o envien senal GPS.",
+        "ms": 8259,
+        "dataRequests": 1,
+        "stormRequests": 1,
+        "telemetryPosts": 1,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\n\nM-26 · Operación de campo\n\nServicios\n\nLa operacion de servicios no tiene pendientes criticos en este momento.\n\nCENTRO OPERATIVO DE SERVICIOS\n\nÓrdenes listas para gestionar\n\nFiltra, abre y ejecuta sin salir del monitor.\n\nNueva orden\nSolicitudes de servicios externas\nReferencias\nReportes\nNo fue posible conectar con el servicio. Revisa tu conexion e intenta de nuevo: tu informacion no se perdio.\nAtención prioritaria\n\nServicios abiertos, en proceso o con novedad.\n\n0 por atender\n\nSin servicios abiertos para atender.\n\nConsulta de órdenes\n\nEncuentra y prioriza trabajo sin recargar la pantalla.\n\nActualizado 09:30 a. m.\nActualizar datos\nTodas 0\nAgendado 0\nPendiente 0\nEn curso 0\nInspeccion 0\nEjecucion 0\nCerrada 0\nNo ejecutada 0\nCancelada 0\nRango de fecha programada\nDesde\nHasta\nAgenda\nCualquier fecha\nProgramadas hoy\nVencidas abiertas\nProximas\nSin programar\nTodos los tipos\nTodos los tecnicos\nSin tecnico asignado\nEvidencia y novedades\nCon evidencia\nSin evidencia\nCon novedades\nTodas las solicitudes\nSolicitudes externas / agendado\nMas recientes primero\nPrioridad operativa\nFecha mas cercana\nFecha mas lejana\nConsecutivo mayor\nOrdenes de servicio\n\n0 visible(s) · 0 cargada(s) de 0 resultado(s)\n\nSelecciona una orden para consultar o continuar el servicio.\n\nDescargar Excel\n\nNo encontramos ordenes con estos filtros\n\nAjusta la busqueda o limpia los filtros activos.",
+        "ms": 8267,
+        "dataRequests": 5,
+        "stormRequests": 5,
+        "telemetryPosts": 5,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\n\nCargando monitoreo TMS...\n\nNo fue posible conectar con el servicio. Revisa tu conexion e intenta de nuevo: tu informacion no se perdio. El panel reintentara solo en unos segundos.",
+        "ms": 8296,
+        "dataRequests": 1,
+        "stormRequests": 1,
+        "telemetryPosts": 1,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nqa.silence.admin.20261119142737@silence-qa.test\n\nNYVORA - Administrador de empresa\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Admin 20261119142737 · NYVORA\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nAcciones frecuentes\n\nRealiza tus tareas principales en un solo clic.\n\nPriorizadas para tu perfil\nNueva venta\nRegistra un pedido de cliente\nNueva compra\nCrea una orden a proveedor\nRecibir mercancía\nRegistra la recepción de una compra\nCrear producto\nAgrega un artículo o servicio\nAjustar inventario\nRegistra una corrección de existencias\nNuevo servicio\nPrograma una orden de servicio\nMis módulos\n\nHabilitados para tu empresa y perfil.\n\n9\nInventario\nOperación\nCompras\nOperación\nVentas\nComercial\nTalento humano\nPersonas\nApex Heart\nControl gerencial\nContabilidad\nFinanzas\nTransporte\nLogística\nServicios\nOperación de campo\nComercio\nComercial",
+        "ms": 8298,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ],
+    "feliz_nyvora_limitado": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nTalento Humano\n\nAdministracion de jornadas\n\nAsignar horarios\n\nConsulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo.\n\nNuevo horario\nConsulta de horarios\n\nCompara fecha, jornada, personas y estado antes de abrir o editar un horario.\n\n31 de 31 visibles\nActualizar\n\nHORARIOS\n\n31\n\nEn el listado actual\n\nACTIVOS\n\n12\n\nSin cerrar ni cancelar\n\nPERSONAS\n\n31\n\nAsignadas en total\n\nADM / OP\n\n31 / 0\n\nPor tipo de jornada\n\nSEGUIMIENTO\n\n65%\n\nHorarios con eventos\n\nSIN PERSONAS\n\n0\n\nTodas con equipo\n\nTodos los tipos\nAdministrativos\nOperativos\nTodos los estados\nActivos\nCerrados\nCancelados\n\n31 registros\n\n▥ Columnas\nID HORARIO\tFECHA Y JORNADA\tTIPO Y UBICACION\tPERSONAS\tESTADO\tACCIONES\n\n\n399\n\nHorario\n\n\t\n\n2026-11-19\n\n00:18 - 01:13 · 15 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261119051818@nyvora.test\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n400\n\nHorario\n\n\t\n\n2026-11-19\n\n00:23 - 01:18 · 15 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261119052329@nyvora.test\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n401\n\nHorario\n\n\t\n\n2026-11-19\n\n00:26 - 01:21 · 15 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nEmpleado evidencia 20261119052614\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n402\n\nHorario\n\n\t\n\n2026-11-19\n\n00:52 - 01:47 · 15 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nEmpleado evidencia 20261119055257\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n392\n\nHorario\n\n\t\n\n2026-11-17\n\n00:01 - 00:02 · 0 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261117191928@nyvora.test\n\n\tSin eventos\n\nInactive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n391\n\nHorario\n\n\t\n\n2026-11-17\n\n00:01 - 00:02 · 0 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261117191702@nyvora.test\n\n\tSin eventos\n\nInactive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n394\n\nHorario\n\n\t\n\n2026-11-17\n\n14:01 - 15:16 · 5 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261117192139@nyvora.test\n\n\tSin eventos\n\nInactive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n393\n\nHorario\n\n\t\n\n2026-11-17\n\n14:15 - 15:15 · 5 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261117192050@nyvora.test\n\n\tSin eventos\n\nInactive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n395\n\nHorario\n\n\t\n\n2026-11-17\n\n14:22 - 15:17 · 15 min tolerancia · sin GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.monitor.employee.20261117192232@nyvora.test\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n396\n\nHorario\n\n\t\n\n2026-11-17\n\n14:26 - 15:21 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.gate.fixed.20261117192613@nyvora.test\n\n\tEn seguimiento\n\nInactive · 1 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n397\n\nHorario\n\n\t\n\n2026-11-17\n\n14:27 - 15:22 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.gate.fixed.20261117192705@nyvora.test\n\n\tCerrado\n\nClosed · 4 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n398\n\nHorario\n\n\t\n\n2026-11-17\n\n14:29 - 15:24 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nqa.gate.fixed.20261117192938@nyvora.test\n\n\tCerrado\n\nClosed · 4 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n303\n\nHorario\n\n\t\n\n2026-09-21\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260921105218\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n301\n\nHorario\n\n\t\n\n2026-09-21\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260921085915\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n300\n\nHorario\n\n\t\n\n2026-09-20\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789961427894\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n298\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789843255642\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n297\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789843195754\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n296\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789843074385\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n295\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789843052264\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n288\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789839318539\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n287\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789839287097\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n272\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789794175244\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n275\n\nHorario\n\n\t\n\n2026-09-19\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260919uxfixes\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n270\n\nHorario\n\n\t\n\n2026-09-18\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260918231424\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n269\n\nHorario\n\n\t\n\n2026-09-18\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260918231402\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n268\n\nHorario\n\n\t\n\n2026-09-18\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260918231313\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n266\n\nHorario\n\n\t\n\n2026-09-18\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789763769474\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n265\n\nHorario\n\n\t\n\n2026-09-18\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 1789763747186\n\n\tSin eventos\n\nActive · 0 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n2\n\nHorario\n\n\t\n\n2026-08-13\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260814DYN01\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n3\n\nHorario\n\n\t\n\n2026-08-13\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)\n\nNyvora Monitor Certificate 20260814DYN02\n\n\tCerrado\n\nClosed · 5 Evento(S)\n\n\t\nAbrir\nEditar\nClonar\n\n\n\n4\n\nHorario\n\n\t\n\n2026-08-13\n\n08:00 - 17:00 · 15 min tolerancia · GPS\n\n\t\n\nAdministrativa\n\nSin sede definida\n\n\t\n\n1 persona(s)",
+        "ms": 8639,
+        "dataRequests": 5,
+        "stormRequests": 0,
+        "telemetryPosts": 2,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\n\nCONTROL OPERATIVO GPS\n\nMapa en vivo de rutas y marcaciones\nEn vivo\nHistorico\nRefresco 25s\nActualizar\n\n4\n\nRutas\n\n4\n\nEquipo\n\n0\n\nOnline\n\n4\n\nSin GPS\n\nTodas las rutas\nSin vehiculo - Horario 399\nSin vehiculo - Horario 400\nSin vehiculo - Horario 401\nSin vehiculo - Horario 402\nTodos los usuarios\nEmpleado evidencia 20261119051818\nEmpleado evidencia 20261119052329\nEmpleado evidencia 20261119052614\nEmpleado evidencia 20261119055257\nTodo\nVivo\nOff\nSin GPS\n4 persona(s)\nActualizado 9:31:25 a.m.\nEmpleado evidencia 20261119051818\nSin vehiculo · Ruta 399\nhace 9h\n--\n00:19 · Sin GPS\nEmpleado evidencia 20261119052329\nSin vehiculo · Ruta 400\nhace 9h\n--\n00:24 · Sin GPS\nEmpleado evidencia 20261119052614\nSin vehiculo · Ruta 401\nhace 9h\n--\n00:27 · Sin GPS\nEmpleado evidencia 20261119055257\nSin vehiculo · Ruta 402\nhace 9h\n--\n00:53 · Sin GPS\nI\nA\nR\nC\nI\nA\nR\nC\nI\nA\nR\nC\nI\nA\nR\nC\n1\n2\n3\n4\n+\n-\nSiguiendo\nRastreo en vivo activo\n\nOpenStreetMap · Zoom 13\n\n4.71100, -74.07210\n\nIngreso / actividad\nAlmuerzo\nRetorno\nCierre\n\nRuta entre marcaciones\n\nSin ubicaciones GPS para mostrar\n\nLas personas con horario asignado apareceran aqui cuando marquen o envien senal GPS.",
+        "ms": 8338,
+        "dataRequests": 1,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Servicios. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8335,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Transporte. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8349,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Limit 20261119142737 · NYVORA\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nAcciones frecuentes\n\nRealiza tus tareas principales en un solo clic.\n\nPriorizadas para tu perfil\n\nNo hay acciones rápidas para estos módulos\n\nPuedes abrir cualquiera desde Mis módulos.\n\nMis módulos\n\nHabilitados para tu empresa y perfil.\n\n1\nTalento humano\nPersonas",
+        "ms": 8395,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ],
+    "tormenta_500_nyvora_limitado": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nTalento Humano\n\nAdministracion de jornadas\n\nAsignar horarios\n\nConsulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo.\n\nNuevo horario\nConsulta de horarios\n\nCompara fecha, jornada, personas y estado antes de abrir o editar un horario.\n\n0 de 0 visibles\nActualizar\n\nHORARIOS\n\n0\n\nEn el listado actual\n\nACTIVOS\n\n0\n\nSin cerrar ni cancelar\n\nPERSONAS\n\n0\n\nAsignadas en total\n\nADM / OP\n\n0 / 0\n\nPor tipo de jornada\n\nSEGUIMIENTO\n\n0%\n\nHorarios con eventos\n\nSIN PERSONAS\n\n0\n\nTodas con equipo\n\nTodos los tipos\nAdministrativos\nOperativos\nTodos los estados\nActivos\nCerrados\nCancelados\nLos contadores de eventos no se pudieron refrescar: aun no hay lectura de este dia. La pantalla reintenta sola.\n\n0 registros\n\n▥ Columnas\nID HORARIO\tFECHA Y JORNADA\tTIPO Y UBICACION\tPERSONAS\tESTADO\tACCIONES\n\nNo hay horarios con estos filtros\n\nLimpia los filtros o crea una nueva asignacion.",
+        "ms": 8333,
+        "dataRequests": 7,
+        "stormRequests": 7,
+        "telemetryPosts": 7,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\n\nCONTROL OPERATIVO GPS\n\nMapa en vivo de rutas y marcaciones\nEn vivo\nHistorico\nRefresco 25s\nActualizar\nNo fue posible cargar esta información en este momento. La aplicación sigue funcionando: vuelve a intentar en unos segundos. Referencia para soporte: qa-silence-500-20261119142737.\n\n0\n\nRutas\n\n0\n\nEquipo\n\n0\n\nOnline\n\n0\n\nSin GPS\n\nTodas las rutas\nTodos los usuarios\nTodo\nVivo\nOff\nSin GPS\n0 persona(s)\n--\n\nNo hay personas para el filtro seleccionado.\n\n+\n-\nSiguiendo\nRastreo en vivo activo\n\nOpenStreetMap · Zoom 13\n\n4.71100, -74.07210\n\nIngreso / actividad\nAlmuerzo\nRetorno\nCierre\n\nRuta entre marcaciones\n\nSin ubicaciones GPS para mostrar\n\nLas personas con horario asignado apareceran aqui cuando marquen o envien senal GPS.",
+        "ms": 8396,
+        "dataRequests": 1,
+        "stormRequests": 1,
+        "telemetryPosts": 1,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Servicios. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8434,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Transporte. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8262,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Limit 20261119142737 · NYVORA\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nAcciones frecuentes\n\nRealiza tus tareas principales en un solo clic.\n\nPriorizadas para tu perfil\n\nNo hay acciones rápidas para estos módulos\n\nPuedes abrir cualquiera desde Mis módulos.\n\nMis módulos\n\nHabilitados para tu empresa y perfil.\n\n1\nTalento humano\nPersonas",
+        "ms": 8354,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ],
+    "tormenta_429_nyvora_limitado": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nTalento Humano\n\nAdministracion de jornadas\n\nAsignar horarios\n\nConsulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo.\n\nNuevo horario\nConsulta de horarios\n\nCompara fecha, jornada, personas y estado antes de abrir o editar un horario.\n\n0 de 0 visibles\nActualizar\n\nHORARIOS\n\n0\n\nEn el listado actual\n\nACTIVOS\n\n0\n\nSin cerrar ni cancelar\n\nPERSONAS\n\n0\n\nAsignadas en total\n\nADM / OP\n\n0 / 0\n\nPor tipo de jornada\n\nSEGUIMIENTO\n\n0%\n\nHorarios con eventos\n\nSIN PERSONAS\n\n0\n\nTodas con equipo\n\nTodos los tipos\nAdministrativos\nOperativos\nTodos los estados\nActivos\nCerrados\nCancelados\nLos contadores de eventos no se pudieron refrescar: aun no hay lectura de este dia. La pantalla reintenta sola.\n\n0 registros\n\n▥ Columnas\nID HORARIO\tFECHA Y JORNADA\tTIPO Y UBICACION\tPERSONAS\tESTADO\tACCIONES\n\nNo hay horarios con estos filtros\n\nLimpia los filtros o crea una nueva asignacion.",
+        "ms": 8432,
+        "dataRequests": 7,
+        "stormRequests": 7,
+        "telemetryPosts": 7,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\n\nCONTROL OPERATIVO GPS\n\nMapa en vivo de rutas y marcaciones\nEn vivo\nHistorico\nRefresco 25s\nActualizar\nLa respuesta tardó demasiado. Vuelve a intentar en unos segundos.\n\n0\n\nRutas\n\n0\n\nEquipo\n\n0\n\nOnline\n\n0\n\nSin GPS\n\nTodas las rutas\nTodos los usuarios\nTodo\nVivo\nOff\nSin GPS\n0 persona(s)\n--\n\nNo hay personas para el filtro seleccionado.\n\n+\n-\nSiguiendo\nRastreo en vivo activo\n\nOpenStreetMap · Zoom 13\n\n4.71100, -74.07210\n\nIngreso / actividad\nAlmuerzo\nRetorno\nCierre\n\nRuta entre marcaciones\n\nSin ubicaciones GPS para mostrar\n\nLas personas con horario asignado apareceran aqui cuando marquen o envien senal GPS.",
+        "ms": 8527,
+        "dataRequests": 1,
+        "stormRequests": 1,
+        "telemetryPosts": 1,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Servicios. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8451,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Transporte. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8444,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Limit 20261119142737 · NYVORA\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nAcciones frecuentes\n\nRealiza tus tareas principales en un solo clic.\n\nPriorizadas para tu perfil\n\nNo hay acciones rápidas para estos módulos\n\nPuedes abrir cualquiera desde Mis módulos.\n\nMis módulos\n\nHabilitados para tu empresa y perfil.\n\n1\nTalento humano\nPersonas",
+        "ms": 8319,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ],
+    "red_cortada_nyvora_limitado": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nTalento Humano\n\nAdministracion de jornadas\n\nAsignar horarios\n\nConsulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo.\n\nNuevo horario\nConsulta de horarios\n\nCompara fecha, jornada, personas y estado antes de abrir o editar un horario.\n\n0 de 0 visibles\nActualizar\n\nHORARIOS\n\n0\n\nEn el listado actual\n\nACTIVOS\n\n0\n\nSin cerrar ni cancelar\n\nPERSONAS\n\n0\n\nAsignadas en total\n\nADM / OP\n\n0 / 0\n\nPor tipo de jornada\n\nSEGUIMIENTO\n\n0%\n\nHorarios con eventos\n\nSIN PERSONAS\n\n0\n\nTodas con equipo\n\nTodos los tipos\nAdministrativos\nOperativos\nTodos los estados\nActivos\nCerrados\nCancelados\nLos contadores de eventos no se pudieron refrescar: aun no hay lectura de este dia. La pantalla reintenta sola.\n\n0 registros\n\n▥ Columnas\nID HORARIO\tFECHA Y JORNADA\tTIPO Y UBICACION\tPERSONAS\tESTADO\tACCIONES\n\nNo hay horarios con estos filtros\n\nLimpia los filtros o crea una nueva asignacion.",
+        "ms": 8334,
+        "dataRequests": 7,
+        "stormRequests": 7,
+        "telemetryPosts": 7,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\n\nCONTROL OPERATIVO GPS\n\nMapa en vivo de rutas y marcaciones\nEn vivo\nHistorico\nRefresco 25s\nActualizar\nNo fue posible conectar con el servicio. Revisa tu conexion e intenta de nuevo: tu informacion no se perdio.\n\n0\n\nRutas\n\n0\n\nEquipo\n\n0\n\nOnline\n\n0\n\nSin GPS\n\nTodas las rutas\nTodos los usuarios\nTodo\nVivo\nOff\nSin GPS\n0 persona(s)\n--\n\nNo hay personas para el filtro seleccionado.\n\n+\n-\nSiguiendo\nRastreo en vivo activo\n\nOpenStreetMap · Zoom 13\n\n4.71100, -74.07210\n\nIngreso / actividad\nAlmuerzo\nRetorno\nCierre\n\nRuta entre marcaciones\n\nSin ubicaciones GPS para mostrar\n\nLas personas con horario asignado apareceran aqui cuando marquen o envien senal GPS.",
+        "ms": 8519,
+        "dataRequests": 1,
+        "stormRequests": 1,
+        "telemetryPosts": 1,
+        "denied": false,
+        "mounted": true
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Servicios. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8843,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Transporte. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8364,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA - Empleado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Limit 20261119142737 · NYVORA\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nAcciones frecuentes\n\nRealiza tus tareas principales en un solo clic.\n\nPriorizadas para tu perfil\n\nNo hay acciones rápidas para estos módulos\n\nPuedes abrir cualquiera desde Mis módulos.\n\nMis módulos\n\nHabilitados para tu empresa y perfil.\n\n1\nTalento humano\nPersonas",
+        "ms": 8415,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ],
+    "feliz_otro_tenant": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Talento humano. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8482,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Talento humano. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8427,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Servicios. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8275,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Transporte. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8361,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Other 20261119142737 · Diana vargas\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nNo tienes módulos habilitados\n\nSolicita al administrador de tu empresa que active los módulos y permisos necesarios para tu operación.",
+        "ms": 8339,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ],
+    "tormenta_500_otro_tenant": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Talento humano. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8350,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Talento humano. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8396,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Servicios. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8382,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Transporte. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8351,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Other 20261119142737 · Diana vargas\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nNo tienes módulos habilitados\n\nSolicita al administrador de tu empresa que active los módulos y permisos necesarios para tu operación.",
+        "ms": 8347,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ],
+    "tormenta_429_otro_tenant": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Talento humano. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8442,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Talento humano. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8266,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Servicios. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8252,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Transporte. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8255,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Other 20261119142737 · Diana vargas\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nNo tienes módulos habilitados\n\nSolicita al administrador de tu empresa que active los módulos y permisos necesarios para tu operación.",
+        "ms": 8378,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ],
+    "red_cortada_otro_tenant": [
+      {
+        "pantalla": "rutas",
+        "url": "/dashboard/talento-humano/rutas",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Talento humano. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8385,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "mapa",
+        "url": "/dashboard/talento-humano/mapa",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nMapa\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Talento humano. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8482,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "servicios",
+        "url": "/dashboard/servicios",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Servicios. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8311,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "monitoreo",
+        "url": "/dashboard/transporte/monitoreo",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\nMonitoreo\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Transporte. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+        "ms": 8389,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": true,
+        "mounted": false
+      },
+      {
+        "pantalla": "home",
+        "url": "/dashboard",
+        "overlayCards": 0,
+        "overlayText": [],
+        "technicalFound": [],
+        "bodyText": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista contable\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nQS\nBienvenido, Qa Silence Other 20261119142737 · Diana vargas\nCreamos sistemas a tu medida.\n\nTu operación, más simple y bajo control.\n\nNo tienes módulos habilitados\n\nSolicita al administrador de tu empresa que active los módulos y permisos necesarios para tu operación.",
+        "ms": 8364,
+        "dataRequests": 0,
+        "stormRequests": 0,
+        "telemetryPosts": 0,
+        "denied": false,
+        "mounted": true
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "api_qa_responde_health",
+      "ok": true,
+      "payload": {
+        "status": 200,
+        "commit": "9c82fca1a392"
+      }
+    },
+    {
+      "name": "qa_sirve_un_bundle_leyable",
+      "ok": true,
+      "payload": {
+        "chunks_leidos": 10,
+        "bytes": 629512
+      }
+    },
+    {
+      "name": "el_bundle_desplegado_trae_el_canal_de_diagnostico",
+      "ok": true,
+      "payload": {
+        "chunks": [
+          "/_next/static/chunks/0203i95lepgi4.js"
+        ]
+      }
+    },
+    {
+      "name": "el_bundle_desplegado_ya_no_dispara_apex_alert",
+      "ok": true,
+      "payload": {
+        "chunks_con_apex_alert": []
+      }
+    },
+    {
+      "name": "nyvora_admin_login_real_en_qa",
+      "ok": true,
+      "payload": {
+        "ms": 2897
+      }
+    },
+    {
+      "name": "nyvora_admin_feliz_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_admin_feliz_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_admin_feliz_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_admin_feliz_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_admin_feliz_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_rutas_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 7,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_rutas_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_mapa_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 1,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_mapa_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_servicios_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 5,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_servicios_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_monitoreo_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 1,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_monitoreo_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_home_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": false,
+        "statica": true
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_500_home_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_rutas_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 7,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_rutas_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_mapa_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 1,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_mapa_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_servicios_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 5,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_servicios_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_monitoreo_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 1,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_monitoreo_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_home_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": false,
+        "statica": true
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_tormenta_429_home_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_rutas_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 7,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_rutas_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_mapa_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 1,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA"
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_mapa_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA"
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_servicios_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 5,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_servicios_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_monitoreo_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 1,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_monitoreo_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORM"
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_home_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": false,
+        "statica": true
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_red_cortada_home_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nQA\n\nq"
+      }
+    },
+    {
+      "name": "nyvora_admin_rbac_sin_ventana",
+      "ok": true,
+      "payload": {
+        "denied": false,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_login_real_en_qa",
+      "ok": true,
+      "payload": {
+        "ms": 3222
+      }
+    },
+    {
+      "name": "nyvora_limitado_feliz_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_feliz_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_feliz_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_feliz_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_feliz_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_rutas_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 7,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.t"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_rutas_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.t"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_mapa_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 1,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.te"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_mapa_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.te"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_servicios_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA -"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_servicios_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_monitoreo_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.t"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_monitoreo_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_home_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": false,
+        "statica": true
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA -"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_500_home_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA -"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_rutas_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 7,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.t"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_rutas_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.t"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_mapa_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 1,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.te"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_mapa_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.te"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_servicios_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA -"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_servicios_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_monitoreo_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.t"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_monitoreo_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_home_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": false,
+        "statica": true
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA -"
+      }
+    },
+    {
+      "name": "nyvora_limitado_tormenta_429_home_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA -"
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_rutas_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 7,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.t"
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_rutas_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.t"
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_mapa_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 1,
+        "esperada": true,
+        "denied": false,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.te"
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_mapa_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.te"
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_servicios_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA -"
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_servicios_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_monitoreo_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.t"
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_monitoreo_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_home_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": false,
+        "statica": true
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA -"
+      }
+    },
+    {
+      "name": "nyvora_limitado_red_cortada_home_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nPERSONAS Y GESTIÓN\nQA\n\nqa.silence.limit.20261119142737@silence-qa.test\n\nNYVORA -"
+      }
+    },
+    {
+      "name": "nyvora_limitado_rbac_sin_ventana",
+      "ok": true,
+      "payload": {
+        "denied": false,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_login_real_en_qa",
+      "ok": true,
+      "payload": {
+        "ms": 2580
+      }
+    },
+    {
+      "name": "otro_tenant_feliz_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_feliz_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_feliz_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_feliz_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_feliz_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_rutas_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas -"
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_rutas_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_mapa_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - "
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_mapa_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_servicios_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista con"
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_servicios_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_monitoreo_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas -"
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_monitoreo_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_home_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": false,
+        "statica": true
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista con"
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_500_home_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista con"
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_rutas_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas -"
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_rutas_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_mapa_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - "
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_mapa_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_servicios_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista con"
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_servicios_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_monitoreo_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas -"
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_monitoreo_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_home_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": false,
+        "statica": true
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista con"
+      }
+    },
+    {
+      "name": "otro_tenant_tormenta_429_home_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista con"
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_rutas_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_rutas_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas -"
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_rutas_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_mapa_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_mapa_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: talento humano · mapa\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - "
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_mapa_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_servicios_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_servicios_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista con"
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_servicios_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_monitoreo_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": true,
+        "statica": false
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_monitoreo_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: transporte · monitoreo\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas -"
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_monitoreo_guard_honesto_sin_ventana",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_home_tormenta_real",
+      "ok": true,
+      "payload": {
+        "solicitudes_fallidas": 0,
+        "esperada": false,
+        "denied": false,
+        "statica": true
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_home_sin_tarjetas",
+      "ok": true,
+      "payload": {
+        "overlayCards": 0,
+        "technicalFound": [],
+        "overlayText": [],
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista con"
+      }
+    },
+    {
+      "name": "otro_tenant_red_cortada_home_pantalla_viva",
+      "ok": true,
+      "payload": {
+        "mounted": true,
+        "snippet": "Saltar al contenido principal\nPágina cargada: Dashboard\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nQA\n\nqa.silence.other.20261119142737@silence-qa.test\n\nDiana vargas - Analista con"
+      }
+    },
+    {
+      "name": "otro_tenant_rbac_sin_ventana",
+      "ok": true,
+      "payload": {
+        "denied": true,
+        "overlayText": []
+      }
+    },
+    {
+      "name": "otro_tenant_no_ve_a_nyvora",
+      "ok": true,
+      "payload": {
+        "empresa": "Diana vargas"
+      }
+    },
+    {
+      "name": "el_navegador_intento_registrar_los_fallos",
+      "ok": true,
+      "payload": {
+        "intentos": 70
+      }
+    },
+    {
+      "name": "los_fallos_quedan_registrados_en_qa",
+      "ok": true,
+      "payload": {
+        "registradas": 74,
+        "codigos": {
+          "200": 70,
+          "204": 4
+        }
+      }
+    }
+  ],
+  "bundle_desplegado": {
+    "chunks_leidos": 10,
+    "diagnostic": [
+      "/_next/static/chunks/0203i95lepgi4.js"
+    ],
+    "alert": [],
+    "tamano_bytes": 629512
+  },
+  "tenant": {
+    "id": "1d162ffd-bd27-4855-8141-b015388265fc",
+    "name": "NYVORA"
+  },
+  "control_aislamiento": {
+    "nyvora_tenant": "NYVORA",
+    "otro_tenant": "Diana vargas",
+    "otro_tenant_empresa": "Diana vargas",
+    "otro_tenant_rol": "Analista contable"
+  },
+  "telemetria": {
+    "intentos_navegador": 70,
+    "codigos_en_navegador": {
+      "200": 70,
+      "204": 4
+    },
+    "registradas": 74
+  },
+  "telemetria_sin_token": {
+    "intentos_navegador": 70,
+    "status_sonda": 401
+  },
+  "cuenta_efimera_desactivada": true,
+  "verdict": {
+    "passed": 163,
+    "failed": 0,
+    "total": 163
+  },
+  "finished_at": "2026-11-19T14:39:55.367Z"
+}

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-const { Prisma } = require("@prisma/client");
 const loadEnv = require("./load-env");
 
 function parseArgs(argv) {
@@ -15,26 +14,52 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-loadEnv(args["env-file"] || "config/production.env");
+let prisma;
 
-const prisma = require("../apps/api/src/core/prisma");
-
-function assertTarget() {
+function resolveTarget() {
   const target = String(args.target || process.env.TARGET_ENV || "").toLowerCase();
-  const expectedProject = target === "production"
-    ? "jzbwzmkidfthknsohhnr"
-    : target === "qa"
-      ? "jbirkghkekuifgfsgquq"
-      : "";
-  if (!expectedProject) throw new Error("El destino debe ser qa o production.");
-  if (!String(process.env.DATABASE_URL || "").includes(expectedProject)) {
-    throw new Error(`DATABASE_URL no corresponde al proyecto ${target} autorizado.`);
+  if (target !== "qa" && target !== "production") {
+    throw new Error("El destino debe ser qa o production.");
   }
   return target;
 }
 
+function assertTarget(target) {
+  const expectedProject = target === "production"
+    ? "jzbwzmkidfthknsohhnr"
+    : "jbirkghkekuifgfsgquq";
+  let databaseUrl;
+  try {
+    databaseUrl = new URL(process.env.DATABASE_URL || "");
+  } catch {
+    throw new Error("DATABASE_URL debe ser una URL PostgreSQL válida.");
+  }
+  const host = databaseUrl.hostname.toLowerCase();
+  const directHost = host === `db.${expectedProject}.supabase.co`
+    && databaseUrl.username === "postgres";
+  const sessionPooler = /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.pooler\.supabase\.com$/.test(host)
+    && databaseUrl.username === `postgres.${expectedProject}`;
+  if (!["postgres:", "postgresql:"].includes(databaseUrl.protocol)
+    || (!directHost && !sessionPooler)
+    || (databaseUrl.port !== "" && databaseUrl.port !== "5432")
+    || databaseUrl.pathname !== "/postgres"
+    || databaseUrl.hash
+    || [...databaseUrl.searchParams.keys()].some((key) => ["host", "hostaddr", "port", "user", "dbname", "options"].includes(key.toLowerCase()))) {
+    throw new Error(`DATABASE_URL no corresponde al proyecto ${target} autorizado.`);
+  }
+}
+
 async function main() {
-  const target = assertTarget();
+  const target = resolveTarget();
+  loadEnv(args["env-file"] || `config/${target}.env`);
+  assertTarget(target);
+
+  const { Prisma } = require("@prisma/client");
+  const models = Prisma?.dmmf?.datamodel?.models;
+  if (!Array.isArray(models) || models.length === 0) {
+    throw new Error("El cliente Prisma debe contener modelos para auditar.");
+  }
+  prisma = require("../apps/api/src/core/prisma");
   const columns = await prisma.$queryRawUnsafe(
     "select table_name, column_name from information_schema.columns where table_schema = 'public'"
   );
@@ -46,14 +71,16 @@ async function main() {
 
   const missing_tables = [];
   const missing_columns = [];
-  for (const model of Prisma.dmmf.datamodel.models) {
+  let columns_checked = 0;
+  for (const model of models) {
     const table = model.dbName || model.name;
     if (!catalog.has(table)) {
       missing_tables.push({ model: model.name, table });
       continue;
     }
     for (const field of model.fields) {
-      if (field.kind !== "scalar" || field.relationName) continue;
+      if (!["scalar", "enum"].includes(field.kind) || field.relationName) continue;
+      columns_checked += 1;
       const column = field.dbName || field.name;
       if (!catalog.get(table).has(column)) missing_columns.push({ model: model.name, table, column });
     }
@@ -62,7 +89,10 @@ async function main() {
   const result = {
     ok: missing_tables.length === 0 && missing_columns.length === 0,
     environment: target,
-    models_checked: Prisma.dmmf.datamodel.models.length,
+    models_checked: models.length,
+    // Presence only: no validation of types, enum values, constraints, RLS or data.
+    scope: "presence_only_public_tables_and_scalar_enum_columns",
+    columns_checked,
     missing_tables,
     missing_columns
   };
@@ -70,9 +100,15 @@ async function main() {
   if (!result.ok) process.exitCode = 1;
 }
 
-main().catch((error) => {
-  console.error(`[schema-alignment] ${error.message}`);
+main().catch(() => {
+  console.error("[schema-alignment] No se pudo completar la auditoría de presencia del esquema; revise destino, configuración, modelos y acceso.");
   process.exitCode = 1;
 }).finally(async () => {
-  await prisma.$disconnect();
+  if (!prisma) return;
+  try {
+    await prisma.$disconnect();
+  } catch {
+    console.error("[schema-alignment] No se pudo cerrar la conexión de auditoría.");
+    process.exitCode = 1;
+  }
 });

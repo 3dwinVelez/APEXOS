@@ -1,0 +1,27 @@
+El ANTES del corte, medido en Produccion el 2026-11-20 antes de que Railway terminara el despliegue
+de a5a49561. Ambiente: apexos-api-prod /health commit 34674cac29b3 (la version estable previa, que
+es el previous_main_commit declarado en el plan de rollback).
+
+- sonda-antes.json: la corrida de scripts/certifications/fase-3-ad-provider-detail-probe.js
+  --target=production --expected-commit 34674cac arroja 9/10 y el unico rojo es exactamente la
+  propiedad que se promovio: sonda_sin_detalle_del_proveedor_platform_companies con
+  { status: 500, leaked: ["Supabase <status>:"] }. Este es el control de falsificabilidad de la
+  sonda: la misma herramienta, contra el mismo endpoint del mismo ambiente, si puede fallar, y fallo.
+  Un verde despues del despliegue no es una rutina que nunca pudo estar en rojo.
+- antes-cuerpo-vivo-companies.txt: el cuerpo literal que devolvia el web de Produccion,
+  {"message":"Supabase 403: Forbidden"} con HTTP 500. Eso es lo que el operario leia (y lo que el
+  dueno pidio retirar) cuando el proveedor rebotaba. La peticion lleva sesion falsa y rebota en la
+  validacion de sesion del proveedor: no escribe datos de clientes.
+
+Dos aclaraciones sobre esta corrida:
+- La produxo una version del script anterior a la del DESPUES: en esa version el control
+  causa_A_desplegada_en_el_ambiente comparaba el commit servido contra el commit evaluado, asi que aqui
+  dijo PASS (34674cac == 34674cac) cuando lo cierto es que ese commit NO lleva el arreglo de congestion.
+  La version nueva ancla el control al commit del arreglo (--fixed-in), que es como debe leerse
+  cualquier corrida de causa A. El rojo que importa -la fuga de detalle- no depende de esa comparacion,
+  y por eso este ANTES sigue valiendo como control de falsificabilidad.
+- El arbol de main versiona el script tal como se certifico (blob del candidato). La version con
+  --fixed-in y con script_sha256 (db32d76b05ded80fb8460a1522c89875ebdfa6e566c6a07cf74a376be37fd1d2) vive
+  en desarrollo y es la que produce el DESPUES; la diferencia entre las dos es solo de anclaje y de
+  trazabilidad, no de lo que se mide. Se declara aqui para que el JSON versionado y el script
+  versionado no se lean como si fueran la misma mano.

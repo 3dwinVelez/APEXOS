@@ -127,6 +127,7 @@ export default function AccountingPyg({ period, onPeriodChange }: { period?: str
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const requestRef = useRef<AbortController | null>(null);
+  const orgRequestRef = useRef<Promise<OrgTree> | null>(null);
 
   const buildUrl = useCallback(() => {
     const params = new URLSearchParams({ period: effectivePeriod, mode });
@@ -184,12 +185,28 @@ export default function AccountingPyg({ period, onPeriodChange }: { period?: str
   }, [refresh]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    api<OrgTree>("/api/v1/accounting/organization-tree", { cache: "no-store", signal: controller.signal })
-      .then(setOrg)
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, []);
+    if (org) return;
+    let active = true;
+    // Keep only this instance's in-flight request across StrictMode effect replay.
+    const inherited = orgRequestRef.current !== null;
+    const loadOrg = async (canRetry: boolean): Promise<void> => {
+      const request = orgRequestRef.current ?? api<OrgTree>("/api/v1/accounting/organization-tree", { cache: "no-store" });
+      orgRequestRef.current = request;
+      try {
+        const tree = await request;
+        if (active) setOrg(tree);
+      } catch (value) {
+        if (active && canRetry && (value as { retryable?: boolean } | null)?.retryable === true) {
+          if (orgRequestRef.current === request) orgRequestRef.current = null;
+          await loadOrg(false);
+        }
+      } finally {
+        if (orgRequestRef.current === request) orgRequestRef.current = null;
+      }
+    };
+    void loadOrg(tab === "presupuesto" && inherited);
+    return () => { active = false; };
+  }, [org, tab]);
 
   const setDimAt = (index: number, value: DimKey) => setDims((current) => current.map((dim, dimIndex) => (dimIndex === index ? value : dim)));
   const optionsFor = (index: number) => DIM_OPTIONS.filter((option) => option.value === dims[index] || !dims.includes(option.value));
@@ -340,7 +357,7 @@ export default function AccountingPyg({ period, onPeriodChange }: { period?: str
         </nav>
       </section>
 
-      {tab === "presupuesto" ? <AccountingPygBudget defaultPeriod={report?.period || effectivePeriod} onSaved={() => void refresh()} /> : null}
+      {tab === "presupuesto" ? <AccountingPygBudget defaultPeriod={report?.period || effectivePeriod} organization={org} onSaved={() => void refresh()} /> : null}
 
       {tab === "matriz" ? (
         <>

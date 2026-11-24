@@ -1,0 +1,52 @@
+{
+  "generado_en": "2026-11-20T04:30:39.863Z",
+  "manifiesto_sha256": "04f2f898643132c5",
+  "ambiente_archivo": "config/qa.env",
+  "base_url": "https://apexos-api-qa-production.up.railway.app",
+  "es_produccion": false,
+  "modo": "aplicar",
+  "filas_seleccionadas": 2,
+  "escrituras": 2,
+  "resultados": [
+    {
+      "empleado_id": 569,
+      "dia": "2026-11-17",
+      "tipo": "entrada",
+      "punched_at": "2026-11-17T19:21:03.352Z",
+      "fuente": "intento_real_en_log",
+      "estado": 404,
+      "ok": false,
+      "code": "EMPLEADO_NO_ENCONTRADO",
+      "message": "El empleado 569 no existe o no pertenece a tu organizacion.",
+      "replay": false
+    },
+    {
+      "empleado_id": 569,
+      "dia": "2026-11-17",
+      "tipo": "salida",
+      "punched_at": "2026-11-17T20:15:00.000Z",
+      "fuente": "horario_asignado",
+      "estado": 404,
+      "ok": false,
+      "code": "EMPLEADO_NO_ENCONTRADO",
+      "message": "El empleado 569 no existe o no pertenece a tu organizacion.",
+      "replay": false
+    }
+  ],
+  "verificacion": [
+    {
+      "empleado_id": 569,
+      "dia": "2026-11-17",
+      "tipos_lectos": [],
+      "jornada_abierta": false,
+      "lectura_estado": 200
+    },
+    {
+      "empleado_id": 569,
+      "dia": "2026-11-17",
+      "tipos_lectos": [],
+      "jornada_abierta": false,
+      "lectura_estado": 200
+    }
+  ]
+}

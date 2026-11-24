@@ -1,0 +1,1315 @@
+{
+  "change_id": "hr-marca-queue-browser-20261119",
+  "certification": "hr-marking-queue-browser-local",
+  "environment": "LOCAL",
+  "browser": "chrome-headless",
+  "frontend_served_by": "next start (build de produccion)",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "api_url": "http://127.0.0.1:3226",
+  "web_url": "http://127.0.0.1:3227",
+  "generated_at": "2026-11-20T02:35:26.492Z",
+  "certified_commit": "b89c14fe91c54122b89806ec233588e97d5c309d",
+  "scope": {
+    "defect": "<cadena de 263 caracteres suprimida>",
+    "product_decision": "<cadena de 287 caracteres suprimida>",
+    "proven_by_live_browser": [
+      "login real por pantalla del operario y del supervisor contra el build de produccion",
+      "criterio 2: PNG etiquetado image/jpeg encolado -> guardado con el tipo olido y el hash de lo recibido",
+      "criterio 3: HEIC real encolado -> la jornada se guarda y la evidencia queda degradada con su codigo",
+      "<cadena de 136 caracteres suprimida>",
+      "criterio 7: marcacion diferida expirada se CIERRA, se ve con su accion y no queda por enviar",
+      "<cadena de 130 caracteres suprimida>",
+      "<cadena de 131 caracteres suprimida>",
+      "la evidencia degradada aparece nombrada en el reporte del supervisor",
+      "avisos legibles en tema claro y en tema oscuro con la razon de contraste medida en el navegador"
+    ]
+  },
+  "fixture": {
+    "tenant": {
+      "id": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd",
+      "name": "Puebla Operaciones"
+    },
+    "operario": {
+      "id": 1088,
+      "email": "qa.mqb.ope.20261120023526@apex.test",
+      "ficha": 741
+    },
+    "supervisor": {
+      "id": 1087,
+      "email": "qa.mqb.sup.20261120023526@apex.test"
+    },
+    "dias": {
+      "contencion": "2026-11-16",
+      "png": "2026-11-15",
+      "heic": "2026-11-14",
+      "autorrecuperada": "2026-11-13",
+      "correccion": "2026-11-12",
+      "vencida": "2026-11-11"
+    },
+    "horarios": {
+      "vencida": 417,
+      "correccion": 418
+    },
+    "evidencia_bytes": {
+      "jpeg": 282,
+      "png": 152,
+      "heic": 624
+    }
+  },
+  "checks": [
+    {
+      "name": "api_health_ok",
+      "ok": true,
+      "detail": {
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "web_sirve_el_build_de_produccion_sin_origen_horneado",
+      "ok": true,
+      "detail": {
+        "build_id": "Cf4jHmoRfF03N4Tv6ocfm",
+        "archivos_con_origen_horneado": [],
+        "web_url": "http://127.0.0.1:3227",
+        "frontend_build": {
+          "fresh": true,
+          "obsoletos": "[0 elementos]",
+          "marca_iso": "2026-11-19T21:58:30.203Z",
+          "reconstruido": false
+        }
+      }
+    },
+    {
+      "name": "rol_del_supervisor_lleva_edicion_de_talento_humano",
+      "ok": true,
+      "detail": {
+        "talento_humano": {
+          "access": false,
+          "view": true,
+          "create": false,
+          "edit": true,
+          "delete": false,
+          "delete_physical_records": false,
+          "approve": false,
+          "export": false,
+          "import": false,
+          "sensitive": false,
+          "reports": false
+        }
+      }
+    },
+    {
+      "name": "fixture_ficha_del_operario",
+      "ok": true,
+      "detail": {
+        "operario_id": 1088,
+        "ficha": 741
+      }
+    },
+    {
+      "name": "login_real_del_operario",
+      "ok": true,
+      "detail": {
+        "ruta": "/dashboard"
+      }
+    },
+    {
+      "name": "literales_sin_deriva",
+      "ok": true,
+      "detail": {
+        "ausentes": []
+      }
+    },
+    {
+      "name": "cola_semada_con_la_forma_de_la_pantalla",
+      "ok": true,
+      "detail": {
+        "items": [
+          "{4 claves}",
+          "{4 claves}",
+          "{4 claves}",
+          "{4 claves}",
+          "{4 claves}",
+          "{4 claves}"
+        ]
+      }
+    },
+    {
+      "name": "cola_semada_leida_desde_el_navegador",
+      "ok": true,
+      "detail": {
+        "escritas": 6,
+        "leidas": 6,
+        "estados": [
+          "queued",
+          "queued",
+          "queued",
+          "blocked",
+          "queued",
+          "queued"
+        ]
+      }
+    },
+    {
+      "name": "lock_de_marcacion_sostenido_desde_otra_conexion",
+      "ok": true,
+      "detail": {
+        "ambito": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd:741:sin-horario:2026-11-16T05:00:00.000Z",
+        "sostiene_ms": 19000,
+        "peticion_en_vuelo": true,
+        "adquirido": true,
+        "asentado": false,
+        "ventanas_punch": [
+          "2026-11-16"
+        ]
+      }
+    },
+    {
+      "name": "criterio8_la_contencion_devuelve_503_reintentable",
+      "ok": true,
+      "detail": {
+        "codigo": "MARCACION_CONCURRENCIA_TEMPORAL",
+        "duracion_ms": 15667
+      }
+    },
+    {
+      "name": "criterio8_nunca_dos_ciclos_simultaneos",
+      "ok": true,
+      "detail": {
+        "peticiones": 8,
+        "solapamientos": []
+      }
+    },
+    {
+      "name": "criterio8_sin_amplificacion_de_peticiones",
+      "ok": true,
+      "detail": {
+        "peticiones": 8,
+        "encoladas": 6,
+        "limite": 18,
+        "detalle": [
+          "{8 claves}",
+          "{8 claves}",
+          "{8 claves}",
+          "{8 claves}",
+          "{8 claves}",
+          "{8 claves}",
+          "{8 claves}",
+          "{8 claves}"
+        ]
+      }
+    },
+    {
+      "name": "criterio8_mientras_hay_una_peticion_en_vuelo_no_sale_otra",
+      "ok": true,
+      "detail": {
+        "duracion_solicitud_ms": 15667,
+        "salidas_en_la_ventana_de_12s": 0,
+        "tambo_anterior_ms": 12000
+      }
+    },
+    {
+      "name": "criterio2_png_etiquetado_jpeg_guardado_desde_la_cola",
+      "ok": true,
+      "detail": {
+        "marcacion": true,
+        "evidence_status": "available",
+        "tipo": "image/png",
+        "hash_coincide": true
+      }
+    },
+    {
+      "name": "criterio3_heic_no_cuesta_la_jornada",
+      "ok": true,
+      "detail": {
+        "marcacion": true,
+        "evidence_status": "degraded",
+        "codigo": "EVIDENCIA_NO_DECODIFICABLE"
+      }
+    },
+    {
+      "name": "criterio6_self_heal_libera_el_elemento_bloqueado",
+      "ok": true,
+      "detail": {
+        "avisos": [
+          "Se recupero una marcacion que estaba bloqueada por la foto y se envio de nuevo sin ella. Revisa el aviso de la foto pend"
+        ]
+      }
+    },
+    {
+      "name": "criterio6_self_heal_envia_la_hora_degradada",
+      "ok": true,
+      "detail": {
+        "marcacion": true,
+        "evidence_status": "degraded",
+        "codigo": "EVIDENCIA_ALFABETO_INVALIDO"
+      }
+    },
+    {
+      "name": "criterio6_la_hora_sobrevive_al_rechazo_de_la_foto",
+      "ok": true,
+      "detail": {
+        "marcacion": true,
+        "evidence_status": "degraded",
+        "motivo_del_desprendimiento": "La foto de validacion no se pudo guardar en este telefono. Tu hora si quedo registrada y l",
+        "novedad_declarada": true
+      }
+    },
+    {
+      "name": "criterio6_la_jornada_no_quedo_colgada_por_la_foto",
+      "ok": true,
+      "detail": {
+        "item_self_heal_encolado": false,
+        "item_en_vuelo_encolado": false,
+        "marcaciones_en_base": 2
+      }
+    },
+    {
+      "name": "criterio6_el_aviso_de_hora_recuperada_llega_a_pantalla",
+      "ok": true,
+      "detail": {
+        "avisos_vistos": [
+          "Se recupero una marcacion que estaba bloqueada por la foto y",
+          "Salida",
+          "Esta marcacion ya no se puede enviar porque paso el tiempo p",
+          "marcacion(es) cerradas: no se van a enviar y no cuentan como",
+          "Tu hora quedo registrada. La foto no se pudo guardar y queda"
+        ]
+      }
+    },
+    {
+      "name": "criterio7_la_vencida_se_cierra_con_su_codigo",
+      "ok": true,
+      "detail": {
+        "estado": "closed",
+        "codigo": "MARCACION_DIFERIDA_EXPIRADA"
+      }
+    },
+    {
+      "name": "criterio7_la_vencida_no_dejo_marcacion",
+      "ok": true,
+      "detail": {
+        "fila_del_dia_vencido": false
+      }
+    },
+    {
+      "name": "criterio7_la_pantalla_nombra_la_salida",
+      "ok": true,
+      "detail": {
+        "cuenta_cerradas": true,
+        "aviso_escalado": true,
+        "motivo_en_la_fila": "Esta marcacion ya no se puede enviar porque paso el tiempo permitido. Pide a tu supervisor que registre la hora. No es u"
+      }
+    },
+    {
+      "name": "criterio7_lo_cerrado_no_cuenta_como_pendiente",
+      "ok": true,
+      "detail": {
+        "pendientes_restantes": 0
+      }
+    },
+    {
+      "name": "las_cinco_jornadas_sobrevivieron",
+      "ok": true,
+      "detail": {
+        "png": true,
+        "heic": true,
+        "autorrecuperada": true,
+        "tras_la_contencion": true,
+        "desprendida_en_vuelo": true
+      }
+    },
+    {
+      "name": "tema_oscuro_aplicado_en_el_documento",
+      "ok": true,
+      "detail": {
+        "dark": true,
+        "data_theme": "dark",
+        "stored": "dark"
+      }
+    },
+    {
+      "name": "aviso_de_cierre_legible_en_claro_y_oscuro",
+      "ok": true,
+      "detail": {
+        "claro": {
+          "found": true,
+          "nodo": "p.flex.items-center.gap-2",
+          "fg": "rgb(15, 23, 42)",
+          "bg": "rgb(248, 250, 252)",
+          "base_opaca": "rgb(248, 250, 252)",
+          "capas_translucidas": 0,
+          "ratio": 17.06,
+          "font_size_px": 14,
+          "font_weight": "600"
+        },
+        "oscuro": {
+          "found": true,
+          "nodo": "p.flex.items-center.gap-2",
+          "fg": "rgb(242, 245, 247)",
+          "bg": "rgb(30, 44, 55)",
+          "base_opaca": "rgb(30, 44, 55)",
+          "capas_translucidas": 0,
+          "ratio": 13.04,
+          "font_size_px": 14,
+          "font_weight": "600"
+        },
+        "temas": {
+          "claro": "{3 claves}",
+          "oscuro": "{3 claves}"
+        }
+      }
+    },
+    {
+      "name": "el_aviso_sigue_visible_en_tema_oscuro",
+      "ok": true,
+      "detail": {
+        "caracteres": 1516
+      }
+    },
+    {
+      "name": "entrada_del_dia_a_corregir_registrada_por_el_canal_propio",
+      "ok": true,
+      "detail": {
+        "estado": 200,
+        "codigo": null
+      }
+    },
+    {
+      "name": "login_real_del_supervisor_con_hr_write_almacenado",
+      "ok": true,
+      "detail": {
+        "ruta": "/dashboard",
+        "hr_write": true,
+        "modulos": [
+          "hr:read",
+          "hr:write"
+        ]
+      }
+    },
+    {
+      "name": "criterio3_la_evidencia_degradada_aparece_nombrada_al_supervisor",
+      "ok": true,
+      "detail": {
+        "linea": "Evidencia degradada: la camara envio un formato que este navegador no puede mostrar. La marcacion quedo registrada."
+      }
+    },
+    {
+      "name": "alerta_degradada_legible_en_claro_y_oscuro",
+      "ok": true,
+      "detail": {
+        "claro": {
+          "found": true,
+          "nodo": "p.inline-flex.items-center.gap-2.rounded-md",
+          "fg": "rgb(69, 26, 3)",
+          "bg": "rgb(255, 251, 235)",
+          "base_opaca": "rgb(255, 251, 235)",
+          "capas_translucidas": 0,
+          "ratio": 14.44,
+          "font_size_px": 12,
+          "font_weight": "600"
+        },
+        "oscuro": {
+          "found": true,
+          "nodo": "p.inline-flex.items-center.gap-2.rounded-md",
+          "fg": "rgb(253, 186, 116)",
+          "bg": "rgb(50, 40, 37)",
+          "base_opaca": "rgb(23, 35, 45)",
+          "capas_translucidas": 1,
+          "ratio": 8.49,
+          "font_size_px": 12,
+          "font_weight": "600"
+        },
+        "temas": {
+          "claro": "{3 claves}",
+          "oscuro": "{3 claves}"
+        }
+      }
+    },
+    {
+      "name": "criterio10b_el_panel_de_correccion_es_visible_para_hr_write",
+      "ok": true,
+      "detail": {
+        "botones_del_panel": [
+          "Inicio de almuerzo",
+          "Fin de almuerzo",
+          "Salida"
+        ]
+      }
+    },
+    {
+      "name": "criterio10b_la_pantalla_prefija_la_hora_del_horario",
+      "ok": true,
+      "detail": {
+        "prefijada": "18:00",
+        "horario": "18:00"
+      }
+    },
+    {
+      "name": "criterio10b_el_guardado_sale_del_navegador_por_la_via_administrativa",
+      "ok": true,
+      "detail": {
+        "estado": 200
+      }
+    },
+    {
+      "name": "criterio10b_la_fila_queda_sellada_con_autor_y_motivo",
+      "ok": true,
+      "detail": {
+        "marcacion": true,
+        "hora": "2026-11-12T23:00:00.000Z",
+        "claves_del_sello": [
+          "en",
+          "por",
+          "salto",
+          "motivo"
+        ],
+        "autor": 1087,
+        "salto": "esperada:inicio_almuerzo"
+      }
+    },
+    {
+      "name": "criterio10b_abre_la_novedad_de_ajuste_manual_con_su_autor",
+      "ok": true,
+      "detail": {
+        "novedad": true,
+        "source": "correccion_administrativa",
+        "corrected_by": 1087,
+        "motivo_en_la_novedad": "La salida nunca llego al servidor; se registra la hora del horario asignado",
+        "salto_en_la_novedad": "escalera:esperada:inicio_almuerzo",
+        "supervisor_esperado": 1087
+      }
+    },
+    {
+      "name": "criterio10b_el_sello_se_ve_en_la_trazabilidad",
+      "ok": true,
+      "detail": {
+        "tiene_insignia": true
+      }
+    },
+    {
+      "name": "criterio10b_el_hueco_corregido_deja_de_ofrecerse",
+      "ok": true,
+      "detail": {
+        "botones_restantes": [
+          "Inicio de almuerzo",
+          "Fin de almuerzo"
+        ]
+      }
+    },
+    {
+      "name": "cero_errores_de_consola",
+      "ok": true,
+      "detail": {
+        "errores": [],
+        "excluidas_con_motivo": [
+          "{2 claves}",
+          "{2 claves}",
+          "{2 claves}"
+        ]
+      }
+    },
+    {
+      "name": "cero_errores_de_pagina",
+      "ok": true,
+      "detail": {
+        "errores": []
+      }
+    },
+    {
+      "name": "cero_500_y_cero_P2028_en_toda_la_sesion",
+      "ok": true,
+      "detail": {
+        "errores_servidor": [
+          "{2 claves}"
+        ],
+        "p2028": []
+      }
+    },
+    {
+      "name": "ningun_rechazo_de_foto_almaceno_bytes",
+      "ok": true,
+      "detail": {
+        "filas_con_bytes": 0
+      }
+    }
+  ],
+  "observations": {
+    "settle_ms": 28478,
+    "punch_requests": [
+      {
+        "inicio": "2026-11-20T02:36:27.890Z",
+        "duracion_ms": 15667,
+        "estado": 503,
+        "codigo": "MARCACION_CONCURRENCIA_TEMPORAL",
+        "dia": "2026-11-16",
+        "foto_adjunta": true,
+        "declaracion": null,
+        "codigo_declarado": null
+      },
+      {
+        "inicio": "2026-11-20T02:37:13.531Z",
+        "duracion_ms": 345,
+        "estado": null,
+        "codigo": null,
+        "dia": "2026-11-16",
+        "foto_adjunta": true,
+        "declaracion": null,
+        "codigo_declarado": null
+      },
+      {
+        "inicio": "2026-11-20T02:37:13.889Z",
+        "duracion_ms": 153,
+        "estado": null,
+        "codigo": null,
+        "dia": "2026-11-15",
+        "foto_adjunta": true,
+        "declaracion": null,
+        "codigo_declarado": null
+      },
+      {
+        "inicio": "2026-11-20T02:37:14.047Z",
+        "duracion_ms": 176,
+        "estado": null,
+        "codigo": null,
+        "dia": "2026-11-14",
+        "foto_adjunta": true,
+        "declaracion": null,
+        "codigo_declarado": null
+      },
+      {
+        "inicio": "2026-11-20T02:37:14.228Z",
+        "duracion_ms": 262,
+        "estado": null,
+        "codigo": null,
+        "dia": "2026-11-13",
+        "foto_adjunta": false,
+        "declaracion": "degraded",
+        "codigo_declarado": "EVIDENCIA_ALFABETO_INVALIDO"
+      },
+      {
+        "inicio": "2026-11-20T02:37:14.491Z",
+        "duracion_ms": 99,
+        "estado": null,
+        "codigo": null,
+        "dia": "2026-11-11",
+        "foto_adjunta": true,
+        "declaracion": null,
+        "codigo_declarado": null
+      },
+      {
+        "inicio": "2026-11-20T02:37:14.612Z",
+        "duracion_ms": 165,
+        "estado": 409,
+        "codigo": "MARCACION_DIFERIDA_EXPIRADA",
+        "dia": "2026-11-17",
+        "foto_adjunta": true,
+        "declaracion": null,
+        "codigo_declarado": null
+      },
+      {
+        "inicio": "2026-11-20T02:37:14.790Z",
+        "duracion_ms": 188,
+        "estado": 400,
+        "codigo": "VALIDACION",
+        "dia": "2026-11-17",
+        "foto_adjunta": false,
+        "declaracion": "degraded",
+        "codigo_declarado": "EVIDENCIA_ALFABETO_INVALIDO"
+      }
+    ],
+    "tema": {
+      "aplicado_claro": {
+        "dark": false,
+        "data_theme": "light",
+        "stored": "light"
+      },
+      "aplicado_oscuro": {
+        "dark": true,
+        "data_theme": "dark",
+        "stored": "dark"
+      },
+      "via": "mecanismo del producto",
+      "claro": {
+        "found": true,
+        "nodo": "p.flex.items-center.gap-2",
+        "fg": "rgb(15, 23, 42)",
+        "bg": "rgb(248, 250, 252)",
+        "base_opaca": "rgb(248, 250, 252)",
+        "capas_translucidas": 0,
+        "ratio": 17.06,
+        "font_size_px": 14,
+        "font_weight": "600"
+      },
+      "oscuro": {
+        "found": true,
+        "nodo": "p.flex.items-center.gap-2",
+        "fg": "rgb(242, 245, 247)",
+        "bg": "rgb(30, 44, 55)",
+        "base_opaca": "rgb(30, 44, 55)",
+        "capas_translucidas": 0,
+        "ratio": 13.04,
+        "font_size_px": 14,
+        "font_weight": "600"
+      }
+    }
+  },
+  "queue_snapshots": [
+    {
+      "momento": "asentada",
+      "items": [
+        {
+          "estado": "closed",
+          "codigo": "MARCACION_DIFERIDA_EXPIRADA",
+          "intentos": 0,
+          "evidencia_degradada": false,
+          "novedad": null,
+          "dia": "2026-11-11"
+        }
+      ]
+    }
+  ],
+  "avisos_vistos": [
+    "<cadena de 126 caracteres suprimida>",
+    "Salida",
+    "<cadena de 146 caracteres suprimida>",
+    "marcacion(es) cerradas: no se van a enviar y no cuentan como pendientes. Tu hora la debe registrar un administrador.",
+    "Tu hora quedo registrada. La foto no se pudo guardar y queda pendiente de revision de tu supervisor."
+  ],
+  "console_errors": [],
+  "console_noise": [
+    {
+      "clave": "<cadena de 237 caracteres suprimida>",
+      "motivo": "respaldo Supabase local: sin servicio en la certificacion, bloqueado por CSP",
+      "texto": "Connecting to 'http://localhost:54321/auth/v1/token?grant_type=password' violates the following Content Securi",
+      "veces": 2
+    },
+    {
+      "clave": "<cadena de 235 caracteres suprimida>",
+      "motivo": "respaldo Supabase local: sin servicio en la certificacion, bloqueado por CSP",
+      "texto": "Fetch API cannot load http://localhost:54321/auth/v1/token?grant_type=password. Refused to connect because it ",
+      "veces": 2
+    },
+    {
+      "clave": "<cadena de 240 caracteres suprimida>",
+      "motivo": "websockets de colaboracion: sin servicio en la certificacion, bloqueado por CSP",
+      "texto": "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directiv",
+      "veces": 21
+    }
+  ],
+  "page_errors": [],
+  "network": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/activity-types",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/work-session",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/preop/active",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 503
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/platform-logs/client",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 409
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/platform-logs/client",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 400
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/platform-logs/client",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/activity-types",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/work-session",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/preop/active",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/activity-types",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/work-session",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/preop/active",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/activity-types",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/work-session",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/self/preop/active",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/employees",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/employees",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/employees",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/employees",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/monitor-evidence/identity/2223",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/employees",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/monitor-evidence/identity/2223",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/employees",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/work-activities",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/routes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/workdays",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/monitor-evidence/identity/2223",
+      "status": 200
+    }
+  ],
+  "status": "passed",
+  "arbol_de_trabajo": {
+    "dirty": true,
+    "rutas_modificadas": 88
+  },
+  "frontend_build": {
+    "fresh": true,
+    "obsoletos": [],
+    "marca_iso": "2026-11-19T21:58:30.203Z",
+    "reconstruido": false
+  },
+  "summary": {
+    "controles": 43,
+    "jornadas_almacenadas": 6,
+    "cerradas_con_accion": 1,
+    "solicitudes_de_marcacion": 8,
+    "solapamientos": 0,
+    "espera_de_contencion_ms": 15667
+  },
+  "cleanup": {
+    "marcaciones_eliminadas": 7,
+    "sesiones_eliminadas": 6,
+    "actividades_eliminadas": 0,
+    "jornadas_eliminadas": 0,
+    "novedades_eliminadas": 2,
+    "empleados_eliminados": 2,
+    "horarios_eliminados": 2,
+    "usuarios_desactivados": 2,
+    "roles_desactivados": 2,
+    "errores": []
+  },
+  "finished_at": "2026-11-20T02:38:13.007Z"
+}

@@ -8,7 +8,7 @@ import { ModalFrame } from "@/components/ui/ModalFrame";
 import { ActionCard } from "@/components/ui/ActionCard";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { Archive, Bell, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, Eye, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Wallet, Wrench } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 type VehicleDocument = {
@@ -319,41 +319,57 @@ export function TransportFleetPage() {
   const [documentPreview, setDocumentPreview] = useState<DocumentPreview | null>(null);
   const [vehicleCatalogs, setVehicleCatalogs] = useState<VehicleMasterCatalogs | null>(null);
   const [orgTree, setOrgTree] = useState<OrgTree | null>(null);
+  const orgRequestRef = useRef<Promise<OrgTree> | null>(null);
   const [orgCreator, setOrgCreator] = useState<"branch" | "">("");
   const [orgDraft, setOrgDraft] = useState({ society_code: "", code: "", name: "" });
   const [orgSaving, setOrgSaving] = useState(false);
+  const canSyncCenters = access.canWrite && hasStoredRolePermission("accounting", "write");
 
   useEffect(() => {
+    if (!access.ready || !access.canRead || (!showEditor && !canSyncCenters) || orgTree) return;
+    let active = true;
+    // Opening the editor must not duplicate the visible accounting action's request.
+    const request = orgRequestRef.current ?? api<OrgTree>("/api/v1/transport/vehicle-accounting-structure", { cache: "no-store" });
+    orgRequestRef.current = request;
+    request
+      .then((tree) => { if (active) setOrgTree(tree); })
+      .catch(() => undefined)
+      .finally(() => { if (orgRequestRef.current === request) orgRequestRef.current = null; });
+    return () => { active = false; };
+  }, [access.ready, access.canRead, showEditor, canSyncCenters, orgTree]);
+
+  useEffect(() => {
+    if (!showEditor || !access.ready || !access.canRead) return;
     let alive = true;
     loadVehicleMasterCatalogs()
       .then((catalogs) => { if (alive) setVehicleCatalogs(catalogs); })
       .catch(() => undefined);
-    api<OrgTree>("/api/v1/transport/vehicle-accounting-structure")
-      .then((tree) => { if (alive) setOrgTree(tree); })
-      .catch(() => undefined);
+    if (access.canReadHr) {
+      api<Employee[]>("/api/v1/hr/employees?active=true", { cache: "no-store" })
+        .then((rows) => { if (alive) setEmployees(rows); })
+        .catch(() => {
+          if (!alive) return;
+          setEmployees([]);
+          setMessage("La flota esta disponible, pero no fue posible cargar empleados para asociar conductores. Puedes continuar con un conductor manual.");
+        });
+    } else {
+      setEmployees([]);
+    }
     return () => { alive = false; };
-  }, []);
+  }, [showEditor, access.ready, access.canRead, access.canReadHr]);
 
   const load = useCallback(async () => {
     setMessage("");
-    const [vehicleResult, employeeResult] = await Promise.allSettled([
-      api<Vehicle[]>("/api/v1/transport/vehicles?include_retired=true"),
-      access.canReadHr ? api<Employee[]>("/api/v1/hr/employees?active=true") : Promise.resolve([] as Employee[])
-    ]);
-    if (vehicleResult.status === "fulfilled") setVehicles(vehicleResult.value);
-    else setVehicles([]);
-    if (employeeResult.status === "fulfilled") setEmployees(employeeResult.value);
-    else setEmployees([]);
-
-    if (vehicleResult.status === "rejected") {
-      const detail = vehicleResult.reason instanceof Error ? vehicleResult.reason.message : String(vehicleResult.reason || "");
+    try {
+      setVehicles(await api<Vehicle[]>("/api/v1/transport/vehicles?include_retired=true"));
+    } catch (error) {
+      setVehicles([]);
+      const detail = error instanceof Error ? error.message : String(error || "");
       setMessage(/403|permiso/i.test(detail)
         ? "Tu perfil no tiene permiso para consultar Transporte. Solicita transport:read al administrador."
         : "No fue posible consultar vehiculos. Revisa la empresa activa o la conectividad del ambiente.");
-    } else if (employeeResult.status === "rejected") {
-      setMessage("La flota esta disponible, pero no fue posible cargar empleados para asociar conductores. Puedes continuar con un conductor manual.");
     }
-  }, [access.canReadHr]);
+  }, []);
 
   useEffect(() => {
     setAccess({
@@ -671,7 +687,7 @@ export function TransportFleetPage() {
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      {access.canWrite && hasStoredRolePermission("accounting", "write") ? <div className="apex-section-card flex flex-wrap items-end gap-3 p-4"><Select label="Sucursal contable para centros de vehiculos existentes" value={syncBranch} onChange={setSyncBranch} {...selectProps([["", "Seleccionar sucursal"], ...(orgTree?.branches || []).filter(row => row.active !== false).map(row => [row.code, `${row.code} · ${row.name}`] as [string, string])])} /><button type="button" className="h-10 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-50" disabled={!syncBranch || syncingCenters} onClick={() => void synchronizeCenters()}>{syncingCenters ? "Sincronizando..." : "Sincronizar centros de costo"}</button><p className="w-full text-xs text-content-body">Crea los centros faltantes de la empresa en la sucursal elegida y conserva las sedes operativas. Los centros previamente vinculados a otra sucursal requieren revision.</p></div> : null}
+      {canSyncCenters ? <div className="apex-section-card flex flex-wrap items-end gap-3 p-4"><Select label="Sucursal contable para centros de vehiculos existentes" value={syncBranch} onChange={setSyncBranch} {...selectProps([["", "Seleccionar sucursal"], ...(orgTree?.branches || []).filter(row => row.active !== false).map(row => [row.code, `${row.code} · ${row.name}`] as [string, string])])} /><button type="button" className="h-10 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-50" disabled={!syncBranch || syncingCenters} onClick={() => void synchronizeCenters()}>{syncingCenters ? "Sincronizando..." : "Sincronizar centros de costo"}</button><p className="w-full text-xs text-content-body">Crea los centros faltantes de la empresa en la sucursal elegida y conserva las sedes operativas. Los centros previamente vinculados a otra sucursal requieren revision.</p></div> : null}
       <header className="apex-section-card flex flex-wrap items-start justify-between gap-4 p-4">
         <div>
           <p className="text-sm font-medium text-apex">M-14 · Maestro de flota</p>

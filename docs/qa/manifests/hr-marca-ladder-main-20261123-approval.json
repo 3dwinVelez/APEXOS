@@ -1,0 +1,148 @@
+{
+  "change_id": "hr-marca-ladder-main-20261123",
+  "commit": "2c2f672339a6465c07601f3425f6e8c3234c806d",
+  "tree_evaluated": "commit certificado 2c2f6723 (padre de la punta de codex/qa-hr-marking-ladder-main-20261123): trae el replay funcional, los tres instrumentos de campo, las cuatro mediciones de esta pata (campo-qa.json, antes-produccion-20261123.json, equivalencia-desarrollo-main.txt, retiro-remanentes.json) y las dos transcripciones de pruebas sobre su propio arbol (foco-candidato.txt, regresion-candidato.txt); este manifiesto y el de alcance se agregan en el commit de gobernanza sin mover producto",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-23T10:40:00-05:00",
+    "instruction": "procede",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "auxiliary_branch_promotion": true,
+      "reason": "El contenido ya esta certificado en el ambiente QA desplegado (43e5510cfe2d): el medidor de campo dio 16/16 sobre ese binario anclado por /health y merge-base --is-ancestor, y las diez regiones de la escalera del candidato son hash-identicas a las medidas. El defecto ademas se vio en Produccion por sonda de solo lectura: 21 rechazos de escalera y 20 jornadas abiertas el 2026-11-23."
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas. No otorga force push, reescritura de historia, borrado de ramas, migraciones remotas ni cambios de infraestructura o secretos.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen manifiesto v2, qa:promotion:scope y qa:approval:evidence, y el DESPUES de Produccion se versiona despues del despliegue."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/local-certification.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/rescate-ejecucion-produccion-20261123.json"
+      ],
+      "notes": "La promesa medida dos veces y por caminos distintos: contra PostgreSQL efimero con Fastify + Prisma + autenticacion y RBAC del producto (local-certification.json, sin mocks) y contra el API de QA ya desplegado con la empresa modelo NYVORA (campo-qa.json, 16/16 anclado al commit servido 43e5510cfe2d). La propiedad que importa -la correccion motivada destraba la jornada- dio 200 y el dia paso de [entrada] a [entrada, salida] leido por la clave de idempotencia de la propia corrida."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marca-ladder-main-20261123/antes-produccion-20261123.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/rescate-pendientes-produccion-20261123.json"
+      ],
+      "notes": "El defecto se midio en el ambiente que recibe la promocion. Produccion con el arbol 7de02a3b: 21 rechazos MARCACION_FUERA_DE_SECUENCIA en la ventana (15 canal propio, 6 canal administrativo), 20 jornadas con entrada y sin salida y 0 dias partidos por ruta sobre 46 marcaciones leidas; resolvePunchLadder aparece 0 veces en el blob servido. El manifiesto de pendientes lista las seis salidas que hoy no pueden escribirse y declara como destrabe esta promocion."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/hr-marking-ladder-field.js",
+        "../../../scripts/certifications/hr-marking-evidence-resilience-local.js",
+        "../../../scripts/certifications/hr-marking-blocked-workers.js",
+        "../evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+        "../certifications/hr-marking-ladder-main-20261123.md"
+      ],
+      "notes": "Tres instrumentos versionados dentro del commit certificado. El de campo solo acepta config/qa.env o config/production.env, cruza TARGET_ENV y EXPECTED_SUPABASE_PROJECT_REF contra DATABASE_URL, ancla el arbol por /health con merge-base --is-ancestor y decide cada pierna con dos lecturas independientes (lo que devolvio la peticion y lo que el registro dice estar asentado). Su --selftest son 15 casos y tres rojos obligatorios: rechazo mudo, clave de idempotencia ajena y ancla que contradice. El sha256 del archivo que corrio, 32efc82762d8, esta estampado en el artefacto y verificado contra el blob commiteado."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/local-certification.json",
+        "../certifications/hr-marking-evidence-resilience-20261123.md",
+        "../evidence/hr-marca-ladder-main-20261123/foco-candidato.txt",
+        "../evidence/hr-marca-ladder-main-20261123/regresion-candidato.txt"
+      ],
+      "notes": "Regresion medida sobre el arbol del candidato, dentro de su propia worktree auxiliar y sin copiar node_modules: 76/76 en los cinco archivos del foco de esta correccion (foco-candidato.txt) y 74/74 en el vecindario tocado -marcacion diferida, concurrencia, empleado declarado, kilometraje, RBAC de marcacion, evidencia movil, estado de cuenta de administrador, sesion, autorizacion, contexto de tenant y RBAC de modulos- (regresion-candidato.txt). Se declaro fuera authorization-status-codes porque exige Redis y el puesto no lo tiene, no porque el candidato falle. Adentro de la corrida de campo la regresion conductual tambien sigue verde: la jornada cerrada responde 409 JORNADA_COMPLETA, el canal propio no conoce la excepcion (409 con y sin bandera, pierna no asentada) y el operario sigue marcando lo suyo. Las dos transcripciones se anclan por arbol (11d61836) porque la rama se reconstruyo despues de la corrida: el diff de codigo entre ese arbol y el commit certificado, limitado a apps/test/scripts/config/package.json/tsconfig.json/next.config.js/prisma, esta medido y responde vacio."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marca-ladder-main-20261123/equivalencia-desarrollo-main.txt",
+        "../evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+        "../evidence/hr-marca-ladder-main-20261123/retiro-remanentes.json",
+        "../evidence/hr-marca-evidence-resilience-20261119/estado-post-rescate-produccion-20261123.json"
+      ],
+      "notes": "No hay esquema nuevo: ninguna migracion se aplica ni se revierte y las 72 migraciones de QA y Produccion quedan intactas. La superficie de escalera esta probada por region (10 regiones, 0 distintas) entre lo que QA sirvio y lo que main va a servir. El aislamiento entre empresas se re-midio en campo: el tenant vecino licenciado obtiene 404 EMPLEADO_NO_ENCONTRADO y el dia de la victima queda igual antes y despues. Las cuentas de medicion se retiraron por el endpoint, no por UPDATE, con login 401 verificado."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-marking-ladder-field.js",
+    "evidence": [
+      "../evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+      "../evidence/hr-marca-ladder-main-20261123/antes-produccion-20261123.json",
+      "../certifications/hr-marking-ladder-main-20261123.md"
+    ],
+    "controls": 16,
+    "passed": 16,
+    "failed": 0,
+    "substrate": "ambiente QA desplegado desde la fusion PR #109 de develop (commit servido 43e5510cfe2d, anclado por GET /health), tenant NYVORA de QA con cuenta efimera y empleado efimero creados por el propio arnes y retirados al cerrar",
+    "basis": "La corrida no puede atribuirse a otro arbol: el control health_ancla_el_commit_servido lee el commit del despliegue y el veredicto exige que c777dc13 sea ancestro de ese commit. El --selftest bloquea la pierna que declara defecto mientras sirve el arbol arreglado, y a la inversa."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-marking-evidence-resilience-local.js",
+    "evidence": [
+      "../evidence/hr-marca-evidence-resilience-20261119/local-certification.json",
+      "../evidence/hr-marca-ladder-main-20261123/equivalencia-desarrollo-main.txt",
+      "../certifications/hr-marking-evidence-resilience-20261123.md"
+    ],
+    "basis": "El certificador local corre el flujo completo contra PostgreSQL efimero y ancla el arbol evaluado por /health, declarando el blob que sirvio. El puente hacia el binario de main es la equivalencia por region: createPunch (461 lineas) y resolvePunchLadder (17) con hash identico entre origin/develop 43e5510c y el candidato, y las otras ocho rutas blob-identicas."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "role_authorized": "APEX_ADMIN de la empresa modelo (canal administrativo POST /api/v1/hr/time-punches con hr:write)",
+    "role_without_permission": "el control del canal propio (POST /api/v1/hr/self/time-punches) mide que la bandera de correccion no existe ahi: mismo 409 con y sin bandera y la pierna no asentada; el hallazgo de que el rol generico Empleado trae hr:write queda declarado con decision pendiente del dueno",
+    "other_tenant_user": "administrador efimero de un tenant vecino con Talentos Humanos y Administracion licenciados: su intento de corregir la jornada ajena responde 404 EMPLEADO_NO_ENCONTRADO y el dia de la victima queda identico antes y despues",
+    "script": "../../../scripts/certifications/hr-marking-ladder-field.js",
+    "evidence": [
+      "../evidence/hr-marca-ladder-main-20261123/campo-qa.json",
+      "../evidence/hr-marca-ladder-main-20261123/retiro-remanentes.json",
+      "../certifications/hr-marking-ladder-main-20261123.md"
+    ],
+    "notes": "Medido sobre la empresa modelo real NYVORA en QA: 16/16 con apertura de jornada, rechazo legible con expected_type, negacion sin motivo, destrabe motivado, novedad auditable escalera:esperada:inicio_almuerzo, dia cerrado sigue bloqueado, aislamiento entre tenants, dia sin datos 200, peor escritura 878 ms sobre presupuesto de 20.000 ms y retiro verificado de las tres cuentas de medicion. Ningun dato de cliente se toco: el arnes creo su propio empleado (codigo CERTL<run>) y lo dejo inactivo al cerrar."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "a0fb7e05b65d84e619b80cb30790b27f3b940fb3",
+    "trigger": "Si en Produccion una marcacion en desorden vuelve a responder 409 sin expected_type; si POST /api/v1/hr/time-punches con correccion_administrativa y motivo deja de escribir la pierna o escribe sin novedad AJUSTE_MANUAL_MARCACION; si el canal propio empieza a aceptar la bandera; si un tenant vecino obtiene algo distinto de 404 al intentar corregir una jornada ajena; si una jornada cerrada admite una quinta marcacion; o si la subida de evidencia vuelve a abortar la escritura de la jornada.",
+    "notes": "Revert controlado del commit de promocion sobre main (git revert del replay, sin reescribir historia compartida) y redeploy del servicio de API de Produccion. No hay migraciones: al revertir, la excepcion de escalera desaparece y el canal administrativo vuelve a negar el salto, que es el defecto que se promociona cerrar. Las seis salidas del 21 y 22 que se escriban despues del despliegue quedan como correcciones administrativas con su novedad y su motivo: un rollback del codigo no borra esas filas, y se declaran en el manifiesto de rescate para que el cierre de nomina las vea."
+  },
+  "evidencia_pendiente_de_despliegue": {
+    "artefacto": "docs/qa/evidence/hr-marca-ladder-main-20261123/campo-despues-produccion.json",
+    "que_falta": "La corrida DESPUES en Produccion, que solo puede existir despues de que Railway sirva el commit promocionado, y la escritura de las seis salidas bloqueadas del 21 y 22 de noviembre con su verificacion.",
+    "como_se_corre": "node scripts/certifications/hr-marking-ladder-field.js --env-file=config/production.env --espera=arreglo --fix-commit=2c2f672339a6465c07601f3425f6e8c3234c806d --output=docs/qa/evidence/hr-marca-ladder-main-20261123/campo-despues-produccion.json",
+    "control_de_contraste": "La pierna de escrituras usa el presupuesto de 20.000 ms y ancla por /health el commit servido: si Railway todavia sirve 7de02a3b el veredicto de la pata queda en defecto y la corrida no puede declararse DESPUES. Las seis salidas se escriben con hr-marking-rescue-apply.js contra el endpoint del producto, a la hora del horario asignado de cada trabajador, y su evidencia se versiona en la misma carpeta."
+  },
+  "estado_post_despliegue": {
+    "estado": "publicado_y_medido",
+    "merge": "790870a0 (padres a0fb7e05 + 06e94091), commit certificado 2c2f6723",
+    "binario_servido": "GET /health de Produccion responde commit 790870a0e439; en su blob apps/api/src/modules/hr/service.js resolvePunchLadder aparece 4 veces (antes: 0)",
+    "artefactos": [
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/campo-despues-produccion.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/cierre-produccion-20261123.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-antes-produccion-20261123.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-ejecucion-produccion-20261123.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-verificacion-produccion-20261123.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-intento-tenant-erroneo-20261123.json",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/rescate-escalera-sesion-produccion-20261123.json",
+      "docs/qa/certifications/hr-marking-ladder-main-20261123.md",
+      "docs/qa/evidence/hr-marca-ladder-main-20261123/campo-despues-produccion-sobre-80681aa1.json"
+    ],
+    "despues_produccion": "hr-marking-ladder-field.js --espera=arreglo: 16/16, anclado por health_ancla_el_commit_servido. Rechazo legible 409 con details.expected_type, 422 MOTIVO_CORRECCION_REQUERIDO sin motivo, destrabe motivado 200 con novedad escalera:esperada:inicio_almuerzo, jornada cerrada sigue 409 JORNADA_COMPLETA, canal propio no conoce la bandera, tenant vecino 404, peor escritura 3.257 ms sobre presupuesto de 20.000 ms.",
+    "seis_salidas": "El mismo payload que tropezaba con 409 MARCACION_FUERA_DE_SECUENCIA responde ahora 400 KILOMETRAJE_REQUERIDO: la compuerta que esta pata traia a Produccion esta pasada con dato real de cliente. Lo que queda delante es el odometro del dia, que ningun registro del sistema permite derivar (Vehicle.mileage en 0, RoutePreoperationalChecklist sin filas de esas placas en la ventana, TransportTripEvent/Event/RouteBlockEvent en 0 filas). No se invento ni hora ni kilometraje.",
+    "cuentas": "250/251/252/253/255/256 retiradas por PATCH /admin/users/:id/status con login 401 despues; 254, sonda que nunca obtuvo sesion, apagada por escritura directa y declarada; 257/258/259 de la re-medicion, tambien retiradas por el endpoint con login 401.",
+    "pendientes_declarados": "1) las seis salidas del 21 y 22 esperan la lectura fisica del odometro por conductor (dueno: operacion); 2) las siete salidas del 23 descartadas por hora futura se recogen en su ventana con hr-marking-rescue-apply.js y la misma frontera de odometro; 3) hallazgo_autorizacion (rol Empleado con hr:write) sigue siendo decision del dueno con su propio brief.",
+    "binario_servido_actual": "80681aa1d998, descendiente del merge 790870a0 por otra pata (mallas con maestro unico). Re-medido con hr-marking-ladder-field.js --espera=arreglo: 16/16, anclado por health_ancla_el_commit_servido. Artefacto docs/qa/evidence/hr-marca-ladder-main-20261123/campo-despues-produccion-sobre-80681aa1.json."
+  }
+}

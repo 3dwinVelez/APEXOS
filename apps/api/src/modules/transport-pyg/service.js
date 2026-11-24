@@ -54,7 +54,7 @@ async function audit(tx, user, action, entity, entityId, newValue) {
   });
 }
 
-// Siembra idempotente del catalogo de conceptos y del mapping por defecto del tenant.
+// Inicializacion explicita e idempotente; las lecturas usan defaults en memoria.
 async function ensureCatalog(db, tenantId) {
   for (const concept of CONCEPT_CATALOG) {
     // update vacio: un GET no puede sobrescribir nombre, orden ni defaults que
@@ -93,19 +93,40 @@ async function listSourceConcepts(tenantId) {
 
 async function listConcepts(tenantId) {
   return read(tenantId, async (db) => {
-    await ensureCatalog(db, tenantId);
     const rows = await db.transportPygConcept.findMany({
-      where: { tenant_id: tenantId, active: true },
+      where: { tenant_id: tenantId },
+      select: { code: true, name: true, section: true, kind: true, display_order: true, active: true },
       orderBy: { display_order: "asc" }
     });
-    return rows.map((row) => ({
-      code: row.code,
-      name: row.name,
-      section: row.section,
-      kind: row.kind,
-      display_order: row.display_order
-    }));
+    const concepts = new Map(CONCEPT_CATALOG.map((concept) => [concept.code, {
+      ...concept, active: true, display_order: concept.order
+    }]));
+    // Incluir inactivos en la lectura evita resucitar defaults desactivados por el tenant.
+    for (const row of rows) concepts.set(row.code, row);
+    return [...concepts.values()].filter((row) => row.active)
+      .sort((left, right) => left.display_order - right.display_order)
+      .map((row) => ({
+        code: row.code,
+        name: row.name,
+        section: row.section,
+        kind: row.kind,
+        display_order: row.display_order
+      }));
   });
+}
+
+async function loadSourceMaps(db, tenantId) {
+  const rows = await db.transportPygSourceMap.findMany({
+    where: { tenant_id: tenantId },
+    select: { source_type: true, source_code: true, pyg_concept_code: true, active: true },
+    orderBy: [{ source_type: "asc" }, { source_code: "asc" }]
+  });
+  const key = (row) => JSON.stringify([row.source_type, row.source_code]);
+  const maps = new Map(DEFAULT_SOURCE_MAP.map((row) => [key(row), { ...row, active: true }]));
+  for (const row of rows) maps.set(key(row), row);
+  return [...maps.values()].sort((left, right) =>
+    left.source_type.localeCompare(right.source_type) || left.source_code.localeCompare(right.source_code)
+  );
 }
 
 // Reporte operativo historico (liquidacion + caja menor + nomina). Ya no es la
@@ -115,7 +136,6 @@ async function listConcepts(tenantId) {
 async function getOperationalReport(tenantId, query = {}) {
   const period = assertPeriod(query.period);
   return read(tenantId, async (db, tenant) => {
-    await ensureCatalog(db, tenant);
     const { start, end } = periodBounds(period);
     const [vehicles, budgets, maps, config] = await Promise.all([
       db.vehicle.findMany({
@@ -124,7 +144,7 @@ async function getOperationalReport(tenantId, query = {}) {
         orderBy: { plate: "asc" }
       }),
       db.transportPygBudget.findMany({ where: { tenant_id: tenant, period } }),
-      db.transportPygSourceMap.findMany({ where: { tenant_id: tenant, active: true } }),
+      loadSourceMaps(db, tenant),
       db.transportPygConfig.findFirst({ where: { tenant_id: tenant } })
     ]);
 
@@ -353,8 +373,7 @@ async function saveBudgets(tenantId, user, input = {}) {
 
 async function getMapping(tenantId) {
   return read(tenantId, async (db) => {
-    await ensureCatalog(db, tenantId);
-    const rows = await db.transportPygSourceMap.findMany({ where: { tenant_id: tenantId }, orderBy: [{ source_type: "asc" }, { source_code: "asc" }] });
+    const rows = await loadSourceMaps(db, tenantId);
     return { rows: rows.map((row) => ({ source_type: row.source_type, source_code: row.source_code, pyg_concept_code: row.pyg_concept_code, active: row.active })) };
   });
 }
@@ -373,7 +392,11 @@ async function saveMapping(tenantId, user, input = {}) {
       const existing = await tx.transportPygSourceMap.findFirst({ where: { tenant_id: tenantId, source_type: sourceType, source_code: sourceCode } });
       // Fila vacia: desactiva el mapping para que el concepto vuelva a "sin clasificar" en el reporte.
       if (!pygCode) {
-        if (existing) await tx.transportPygSourceMap.update({ where: { id: existing.id }, data: { pyg_concept_code: "", active: false } });
+        if (existing) {
+          await tx.transportPygSourceMap.update({ where: { id: existing.id }, data: { pyg_concept_code: "", active: false } });
+        } else {
+          await tx.transportPygSourceMap.create({ data: { tenant_id: tenantId, source_type: sourceType, source_code: sourceCode, pyg_concept_code: "", active: false } });
+        }
         continue;
       }
       if (!conceptCodes.has(pygCode)) throw appError(400, "PYG_MAPPING_CONCEPT_INVALID", `El concepto PYG ${pygCode} no existe.`);

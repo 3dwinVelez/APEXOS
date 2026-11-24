@@ -1,7 +1,9 @@
 "use client";
 
 import { api } from "@/lib/api";
-import { scheduleTruncationNotices } from "@/lib/hrScheduleMonitor";
+import HrTimelineEvidence from "@/components/hr/HrTimelineEvidence";
+import type { HrTimelinePhoto } from "@/components/hr/HrTimelineEvidence";
+import { scheduleMonitorHasEvidenceFile, scheduleTruncationNotices } from "@/lib/hrScheduleMonitor";
 import type { ScheduleTruncationSignal } from "@/lib/hrScheduleMonitor";
 import { ArrowLeft, CalendarDays, Clock, ExternalLink, LocateFixed, MapPin, RefreshCw, Route, Satellite, Users } from "lucide-react";
 import Link from "next/link";
@@ -57,7 +59,8 @@ type PunchPoint = {
   extra_minutes: number;
   extra_reason?: string;
   extra_detail?: string;
-  extra_evidence?: { base64_data?: string; file_name?: string; file_url?: string };
+  extra_evidence?: HrTimelinePhoto;
+  identity_evidence?: HrTimelinePhoto;
   metadata?: Record<string, unknown>;
 };
 
@@ -104,7 +107,9 @@ type OperationsMap = {
 };
 
 const TILE_SIZE = 256;
-const LIVE_REFRESH_SECONDS = 10;
+// La malla de 30 dias con huella GPS es la lectura mas pesada del modulo; a 10s entraba en cola con
+// el statement_timeout del servidor y el operario veia el mapa caer. Con 30s el rastro sigue vivo.
+const LIVE_REFRESH_SECONDS = 30;
 const DEFAULT_CENTER = { latitude: 4.711, longitude: -74.0721 };
 const statusTone: Record<string, string> = {
   "En ruta": "bg-emerald-500",
@@ -685,9 +690,8 @@ export default function LiveGpsMapPage() {
                 <p className="rounded-md bg-paper p-3">Vehiculo: <span className="font-semibold">{selectedMark.vehicle_plate || "--"}</span> - Horario {selectedMark.route_id || "--"}</p>
                 <p className="rounded-md bg-paper p-3">GPS: {selectedMark.latitude.toFixed(6)}, {selectedMark.longitude.toFixed(6)} · {Math.round(selectedMark.accuracy_meters || 0)}m</p>
                 {selectedMark.metadata?.observation ? <p className="rounded-md bg-emerald-50 p-3 text-emerald-900">Observacion: {String(selectedMark.metadata.observation)}</p> : null}
-                {Array.isArray(selectedMark.metadata?.evidence) && selectedMark.metadata.evidence[0]?.base64_data ? <Image alt="Evidencia operativa" className="max-h-48 rounded-md object-cover" height={480} src={String(selectedMark.metadata.evidence[0].base64_data)} unoptimized width={640} /> : null}
                 {selectedMark.extra_minutes ? <p className="rounded-md bg-amber-50 p-3 text-amber-900">Extra: {selectedMark.extra_minutes} min · {selectedMark.extra_reason || "extension"}{selectedMark.extra_detail ? ` · ${selectedMark.extra_detail}` : ""}</p> : null}
-                {selectedMark.extra_evidence?.base64_data ? <Image alt="Soporte hora extra" className="max-h-48 rounded-md object-cover" height={480} src={selectedMark.extra_evidence.base64_data} unoptimized width={640} /> : null}
+                <HrTimelineEvidence evidence={[selectedMark.extra_evidence, selectedMark.identity_evidence].filter(scheduleMonitorHasEvidenceFile)} />
               </div>
               <a className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex text-sm font-semibold text-white" href={mapsUrl(selectedMark)} target="_blank" rel="noreferrer">Abrir marca en Google Maps <ExternalLink size={14} /></a>
             </div>

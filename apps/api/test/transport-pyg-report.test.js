@@ -3,6 +3,7 @@
 // del PYG corporativo de logistica para anclar el criterio de calculo.
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { AsyncLocalStorage } = require("node:async_hooks");
 
 const { CONCEPT_CATALOG, DEFAULT_SOURCE_MAP, UNMAPPED_CONCEPT } = require("../src/modules/transport-pyg/concept-catalog");
 const { buildReport, periodBounds, normalizePlate } = require("../src/modules/transport-pyg/engine");
@@ -188,72 +189,113 @@ function loadService(fakePrisma) {
 }
 
 function buildFakePrisma() {
+  const storage = new AsyncLocalStorage();
   const state = {
-    budgets: new Map(),
-    vehicles: new Map([[1, { id: 1, plate: "ESQ 294", active: true, deleted_at: null, authorized_driver_id: 10 }]]),
-    concepts: new Map(),
-    maps: new Map(),
-    config: null,
-    tenant: { id: "tenant-qa", config: {} },
-    activeTenantId: null,
-    audit: [],
-    tenantContexts: [],
-    conceptUpserts: []
+    budgets: new Map(), vehicles: new Map(), concepts: new Map(), maps: new Map(),
+    configs: new Map(), sources: new Map(), inputs: new Map(), tenants: new Map(),
+    audit: [], calls: [], nextId: 1
   };
   const key = (...parts) => parts.join("||");
+  const addTenant = (tenantId, inputs = goliatInputs()) => {
+    state.tenants.set(tenantId, { id: tenantId, config: {} });
+    state.inputs.set(tenantId, structuredClone(inputs));
+    for (const vehicle of inputs.vehicles) state.vehicles.set(key(tenantId, vehicle.id), { ...vehicle, tenant_id: tenantId, active: true, deleted_at: null });
+    for (const row of inputs.budgets) state.budgets.set(key(tenantId, row.vehicle_id, PERIOD, row.concept_code), { ...row, tenant_id: tenantId, period: PERIOD, amount: String(row.amount) });
+  };
+  addTenant("tenant-qa");
+  state.tenant = state.tenants.get("tenant-qa");
+
+  async function record(name, args, type = "read", explicitTenant = true) {
+    // Ceder el turno fuerza el entrelazado de peticiones concurrentes sin un tenant global.
+    await Promise.resolve();
+    const context = storage.getStore();
+    assert.ok(context?.tenantId, `${name}: contexto de tenant requerido`);
+    state.calls.push({ name, args: structuredClone(args), type, tenantId: context.tenantId, transaction: context.transaction === true });
+    if (type === "write" || type === "transaction") {
+      assert.notEqual(context.readOnly, true, `${name}: DML prohibido en GET`);
+      if (type === "write") assert.equal(context.transaction, true, `${name}: escritura fuera de transaccion`);
+    }
+    if (explicitTenant) {
+      const compound = args?.where?.tenant_id_code || args?.where?.tenant_id_vehicle_id_period_concept_code;
+      const tenant = args?.data?.tenant_id ?? args?.create?.tenant_id ?? compound?.tenant_id ?? args?.where?.tenant_id;
+      assert.equal(tenant, context.tenantId, `${name}: filtro tenant explicito inconsistente`);
+    }
+    return context;
+  }
+
+  async function findRows(table, name, args, explicitTenant = true) {
+    const context = await record(name, args, "read", explicitTenant);
+    // Solo vehicle emula la inyeccion del middleware, como el servicio existente.
+    const where = { ...args.where, tenant_id: context.tenantId };
+    let rows = [...table.values()].filter((row) => Object.entries(where).every(([field, value]) => row[field] === value));
+    const ordering = args.orderBy ? (Array.isArray(args.orderBy) ? args.orderBy : [args.orderBy]) : [];
+    rows.sort((left, right) => {
+      for (const entry of ordering) {
+        const [field, direction] = Object.entries(entry)[0];
+        const comparison = typeof left[field] === "number" ? left[field] - right[field] : String(left[field]).localeCompare(String(right[field]));
+        if (comparison) return direction === "desc" ? -comparison : comparison;
+      }
+      return 0;
+    });
+    return rows.map((row) => args.select
+      ? Object.fromEntries(Object.keys(args.select).filter((field) => args.select[field]).map((field) => [field, row[field]]))
+      : { ...row });
+  }
+
+  async function upsert(table, name, args, mapKey) {
+    await record(name, args, "write");
+    const existing = table.get(mapKey);
+    const row = existing ? { ...existing, ...args.update } : { id: state.nextId++, active: true, ...args.create };
+    table.set(mapKey, row);
+    return { ...row };
+  }
+
   const db = {
     tenant: {
-      findUnique: async ({ where }) => {
-        state.tenantContexts.push(`tenant.findUnique:${where.id}`);
-        if (where.id !== state.tenant.id) return null;
-        return { id: state.tenant.id, config: state.tenant.config };
+      findUnique: async (args) => {
+        const context = await record("tenant.findUnique", args, "read", false);
+        assert.equal(args.where.id, context.tenantId, "lectura de otro tenant prohibida");
+        assert.deepEqual(args.select, { config: true }, "solo config es necesaria para el reporte");
+        const tenant = state.tenants.get(args.where.id);
+        return tenant ? { config: structuredClone(tenant.config) } : null;
       }
     },
     vehicle: {
-      findMany: async () => {
-        state.tenantContexts.push("vehicle.findMany");
-        return [{ id: 1, plate: "ESQ 294", brand: "NPR", line: "GOLIAT", authorized_driver_id: 10 }];
-      },
-      findFirst: async ({ where }) => state.vehicles.get(where.id) || null
+      findMany: (args) => findRows(state.vehicles, "vehicle.findMany", args, false),
+      findFirst: async (args) => (await findRows(state.vehicles, "vehicle.findFirst", args, false))[0] || null
     },
     transportPygBudget: {
-      findMany: async () => goliatBudgets(1).map((row) => ({ ...row, amount: String(row.amount) })),
-      upsert: async ({ where, update, create }) => {
-        const mapKey = key(create.tenant_id, create.vehicle_id, create.period, create.concept_code);
-        state.budgets.set(mapKey, { ...create, ...update });
-        return state.budgets.get(mapKey);
-      }
+      findMany: (args) => findRows(state.budgets, "budget.findMany", args),
+      upsert: (args) => upsert(state.budgets, "budget.upsert", args, key(args.create.tenant_id, args.create.vehicle_id, args.create.period, args.create.concept_code))
     },
     transportPygConcept: {
-      upsert: async ({ where, update, create }) => {
-        state.conceptUpserts.push({ update });
-        const code = where.tenant_id_code.code;
-        const existing = state.concepts.get(code);
-        const next = existing ? { ...existing, ...update } : { ...create };
-        state.concepts.set(code, next);
-        return next;
-      },
-      findMany: async () => [...state.concepts.values()].sort((a, b) => a.display_order - b.display_order)
+      findMany: (args) => findRows(state.concepts, "concept.findMany", args),
+      upsert: (args) => upsert(state.concepts, "concept.upsert", args, key(args.where.tenant_id_code.tenant_id, args.where.tenant_id_code.code))
     },
     transportPygSourceMap: {
-      findMany: async () => DEFAULT_SOURCE_MAP.map((row) => ({ ...row, active: true })),
-      findFirst: async ({ where }) => state.maps.get(key(where.tenant_id, where.source_type, where.source_code)) || null,
-      create: async ({ data }) => {
-        state.maps.set(key(data.tenant_id, data.source_type, data.source_code), data);
-        return data;
+      findMany: (args) => findRows(state.maps, "map.findMany", args),
+      findFirst: async (args) => (await findRows(state.maps, "map.findFirst", args))[0] || null,
+      create: async (args) => {
+        await record("map.create", args, "write");
+        const mapKey = key(args.data.tenant_id, args.data.source_type, args.data.source_code);
+        assert.equal(state.maps.has(mapKey), false, "tuple de mapping duplicada");
+        const row = { id: state.nextId++, active: true, ...args.data };
+        state.maps.set(mapKey, row);
+        return { ...row };
       },
-      update: async ({ where, data }) => {
-        const existing = [...state.maps.entries()].find(([, value]) => value.id === where.id);
-        if (existing) state.maps.set(existing[0], { ...existing[1], ...data });
-        return existing?.[1];
+      update: async (args) => {
+        const context = await record("map.update", args, "write", false);
+        const existing = [...state.maps.entries()].find(([, row]) => row.id === args.where.id);
+        assert.ok(existing, "mapping existente requerido");
+        assert.equal(existing[1].tenant_id, context.tenantId, "update de otro tenant prohibido");
+        const row = { ...existing[1], ...args.data };
+        state.maps.set(existing[0], row);
+        return { ...row };
       }
     },
     transportPygConfig: {
-      findFirst: async () => state.config,
-      upsert: async ({ create, update }) => {
-        state.config = { ...create, ...update };
-        return state.config;
-      }
+      findFirst: async (args) => (await findRows(state.configs, "config.findFirst", args))[0] || null,
+      upsert: (args) => upsert(state.configs, "config.upsert", args, args.create.tenant_id)
     },
     account: {
       // El plan real solo se consume desde core/prisma; el servicio contable ya
@@ -262,45 +304,347 @@ function buildFakePrisma() {
         throw new Error("db.account.findMany no debe consultarse desde el reporte PYG contable");
       }
     },
-    auditLog: { create: async ({ data }) => { state.audit.push(data); return data; } },
+    pettyCashConcept: { findMany: (args) => findRows(state.sources, "source.findMany", args) },
+    auditLog: { create: async (args) => {
+      const context = await record("audit.create", args, "write", false);
+      const row = { ...args.data, tenant_id: context.tenantId };
+      state.audit.push(row);
+      return row;
+    } },
     $queryRaw: async (strings, ...values) => {
-      const sql = Array.isArray(strings) ? strings.join("?") : String(strings);
-      if (sql.includes("TransportSettlementItem")) return [{ plate: "ESQ 294", total: 19150000 }];
-      if (sql.includes("petty_cash_voucher_lines")) return [{ plate: "ESQ 294", concept_code: "COMBUSTIBLE", total: 3323769.1 }];
-      if (sql.includes('"Payroll"')) return [{ employee_id: 10, total: 7803733 }];
-      if (sql.includes("th_aportes_sociales_lineas")) return [{ employee_id: 10, total: 1191588.11 }];
-      if (sql.includes("th_prestaciones_saldos")) return [{ employee_id: 10, total: 1170559.95 }];
-      return [];
+      const sql = strings.join("?");
+      const context = await record("queryRaw", { sql, values }, "raw", false);
+      assert.match(sql, /tenant_id = \?/);
+      assert.equal(values[0], context.tenantId);
+      const inputs = state.inputs.get(context.tenantId);
+      if (sql.includes("TransportSettlementItem")) {
+        assert.equal(values[1], context.tenantId);
+        return structuredClone(inputs?.incomeRows || []);
+      }
+      if (sql.includes("petty_cash_voucher_lines")) return structuredClone(inputs?.pettyRows || []);
+      if (sql.includes('"Payroll"')) return structuredClone(inputs?.payrollRows || []);
+      if (sql.includes("th_aportes_sociales_lineas")) return structuredClone(inputs?.pilaRows || []);
+      if (sql.includes("th_prestaciones_saldos")) return structuredClone(inputs?.provisionRows || []);
+      assert.fail("SQL inesperado");
     },
-    $executeRawUnsafe: async () => 1,
-    runWithTenant: (tenantId, callback) => {
-      state.activeTenantId = tenantId;
-      return callback();
+    $executeRawUnsafe: async (sql, lockKey) => {
+      const context = await record("executeRawUnsafe", { sql, lockKey }, "write", false);
+      assert.equal(sql, "SELECT pg_advisory_xact_lock(hashtext($1))");
+      assert.equal(lockKey, `transport-pyg:${context.tenantId}`);
+      return 1;
     },
-    $transaction: async (callback) => callback(db)
+    runWithTenant: (tenantId, callback) => storage.run({ ...storage.getStore(), tenantId }, callback),
+    $transaction: async (callback, options) => {
+      const context = await record("transaction", options, "transaction", false);
+      const snapshot = structuredClone({ maps: state.maps, concepts: state.concepts, budgets: state.budgets, configs: state.configs, audit: state.audit });
+      try {
+        return await storage.run({ ...context, transaction: true }, () => callback(db));
+      } catch (error) {
+        Object.assign(state, snapshot);
+        throw error;
+      }
+    }
   };
-  return { db, state };
+  return { db, state, key, addTenant, readOnly: (fn) => storage.run({ readOnly: true }, fn) };
 }
+
+function persistConcept(fake, tenantId, code, patch = {}) {
+  const concept = CONCEPT_CATALOG.find((row) => row.code === code);
+  const row = { id: fake.state.nextId++, tenant_id: tenantId, ...concept, code, display_order: concept?.order ?? 0, active: true, ...patch };
+  fake.state.concepts.set(fake.key(tenantId, code), row);
+  return row;
+}
+
+function persistMap(fake, tenantId, sourceCode, patch = {}) {
+  const map = DEFAULT_SOURCE_MAP.find((row) => row.source_code === sourceCode);
+  const row = { id: fake.state.nextId++, tenant_id: tenantId, source_type: "petty_cash_concept", ...map, source_code: sourceCode, active: true, ...patch };
+  fake.state.maps.set(fake.key(tenantId, row.source_type, sourceCode), row);
+  return row;
+}
+
+function seedCatalogState(fake, tenantId) {
+  for (const concept of CONCEPT_CATALOG) persistConcept(fake, tenantId, concept.code);
+  for (const map of DEFAULT_SOURCE_MAP) persistMap(fake, tenantId, map.source_code);
+}
+
+function storedState(fake) {
+  const { concepts, maps, budgets, configs, audit } = fake.state;
+  return structuredClone({ concepts, maps, budgets, configs, audit });
+}
+
+function conceptDTO(row) {
+  return { code: row.code, name: row.name, section: row.section, kind: row.kind, display_order: row.display_order ?? row.order };
+}
+
+function mappingDTO(row) {
+  return { source_type: row.source_type, source_code: row.source_code, pyg_concept_code: row.pyg_concept_code, active: row.active ?? true };
+}
+
+function sortMaps(rows) {
+  return rows.sort((left, right) => left.source_type.localeCompare(right.source_type) || left.source_code.localeCompare(right.source_code));
+}
+
+function assertSingleRead(fake, name, select) {
+  assert.equal(fake.state.calls.length, 1);
+  assert.equal(fake.state.calls[0].name, name);
+  assert.equal(fake.state.calls[0].type, "read");
+  assert.deepEqual(fake.state.calls[0].args.where, { tenant_id: "tenant-qa" });
+  assert.deepEqual(fake.state.calls[0].args.select, select);
+}
+
+for (const seeded of [false, true]) {
+  test(`servicio: conceptos y mapping ${seeded ? "sembrados" : "vacios"} requieren una lectura cada uno y cero DML`, async () => {
+    const fake = buildFakePrisma();
+    if (seeded) seedCatalogState(fake, "tenant-qa");
+    const before = storedState(fake);
+    const loaded = loadService(fake.db);
+    try {
+      const concepts = await fake.readOnly(() => loaded.service.listConcepts("tenant-qa"));
+      assert.deepEqual(concepts, CONCEPT_CATALOG.map(conceptDTO));
+      assertSingleRead(fake, "concept.findMany", { code: true, name: true, section: true, kind: true, display_order: true, active: true });
+      fake.state.calls.length = 0;
+      const mapping = await fake.readOnly(() => loaded.service.getMapping("tenant-qa"));
+      assert.deepEqual(mapping, { rows: sortMaps(DEFAULT_SOURCE_MAP.map(mappingDTO)) });
+      assertSingleRead(fake, "map.findMany", { source_type: true, source_code: true, pyg_concept_code: true, active: true });
+      fake.state.calls.length = 0;
+      const report = await fake.readOnly(() => loaded.service.getOperationalReport("tenant-qa", { period: PERIOD }));
+      assert.deepEqual(report, buildReport(goliatInputs()));
+      assert.equal(fake.state.calls.length, 9);
+      assert.equal(fake.state.calls.filter((call) => call.type === "read").length, 4);
+      assert.equal(fake.state.calls.filter((call) => call.type === "raw").length, 5);
+      assert.deepEqual(storedState(fake), before);
+    } finally {
+      loaded.restore();
+    }
+  });
+}
+
+test("servicio: conceptos persistidos prevalecen incluso inactivos, vacios y con orden cero", async () => {
+  const fake = buildFakePrisma();
+  persistConcept(fake, "tenant-qa", "COMBUSTIBLE", { active: false });
+  const override = persistConcept(fake, "tenant-qa", "INGRESOS", { name: "", section: "propia", kind: "expense", display_order: 0 });
+  const custom = persistConcept(fake, "tenant-qa", "CUSTOM", { name: "Propio", section: "propia", kind: "income", display_order: 1 });
+  persistConcept(fake, "tenant-qa", "CUSTOM_INACTIVE", { active: false, display_order: -1 });
+  persistConcept(fake, "tenant-other", "DOTACION", { name: "No pertenece", display_order: -2 });
+  const before = storedState(fake);
+  const loaded = loadService(fake.db);
+  try {
+    const concepts = await fake.readOnly(() => loaded.service.listConcepts("tenant-qa"));
+    const expected = [override, custom, ...CONCEPT_CATALOG.filter((row) => !["INGRESOS", "COMBUSTIBLE"].includes(row.code))].map(conceptDTO);
+    assert.deepEqual(concepts, expected);
+    assert.equal(concepts.some((row) => "id" in row || "active" in row || "tenant_id" in row || "order" in row), false);
+    assert.equal(fake.state.calls.length, 1);
+    assert.deepEqual(storedState(fake), before);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("servicio: mapping fusiona por tuple, conserva false/vacio, custom y orden estable", async () => {
+  const fake = buildFakePrisma();
+  const inactive = persistMap(fake, "tenant-qa", "PEAJES", { active: false, pyg_concept_code: "OTROS" });
+  const blank = persistMap(fake, "tenant-qa", "HONORARIOS", { active: true, pyg_concept_code: "" });
+  const custom = persistMap(fake, "tenant-qa", "AAA_CUSTOM", { pyg_concept_code: "VIATICOS" });
+  const otherType = persistMap(fake, "tenant-qa", "COMBUSTIBLE", { source_type: "another_type", pyg_concept_code: "OTROS" });
+  persistMap(fake, "tenant-other", "COMBUSTIBLE", { active: false, pyg_concept_code: "" });
+  const before = storedState(fake);
+  const loaded = loadService(fake.db);
+  try {
+    const expected = sortMaps([
+      ...DEFAULT_SOURCE_MAP.filter((row) => !["PEAJES", "HONORARIOS"].includes(row.source_code)),
+      inactive, blank, custom, otherType
+    ].map(mappingDTO));
+    const mapping = await fake.readOnly(() => loaded.service.getMapping("tenant-qa"));
+    assert.deepEqual(mapping, { rows: expected });
+    assert.equal(mapping.rows.some((row) => "id" in row || "tenant_id" in row), false);
+    assert.equal(fake.state.calls.length, 1);
+    fake.state.calls.length = 0;
+    assert.deepEqual(await fake.readOnly(() => loaded.service.getMapping("tenant-qa")), mapping);
+    assert.equal(fake.state.calls.length, 1, "segunda lectura sin cache global");
+    assert.deepEqual(storedState(fake), before);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("servicio: GET concurrentes de dos tenants no comparten overrides, mapa ni impuesto", async () => {
+  const fake = buildFakePrisma();
+  fake.addTenant("tenant-other");
+  persistConcept(fake, "tenant-qa", "INGRESOS", { active: false, name: "No cambia el motor" });
+  persistConcept(fake, "tenant-other", "INGRESOS", { name: "Empresa B" });
+  const inactive = persistMap(fake, "tenant-qa", "COMBUSTIBLE", { active: false });
+  const override = persistMap(fake, "tenant-other", "COMBUSTIBLE", { pyg_concept_code: "OTROS" });
+  const blank = persistMap(fake, "tenant-other", "PEAJES", { pyg_concept_code: "", active: true });
+  fake.state.configs.set("tenant-qa", { tenant_id: "tenant-qa", tax_percent: "0" });
+  fake.state.configs.set("tenant-other", { tenant_id: "tenant-other", tax_percent: "3.5" });
+  const before = storedState(fake);
+  const loaded = loadService(fake.db);
+  try {
+    await fake.readOnly(async () => {
+      await Promise.all(Array.from({ length: 6 }, async (_, index) => {
+        const tenantId = index % 2 ? "tenant-other" : "tenant-qa";
+        const [concepts, mapping, report] = await Promise.all([
+          loaded.service.listConcepts(tenantId), loaded.service.getMapping(tenantId),
+          loaded.service.getOperationalReport(tenantId, { period: PERIOD })
+        ]);
+        const inputs = goliatInputs();
+        inputs.taxPercent = tenantId === "tenant-qa" ? 0 : 3.5;
+        inputs.sourceMaps = [...DEFAULT_SOURCE_MAP.filter((row) => row.source_code !== "COMBUSTIBLE" && (tenantId === "tenant-qa" || row.source_code !== "PEAJES")), ...(tenantId === "tenant-qa" ? [inactive] : [override, blank])];
+        assert.deepEqual(report, buildReport(inputs), "calculo con catalogo canonico y configuracion propia");
+        if (tenantId === "tenant-qa") {
+          assert.equal(concepts.some((row) => row.code === "INGRESOS"), false);
+          assert.equal(mapping.rows.find((row) => row.source_code === "COMBUSTIBLE").active, false);
+          assert.equal(report.data_status.unmapped_total, 3323769.1);
+        } else {
+          assert.equal(concepts.find((row) => row.code === "INGRESOS").name, "Empresa B");
+          assert.equal(mapping.rows.find((row) => row.source_code === "COMBUSTIBLE").pyg_concept_code, "OTROS");
+          assert.equal(report.data_status.unmapped_total, 2013600);
+        }
+      }));
+    });
+    assert.equal(fake.state.calls.length, 6 * 11);
+    for (const tenantId of ["tenant-qa", "tenant-other"]) {
+      const calls = fake.state.calls.filter((call) => call.tenantId === tenantId);
+      assert.equal(calls.length, 3 * 11);
+      assert.equal(calls.filter((call) => call.name === "concept.findMany").length, 3);
+      assert.equal(calls.filter((call) => call.name === "map.findMany").length, 6);
+    }
+    assert.deepEqual(storedState(fake), before);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("servicio: todos los GET rechazan tenant ausente antes de consultar", async () => {
+  const fake = buildFakePrisma();
+  const loaded = loadService(fake.db);
+  try {
+    for (const method of ["listConcepts", "getMapping", "getReport", "getOperationalReport", "listSourceConcepts", "getBudgets", "getConfig"]) {
+      await assert.rejects(async () => loaded.service[method](null, { period: PERIOD }), { code: "PYG_TENANT_REQUIRED", statusCode: 401 });
+    }
+    assert.equal(fake.state.calls.length, 0);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("fake: GET no puede abrir transaccion ni escribir aunque tenga contexto tenant", async () => {
+  const fake = buildFakePrisma();
+  const row = persistMap(fake, "tenant-qa", "PEAJES");
+  await fake.readOnly(() => fake.db.runWithTenant("tenant-qa", async () => {
+    for (const mutation of [
+      () => fake.db.transportPygConcept.upsert({ where: { tenant_id_code: { tenant_id: "tenant-qa", code: "INGRESOS" } }, create: { tenant_id: "tenant-qa", code: "INGRESOS" }, update: {} }),
+      () => fake.db.transportPygSourceMap.create({ data: row }),
+      () => fake.db.transportPygSourceMap.update({ where: { id: row.id }, data: { active: false } }),
+      () => fake.db.$executeRawUnsafe("SELECT 1"),
+      () => fake.db.$transaction(async () => null)
+    ]) await assert.rejects(mutation, /DML prohibido en GET/);
+  }));
+  assert.equal(fake.state.maps.get(fake.key("tenant-qa", "petty_cash_concept", "PEAJES")).active, true);
+});
+
+test("servicio: inicializacion explicita conserva overrides y no resucita tombstones", async () => {
+  const fake = buildFakePrisma();
+  const concept = persistConcept(fake, "tenant-qa", "INGRESOS", { name: "Propio", section: "otra", kind: "expense", display_order: 0, active: false });
+  const tombstone = persistMap(fake, "tenant-qa", "COMBUSTIBLE", { active: false, pyg_concept_code: "" });
+  const loaded = loadService(fake.db);
+  try {
+    for (let index = 0; index < 2; index += 1) {
+      await fake.db.runWithTenant("tenant-qa", () => fake.db.$transaction((tx) => loaded.service.ensureCatalog(tx, "tenant-qa")));
+      assert.deepEqual(fake.state.concepts.get(fake.key("tenant-qa", "INGRESOS")), concept);
+      assert.deepEqual(fake.state.maps.get(fake.key("tenant-qa", "petty_cash_concept", "COMBUSTIBLE")), tombstone);
+      assert.equal(fake.state.concepts.size, CONCEPT_CATALOG.length);
+      assert.equal(fake.state.maps.size, DEFAULT_SOURCE_MAP.length);
+    }
+    assert.ok(fake.state.calls.filter((call) => call.name === "concept.upsert").every((call) => Object.keys(call.args.update).length === 0));
+  } finally {
+    loaded.restore();
+  }
+});
 
 test("servicio: getOperationalReport conserva el calculador legacy (caja menor, nomina, liquidacion)", async () => {
   const fake = buildFakePrisma();
   const loaded = loadService(fake.db);
   try {
-    const report = await loaded.service.getOperationalReport("tenant-qa", { period: PERIOD });
+    const report = await fake.readOnly(() => loaded.service.getOperationalReport("tenant-qa", { period: PERIOD }));
     assert.equal(report.period, PERIOD);
     assert.equal(report.tax_percent, 2.25);
     assert.equal(report.source, "operational");
     assert.equal(report.vehicles[0].income_actual, 19150000);
     assert.equal(report.vehicles[0].rows.find((row) => row.code === "GASTOS_PERSONAL").actual, 7803733);
     assert.equal(report.corporate.income_actual, 19150000);
-    assert.equal(fake.state.activeTenantId, "tenant-qa");
     assert.equal(fake.state.tenant.id, "tenant-qa");
-    // La siembra idempotente del legacy (solo via getOperationalReport) crea el
-    // catalogo completo y el mapping por defecto.
-    assert.equal(fake.state.concepts.size, CONCEPT_CATALOG.length);
-    assert.equal(fake.state.maps.size, DEFAULT_SOURCE_MAP.length);
+    assert.deepEqual(report, buildReport(goliatInputs()));
+    assert.ok(fake.state.calls.every((call) => call.tenantId === "tenant-qa"));
+    // La proyeccion legacy tampoco inicializa tablas: usa defaults virtuales.
+    assert.equal(fake.state.concepts.size, 0);
+    assert.equal(fake.state.maps.size, 0);
+    assert.equal(fake.state.calls.filter((call) => call.type === "write" || call.type === "transaction").length, 0);
+    assert.equal(fake.state.calls.filter((call) => call.type === "read").length, 4);
+    assert.equal(fake.state.calls.filter((call) => call.type === "raw").length, 5);
   } finally {
     loaded.restore();
+  }
+});
+
+test("servicio: source-concepts filtra inactivos y otro tenant y selecciona solo campos publicos", async () => {
+  const fake = buildFakePrisma();
+  const row = { id: 81, tenant_id: "tenant-qa", code: "FUEL", name: "Combustible", active: true, account_code: "5105", metadata: { private: true } };
+  fake.state.sources.set(fake.key("tenant-qa", "FUEL"), row);
+  fake.state.sources.set(fake.key("tenant-qa", "HIDDEN"), { ...row, id: 82, code: "HIDDEN", active: false });
+  fake.state.sources.set(fake.key("tenant-other", "FUEL"), { ...row, id: 83, tenant_id: "tenant-other" });
+  const before = structuredClone(fake.state.sources);
+  const loaded = loadService(fake.db);
+  try {
+    const sources = await fake.readOnly(() => loaded.service.listSourceConcepts("tenant-qa"));
+    assert.deepEqual(sources, [{ id: 81, code: "FUEL", name: "Combustible", active: true }]);
+    assert.equal(fake.state.calls.length, 1);
+    assert.equal(fake.state.calls[0].name, "source.findMany");
+    assert.deepEqual(fake.state.calls[0].args.where, { tenant_id: "tenant-qa", active: true });
+    assert.deepEqual(fake.state.calls[0].args.select, { id: true, code: true, name: true, active: true });
+    assert.deepEqual(fake.state.sources, before);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("servicio: reporte publico ignora liquidacion, nomina, caja menor y presupuesto operativo sin ledger", async () => {
+  const fake = buildFakePrisma();
+  persistConcept(fake, "tenant-qa", "INGRESOS", { active: false, name: "Override operativo" });
+  persistMap(fake, "tenant-qa", "COMBUSTIBLE", { active: false, pyg_concept_code: "" });
+  fake.state.tenant.config = { accounting: { vehicle_pyg: { source: "operational", concepts: [] } } };
+  const before = storedState(fake);
+  const tenantBefore = structuredClone(fake.state.tenants);
+  const calls = [];
+  interactiveStub.getInteractivePyg = async (tenantId, query) => {
+    calls.push({ tenantId, query });
+    return { nodes: [], warnings: [], linkage: {} };
+  };
+  const loaded = loadService(fake.db);
+  try {
+    const report = await fake.readOnly(() => loaded.service.getReport("tenant-qa", { period: PERIOD }));
+    assert.equal(report.source, "accounting");
+    assert.equal(report.report_source, "ledger");
+    assert.deepEqual(calls, [{ tenantId: "tenant-qa", query: { period: PERIOD, mode: "month", dimensions: "puc,branch,cost_center" } }]);
+    for (const vehicle of report.vehicles) {
+      for (const code of ["INGRESOS", "GASTOS_PERSONAL", "COMBUSTIBLE"]) {
+        const row = vehicle.rows.find((item) => item.code === code);
+        assert.equal(row.actual, 0);
+        assert.equal(row.budget, null);
+        assert.equal(row.cump, null);
+      }
+    }
+    assert.equal(report.corporate.totals.totalIngresos.actual, 0);
+    assert.equal(report.reconciliation.ledger_net, 0);
+    assert.equal(report.reconciliation.difference, 0);
+    assert.equal(fake.state.calls.filter((call) => call.type !== "read").length, 0);
+    assert.equal(fake.state.calls.some((call) => ["budget.findMany", "map.findMany", "concept.findMany"].includes(call.name)), false);
+    assert.ok(fake.state.calls.every((call) => call.tenantId === "tenant-qa"));
+    assert.deepEqual(storedState(fake), before);
+    assert.deepEqual(fake.state.tenants, tenantBefore);
+  } finally {
+    loaded.restore();
+    interactiveStub.getInteractivePyg = async () => ({ nodes: [] });
   }
 });
 
@@ -340,7 +684,7 @@ test("servicio: getReport siempre lee el libro contable, incluso sin config ni f
   interactiveStub.getInteractivePyg = async () => ({ nodes: sourceNodes, warnings: [], linkage: {} });
   const loaded = loadService(fake.db);
   try {
-    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    const report = await fake.readOnly(() => loaded.service.getReport("tenant-qa", { period: PERIOD }));
     assert.equal(report.source, "accounting");
     const vehicle = report.vehicles.find((item) => item.plate === "ESQ 294");
     const ingresos = vehicle.rows.find((row) => row.code === "INGRESOS");
@@ -390,7 +734,7 @@ test("servicio: getReport con flag legacy operational sigue leyendo el libro, no
   interactiveStub.getInteractivePyg = async () => ({ nodes: sourceNodes, warnings: [], linkage: {} });
   const loaded = loadService(fake.db);
   try {
-    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    const report = await fake.readOnly(() => loaded.service.getReport("tenant-qa", { period: PERIOD }));
     assert.equal(report.source, "accounting");
     assert.equal(report.report_source, "ledger");
     assert.equal(report.vehicles.find((item) => item.plate === "ESQ 294").rows.find((row) => row.code === "INGRESOS").actual, 12340);
@@ -417,7 +761,7 @@ test("servicio: getReport pasa el mes solicitado exacto al lector contable", asy
   };
   const loaded = loadService(fake.db);
   try {
-    await loaded.service.getReport("tenant-qa", { period: "2026-08" });
+    await fake.readOnly(() => loaded.service.getReport("tenant-qa", { period: "2026-08" }));
     assert.deepEqual(periodsSeen, ["2026-08"], "el periodo pedido va exacto al lector, sin mes anterior ni periodo actual");
   } finally {
     loaded.restore();
@@ -474,7 +818,7 @@ test("servicio: el libro firmado incluye resultados historicos importados y cent
   interactiveStub.getInteractivePyg = async () => ({ nodes: sourceNodes, warnings: [], linkage: {} });
   const loaded = loadService(fake.db);
   try {
-    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    const report = await fake.readOnly(() => loaded.service.getReport("tenant-qa", { period: PERIOD }));
     assert.equal(report.source, "accounting");
     // El centro sin vehiculo (historico importado) no se pierde: aparece en el
     // bloque sin asignar y en el consolidado firmado.
@@ -492,14 +836,18 @@ test("servicio: el libro firmado incluye resultados historicos importados y cent
 
 test("servicio: ensureCatalog no sobrescribe nombre, orden ni defaults del tenant", async () => {
   const fake = buildFakePrisma();
-  fake.state.concepts.set("INGRESOS", { tenant_id: "tenant-qa", code: "INGRESOS", name: "INGRESOS AJUSTADOS", section: "ingresos", kind: "income", display_order: 99 });
+  const override = persistConcept(fake, "tenant-qa", "INGRESOS", { name: "INGRESOS AJUSTADOS", section: "ingresos", kind: "income", display_order: 99 });
   const loaded = loadService(fake.db);
   try {
-    const rows = await loaded.service.listConcepts("tenant-qa");
+    await fake.db.runWithTenant("tenant-qa", () => fake.db.$transaction((tx) => loaded.service.ensureCatalog(tx, "tenant-qa")));
+    const upserts = fake.state.calls.filter((call) => call.name === "concept.upsert");
+    assert.equal(upserts.length, CONCEPT_CATALOG.length);
+    assert.ok(upserts.every((entry) => Object.keys(entry.args.update).length === 0));
+    assert.deepEqual(fake.state.concepts.get(fake.key("tenant-qa", "INGRESOS")), override);
+    const rows = await fake.readOnly(() => loaded.service.listConcepts("tenant-qa"));
     const ingresos = rows.find((row) => row.code === "INGRESOS");
     assert.equal(ingresos.name, "INGRESOS AJUSTADOS");
     assert.equal(ingresos.display_order, 99);
-    assert.ok(fake.state.conceptUpserts.every((entry) => Object.keys(entry.update).length === 0));
   } finally {
     loaded.restore();
   }
@@ -552,7 +900,7 @@ test("servicio: getReport con fuente contable usa el arbol interactivo y hojas l
   interactiveStub.getInteractivePyg = async () => ({ nodes: sourceNodes, warnings: [], linkage: {} });
   const loaded = loadService(fake.db);
   try {
-    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    const report = await fake.readOnly(() => loaded.service.getReport("tenant-qa", { period: PERIOD }));
     assert.equal(report.source, "accounting");
     const vehicle = report.vehicles.find((item) => item.plate === "ESQ 294");
     const ingresos = vehicle.rows.find((row) => row.code === "INGRESOS");
@@ -633,7 +981,7 @@ test("servicio: el extractor limpia el prefijo del nombre y respeta budget_month
   });
   const loaded = loadService(fake.db);
   try {
-    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    const report = await fake.readOnly(() => loaded.service.getReport("tenant-qa", { period: PERIOD }));
     // El centro ABC123 no tiene maestro en organization_tree: sus hojas caen al
     // bloque sin vehiculo, y por eso se leen en el consolidado.
     assert.ok(report.vehicles.every((item) => item.rows.find((row) => row.code === "INGRESOS").actual === 0));
@@ -670,7 +1018,7 @@ test("servicio: configuracion guardada invalida cae a la propuesta con aviso", a
   interactiveStub.getInteractivePyg = async () => ({ nodes: [], warnings: [], linkage: {} });
   const loaded = loadService(fake.db);
   try {
-    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    const report = await fake.readOnly(() => loaded.service.getReport("tenant-qa", { period: PERIOD }));
     assert.equal(report.source, "accounting");
     assert.ok(report.warnings.some((item) => item.code === "VEHICLE_PYG_CONFIG_FALLBACK"));
     assert.equal(report.corporate.rows.length, accountConfig.EXCEL_PROPOSAL.concepts.length);
@@ -716,7 +1064,7 @@ test("servicio: los meses de presupuesto salen de budget_months_found", async ()
   });
   const loaded = loadService(fake.db);
   try {
-    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    const report = await fake.readOnly(() => loaded.service.getReport("tenant-qa", { period: PERIOD }));
     const vehicle = report.vehicles.find((item) => item.plate === "ESQ 294");
     const account = vehicle.rows.find((row) => row.code === "INGRESOS").children[0];
     assert.equal(account.budget_coverage, "full");
@@ -732,6 +1080,129 @@ test("servicio: getReport rechaza periodo invalido", async () => {
   try {
     await assert.rejects(() => loaded.service.getReport("tenant-qa", { period: "2026-13" }), /YYYY-MM/);
     await assert.rejects(() => loaded.service.getReport("tenant-qa", {}), /YYYY-MM/);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("servicio: PUT desactiva default ausente, GET conserva tombstone y PUT reactiva con override propio", async () => {
+  const fake = buildFakePrisma();
+  fake.addTenant("tenant-other");
+  const otherMap = persistMap(fake, "tenant-other", "COMBUSTIBLE", { pyg_concept_code: "VIATICOS" });
+  fake.state.configs.set("tenant-qa", { tenant_id: "tenant-qa", tax_percent: "0" });
+  const unchanged = structuredClone({ budgets: fake.state.budgets, configs: fake.state.configs, concepts: fake.state.concepts });
+  const loaded = loadService(fake.db);
+  const mapKey = fake.key("tenant-qa", "petty_cash_concept", "COMBUSTIBLE");
+  try {
+    const result = await loaded.service.saveMapping("tenant-qa", { id: 5 }, {
+      tenant_id: "tenant-other",
+      rows: [{ tenant_id: "tenant-other", source_code: " combustible ", pyg_concept_code: " ", active: true }]
+    });
+    assert.deepEqual(result, { ok: true, upserted: 1 });
+    const tombstone = fake.state.maps.get(mapKey);
+    assert.ok(tombstone.id);
+    assert.deepEqual(mappingDTO(tombstone), { source_type: "petty_cash_concept", source_code: "COMBUSTIBLE", pyg_concept_code: "", active: false });
+    assert.equal(tombstone.tenant_id, "tenant-qa");
+    assert.equal(fake.state.maps.size, 2);
+    assert.equal(fake.state.calls.filter((call) => call.name === "map.create").length, 1);
+    assert.equal(fake.state.calls.filter((call) => call.name === "transaction").length, 1);
+    assert.deepEqual(fake.state.calls.find((call) => call.name === "transaction").args, { maxWait: 10000, timeout: 25000 });
+    assert.equal(fake.state.calls.filter((call) => call.name === "executeRawUnsafe").length, 1);
+    assert.ok(fake.state.calls.filter((call) => call.type === "write").every((call) => call.transaction && call.tenantId === "tenant-qa"));
+    assert.equal(fake.state.audit.length, 1);
+    assert.equal(fake.state.audit[0].action, "transport.pyg.mapping.updated");
+    assert.equal(fake.state.audit[0].tenant_id, "tenant-qa");
+
+    fake.state.calls.length = 0;
+    const mapping = await fake.readOnly(() => loaded.service.getMapping("tenant-qa"));
+    assert.deepEqual(mapping.rows.find((row) => row.source_code === "COMBUSTIBLE"), mappingDTO(tombstone));
+    assertSingleRead(fake, "map.findMany", { source_type: true, source_code: true, pyg_concept_code: true, active: true });
+    const disabledReport = await fake.readOnly(() => loaded.service.getOperationalReport("tenant-qa", { period: PERIOD }));
+    assert.deepEqual(disabledReport, buildReport({ ...goliatInputs(), taxPercent: 0, sourceMaps: [...DEFAULT_SOURCE_MAP.filter((row) => row.source_code !== "COMBUSTIBLE"), tombstone] }));
+    assert.equal(disabledReport.data_status.unmapped_total, 3323769.1);
+    assert.deepEqual(fake.state.maps.get(fake.key("tenant-other", "petty_cash_concept", "COMBUSTIBLE")), otherMap);
+
+    fake.state.calls.length = 0;
+    await loaded.service.saveMapping("tenant-qa", { id: 5 }, {
+      rows: [{ source_code: "combustible", pyg_concept_code: " otros ", active: true }]
+    });
+    const override = fake.state.maps.get(mapKey);
+    assert.equal(override.id, tombstone.id, "reactiva la fila existente sin duplicar el tuple");
+    assert.deepEqual(mappingDTO(override), { source_type: "petty_cash_concept", source_code: "COMBUSTIBLE", pyg_concept_code: "OTROS", active: true });
+    assert.equal(fake.state.calls.filter((call) => call.name === "map.update").length, 1);
+    assert.equal(fake.state.calls.filter((call) => call.name === "map.create").length, 0);
+    assert.equal(fake.state.audit.length, 2);
+    assert.ok(fake.state.audit.every((entry) => entry.tenant_id === "tenant-qa" && entry.action === "transport.pyg.mapping.updated"));
+
+    fake.state.calls.length = 0;
+    const reactivated = await fake.readOnly(() => loaded.service.getMapping("tenant-qa"));
+    assert.deepEqual(reactivated.rows.find((row) => row.source_code === "COMBUSTIBLE"), mappingDTO(override));
+    assertSingleRead(fake, "map.findMany", { source_type: true, source_code: true, pyg_concept_code: true, active: true });
+    const activeReport = await fake.readOnly(() => loaded.service.getOperationalReport("tenant-qa", { period: PERIOD }));
+    assert.deepEqual(activeReport, buildReport({ ...goliatInputs(), taxPercent: 0, sourceMaps: [...DEFAULT_SOURCE_MAP.filter((row) => row.source_code !== "COMBUSTIBLE"), override] }));
+    assert.equal(activeReport.data_status.unmapped_total, 0);
+    const otherMapping = await fake.readOnly(() => loaded.service.getMapping("tenant-other"));
+    assert.deepEqual(otherMapping.rows.find((row) => row.source_code === "COMBUSTIBLE"), mappingDTO(otherMap));
+    assert.deepEqual(fake.state.maps.get(fake.key("tenant-other", "petty_cash_concept", "COMBUSTIBLE")), otherMap);
+    assert.deepEqual({ budgets: fake.state.budgets, configs: fake.state.configs, concepts: fake.state.concepts }, unchanged);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("servicio: PUT limpia mapping existente y conserva active false con destino no vacio", async () => {
+  const fake = buildFakePrisma();
+  const existing = persistMap(fake, "tenant-qa", "PEAJES", { pyg_concept_code: "OTROS" });
+  const loaded = loadService(fake.db);
+  try {
+    const result = await loaded.service.saveMapping("tenant-qa", { id: 5 }, {
+      rows: [
+        { source_code: "PEAJES", pyg_concept_code: "" },
+        { source_code: "VIATICOS", pyg_concept_code: "DOTACION", active: false },
+        { source_code: "CUSTOM", pyg_concept_code: "HONORARIOS_CONTABLES_SST" }
+      ]
+    });
+    assert.deepEqual(result, { ok: true, upserted: 3 });
+    const cleared = fake.state.maps.get(fake.key("tenant-qa", "petty_cash_concept", "PEAJES"));
+    assert.equal(cleared.id, existing.id);
+    assert.equal(cleared.pyg_concept_code, "");
+    assert.equal(cleared.active, false);
+    const disabled = fake.state.maps.get(fake.key("tenant-qa", "petty_cash_concept", "VIATICOS"));
+    assert.equal(disabled.pyg_concept_code, "DOTACION");
+    assert.equal(disabled.active, false);
+    fake.state.calls.length = 0;
+    const mapping = await fake.readOnly(() => loaded.service.getMapping("tenant-qa"));
+    for (const row of fake.state.maps.values()) assert.deepEqual(mapping.rows.find((item) => item.source_code === row.source_code), mappingDTO(row));
+    assertSingleRead(fake, "map.findMany", { source_type: true, source_code: true, pyg_concept_code: true, active: true });
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("servicio: PUT valida y revierte tombstone parcial sin afectar otro tenant ni auditar", async () => {
+  const fake = buildFakePrisma();
+  fake.addTenant("tenant-other");
+  persistMap(fake, "tenant-other", "COMBUSTIBLE", { pyg_concept_code: "OTROS" });
+  const before = storedState(fake);
+  const loaded = loadService(fake.db);
+  try {
+    await assert.rejects(() => loaded.service.saveMapping("tenant-qa", { id: 5 }, {
+      rows: [{ source_code: "COMBUSTIBLE", pyg_concept_code: "" }, { source_code: "PEAJES", pyg_concept_code: "NO_EXISTE" }]
+    }), { code: "PYG_MAPPING_CONCEPT_INVALID", statusCode: 400 });
+    assert.equal(fake.state.calls.filter((call) => call.name === "map.create").length, 1, "se intento el tombstone antes del error");
+    assert.equal(fake.state.calls.filter((call) => call.name === "audit.create").length, 0);
+    assert.deepEqual(storedState(fake), before, "la transaccion revierte el lote completo");
+    for (const [input, code] of [
+      [{ rows: [] }, "PYG_MAPPING_EMPTY"],
+      [{ rows: [{ source_type: "other", source_code: "PEAJES" }] }, "PYG_MAPPING_SOURCE_INVALID"],
+      [{ rows: [{ source_code: " " }] }, "PYG_MAPPING_SOURCE_CODE_REQUIRED"]
+    ]) await assert.rejects(() => loaded.service.saveMapping("tenant-qa", { id: 5 }, input), { code, statusCode: 400 });
+    await assert.rejects(() => loaded.service.saveMapping(null, { id: 5 }, { rows: [{ source_code: "COMBUSTIBLE", pyg_concept_code: "" }] }), { code: "PYG_TENANT_REQUIRED", statusCode: 401 });
+    assert.deepEqual(storedState(fake), before);
+    fake.state.calls.length = 0;
+    const mapping = await fake.readOnly(() => loaded.service.getMapping("tenant-qa"));
+    assert.deepEqual(mapping.rows.find((row) => row.source_code === "COMBUSTIBLE"), mappingDTO(DEFAULT_SOURCE_MAP.find((row) => row.source_code === "COMBUSTIBLE")));
+    assertSingleRead(fake, "map.findMany", { source_type: true, source_code: true, pyg_concept_code: true, active: true });
   } finally {
     loaded.restore();
   }
@@ -771,8 +1242,8 @@ test("servicio: saveConfig persiste la tarifa del impuesto y valida el rango", a
   const loaded = loadService(fake.db);
   try {
     await loaded.service.saveConfig("tenant-qa", { id: 5 }, { tax_percent: 3.5 });
-    assert.equal(Number(fake.state.config.tax_percent), 3.5);
-    const config = await loaded.service.getConfig("tenant-qa");
+    assert.equal(Number(fake.state.configs.get("tenant-qa").tax_percent), 3.5);
+    const config = await fake.readOnly(() => loaded.service.getConfig("tenant-qa"));
     assert.equal(config.tax_percent, 3.5);
     await assert.rejects(() => loaded.service.saveConfig("tenant-qa", { id: 5 }, { tax_percent: 120 }), /entre 0 y 100/);
   } finally {

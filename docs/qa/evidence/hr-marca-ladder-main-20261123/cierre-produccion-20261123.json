@@ -1,0 +1,70 @@
+{
+  "cierre_en": "2026-11-23T21:20:00.000Z",
+  "ambiente": "produccion",
+  "change_id": "hr-marca-ladder-main-20261123",
+  "despliegue": {
+    "merge_de_promocion": "790870a0e4392d4c8a1bd46b925ca9f4f89e487f",
+    "padres": ["a0fb7e05b65d84e619b80cb30790b27f3b940fb3 (main previo)", "06e94091 (punta de la rama auxiliar)"],
+    "commit_certificado": "2c2f672339a6465c07601f3425f6e8c3234c806d",
+    "rama_auxiliar": "codex/qa-hr-marking-ladder-main-20261123",
+    "salud_servida": { "status": 200, "commit": "790870a0e439", "servicio": "apexos-api-prod-production" },
+    "escalera_en_el_arbol_servido": "resolvePunchLadder y MOTIVO_CORRECCION_REQUERIDO aparecen 4 veces en apps/api/src/modules/hr/service.js del arbol servido; antes de la promocion aparecian 0"
+  },
+  "medicion_despues": {
+    "artefacto": "campo-despues-produccion.json",
+    "total_controles": 16,
+    "pasaron": 16,
+    "ancla": "health_ancla_el_commit_servido con el commit servido 790870a0e439 y --espera=arreglo",
+    "hechos": {
+      "rechazo_de_escalera_legible": "409 MARCACION_FUERA_DE_SECUENCIA con details.expected_type=inicio_almuerzo y details.punch_type=salida",
+      "correccion_sin_motivo": "422 MOTIVO_CORRECCION_REQUERIDO con details.field=motivo_correccion",
+      "correccion_motivada": "200 y el dia paso de [entrada] a [entrada, salida] con novedad escalera:esperada:inicio_almuerzo",
+      "jornada_cerrada": "409 JORNADA_COMPLETA",
+      "canal_propio": "409 con y sin la bandera, pierna no asentada: la excepcion no existe ahi",
+      "tenant_vecino": "404 EMPLEADO_NO_ENCONTRADO y el dia de la victima queda identico",
+      "peor_escritura_ms": 3257,
+      "presupuesto_ms": 20000
+    }
+  },
+  "las_seis_piernas": {
+    "manifiesto_de_pendientes": "../hr-marca-evidence-resilience-20261119/rescate-pendientes-produccion-20261123.json",
+    "filas": [
+      { "empleado_id": 479, "dia": "2026-11-21", "tipo": "salida", "hora_colombia": "15:00", "ruta": 366, "antes": "409 MARCACION_FUERA_DE_SECUENCIA", "despues": "400 KILOMETRAJE_REQUERIDO" },
+      { "empleado_id": 503, "dia": "2026-11-21", "tipo": "salida", "hora_colombia": "15:00", "ruta": 359, "antes": "409 MARCACION_FUERA_DE_SECUENCIA", "despues": "400 KILOMETRAJE_REQUERIDO" },
+      { "empleado_id": 515, "dia": "2026-11-21", "tipo": "salida", "hora_colombia": "17:00", "ruta": 363, "antes": "409 MARCACION_FUERA_DE_SECUENCIA", "despues": "400 KILOMETRAJE_REQUERIDO" },
+      { "empleado_id": 479, "dia": "2026-11-22", "tipo": "salida", "hora_colombia": "16:00", "ruta": 373, "antes": "409 MARCACION_FUERA_DE_SECUENCIA", "despues": "400 KILOMETRAJE_REQUERIDO" },
+      { "empleado_id": 503, "dia": "2026-11-22", "tipo": "salida", "hora_colombia": "15:30", "ruta": 368, "antes": "409 MARCACION_FUERA_DE_SECUENCIA", "despues": "400 KILOMETRAJE_REQUERIDO" },
+      { "empleado_id": 547, "dia": "2026-11-22", "tipo": "salida", "hora_colombia": "16:30", "ruta": 369, "antes": "409 MARCACION_FUERA_DE_SECUENCIA", "despues": "400 KILOMETRAJE_REQUERIDO" }
+    ],
+    "lectura": "El codigo 409 de escalera desaparecio en las seis: la compuerta que la promocion traia a Produccion esta pasada con dato real. Lo que queda es otra regla de negocio, el kilometraje del dia, que exige hrPolicy.validateMileage (apps/api/src/modules/hr/policy.js:54) desde service.js:2915 cuando la marcacion es salida y la ruta tiene placa de vehiculo. La escalera ya no rechaza: el payload se valida mas adelante y se niega por falta de odometro.",
+    "artefactos": {
+      "antes": "rescate-escalera-antes-produccion-20261123.json",
+      "ejecucion": "rescate-escalera-ejecucion-produccion-20261123.json",
+      "verificacion": "rescate-escalera-verificacion-produccion-20261123.json",
+      "intento_descartado": "rescate-escalera-intento-tenant-erroneo-20261123.json",
+      "sesion": "rescate-escalera-sesion-produccion-20261123.json"
+    }
+  },
+  "por_que_no_se_invento_el_kilometraje": {
+    "instruccion_del_dueno": "no vamos a inventar: las marcaciones que se rescatan son las reales de sus jornadas",
+    "medicion_de_fuentes_en_produccion": {
+      "Vehicle.mileage_de_las_cuatro_placas_involucradas": [0, 0, 0, 0],
+      "RoutePreoperationalChecklist": "el modelo si tiene columna mileage_initial (apps/api/prisma/schema.prisma:1144), pero hay 11 checklists en toda la base de Produccion y cero en la ventana del 18 al 24 de noviembre para esas cuatro placas: no hay odometro inicial con el que derivar el del dia",
+      "TransportTripEvent_filas": 0,
+      "Event_filas": 0,
+      "RouteBlockEvent_filas": 0
+    },
+    "consecuencia": "Ningun registro del sistema contiene la lectura de odómetro del 21 y del 22 de noviembre, ni siquiera como derivacion de dos lecturas vecinas. Escribirla fabricando un numero contaminaria combustible y PYG, que es exactamente lo que el manifiesto de pendientes declaro como prohibido.",
+    "dueno_del_pendiente": "operacion: entregar la lectura fisica del odometro por conductor (4 placas) y cerrar la salida por el canal administrativo con su motivo; con la escalera ya en Produccion esa escritura pasa",
+    "comando_del_pendiente": "node scripts/certifications/hr-marking-rescue-apply.js --manifest=<fuera-del-repo>.json --env-file=config/production.env --aplicar --yo-autorizo-produccion --token-env=<VAR>  (las filas deben llevar payload.kilometraje_dia con la lectura real)"
+  },
+  "cuentas_efimeras_de_esta_pata": {
+    "250_251_252": "creadas por el medidor de campo en la corrida DESPUES, retiradas por el endpoint con login 401 verificado",
+    "253": "cuenta colgada del primer intento (correo con mayusculas: el login normaliza a minusculas en apps/api/src/modules/auth/service.js:125); se le normalizo el correo y se retiro por el endpoint, login 401",
+    "254": "sonda de diagnostico de ese mismo 401; nunca obtuvo sesion, por eso se apago por escritura directa y queda declarada aqui",
+    "255": "cuenta del primer intento de escritura contra el tenant equivocado, retirada por el endpoint con login 401",
+    "256": "cuenta del tenant dueno de las seis jornadas (IMPORTADORA SCJ SAS), retirada por el endpoint con login 401",
+    "marcaciones_por_debajo_del_api": 0
+  },
+  "veredicto": "APROBADO con un pendiente de operacion declarado: la escalera esta en Produccion y medida 16/16 sobre el binario servido; las seis salidas dejaron de estar trabadas por secuencia y quedaron trabadas por el odometro que el sistema no tiene."
+}

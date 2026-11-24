@@ -1,0 +1,130 @@
+{
+  "evento": "hr_auth_latency_diferencial",
+  "ejecutado_en": "2026-11-19T15:09:19.348Z",
+  "rama": "desarrollo",
+  "commit": "1d3e2e28",
+  "ambiente": "qa",
+  "project_ref": "jbirkghkekuifgfsgquq",
+  "muestra_usuarios": 2,
+  "casos": 12,
+  "preservacion": {
+    "decisiones_revisadas": 12,
+    "divergencias": 0,
+    "lista": []
+  },
+  "latencia_ms": {
+    "cinco_sentencias": {
+      "mediana": 1417.2,
+      "min": 1406.1,
+      "max": 2006.1
+    },
+    "una_sentencia": {
+      "mediana": 506.6,
+      "min": 502.6,
+      "max": 516
+    },
+    "factor": 0.36,
+    "presupuesto_factor": 0.6
+  },
+  "corridas": [
+    {
+      "caso": "f5bfb2 · vivo",
+      "antigua_ms": 1458.3,
+      "nueva_ms": 510.9,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · sid inexistente",
+      "antigua_ms": 1931.6,
+      "nueva_ms": 510.3,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · sid nulo",
+      "antigua_ms": 1416.1,
+      "nueva_ms": 515.9,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · uv viejo",
+      "antigua_ms": 1415.1,
+      "nueva_ms": 506.6,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · tv viejo",
+      "antigua_ms": 1424.2,
+      "nueva_ms": 504.1,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "usuario inactivo",
+      "antigua_ms": 1525.6,
+      "nueva_ms": 507.8,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · vivo",
+      "antigua_ms": 1411.6,
+      "nueva_ms": 502.6,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · sid inexistente",
+      "antigua_ms": 2006.1,
+      "nueva_ms": 503.7,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · sid nulo",
+      "antigua_ms": 1409.4,
+      "nueva_ms": 503.5,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · uv viejo",
+      "antigua_ms": 1406.1,
+      "nueva_ms": 504.2,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "f5bfb2 · tv viejo",
+      "antigua_ms": 1407.6,
+      "nueva_ms": 504.2,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    },
+    {
+      "caso": "usuario inactivo",
+      "antigua_ms": 1417.2,
+      "nueva_ms": 516,
+      "antigua_lanza": true,
+      "nueva_lanza": true,
+      "motivo": null
+    }
+  ],
+  "omitidos": [],
+  "veredicto": "VERDE",
+  "lectura": "Una sentencia decide igual que cinco en 12 casos y mediana 507 ms vs 1417 ms."
+}

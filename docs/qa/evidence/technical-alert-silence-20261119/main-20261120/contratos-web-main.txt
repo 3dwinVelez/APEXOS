@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: la marcacion movil emite refresh inmediato para monitores abiertos
+ok 1 - la marcacion movil emite refresh inmediato para monitores abiertos
+  ---
+  duration_ms: 3.6839
+  type: 'test'
+  ...
+# Subtest: el monitor de horarios escucha refresh local y el respaldo baja de 30 segundos
+ok 2 - el monitor de horarios escucha refresh local y el respaldo baja de 30 segundos
+  ---
+  duration_ms: 3.969
+  type: 'test'
+  ...
+# Subtest: la carga de horarios reintenta respuestas vacias transitorias y conserva el ultimo estado valido
+ok 3 - la carga de horarios reintenta respuestas vacias transitorias y conserva el ultimo estado valido
+  ---
+  duration_ms: 2.9811
+  type: 'test'
+  ...
+# Subtest: el listado de horarios carga al montar sin esperar catalogos secundarios
+ok 4 - el listado de horarios carga al montar sin esperar catalogos secundarios
+  ---
+  duration_ms: 2.8742
+  type: 'test'
+  ...
+# Subtest: el monitor solicita estado operativo fresco y conserva evidencia resumida
+ok 5 - el monitor solicita estado operativo fresco y conserva evidencia resumida
+  ---
+  duration_ms: 5.9456
+  type: 'test'
+  ...
+# Subtest: el punto unico de fallo tecnico emite diagnostico, no ventana de usuario
+ok 6 - el punto unico de fallo tecnico emite diagnostico, no ventana de usuario
+  ---
+  duration_ms: 2.3283
+  type: 'test'
+  ...
+# Subtest: el canal apex:alert esta retirado del cliente
+ok 7 - el canal apex:alert esta retirado del cliente
+  ---
+  duration_ms: 245.7456
+  type: 'test'
+  ...
+# Subtest: la tarjeta tecnica vive detras del modo diagnostico y con presupuesto
+ok 8 - la tarjeta tecnica vive detras del modo diagnostico y con presupuesto
+  ---
+  duration_ms: 0.2359
+  type: 'test'
+  ...
+# Subtest: el mensaje que ve el operario no lleva ruta ni codigo de estado
+ok 9 - el mensaje que ve el operario no lleva ruta ni codigo de estado
+  ---
+  duration_ms: 0.3558
+  type: 'test'
+  ...
+# Subtest: un corte de red se dice en espanol de operario, no en ingles de navegador
+ok 10 - un corte de red se dice en espanol de operario, no en ingles de navegador
+  ---
+  duration_ms: 0.3856
+  type: 'test'
+  ...
+# Subtest: la pantalla de error global no pinta el detalle crudo
+ok 11 - la pantalla de error global no pinta el detalle crudo
+  ---
+  duration_ms: 0.153
+  type: 'test'
+  ...
+# Subtest: el aviso de sesion reemplaza a la ventana de 401
+ok 12 - el aviso de sesion reemplaza a la ventana de 401
+  ---
+  duration_ms: 0.151
+  type: 'test'
+  ...
+# Subtest: el fallback de base de datos no filtra su codigo al operario
+ok 13 - el fallback de base de datos no filtra su codigo al operario
+  ---
+  duration_ms: 0.1525
+  type: 'test'
+  ...
+# Subtest: los temporizadores de a pie no vuelven a multiplicar la tormenta
+ok 14 - los temporizadores de a pie no vuelven a multiplicar la tormenta
+  ---
+  duration_ms: 2.9795
+  type: 'test'
+  ...
+# Subtest: la validacion de empleados se pinta en el campo, no en una ventana
+ok 15 - la validacion de empleados se pinta en el campo, no en una ventana
+  ---
+  duration_ms: 1.7918
+  type: 'test'
+  ...
+# Subtest: corregir el dato limpia el motivo en linea
+ok 16 - corregir el dato limpia el motivo en linea
+  ---
+  duration_ms: 1.331
+  type: 'test'
+  ...
+# Subtest: un visitante sin sesion tambien deja su fallo en el buzon
+ok 17 - un visitante sin sesion tambien deja su fallo en el buzon
+  ---
+  duration_ms: 0.2313
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 461.7282

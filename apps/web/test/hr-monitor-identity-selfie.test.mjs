@@ -23,9 +23,13 @@ test("cada evidencia se carga con su propia fuente", () => {
   assert.match(source, /\/api\/v1\/hr\/monitor-evidence\/\$\{source\}\//);
 });
 
-test("el lote del monitor une soporte extra y selfie por marcacion", () => {
-  assert.match(source, /batch\.identity_evidence/);
-  assert.match(source, /\[batch\.punch_evidence\?\.\[id\], batch\.identity_evidence\?\.\[id\]\]/);
+test("el monitor trae los bytes por evento y no en un lote bloqueante", () => {
+  // El lote `/monitor-evidence/route/:id` hoy es un indice sin payload. Precargarlo al
+  // abrir el horario era la consulta que movia las selfies de toda la ruta por el pooler,
+  // asi que el monitor no debe volver a pedirlo ni esperar por el.
+  assert.doesNotMatch(source, /monitor-evidence\/route\//);
+  assert.doesNotMatch(source, /loadingBatch|batchLoadedRef/);
+  assert.match(source, /if \(!selectedRoute\) return;/);
 });
 
 test("las marcaciones verificadas llevan la insignia de identidad", () => {

@@ -1,0 +1,80 @@
+LECTURA DE LA EVIDENCIA — fase 3, causas A y D (regresión del enmudecimiento)
+================================================================================
+
+Que es esto
+-----------
+Corrida de `npm run certify:technical-alerts-silence:local` con `CERT_ARTIFACT=fase-3-causas-ad-20261120`,
+lanzada para cumplir el criterio 2 de `docs/briefs/2026-11-19-fase-3-causas-del-fallo-tecnico.md`:
+ninguna causa nueva de la Fase 3 puede reintroducir una ventana de fallo técnico.
+Formato del artefacto: `apexos-technical-alert-silence-v1`. Carpeta nueva a propósito: la corrida no
+escribe sobre la evidencia que citan los manifiestos de las promociones cerradas.
+
+Veredicto
+---------
+79 / 79 comprobaciones, 0 fallos (`certification.json` → `verdict`).
+`native_dialogs: []` en toda la corrida (el arnés se provoca un `alert` con prefijo `ARNES:` para probar
+que el contador puede subir; esa es la comprobación `el_arnes_detecta_una_ventanilla_nativa`, en PASS).
+Ventana: 2026-11-20T07:19:00.783Z → 2026-11-20T07:22:23.944Z (3 min 23 s).
+
+Sobre que binario corrio
+------------------------
+`next start` de producción (campo `frontend_served_by`) sobre `apps/web/.next` con
+`BUILD_ID = _I5ZfzKrKtY0K35ArePQD`, que es el `build_id` consignado en `certification.json`.
+Ese build se hizo sobre el árbol de trabajo de `desarrollo` con el diff de este corte aplicado,
+sobre la base commiteada `89ca1f5b`; el árbol no se movió de rama ni se montó en worktree.
+Origen servido: `http://127.0.0.1:3323`. API y base de datos deliberadamente apagadas
+(`127.0.0.1:3000` no escucha): el estado se fabrica interceptando peticiones en la capa de red y
+ninguna petición escapa del navegador.
+
+Escenarios y lo que cada uno deja medido
+----------------------------------------
+- `tormenta_500_light` y `tormenta_500_dark`: 5 pantallas (rutas, mapa, servicios, monitoreo, home) con 500
+  inyectado en ambos temas. Cero tarjetas flotantes, cero detalle técnico en pantalla, pantalla viva.
+  14 y 28 reportes de telemetría salientes respectivamente: el registro existe, la ventana no.
+- `red_cortada`: 14 peticiones abortadas. Las pantallas siguen vivas y sin tarjetas.
+- `tormenta_429`: cascada de límite de solicitudes sin tarjetas.
+- `diagnostico_activado` (control positivo): con `localStorage.apexos_diagnostics = "1"` el detalle técnico
+  sí aparece —5 tarjetas en el pico, con `Ruta: /api/v1/hr/routes?limit=500 | Estado: 500 | Detalle: …`—
+  y respeta el presupuesto (`max: 5`). Sin esta comprobación verde, un `0 tarjetas` en los demás escenarios
+  podría significar simplemente que el arnés no sabe mirar tarjetas.
+- `validacion_empleados`: flujo completo de alta con 5 motivos en línea, 2 campos con `aria-invalid`,
+  0 tarjetas flotantes y 0 diálogos nativos.
+- Comprobaciones de código: `api_no_dispara_la_alerta_de_usuario`, `el_canal_apex_alert_esta_retirado`,
+  `la_ventana_queda_detras_del_modo_diagnostico`, `el_barrido_del_arnes_detecta_las_ventanillas_que_dice_detectar`
+  (control de contraste del propio barrido) y `la_pantalla_de_empleados_no_usa_ventanillas_de_alerta`.
+
+Sustrato: dos incidentes que hay que declarar
+---------------------------------------------
+1. `next build` borra `.next/BUILD_ID` al arrancar. Antes de esta corrida hubo un intento de certificar sin
+   build reciente y el certificador abortó por su propio prerrequisito; un segundo intento de build encontró
+   «Another next build process is already running» porque el primero seguía vivo pese a que la tarea en
+   segundo plano ya se había reportado cerrada. Se esperó a que terminara y se verificó el `BUILD_ID` antes
+   de lanzar esta corrida.
+2. `runtime.page_errors` y `runtime.console_errors` traen texto a propósito: son los errores de red que el
+   propio escenario fabrica (incluye el aviso honesto «No fue posible cargar esta información… Referencia
+   para soporte: cert-silence-500»). No son fallos de la corrida; el conteo que manda es `verdict`.
+
+Que NO prueba esta evidencia
+----------------------------
+- No prueba el comportamiento nuevo de la causa A: la API está apagada durante toda la corrida, así que el
+  `503` de congestión y la cabecera `retry-after` se certifican aparte en
+  `apps/api/test/api-error-congestion.test.js` (11/11), no aquí.
+- No prueba que los handlers `app/api/**` de la causa D respondan ya sin detalle: se corren en el servidor
+  de la pantalla y la corrida no hace peticiones a ellos. Su control es
+  `apps/web/test/technical-detail-not-leaked.test.mjs` (5/5, con su filtración real vista en rojo).
+- No es evidencia de QA ni de Producción: falta el `platform_logs` antes/después (criterio 4), que exige
+  desplegar este build. Estado de la causa A y D: `local_passed_qa_pending`.
+
+Datos personales
+----------------
+Empresa y usuario de certificación sintéticos del arnés (`cert.silence@apex.local`,
+«Empresa de certificación…»). Ningún tenant de cliente real participa en la corrida, y las rutas de las
+tarjetas del modo diagnóstico son peticiones fabricadas por el interceptador, no lecturas de datos.
+
+En esta misma carpeta
+---------------------
+`suite-web.txt` — la corrida completa de `apps/web` con su baseline recalculado sin el archivo nuevo, los
+rojos heredados nombrados uno por uno y la falsabilidad de los controles nuevos vista en rojo.
+`suite-api-apuntada.txt` — 26/26 en los cuatro archivos que este corte toca o rodea (congestión 6, contrato
+de mapeo previo 5, telemetría pública 7, módulos de la torre 8), con la nota de por qué no se corre aquí la
+suite API completa.

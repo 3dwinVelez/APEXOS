@@ -12,6 +12,7 @@ config/*.env
 .next-dev/
 .next-cert/
 apps/web/.next-dev-*/
+apps/web/.next-*/
 dist/
 coverage/
 *.log

@@ -36,6 +36,35 @@ internos.
 
 ## Rendimiento
 
-La comprobación usa una consulta indexada por `session.id` que incluye usuario y
-empresa. Se evita cualquier caché de autorización entre solicitudes. El objetivo
-es p95 menor de 80 ms para la fase completa de autenticación y autorización.
+La decisión se toma en **una sola sentencia** (`AUTHORIZATION_SNAPSHOT` en
+`apps/api/src/security/authorizationState.js`): usuario, rol con sus permisos,
+empresa y sesión viajan juntos en un `to_jsonb` por relación, con `sid` y `user id`
+como parámetros `$1`/`$2`. El tenant autoritativo es el del usuario, nunca el que
+declara el bearer.
+
+Medido el 2026-11-19 con datos reales, comparando la ruta de una sentencia contra la
+de cinco (`npm run certify:hr-auth-latency:qa` y `:production`):
+
+| Ambiente | Cinco sentencias (mediana) | Una sentencia (mediana) | Factor |
+| --- | --- | --- | --- |
+| QA | 2 009 ms | 532 ms | 0,26 |
+| Producción | 572 ms | 144 ms | 0,25 |
+
+Las 18 decisiones revisadas por ambiente coincidieron en las dos rutas: 6 aceptadas,
+9 medidas sin expulsar (`SESSION_REVOKED`, `USER_VERSION_STALE`,
+`TENANT_VERSION_STALE`) y 3 rechazadas (`USER_REVOKED`). Cero divergencias.
+
+Lo que se llevó el piso no fue el trabajo sino el número de viajes: cada sentencia
+contra el pooler cuesta su latencia de ida y vuelta y Prisma parte cada `include` en
+una sentencia propia, así que paralelizar o afinar el `include` no baja nada. El
+objetivo histórico de p95 < 80 ms para la fase completa de autenticación no era
+alcanzable sobre pooler remoto; el presupuesto vigente es el que mide la compuerta de
+latencia del monitor por ambiente.
+
+Dos invariantes que sostienen la decisión y están cubiertas por pruebas en
+`apps/api/test/`:
+
+- Las fechas de la sesión salen como texto desde `jsonb` y se normalizan a `Date`
+  antes de comparar; sin ese paso una sesión vencida no se vería vencida.
+- Un `sid` mal formado hace fallar el `cast` y el middleware responde `401`, igual
+  que antes de la optimización.

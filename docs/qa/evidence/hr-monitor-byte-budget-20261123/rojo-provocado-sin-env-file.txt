@@ -1,0 +1,4 @@
+(node:6948) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+MEDICION DE PRESUPUESTO DEL MONITOR FALLIDA: Falta --env-file=config/<ambiente>.env: esta medicion nunca usa un ambiente predeterminado.
+exit=1

@@ -6,18 +6,22 @@ import { Badge } from "@/components/ui/feedback";
 import { downloadXlsxWorkbook } from "@/lib/reportExports";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { punctualityAlert, punctualityTypeNames, type PunctualityAlert, type PunctualityTone } from "@/lib/punchPunctuality";
-import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, ClipboardList, Clock, Download, Eye, Filter, ImageOff, LogIn, MapPin, RotateCcw, Search } from "lucide-react";
+import { ModalFrame } from "@/components/ui/ModalFrame";
+import { CORRECTION_REASON_MAXIMUM, PUNCH_LADDER_LABELS, correctionBody, correctionInstant, correctionValidationIssues, missingLadderTypes, scheduledClockFor, type PunchLadderType } from "@/lib/hrMarkingCorrection";
+import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, ClipboardList, Clock, Download, Eye, Filter, ImageOff, LogIn, MapPin, PenLine, RotateCcw, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
-type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; late_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; base64?: string; file_url?: string }; metadata?: PunchIdentityMetadata };
+type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; late_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; base64?: string; file_url?: string; storage_path?: string; has_base64_data?: boolean }; metadata?: PunchIdentityMetadata };
 // Selfie y verificacion de la marcacion de la app (hr/mobile-identity.js). La
 // API anterior al despliegue guardaba la selfie en `base64`; la actual, en
-// `base64_data`. Se leen ambas.
-type PunchIdentityMetadata = { identity_verification?: { status?: string; face_match?: { status?: string; similarity?: number | null }; fingerprint?: { status?: string } }; identity_photo?: { base64_data?: string; base64?: string; type?: string; has_base64_data?: boolean } };
+// `base64_data`. Se leen ambas. `storage_path`/`has_base64_data` anuncian el
+// archivo ya rescatado al almacen: los bytes se piden por id al monitor.
+type PunchIdentityMetadata = { identity_verification?: { status?: string; face_match?: { status?: string; similarity?: number | null }; fingerprint?: { status?: string } }; identity_photo?: { base64_data?: string; base64?: string; type?: string; has_base64_data?: boolean; storage_path?: string; evidence_status?: string; evidence_failure_code?: string }; evidence_status?: string; evidence_detached_reason?: string; correccion_administrativa?: PunchCorrectionMetadata };
+type PunchCorrectionMetadata = { motivo?: string; salto?: string; por?: string | null; en?: string };
 type Attendance = { user_name: string; next_type: string | null; punches: Punch[] };
 type WorkActivity = { id: number; employee_id?: number | string; user_id?: string; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number | string; vehicle_plate?: string; evidence?: HrTimelinePhoto[]; metadata?: { supplied_user_name?: string; employee_code?: string; employee_name?: string; identity_aliases?: string[] } };
 type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number };
@@ -27,6 +31,12 @@ type ProcessedWorkday = { employee_id: number; date: string; overtime_day_minute
 type ReportRow = {
   key: string;
   employeeId: string;
+  /// Ficha resuelta a entero, o null cuando el reporte solo conoce el alias de la marcacion.
+  /// La correccion administrativa exige destino explicito: sin id no se ofrece el boton.
+  employeeNumericId: number | null;
+  /// El `user_name` tal como lo trajeron las marcaciones del dia: es lo que el servidor usa para
+  /// anclar la identidad, y no siempre coincide con el nombre legible del maestro.
+  punchUserName: string;
   employeeName: string;
   role: string;
   document: string;
@@ -47,8 +57,11 @@ type ReportRow = {
   /// Que se esta justificando, para titular el recuadro con la verdad.
   justificationKind: "tarde" | "extension" | "";
   punchAlerts: PunchAlert[];
+  /// Horas que el horario define para esta jornada: son la unica fuente legitima de la hora
+  /// corregida (la autorizacion del dueño es "el horario que tienen definido", no una invencion).
+  schedule: { start_time?: string; end_time?: string };
   activities: WorkActivity[];
-  events: Array<{ kind: string; title: string; at: string; userName: string; gps?: string; accuracy?: number; detail?: string; alert?: PunctualityAlert | null; evidenceCount?: number; evidence?: HrTimelinePhoto[]; selfie?: string; identityVerified?: boolean }>;
+  events: Array<{ kind: string; title: string; at: string; userName: string; gps?: string; accuracy?: number; detail?: string; alert?: PunctualityAlert | null; evidenceCount?: number; evidence?: HrTimelinePhoto[]; selfie?: string; identityVerified?: boolean; degradation?: string; correction?: PunchCorrectionMetadata | null }>;
 };
 
 function punctualityIconFor(tone: PunctualityTone) {
@@ -162,17 +175,45 @@ function punchSelfie(punch: Punch) {
   return content.startsWith("data:") ? content : `data:${photo?.type || "image/jpeg"};base64,${content}`;
 }
 
+// El listado de asistencia ya no arrastra el binario: `/hr/attendance` anuncia el soporte con
+// `has_base64_data` y `HrTimelineEvidence` pide el archivo por id a `/hr/monitor-evidence`.
+// Contar el aviso —y no los bytes— es lo que deja el conteo igual que antes de la proyeccion.
+function punchEvidenceAnnounced(evidence?: Punch["extra_evidence"]) {
+  return Boolean(evidence && (evidence.has_base64_data || evidence.base64_data || evidence.base64 || evidence.file_url || evidence.storage_path));
+}
+
 function punchEvidenceCount(punch: Punch) {
-  const extra = punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url || punch.extra_evidence?.base64 ? 1 : 0;
-  const selfie = punchSelfie(punch) || punch.metadata?.identity_photo?.has_base64_data ? 1 : 0;
+  const extra = punchEvidenceAnnounced(punch.extra_evidence) ? 1 : 0;
+  const selfie = punchSelfie(punch) || punch.metadata?.identity_photo?.has_base64_data || punch.metadata?.identity_photo?.storage_path ? 1 : 0;
   return extra + selfie;
 }
 
 function punchTimelineEvidence(punch: Punch): HrTimelinePhoto[] {
   const photos: HrTimelinePhoto[] = [];
-  if (punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url || punch.extra_evidence?.base64) photos.push({ ...punch.extra_evidence, id: punch.id, source: "punch" });
-  if (!punchSelfie(punch) && punch.metadata?.identity_photo?.has_base64_data) photos.push({ id: punch.id, source: "identity" });
+  if (punchEvidenceAnnounced(punch.extra_evidence)) photos.push({ ...punch.extra_evidence, id: punch.id, source: "punch" });
+  if (!punchSelfie(punch) && (punch.metadata?.identity_photo?.has_base64_data || punch.metadata?.identity_photo?.storage_path)) photos.push({ id: punch.id, source: "identity", storage_path: punch.metadata?.identity_photo?.storage_path });
   return photos;
+}
+
+// Por que una marcacion registrada no trae foto que mostrar. La fila degradada llega sin bytes y
+// sin anuncio de evidencia, asi que sin este mapa el supervisor leia "Sin evidencia fotografica" y
+// no tenia como distinguir al operario que no tomo foto del que la tomo en un formato que este
+// navegador no pinta (HEIC de camara) o que el telefono no pudo adjuntar.
+const EVIDENCE_DEGRADATION_LABELS: Record<string, string> = {
+  EVIDENCIA_NO_DECODIFICABLE: "la camara envio un formato que este navegador no puede mostrar",
+  EVIDENCIA_MULTIPAGE: "el archivo de la foto tenia varias paginas",
+  EVIDENCIA_TIEMPO_LIMITE_DECODIFICACION: "el archivo de la foto tardo demasiado en leerse",
+  EVIDENCIA_INDECODIFICABLE: "el archivo de la foto no pudo leerse"
+};
+
+function punchEvidenceDegradation(punch: Punch) {
+  const photo = punch.metadata?.identity_photo;
+  if (photo?.evidence_status === "degraded") {
+    const code = String(photo.evidence_failure_code || "");
+    return EVIDENCE_DEGRADATION_LABELS[code] || (code ? `el archivo quedo marcado como ${code}` : "el archivo de la foto no esta disponible");
+  }
+  if (punch.metadata?.evidence_status === "degraded") return "el equipo del operario no pudo adjuntar la foto y la guardo localmente";
+  return "";
 }
 
 function employeeName(employee?: Employee, fallback = "") {
@@ -240,6 +281,13 @@ export default function HrReportsPage() {
   const [journeyFilter, setJourneyFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<ReportRow | null>(null);
+  const [canCorrect, setCanCorrect] = useState(false);
+  const [correctionType, setCorrectionType] = useState<PunchLadderType | null>(null);
+  const [correctionClock, setCorrectionClock] = useState("");
+  const [correctionReason, setCorrectionReason] = useState("");
+  const [correctionError, setCorrectionError] = useState("");
+  const [savingCorrection, setSavingCorrection] = useState(false);
+  const [reopenedKey, setReopenedKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [canExport, setCanExport] = useState(false);
@@ -455,6 +503,7 @@ export default function HrReportsPage() {
 
   useEffect(() => {
     setCanExport(hasStoredRolePermission("hr", "export"));
+    setCanCorrect(hasStoredRolePermission("hr", "write"));
   }, []);
 
   const load = useCallback(async () => {
@@ -547,13 +596,20 @@ export default function HrReportsPage() {
         return activityAliases.some((alias) => userAliases.has(alias)) || Boolean(activity.route_id && String(activity.route_id) === String(sorted[0]?.route_id));
       });
       const events = [
-        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, userName: punch.user_name || employeeName(employee, userName), gps: gps(punch), accuracy: punch.accuracy_meters, detail: [faceMatchNote(punch), punch.late_minutes ? `${punch.late_minutes} min de retardo` : punch.extra_minutes ? `${punch.extra_minutes} min extra` : ""].filter(Boolean).join(" · "), alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: punchEvidenceCount(punch), evidence: punchTimelineEvidence(punch), selfie: punchSelfie(punch), identityVerified: punch.metadata?.identity_verification?.status === "verified" })),
+        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, userName: punch.user_name || employeeName(employee, userName), gps: gps(punch), accuracy: punch.accuracy_meters, detail: [faceMatchNote(punch), punch.late_minutes ? `${punch.late_minutes} min de retardo` : punch.extra_minutes ? `${punch.extra_minutes} min extra` : ""].filter(Boolean).join(" · "), alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: punchEvidenceCount(punch), evidence: punchTimelineEvidence(punch), selfie: punchSelfie(punch), identityVerified: punch.metadata?.identity_verification?.status === "verified", degradation: punchEvidenceDegradation(punch), correction: punch.metadata?.correccion_administrativa || null })),
         ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, userName: activity.user_name || employeeName(employee, userName), gps: gps(activity), accuracy: activity.accuracy_meters, detail: activity.observation || "", alert: null, evidenceCount: activity.evidence?.length || 0, evidence: (activity.evidence || []).map(photo => ({ ...photo, source: "activity" as const })) }))
       ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
       const punchAlerts = reportPunchAlerts(entry, exit, route);
+      // El horario asignado del dia, aunque ninguna marcacion haya traido su `route_id`: es la
+      // fuente legitima de la hora corregida. Se resuelve aparte de `route` para no mover las
+      // alertas de puntualidad, que siguen ancladas al horario de la marcacion como hasta ahora.
+      const daySchedule = route || routes.find((candidate) => dateKey(candidate.date) === dateKey(sorted[0]?.date)
+        && (candidate.employees || []).some((alias) => userAliases.has(normalized(alias))));
       return {
         key,
         employeeId: String(employee?.id || userName),
+        employeeNumericId: Number.isInteger(employee?.id) && Number(employee?.id) > 0 ? Number(employee?.id) : null,
+        punchUserName: userName,
         employeeName: employeeName(employee, userName),
         role: String(employee?.user_type || employee?.position || "operativo"),
         document: employee?.metadata?.document || "",
@@ -574,6 +630,7 @@ export default function HrReportsPage() {
         latenessMinutes: sorted.reduce((sum, punch) => sum + Number(punch.late_minutes || 0), 0),
         justificationKind: !justified ? "" : justified.type === "entrada" ? "tarde" : "extension",
         punchAlerts,
+        schedule: { start_time: daySchedule?.start_time, end_time: daySchedule?.end_time },
         activities: routeActivities,
         events
       } satisfies ReportRow;
@@ -592,6 +649,75 @@ export default function HrReportsPage() {
   }), [appliedRange, employeeFilter, journeyFilter, onlyOvertime, query, rows]);
 
   const activeFilters = [employeeFilter !== "all", onlyOvertime, journeyFilter !== "all", Boolean(query.trim())].filter(Boolean).length;
+
+  /// Huecos de la escalera en la jornada abierta, en el orden en que debian ocurrir.
+  const missingPunches = selected ? missingLadderTypes({
+    entrada: Boolean(selected.entry),
+    inicio_almuerzo: Boolean(selected.lunchStart),
+    fin_almuerzo: Boolean(selected.lunchEnd),
+    salida: Boolean(selected.exit)
+  }) : [];
+
+  const correctionScheduledClock = correctionType ? scheduledClockFor(correctionType, selected?.schedule) : "";
+  const correctionInstantPreview = correctionType && selected ? correctionInstant(selected.date, correctionClock.trim()) : "";
+
+  function openCorrection(type: PunchLadderType) {
+    setCorrectionType(type);
+    setCorrectionClock(scheduledClockFor(type, selected?.schedule));
+    setCorrectionReason("");
+    setCorrectionError("");
+  }
+
+  useEffect(() => {
+    if (selected) return;
+    setCorrectionType(null);
+    setCorrectionClock("");
+    setCorrectionReason("");
+    setCorrectionError("");
+  }, [selected]);
+
+  // Despues de registrar la hora que faltaba, la ventana vuelve a abrirse sobre la fila ya
+  // recargada: es la unica forma de que quien corrigio vea la marcacion en su trazabilidad sin
+  // volver a buscar al trabajador en el listado.
+  useEffect(() => {
+    if (!reopenedKey) return;
+    const fresh = rows.find((row) => row.key === reopenedKey);
+    setReopenedKey(null);
+    if (fresh) setSelected(fresh);
+  }, [reopenedKey, rows]);
+
+  async function submitCorrection() {
+    if (!selected || !correctionType || savingCorrection) return;
+    const input = {
+      employeeId: selected.employeeNumericId,
+      userName: selected.punchUserName,
+      date: selected.date,
+      type: correctionType,
+      clock: correctionClock.trim(),
+      reason: correctionReason,
+      schedule: selected.schedule
+    };
+    const issues = correctionValidationIssues(input);
+    if (issues.length) {
+      setCorrectionError(issues[0]);
+      return;
+    }
+    setSavingCorrection(true);
+    setCorrectionError("");
+    try {
+      await api("/api/v1/hr/time-punches", { method: "POST", body: JSON.stringify(correctionBody(input)), silentFailureAlert: true });
+      const label = PUNCH_LADDER_LABELS[correctionType];
+      const worker = selected.employeeName;
+      setReopenedKey(selected.key);
+      setSelected(null);
+      setMessage(`Se registro ${label.toLowerCase()} de ${worker} a las ${correctionClock.trim()} como correccion administrativa.`);
+      await load();
+    } catch (error) {
+      setCorrectionError(error instanceof Error ? error.message : "No fue posible registrar la marcacion.");
+    } finally {
+      setSavingCorrection(false);
+    }
+  }
 
   function applyDateFilters() {
     const error = reportRangeError(from, to);
@@ -1023,6 +1149,20 @@ export default function HrReportsPage() {
                   <Metric label="Entrada" value={hour(selected.entry?.punched_at)} />
                   <Metric label="Cierre" value={hour(selected.exit?.punched_at)} />
                 </div>
+                {canCorrect && missingPunches.length ? (
+                  <div className="mt-3 rounded-md border border-line bg-surface-muted p-3">
+                    <h4 className="text-sm font-semibold text-content-strong">Registrar la hora que falta</h4>
+                    <p className="mt-1 text-xs text-content-muted">La escalera de marcaciones no rellena un hueco del dia: esta correccion la hace el supervisor, queda a tu usuario y abre la novedad de ajuste manual.</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {missingPunches.map((type) => (
+                        <button key={type} className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm font-semibold text-content-strong hover:bg-white disabled:cursor-not-allowed disabled:opacity-60" disabled={!selected.employeeNumericId || savingCorrection} onClick={() => openCorrection(type)} title={selected.employeeNumericId ? "" : "El reporte no resolvio la ficha del empleado"} type="button">
+                          <PenLine size={15} /> {PUNCH_LADDER_LABELS[type]}
+                        </button>
+                      ))}
+                    </div>
+                    {!selected.employeeNumericId ? <p className="mt-2 text-xs font-semibold text-amber-900">El reporte no resolvio la ficha del empleado: registra la marcacion desde su terminal.</p> : null}
+                  </div>
+                ) : null}
                 <p className="mt-3 rounded-md bg-surface-muted p-3 text-xs text-content-muted">Vista consolidada del reporte. Las marcaciones y actividades conservan la misma lectura visual del monitor operativo.</p>
                 {selected.liquidatedOvertimeMinutes != null && selected.liquidatedOvertimeMinutes !== selected.overtimeMinutes ? (
                   <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-950">
@@ -1064,9 +1204,11 @@ export default function HrReportsPage() {
                                 <Badge tone={isMark ? "neutral" : "info"}>{isMark ? "Marcacion" : "Actividad"}</Badge>
                                 {event.alert ? <Badge tone={event.alert.tone}>{event.alert.label}</Badge> : null}
                                 {event.identityVerified ? <Badge tone="success">Identidad verificada</Badge> : null}
+                                {event.correction?.motivo ? <Badge tone="warning">Correccion administrativa</Badge> : null}
                               </div>
                               <p className="mt-1 text-sm text-content-muted">{event.userName} · <span className="font-semibold text-content-body">{hour(event.at)}</span></p>
                               {event.detail ? <p className="mt-1.5 text-sm text-content-body">{event.detail}</p> : null}
+                              {event.correction?.motivo ? <p className="mt-1.5 text-xs text-content-muted">Hora registrada por el supervisor: {event.correction.motivo}{event.correction.salto ? ` (la escalera esperaba ${event.correction.salto})` : ""}.</p> : null}
                               {event.gps ? <p className="mt-1.5 flex items-center gap-1.5 text-xs text-content-muted"><MapPin size={12} /> {event.gps}{event.accuracy != null ? ` · precision +/-${Math.round(Number(event.accuracy || 0))} m` : ""}</p> : null}
                             </div>
                           </div>
@@ -1078,6 +1220,7 @@ export default function HrReportsPage() {
                             ) : null}
                             <HrTimelineEvidence evidence={event.evidence} />
                             {event.evidenceCount ? <Badge tone="success">{event.evidenceCount} evidencia(s)</Badge> : <p className="inline-flex items-center gap-2 rounded-md bg-surface-muted px-3 py-2 text-xs font-semibold text-content-subtle"><ImageOff size={14} /> Sin evidencia fotografica</p>}
+                            {event.degradation ? <p className="inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-950" role="status"><AlertTriangle size={14} /> Evidencia degradada: {event.degradation}. La marcacion quedo registrada.</p> : null}
                           </div>
                         </article>
                       </li>
@@ -1092,6 +1235,44 @@ export default function HrReportsPage() {
         </div>
         </div>
       ), document.body) : null}
+
+      {mounted && selected && correctionType ? (
+        <ModalFrame
+          description={`${selected.employeeName} · ${selected.date}`}
+          onClose={() => setCorrectionType(null)}
+          title={`Registrar ${PUNCH_LADDER_LABELS[correctionType].toLowerCase()}`}
+          footer={(
+            <div className="flex w-full items-center gap-2">
+              <button className="h-10 flex-1 rounded-md border border-line text-sm font-semibold hover:bg-surface-muted" disabled={savingCorrection} onClick={() => setCorrectionType(null)} type="button">Cancelar</button>
+              <button className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-md bg-apex text-sm font-semibold text-white disabled:bg-neutral-300" disabled={savingCorrection || !correctionInstantPreview} onClick={submitCorrection} type="button">
+                <PenLine size={16} /> {savingCorrection ? "Registrando..." : "Registrar la marcacion"}
+              </button>
+            </div>
+          )}
+        >
+          <div className="space-y-4">
+            <p className="rounded-md bg-surface-muted p-3 text-xs text-content-muted">
+              El supervisor registra esta hora porque la escalera de marcaciones no rellena huecos del dia. Queda marcada como correccion administrativa con tu usuario y abre la novedad de ajuste manual.
+            </p>
+            <label className="block">
+              <span className="mb-1 block text-sm font-semibold text-content-strong">Hora de la marcacion</span>
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" max="23:59" min="00:00" type="time" value={correctionClock} onChange={(event) => setCorrectionClock(event.target.value)} />
+              <span className="mt-1 block text-xs text-content-muted">
+                {correctionScheduledClock
+                  ? `El horario asignado marca ${correctionScheduledClock}. Es la hora autorizada cuando la marcacion nunca llego.`
+                  : "Este horario no define esa hora: escribe la en que realmente ocurrio."}
+                {correctionScheduledClock && correctionClock && correctionClock !== correctionScheduledClock ? ` La hora que escribes (${correctionClock}) difiere del horario.` : ""}
+              </span>
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-sm font-semibold text-content-strong">Motivo de la correccion</span>
+              <textarea className="min-h-[72px] w-full rounded-md border border-line px-3 py-2 text-sm" maxLength={CORRECTION_REASON_MAXIMUM} onChange={(event) => setCorrectionReason(event.target.value)} placeholder="Ej: la marcacion de entrada fue rechazada y el operario no pudo volver a marcar" value={correctionReason} />
+              <span className="mt-1 block text-xs text-content-muted">{correctionReason.trim().length}/{CORRECTION_REASON_MAXIMUM} caracteres. Explica que paso: queda en la auditoria con tu usuario.</span>
+            </label>
+            {correctionError ? <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-950" role="alert">{correctionError}</p> : null}
+          </div>
+        </ModalFrame>
+      ) : null}
     </div>
   );
 }

@@ -17,10 +17,21 @@ test("la ficha del empleado muestra el telefono registrado para marcar", () => {
   assert.match(source, /employee\.metadata\?\.mobile_biometric/);
 });
 
-test("restablecer pide confirmacion y usa la ruta del API", () => {
-  assert.match(source, /window\.confirm\(/);
+test("restablecer se arma con dos clics en el panel y usa la ruta del API", () => {
+  assert.doesNotMatch(source, /window\.confirm\(/, "la pregunta ya no tapa la pantalla: vive en el panel");
+  assert.match(source, /const \[armed, setArmed\] = useState\(false\);/);
+  assert.match(source, /onClick=\{\(\) => setArmed\(true\)\}/, "el primer clic arma, no borra");
+  assert.match(source, /onClick=\{\(\) => setArmed\(false\)\}/, "cancelar desarma: el panel no puede quedar apuntando a un empleado viejo");
+  assert.match(source, /\{busy \? "Restableciendo\.\.\." : "Confirmar restablecimiento"\}/);
   assert.match(source, /\/api\/v1\/hr\/employees\/\$\{encodeURIComponent\(String\(employee\.id\)\)\}\/biometric-enrollment/);
   assert.match(source, /method: "DELETE"/);
+});
+
+test("el panel se remonta al cambiar de empleado y no hereda el disparador armado", () => {
+  // Sin el key, React conserva el estado y el segundo clic borraría el registro del empleado
+  // equivocado: el panel queda montado sobre otra ficha con "armed" todavía en true.
+  const montaje = source.match(/<BiometricEnrollmentPanel key=\{String\(selected\.id\)\}[^>]*employee=\{selected\}/);
+  assert.ok(montaje, "el panel debe ir remontado por empleado: si cambió de forma, este control ya no mide nada");
 });
 
 test("el panel solo aparece sobre un empleado existente", () => {

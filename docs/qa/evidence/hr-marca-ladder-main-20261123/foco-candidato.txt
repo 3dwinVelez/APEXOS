@@ -1,0 +1,89 @@
+foco del candidato a main, corrido dentro de la worktree auxiliar
+arbol_medido=11d6183659d949c61b46d171155aa9f3273f0b20 (estado de la worktree al correr)
+ancla=la rama se reconstruyo despues de la corrida (git reset --soft sobre el tip nuevo de main), por eso se ancla por arbol y no por sha de commit
+paridad=git diff --name-only 11d61836 <certified_commit> -- apps test scripts config package.json tsconfig.json next.config.js prisma responde vacio: el codigo probado es el del commit certificado (su sha esta en docs/qa/manifests/hr-marca-ladder-main-20261123-scope.json)
+fecha_utc=2026-11-23T16:02:14Z
+comando=NODE_PATH=<node_modules del arbol principal> node --test test/hr-administrative-punch-correction.test.js test/hr-evidence-resilience.test.js test/hr-mobile-identity.test.js test/platform-log-rejection-detail.test.js test/telemetry-client-logs-public.test.js
+nota=nunca se copio ni se enlazo node_modules en la worktree; solo se resolvio la ruta de modulos por NODE_PATH
+
+ok 1 - el canal propio nunca puede declararse correccion administrativa
+ok 2 - sin declaracion explicita manda la escalera en la ruta administrativa
+ok 3 - una correccion sin motivo se rechaza con codigo y campo
+ok 4 - la correccion nombra que esperaba la escalera
+ok 5 - el motivo se acota: no es un vertedero de texto
+ok 6 - la bandera tambien se acepta dentro de metadata (el canal que usa la app)
+ok 7 - la selfie recibida se guarda verbatim: ningun byte re-codificado
+ok 8 - el canal movil queda verified sobre la JPEG firmada y su hash coincide
+ok 9 - una AVIF real de camara queda available conservando sus bytes y su tipo olido
+ok 10 - un WEBP real queda available y conserva el hash firmado
+ok 11 - un HEIC con marca HEVC real degrada la evidencia y no cuesta la marcacion
+ok 12 - un TIFF degrada en lugar de rechazar
+ok 13 - PNG declarado jpeg pero ileible degrada con su motivo machine-readable
+ok 14 - el transporte roto se tolera y se registra en normalization_applied
+ok 15 - el alfabeto url-safe se tolera y la firma sigue cerrando
+ok 16 - un PDF o un mp4 disfrazados de selfie se rechazan con codigo y detalle
+ok 17 - un payload con alfabeto invalido se rechaza, no se degrada
+ok 18 - el rechazo por clase llega al cliente con el motivo machine-readable en el detalle
+ok 19 - el tope de bytes sigue rechazando y nombra el limite que disparo
+ok 20 - el canal web usa su propio tope de 2 MB y lo nombra
+ok 21 - la compuerta del almacen y la de la selfie afirman lo mismo sobre el mismo payload
+ok 22 - la web guarda la foto buena como photo_only y degrada la ilegible sin perder la marcacion
+ok 23 - la pantalla distingue un rechazo de secuencia de un rechazo de foto
+ok 24 - un rechazo de evidencia llega al cliente con codigo y detalle, no con una frase suelta
+ok 25 - registra el telefono con una firma valida de la huella
+ok 26 - no se vuelve a registrar sin que un supervisor restablezca
+ok 27 - el registro exige que la firma sea de la llave enviada
+ok 28 - el registro firmado para otro usuario no sirve
+ok 29 - solo acepta llaves EC P-256
+ok 30 - un registro con la hora muy corrida se rechaza
+ok 31 - un identificador de telefono raro se rechaza
+ok 32 - la marcacion de la app firmada en el telefono registrado queda verificada
+ok 33 - la selfie se guarda como data URL canonico aunque llegue sin prefijo
+ok 34 - acepta selfie PNG declarada PNG
+ok 35 - la web guarda la selfie pero no la da por verificada
+ok 36 - la web no puede marcar entrada ni salida sin selfie
+ok 37 - la web reenvia una entrada sin foto cuando el servidor ya rechazo esa foto
+ok 38 - la excepcion de la foto desprendida no se compra con una declaracion inventada
+ok 39 - el almuerzo de la web sigue marcandose sin foto
+ok 40 - la app sin telefono registrado no puede marcar
+ok 41 - una version vieja de la app (sin firma) no puede marcar
+ok 42 - desde otro telefono no se puede marcar
+ok 43 - con la llave de otro telefono la firma no pasa
+ok 44 - cambiar la selfie despues de firmar invalida la marcacion
+ok 45 - cambiar el tipo de marcacion despues de firmar la invalida
+ok 46 - sin selfie la app no puede marcar entrada ni salida
+ok 47 - el almuerzo se marca sin selfie pero firmado
+ok 48 - quitarle la selfie a una entrada firmada con foto no la cuela como almuerzo
+ok 49 - una app vieja todavia marca el almuerzo con foto, pero la foto no se guarda
+ok 50 - en el almuerzo la firma sigue atada al telefono registrado
+ok 51 - una selfie que no es imagen se rechaza
+ok 52 - una selfie declarada JPEG pero con contenido PNG real es evidencia disponible
+ok 53 - un PNG declarado jpeg que el navegador no puede decodificar degrada, no rechaza
+ok 54 - una selfie demasiado grande se rechaza
+ok 55 - restablecer pasa el registro al historial sin la llave
+ok 56 - el historial de registros no crece sin limite
+ok 57 - los listados no llevan el contenido de la selfie ni la firma cruda
+ok 58 - una fila degradada jamas anuncia evidencia en los listados, aunque lleve bytes
+ok 59 - la selfie se entrega al monitor como evidencia
+ok 60 - la evidencia degradada tambien llega al monitor, con su motivo
+ok 61 - las selfies guardadas antes del despliegue tambien llegan al monitor
+ok 62 - lo que ve el empleado de su registro nunca incluye la llave
+ok 63 - el detalle nombra el motivo machine-readable, el campo y los tipos olidos
+ok 64 - una marcacion fuera de secuencia se nombra por la hora que sigue
+ok 65 - el detalle jamas arrastra el contenido de la evidencia ni claves fuera de la lista
+ok 66 - el detalle queda acotado aunque el rechazo traiga claves largas
+ok 67 - un detalle vacio no inventa texto
+ok 68 - la respuesta ya serializada aporta el codigo y el detalle del 4xx que no se lancio
+ok 69 - un cuerpo que no es JSON pequeno se ignora en lugar de romperse
+ok 70 - sin buzon configurado responde honesto: no finge un ok y no escribe
+ok 71 - con buzon el reporte anonimo cae en el tenant del despliegue y sin usuario
+ok 72 - el cuerpo no elige tenant ni siembra PII: lo que no esta en el contrato se descarta
+ok 73 - el mensaje es obligatorio y acotado: no es un vertedero de trazas
+ok 74 - el detalle y la metadata extra se limitan por contrato, no por bondad
+ok 75 - la ingesta publica no hereda el limite de 25 MB de la API
+ok 76 - el reporte anonimo conserva la causa clasificada y el codigo del rechazo
+# tests 76
+# pass 76
+# fail 0
+# cancelled 0
+# skipped 0

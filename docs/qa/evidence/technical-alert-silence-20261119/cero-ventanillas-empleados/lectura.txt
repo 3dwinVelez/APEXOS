@@ -1,0 +1,51 @@
+Corrida local del 2026-11-20 · cero ventanillas nativas en la pantalla de Empleados
+================================================================================
+
+SUSTRATO (lo que se sirvió, medido, no supuesto)
+- Commit certificado: `bede369c` en `desarrollo`, igual a `origin/desarrollo` al momento del cierre.
+- Build: `npm run build` en `apps/web` dentro del árbol principal. `BUILD_ID` = `L2qD4tF_hhOtd5lXKIqgF`.
+  Sirve `next start -p 3323 -H 127.0.0.1` (producción, no `next dev`). La API local y su base están
+  deliberadamente apagadas: eso es lo que se quiere probar.
+- El build corrió en el árbol principal y no en una worktree puntual por el incidente narrado más
+  abajo. Antes de correr, el árbol se verificó idéntico al commit: `git ls-files --deleted -- apps packages`
+  = 0, `git status --porcelain --untracked-files=no` = 0 y `apps/` sin archivos sin versionar.
+  Por eso lo construido aquí es el árbol de `bede369c`, no un árbol con trabajo ajeno encima.
+- Prueba de que el binario contiene el corte (no solo el código fuente): el chunk servido
+  `.next/static/chunks/2hwtl1y4-wxrq.js` incluye la cadena `Fecha final de vigencia` y tiene
+  **0** coincidencias de `window.prompt` y `window.confirm`.
+
+QUÉ AFIRMA `certification.json`
+- Veredicto **79/79**, 0 fallos, 0 chequeos parciales. Ventanillas nativas reales en toda la corrida:
+  `[]`. Peticiones de telemetría salientes: 78 (el registro existe, la ventana no).
+- Tramo de Empleados: 4 motivos entregados en línea (documento obligatorio, nombres y apellidos,
+  maestro contable, sucursal/centro), 2 campos marcados con `aria-invalid`, 0 tarjetas flotantes y
+  0 diálogos del navegador en el tramo.
+- El arnés sigue provocándose un diálogo propio (`el_arnes_detecta_una_ventanilla_nativa`, prefijo
+  `ARNES:`), así que el cero de arriba es un cero que puede ponerse rojo.
+- Chequeo nuevo `el_barrido_del_arnes_detecta_las_ventanillas_que_dice_detectar`: el mismo regex con el
+  que se barre la pantalla tiene que encontrar `confirm` y `prompt` en un fixture que sí los contiene.
+  Con esto el barrido deja de ser una afirmación de una sola función (`alert`) y cubre las tres
+  ventanillas que esta intervención retiró. La cuenta pasó de 78 a 79 por este control, no por un
+  cambio de comportamiento.
+
+LÍMITE DECLARADO (lo que esta corrida NO prueba)
+- El cierre de vigencia en línea y el restablecimiento de huella en dos clics no se ejercitaron como
+  flujos: el arnés corre con la API caída y no fabrica una afiliación activa ni un empleado con huella
+  registrada. Lo medido aquí es la ausencia de ventanillas y el contrato de código; la columna en
+  navegador de esos dos controles se toma con la promoción en QA, donde existe el dato real.
+
+INCIDENTE DE ESTA CORRIDA (narrado porque forma parte del sustrato)
+- Para aislar el corte se creó una worktree puntual y se intentó darle `node_modules` por enlace. Git Bash
+  no pudo enlazar y **copió** el árbol; dentro de `node_modules` los enlaces `@apex-os/{web,api,types}`
+  llevan **ruta absoluta al árbol principal**, así que al borrar la worktree con `git worktree remove --force`
+  el barrido los siguió. Consecuencia medida: **1.173 archivos rastreados desaparecieron** de
+  `apps/web` (648), `apps/api` (473), `apps/control-tower` (47) y `packages/types` (5), más tres paquetes
+  vaciados (`node_modules/@prisma/client`, `node_modules/rimraf`) y `apps/web/node_modules/typescript`.
+- Recuperación: `git checkout HEAD -- apps packages` devolvió los 1.173 byte a byte (estaban limpios: el
+  árbol solo tenía archivos sin versionar, y el conteo de esos 64 quedó idéntico antes y después). Los
+  paquetes se restauraron con `npm pack` + `tar -xzf` sobre las versiones exactas del `package-lock.json`
+  (5.22.0, 2.7.1, 5.8.2), sin tocar `package.json` ni el lockfile. `node_modules/.prisma` (35 MB, cliente
+  generado) nunca se perdió. Verificación final: 0 paquetes sin `package.json` de 814 inspeccionados.
+- Este evento es la misma firma del barrido del 2026-11-18 (1.161 archivos) que quedó registrado como
+  «causa nunca identificada». La lección se versionó como regla 40 de `apexos-git-guardian` y como
+  corrección de la regla 35 del mismo agente.

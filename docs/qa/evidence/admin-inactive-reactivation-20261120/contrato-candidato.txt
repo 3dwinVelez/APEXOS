@@ -1,0 +1,56 @@
+(node:7604) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+TAP version 13
+# (node:18000) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: desactivar usuario responde con el registro inactivo y revoca sesiones
+ok 1 - desactivar usuario responde con el registro inactivo y revoca sesiones
+  ---
+  duration_ms: 72.3649
+  type: 'test'
+  ...
+# Subtest: el cambio de estado no puede operar sobre un usuario de otro tenant
+ok 2 - el cambio de estado no puede operar sobre un usuario de otro tenant
+  ---
+  duration_ms: 8.5235
+  type: 'test'
+  ...
+# Subtest: la ruta publica el resultado exitoso del servicio sin convertirlo en 404
+ok 3 - la ruta publica el resultado exitoso del servicio sin convertirlo en 404
+  ---
+  duration_ms: 0.8471
+  type: 'test'
+  ...
+# Subtest: reactivar un usuario inactivo opera sobre el mismo id que se desactivó
+ok 4 - reactivar un usuario inactivo opera sobre el mismo id que se desactivó
+  ---
+  duration_ms: 5.4182
+  type: 'test'
+  ...
+# Subtest: el bloqueo de acceso de una cuenta inactiva no se pierde en un 404 al leerla
+ok 5 - el bloqueo de acceso de una cuenta inactiva no se pierde en un 404 al leerla
+  ---
+  duration_ms: 10.2542
+  type: 'test'
+  ...
+# Subtest: inactivar desde el acceso responde con la fila escrita, no con un 404 posterior
+ok 6 - inactivar desde el acceso responde con la fila escrita, no con un 404 posterior
+  ---
+  duration_ms: 5.2222
+  type: 'test'
+  ...
+# Subtest: toda lectura de cuenta en administracion ve la inactiva y conserva su tenant
+ok 7 - toda lectura de cuenta en administracion ve la inactiva y conserva su tenant
+  ---
+  duration_ms: 1.8397
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 282.5038

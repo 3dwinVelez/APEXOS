@@ -1,0 +1,46 @@
+Produccion despues de la promocion de la secuela del enmudecimiento
+===================================================================
+
+Cambio medido aqui: `merge: promocion puntual de la secuela del enmudecimiento a main`.
+
+Sustrato
+--------
+- Commit promocionado a `main`: 34674cac29b3a05ffef71d034becdf84ce389d65
+- Padres: f207140d21d0 (punta anterior de `main`) + 37fdfc88 (punta de `codex/qa-alertsilence-seq-main-20261120`)
+- Diff neto contra `f207140d`: 91 rutas, exactamente el inventario de `docs/qa/manifests/technical-alert-silence-seq-main-20261120-scope.json`
+- Puertas revalidadas sobre el propio commit de merge (no solo sobre la rama auxiliar):
+  - `npm run qa:promotion:scope -- docs/qa/manifests/technical-alert-silence-seq-main-20261120-scope.json 34674cac origin/main`
+    -> `ALCANCE DE PROMOCION VALIDO: technical-alert-silence-seq-main-20261120 (91 rutas)`
+  - `npm run qa:approval:evidence -- docs/qa/manifests/technical-alert-silence-seq-main-20261120-approval.json`
+    -> `APROBACION QA VALIDA: technical-alert-silence-seq-main-20261120`
+- CI de GitHub sobre `main`, run 44682146781 sobre `34674cac`: completed / success
+  (Git Governance Guard, Security Audit, Lint & TypeCheck, Build API, Build Web)
+- Despliegue automatico de Railway, proyecto `APEXOS PROD`, ambiente `production`:
+  - `apexos-web-prod`: deployment 2f39a480-eb81-49a0-adf7-b265b4cefc09, estado Online
+  - `apexos-api-prod`: deployment 7375dfb6-6bfe-46d9-84b4-aee703e5f99d, estado Online
+- Variable del buzon anonimo en `apexos-api-prod`: `APEXOS_TELEMETRY_TENANT_ID = 52db0658-a184-4fa1-a47b-c90b184914c3`
+  (empresa APEXOS Platform, tenant propio de la plataforma). Fijada con `--skip-deploys` para que un solo
+  despliegue cargara el codigo y la variable a la vez. Nunca el tenant de un cliente real.
+
+Lo que mide `sonda-desplegada.json`
+-----------------------------------
+Corrida dos veces con el mismo resultado (solo cambia el identificador del sondeo): `20261120053956` y `20261120054105`.
+
+- `health.commit = 34674cac29b3`: Produccion sirve exactamente el commit promocionado. No es inferencia por fecha
+  de despliegue; lo dice el servicio.
+- `artefacto.apex_alert_chunks = []`: el token `apex:alert` no aparece en ninguno de los 10 chunks que `/login`
+  referencia (629,263 bytes leidos). La ventana tecnica ya no esta en el binario publicado.
+- `artefacto.apex_diagnostic_chunks = [/_next/static/chunks/0n6wdjzti-4m2.js]`: el camino opt-in (`localStorage.apexos_diagnostics = "1"`)
+  si esta publicado, que es lo que lo distingue de un simple borrado.
+- `sonda_publica = 202 { recorded: true }`: la boca publica `/api/v1/public/telemetry/client-logs` acepta el reporte
+  sin sesion. Antes de esta secuela el mismo envio rebotaba en el login.
+- `registro.tenant_registrado = 52db0658-a184-4fa1-a47b-c90b184914c3` y `registro.borrada = 1`: la fila acabo en el
+  buzón de la plataforma (no en el de un cliente) y se borro antes de salir. `lleve_llaves_hostiles = false` confirma
+  que el esquema despojo `tenant_id`, `user_email` y `authorization` del payload anonimo.
+
+Limite declarado de esta lectura
+--------------------------------
+Es una sonda sobre el artefacto servido y sobre una fila de sondeo propia, no una carrera de navegador. No se ejecuto
+el arnes de 174 controles contra Produccion porque eso implicaria iniciar sesion y manipular datos de clientes reales;
+esa misma tanda de controles se corrio contra el ambiente QA (`7e02008a555b`, 174/174 con la empresa modelo NYVORA) y
+contra el binario de la pata `main` en puesto local (78/78, `main-20261120/`).

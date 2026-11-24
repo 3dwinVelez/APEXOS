@@ -182,7 +182,8 @@ function crewPunchMessage({ employeeId, type, punchedAt, idempotencyKey, deviceI
 
 const challengeForMessage = (message) => bufferToB64url(sha256(Buffer.from(message, "utf8")));
 
-function verifyCrewAssertion({ device, employeeId, input = {}, allowedOrigins, allowedRpIds, now = new Date() }) {
+// Asincronica: la selfie se inspecciona con sharp (normalizeSelfie de mobile-identity.js).
+async function verifyCrewAssertion({ device, employeeId, input = {}, allowedOrigins, allowedRpIds, now = new Date() }) {
   if (!device || device.active === false) {
     throw fail(403, "CELULAR_NO_REGISTRADO", "Este celular no esta registrado o fue revocado. Pide a talento humano que lo registre.");
   }
@@ -199,7 +200,8 @@ function verifyCrewAssertion({ device, employeeId, input = {}, allowedOrigins, a
   if (!photo?.base64 && !photo?.base64_data) {
     throw fail(400, "SELFIE_REQUERIDA", "Toma la selfie de la persona que marca.");
   }
-  const selfie = normalizeSelfie(photo, { maxBytes: MAX_SHARED_SELFIE_BYTES });
+  const selfie = await normalizeSelfie(photo, { maxBytes: MAX_SHARED_SELFIE_BYTES });
+  if (selfie.hard_rejection) throw selfie.hard_rejection;
 
   const message = crewPunchMessage({
     employeeId,

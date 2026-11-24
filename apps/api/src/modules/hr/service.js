@@ -6,6 +6,9 @@ const { randomUUID } = require("crypto");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
 const { buildRouteEventSummaries } = require("./routeEventSummaries");
+const monitorEvidenceRows = require("./monitorEvidenceRows");
+const evidenceStorage = require("./evidenceStorage");
+const { SELF_PUNCH_SELECT } = monitorEvidenceRows;
 const { normalizePunchType, processWorkday } = require("./timeLogic");
 const hrPolicy = require("./policy");
 const { loadPayrollWorkdays } = require("./payrollWorkdays");
@@ -110,10 +113,14 @@ function minutesFromTime(value) {
   return hrPolicy.minutesFromTime(value);
 }
 
-function validationError(message, statusCode = 400, code = "VALIDATION_ERROR") {
+function validationError(message, statusCode = 400, code = "VALIDATION_ERROR", details) {
   const error = new Error(message);
   error.statusCode = statusCode;
   error.code = code;
+  // El detalle viaja hasta el cliente (`core/api-error.js` lo reenvia) y hasta el registro
+  // tecnico (`fabric/platformLogs` lo sanea con lista blanca). Sin el, un 409 del modulo era
+  // una frase suelta: identico en el log a cualquier otro 409.
+  if (details && typeof details === "object") error.details = details;
   return error;
 }
 
@@ -129,9 +136,11 @@ function jsonSafeBigInt(value) {
 function normalizeExtraEvidence(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const base64 = String(value.base64 || value.base64_data || "").trim();
-  if (!base64) return null;
+  const storagePath = String(value.storage_path || "").trim();
+  if (!base64 && !storagePath) return null;
   return {
     base64,
+    storage_path: storagePath,
     name: value.name || value.file_name || "",
     type: value.type || value.mime_type || "image/jpeg",
     size: value.size || value.file_size || null
@@ -185,6 +194,67 @@ function monitorPunchEvidence(punch, summary = false) {
   return items.length ? { ...items[0], ...(items.length > 1 ? { items } : {}) } : {};
 }
 
+// Aviso del mapa del dia: esta marcacion guarda un soporte, pero sus bytes no viajan en el
+// listado. La pantalla que lo muestra lo pide por `getMonitorEvidence(source = punch)`, que
+// es el unico camino que todavia lleva el archivo. El aviso sale de que la columna no este
+// vacia (ver monitorEvidenceRows.EVIDENCE_PRESENT_MIN_BYTES), no de abrir su contenido.
+function monitorPunchEvidenceFlag(punch) {
+  if (punch?.has_extra_evidence) {
+    return { id: punch.id, source: "punch", available: true, has_base64_data: true };
+  }
+  // Fila rescatada y purgada hasta quedar vacia: el tamano de la columna ya no la delata,
+  // pero la bandera de rescate promete el objeto en Storage y la pantalla puede pedirlo por id.
+  if (punch?.metadata && evidenceStorage.hasRescuedRef(punch.metadata, "extra")) {
+    return { id: punch.id, source: "punch", available: true, has_base64_data: true };
+  }
+  return {};
+}
+
+// En listados que aun devuelven la fila cruda (reportes via /hr/attendance), la bandera de
+// rescate queda enterrada en `metadata` y la pantalla no tiene de donde inferir que el
+// archivo sigue existiendo. Esto reescribe SOLO la proyeccion en memoria: anuncia
+// `storage_path` en la selfie y en el extra cuando la bandera o la columna ya lo prometen,
+// para que la pantalla pida el contenido por id a `getMonitorEvidence`. No toca lo que esta
+// en la base ni borra bytes de filas que aun los llevan.
+//
+// `publicPunchMetadata` cierra el viaje: es el unico lector de `identity_photo` en estos
+// listados y su contrato es anunciar el archivo sin arrastrarlo. Sin ella, la pantalla de
+// marcacion recibia la selfie en claro dentro de `metadata` (414 KB de media, 2,6 MB el peor
+// caso medido en produccion) cuando lo que pinta son tipo, hora, placa y ruta.
+function announceRescuedPunchEvidence(punch) {
+  if (!punch || typeof punch !== "object") return punch;
+  const metadata = punch.metadata && typeof punch.metadata === "object" ? punch.metadata : null;
+  const photo = metadata?.identity_photo;
+  if (photo && typeof photo === "object" && !photo.base64_data && !photo.base64 && !photo.storage_path) {
+    const rescued = evidenceStorage.pathForEvidence(photo, metadata, "identity");
+    if (rescued) photo.storage_path = rescued;
+  }
+  const extra = punch.extra_evidence && typeof punch.extra_evidence === "object" ? punch.extra_evidence : null;
+  if (extra && !extra.base64_data && !extra.base64 && !extra.file_url && !extra.storage_path && metadata) {
+    const rescued = evidenceStorage.pathForEvidence(extra, metadata, "extra");
+    if (rescued) extra.storage_path = rescued;
+  }
+  if (metadata) punch.metadata = mobileIdentity.publicPunchMetadata(metadata);
+  return punch;
+}
+
+// Aviso del reporte de asistencia: la fila llega sin bytes (proyeccion de
+// `monitorEvidenceRows`) y aqui el aviso interno se convierte en el contrato que la pantalla
+// ya entiende: `extra_evidence` anunciado con `has_base64_data` y, cuando la bandera de
+// rescate lo promete, con `storage_path`. La otra mitad del par se resuelve arriba. Sin este
+// paso el conteo del reporte caeria a cero en cuanto el listado deje de traer el payload.
+function announceProjectedPunchEvidence(punch) {
+  if (!punch || typeof punch !== "object") return punch;
+  announceRescuedPunchEvidence(punch);
+  const rescued = evidenceStorage.pathForEvidence(null, punch.metadata, "extra");
+  punch.extra_evidence = punch.has_extra_evidence || rescued
+    ? { has_base64_data: true, available: true, ...(rescued ? { storage_path: rescued } : {}) }
+    : null;
+  // El aviso interno no es parte del contrato de la pantalla: `extra_evidence` ya lo dice.
+  delete punch.has_extra_evidence;
+  return punch;
+}
+
 async function getMonitorEvidence(tenantId, source, id) {
   const evidenceId = optionalNumericId(id);
   if (!evidenceId || !["activity", "punch", "identity"].includes(String(source))) {
@@ -192,18 +262,40 @@ async function getMonitorEvidence(tenantId, source, id) {
   }
   return prisma.runWithTenant(tenantId, async () => {
     let evidence;
+    let refEvidence = null;
+    let refMeta = null;
     if (source === "activity") {
       evidence = await prisma.activityEvidence.findFirst({
         where: { id: evidenceId, tenant_id: tenantId, activity: { tenant_id: tenantId } }
       });
+      refEvidence = evidence;
+      refMeta = evidence?.metadata;
     } else if (source === "identity") {
       const punch = await prisma.timePunch.findFirst({ where: { id: evidenceId, tenant_id: tenantId } });
       evidence = mobileIdentity.identityEvidenceOf(punch);
+      refEvidence = punch?.metadata?.identity_photo || null;
+      refMeta = punch?.metadata || null;
     } else {
       const punch = await prisma.timePunch.findFirst({ where: { id: evidenceId, tenant_id: tenantId } });
       evidence = punch ? monitorPunchEvidence(punch) : null;
+      refEvidence = punch?.extra_evidence || null;
+      refMeta = punch?.metadata || null;
     }
     const payload = monitorEvidencePayload(evidence || {});
+    if (!payload.base64_data && !payload.file_url && evidenceStorage.readEnabled()) {
+      // Fila rescatada y purgada: los bytes ya no viven en la base, sino en Storage.
+      const kind = source === "identity" ? "identity" : source === "activity" ? "activity" : "extra";
+      const objectPath = evidenceStorage.pathForEvidence(refEvidence, refMeta, kind);
+      if (objectPath) {
+        const dataUrl = await evidenceStorage.downloadDataUrl(objectPath);
+        if (dataUrl) {
+          payload.base64_data = dataUrl;
+          if (!payload.mime_type) payload.mime_type = dataUrl.slice(5, dataUrl.indexOf(";base64"));
+          payload.available = true;
+          payload.has_base64_data = true;
+        }
+      }
+    }
     if (!payload.base64_data && !payload.file_url) {
       throw validationError("La evidencia solicitada no existe o no contiene un archivo disponible.", 404, "EVIDENCIA_MONITOR_NO_ENCONTRADA");
     }
@@ -217,28 +309,43 @@ async function getMonitorEvidenceBatch(tenantId, routeId) {
     throw validationError("Identificador de ruta invalido para las evidencias del monitor.", 400, "EVIDENCIA_MONITOR_RUTA_INVALIDA");
   }
   return prisma.runWithTenant(tenantId, async () => {
-    const [punches, activities] = await Promise.all([
-      prisma.timePunch.findMany({
-        where: { route_id: routeNumericId, tenant_id: tenantId },
-        orderBy: { punched_at: "asc" }
-      }),
+    // El lote es un INDICE: dice que evidencia existe en la ruta y cuanto pesa, y nunca
+    // arrastra los bytes. Antes leia cada selfie en base64 de todas las marcaciones de la
+    // ruta y era el primer consumidor de la base de produccion (ver monitorEvidenceRows.js).
+    // Quien necesite un archivo lo pide por `getMonitorEvidence`, que sigue devolviendo el
+    // payload completo de una sola evidencia.
+    const [punches, activities, evidenceRows] = await Promise.all([
+      monitorEvidenceRows.readRoutePunchEvidence(prisma, tenantId, routeNumericId),
       prisma.workActivity.findMany({
         where: { route_id: routeNumericId, tenant_id: tenantId },
-        include: { evidence: true },
+        select: { id: true },
         orderBy: { occurred_at: "asc" }
-      })
+      }),
+      monitorEvidenceRows.readRouteActivityEvidence(prisma, tenantId, routeNumericId)
     ]);
     const punchEvidence = {};
     const identityEvidence = {};
     for (const punch of punches) {
-      punchEvidence[String(punch.id)] = { ...monitorPunchEvidence(punch), id: punch.id, source: "punch" };
+      const entry = { ...monitorPunchEvidence(punch, true), id: punch.id, source: "punch" };
+      // En el extra rescatado la ruta no vive en `extra_evidence` sino en la bandera de
+      // rescate del metadata (la purga borro los bytes). Sin esta referencia la pantalla
+      // daria la evidencia por inexistente y no volveria a pedirla por id.
+      if (!entry.has_base64_data && !entry.file_url && !entry.storage_path) {
+        const rescued = evidenceStorage.pathForEvidence(punch.extra_evidence, punch.metadata, "extra");
+        if (rescued) entry.storage_path = rescued;
+      }
+      punchEvidence[String(punch.id)] = entry;
       const selfie = mobileIdentity.identityEvidenceOf(punch);
-      if (selfie) identityEvidence[String(punch.id)] = { ...monitorEvidencePayload(selfie), id: punch.id, source: "identity" };
+      if (selfie) identityEvidence[String(punch.id)] = { ...monitorEvidenceSummary(selfie, { id: punch.id, source: "identity" }), id: punch.id, source: "identity" };
     }
     const activityEvidence = {};
-    for (const activity of activities) {
-      activityEvidence[String(activity.id)] = (activity.evidence || []).map((evidence) => ({ ...monitorEvidencePayload(evidence), id: evidence.id, source: "activity" }));
+    for (const activity of activities) activityEvidence[String(activity.id)] = [];
+    for (const evidence of evidenceRows) {
+      const key = String(evidence.activity_id);
+      if (!activityEvidence[key]) activityEvidence[key] = [];
+      activityEvidence[key].push({ ...monitorEvidenceSummary(evidence, { id: evidence.id, source: "activity" }), id: evidence.id, source: "activity" });
     }
+    const visible = (item) => Boolean(item?.has_base64_data || item?.file_url || item?.storage_path);
     return {
       route_id: routeNumericId,
       generated_at: new Date().toISOString(),
@@ -247,9 +354,9 @@ async function getMonitorEvidenceBatch(tenantId, routeId) {
       activity_evidence: activityEvidence,
       counts: {
         punches: punches.length,
-        punch_evidence: Object.values(punchEvidence).filter((payload) => payload.base64_data || payload.file_url).length,
+        punch_evidence: Object.values(punchEvidence).filter(visible).length,
         activities: activities.length,
-        activity_evidence: Object.values(activityEvidence).reduce((sum, items) => sum + items.filter((item) => item.base64_data || item.file_url).length, 0)
+        activity_evidence: Object.values(activityEvidence).reduce((sum, items) => sum + items.filter(visible).length, 0)
       }
     };
   });
@@ -358,11 +465,26 @@ function operationalRouteNumericId(input = {}) {
     || optionalNumericId(input.metadata?.legacy_route_id);
 }
 
-function routeEventMetadata(input = {}, routeId = null) {
+// Ramas de `metadata` que sostienen el sustento visual de una marcacion.
+const EVIDENCE_METADATA_KEYS = ["identity_photo", "extra_evidence", "photo"];
+
+// El metadata que manda el cliente se hereda a todas las filas del mismo evento: la
+// marcacion, su ping de GPS, la actividad y la sesion. La selfie viaja en esa copia y
+// produccion lo pago dos veces: medido el 2026-11-18 sobre el tenant del horario 336,
+// `TimePunch` guarda 29,7 MB de `identity_photo` en 46 filas (su duena legitima: el
+// monitor y el reporte la piden por el id de la marcacion) y `GpsPing` guarda 28,5 MB
+// en 44 filas copiadas del mismo envio, sin un solo lector. `WorkActivity` mide 64 KB
+// con cero binario, porque su sustento vive en `ActivityEvidence`.
+//
+// La regla queda en el unico constructor que escriben los cinco sitios: la marcacion es
+// duena del binario y lo declara con `owner: true`; lo demas es presencia.
+function routeEventMetadata(input = {}, routeId = null, { owner = false } = {}) {
   const metadata = input.metadata || {};
   const displayRouteId = metadata.display_route_id || metadata.route_code || input.route_id || routeId || "";
+  const carried = owner ? metadata : Object.fromEntries(Object.entries(metadata)
+    .filter(([key]) => !EVIDENCE_METADATA_KEYS.includes(key)));
   return {
-    ...metadata,
+    ...carried,
     display_route_id: displayRouteId ? String(displayRouteId) : "",
     route_code: metadata.route_code ? String(metadata.route_code) : (displayRouteId ? String(displayRouteId) : ""),
     source_route_id: metadata.source_route_id ? String(metadata.source_route_id) : "",
@@ -877,16 +999,10 @@ async function listRouteEventSummaries(tenantId) {
         where: { activity: { route_id: { in: routeIds } } },
         select: { activity: { select: { route_id: true } } }
       }),
-      prisma.timePunch.findMany({
-        where: { route_id: { in: routeIds } },
-        select: { route_id: true, extra_evidence: true, metadata: true }
-      }),
-      prisma.timePunch.findMany({
-        where: { route_id: null, OR: dateWindows.map((date) => ({ date })) },
-        select: { employee_id: true, user_name: true, type: true, punched_at: true, date: true, metadata: true, extra_evidence: true },
-        orderBy: { punched_at: "desc" },
-        take: 2000
-      }),
+      // Solo se necesita el conteo de evidencias por ruta; leer el base64 de la selfie
+      // costaba ~63 MB por llamada a traves del pooler (ver monitorEvidenceRows.js).
+      monitorEvidenceRows.readRouteEvidence(prisma, tenantId, routeIds),
+      monitorEvidenceRows.readUnlinkedEvidence(prisma, tenantId, dateWindows),
       prisma.workActivity.findMany({
         where: { route_id: null, OR: dateWindows.map((occurred_at) => ({ occurred_at })) },
         select: { employee_id: true, user_name: true, occurred_at: true, metadata: true, _count: { select: { evidence: true } } },
@@ -2138,16 +2254,24 @@ async function submitPreoperationalChecklist(tenantId, user, id, input) {
       for (const evidence of answer.evidence || []) {
         assertSafeFile(evidence, { maxBytes: MAX_EVIDENCE_BYTES });
         const fileName = normalizeFileName(evidence.file_name || `${answer.item_key}.jpg`);
+        const declaredPath = evidence.storage_path || secureStoragePath({ tenantId, module: "hr", entity: "preoperational", entityId: checklist.id, fileName });
+        let inlineBase64 = evidence.base64_data || "";
+        let storagePath = declaredPath;
+        if (evidenceStorage.writeEnabled() && inlineBase64) {
+          const up = await evidenceStorage.uploadInline({ tenantId, entity: "preoperational", entityId: checklist.id, fileName, base64Raw: inlineBase64, declaredPath });
+          inlineBase64 = "";
+          storagePath = up.storage_path;
+        }
         evidenceRows.push({
           checklist_id: checklist.id,
           item_key: answer.item_key,
           evidence_type: evidence.evidence_type || "photo",
           file_name: fileName,
           file_url: evidence.file_url || "",
-          base64_data: evidence.base64_data || "",
+          base64_data: inlineBase64,
           mime_type: evidence.mime_type || "",
           file_size: evidence.file_size || null,
-          storage_path: evidence.storage_path || secureStoragePath({ tenantId, module: "hr", entity: "preoperational", entityId: checklist.id, fileName }),
+          storage_path: storagePath,
           uploaded_by: user?.id || null
         });
       }
@@ -2395,6 +2519,7 @@ async function latestPunchesForEmployee(employee, userName, date = new Date(), r
       ...operationalIdentityRouteWhere(employee, userName, routeId, extraAliases),
       date: { gte: startOfDay(date), lt: endOfDay(date) }
     },
+    select: SELF_PUNCH_SELECT,
     orderBy: { punched_at: "asc" }
   });
 }
@@ -2584,15 +2709,23 @@ async function createWorkActivity(tenantId, user, input) {
     }
     const fileName = normalizeFileName(input.photo.name || `actividad-${activity.id}.jpg`);
     const uploaderKey = String(user?.id || session.employee_id || "operador").replace(/[^a-zA-Z0-9_-]/g, "");
+    const declaredEvidencePath = secureStoragePath({ tenantId, module: "hr", entity: `work-sessions/${session.id}/users/${uploaderKey}/activities`, entityId: activity.id, fileName });
+    let evidenceBase64 = input.photo.base64;
+    let evidenceStoragePath = declaredEvidencePath;
+    if (evidenceStorage.writeEnabled()) {
+      const up = await evidenceStorage.uploadInline({ tenantId, entity: "activities", fileName, base64Raw: input.photo.base64, declaredPath: declaredEvidencePath });
+      evidenceBase64 = "";
+      evidenceStoragePath = up.storage_path;
+    }
     await prisma.activityEvidence.create({
       data: {
         activity_id: activity.id,
         evidence_type: "photo",
         file_name: fileName,
-        base64_data: input.photo.base64,
+        base64_data: evidenceBase64,
         mime_type: input.photo.type,
         file_size: input.photo.size,
-        storage_path: secureStoragePath({ tenantId, module: "hr", entity: `work-sessions/${session.id}/users/${uploaderKey}/activities`, entityId: activity.id, fileName }),
+        storage_path: evidenceStoragePath,
         uploaded_by: user?.id || null,
         metadata: { storage_hint: "company_id/module/work_session_id/user_id/activity_id/file" }
       }
@@ -2763,14 +2896,29 @@ async function createPunch(tenantId, input, user, options = {}) {
         ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases),
         date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }
       },
+      select: SELF_PUNCH_SELECT,
       orderBy: { punched_at: "asc" }
     });
     const expectedType = nextPunchType(punchesToday);
-    if (!expectedType) {
-      throw validationError("La jornada ya esta completa para hoy.", 409, "JORNADA_COMPLETA");
-    }
-    if (type !== expectedType) {
-      throw validationError(`La siguiente marcacion permitida es ${expectedType}.`, 409, "MARCACION_FUERA_DE_SECUENCIA");
+    // La unica excepcion a la escalera es la correccion administrativa explicita (`hr:write`).
+    const correction = resolvePunchLadder({ ownScope, expectedType, type, input });
+    if (!correction) {
+      if (!expectedType) {
+        // `punch_type` en el detalle: es lo unico que le dice a quien mira el registro que el
+        // operario intento abrir una jornada que el servidor ya tenia cerrada (y no que la foto
+        // o el horario estaban mal), y es lo que necesita el cliente para dejar de reintentar.
+        throw validationError("La jornada ya esta completa para hoy.", 409, "JORNADA_COMPLETA", { punch_type: type });
+      }
+      if (type !== expectedType) {
+        // La escalera es lineal por diseno (control de asistencia), pero el rechazo no puede ser
+        // muda: `expected_type` es la marcacion que el servidor espera, y medido en produccion es
+        // la unica forma de que la pantalla le ofrezca al operario el boton correcto en vez de
+        // encolar una `salida` que va a rebotar todo el dia (39 rechazos / 14 operarios).
+        throw validationError(`La siguiente marcacion permitida es ${expectedType}.`, 409, "MARCACION_FUERA_DE_SECUENCIA", {
+          expected_type: expectedType,
+          punch_type: type
+        });
+      }
     }
     const routeVehicle = String(route?.vehicle_plate || input.vehicle_plate || "").trim();
     const mileagePrecision = Number(input.metadata?.mileage_precision ?? input.metadata?.kilometraje_precision ?? 1);
@@ -2855,7 +3003,7 @@ async function createPunch(tenantId, input, user, options = {}) {
           type: extraEvidence.type || "image/jpeg",
           size: extraEvidence.size || null,
           base64_data: extraEvidence.base64,
-          storage_path: secureStoragePath({
+          storage_path: extraEvidence.storage_path || secureStoragePath({
             tenantId,
             module: "hr",
             entity: lateMinutes > 0 ? "late-arrivals" : "overtime-extensions",
@@ -2864,7 +3012,8 @@ async function createPunch(tenantId, input, user, options = {}) {
           })
         } : {},
         metadata: {
-          ...routeEventMetadata(input, route?.id || inputRouteId),
+          // Unica fila duena del sustento: ver `routeEventMetadata`.
+          ...routeEventMetadata(input, route?.id || inputRouteId, { owner: true }),
           supplied_user_name: input.user_name || "",
           employee_code: employee.code || "",
           employee_name: employeeDisplayName(employee) || resolvedUserName,
@@ -2873,6 +3022,16 @@ async function createPunch(tenantId, input, user, options = {}) {
           // Fuera de extra_minutes a proposito: la llegada tarde no se paga
           // como recargo y sumarla ahi inflaria la nomina.
           ...(lateMinutes > 0 ? { late_minutes: lateMinutes } : {}),
+          ...(correction ? {
+            // Quien corrijo, por que y que esperaba la escalera: la fila queda marcada como
+            // correccion administrativa y no como una marcacion del operario.
+            correccion_administrativa: {
+              motivo: correction.motivo,
+              salto: correction.salto,
+              por: user?.id || null,
+              en: new Date().toISOString()
+            }
+          } : {}),
           ...(startMileage != null ? {
             kilometraje_inicial: startMileage,
             start_mileage: {
@@ -2906,14 +3065,22 @@ async function createPunch(tenantId, input, user, options = {}) {
         detail: gpsUnavailable
       });
     }
-    if (!selfServiceScope && startOfDay(punchedAt).toISOString().slice(0, 10) !== startOfDay().toISOString().slice(0, 10)) {
+    const otherDayPunch = startOfDay(punchedAt).toISOString().slice(0, 10) !== startOfDay().toISOString().slice(0, 10);
+    // Una correccion que salto la escalera es tan auditable como una de otro dia: sin novedad, el
+    // eslabon agregado a posteriori quedaba invisible para el supervisor y sin autor.
+    // Celular compartido (selfServiceScope) se trata como marcacion propia: sin novedad manual.
+    if (!selfServiceScope && (otherDayPunch || correction)) {
       await recordManualAdjustmentNovelty(tx, {
         tenantId,
         employeeId: employee.id,
         routeId: route?.id || inputRouteId || null,
         moment: punchedAt,
         segment: `${type}:${timeString(punchedAt).slice(0, 5)}`,
-        detail: { reason: input.extra_reason, detail: input.extra_detail, userId: user?.id || null }
+        detail: {
+          reason: correction?.motivo || input.extra_reason,
+          detail: correction ? `escalera:${correction.salto}` : input.extra_detail,
+          userId: user?.id || null
+        }
       });
     }
     if (dayMileage != null) {
@@ -3066,6 +3233,14 @@ async function createPunch(tenantId, input, user, options = {}) {
     };
   };
 
+  // Con el almacen activado, la selfie y la evidencia extra se suben ANTES de abrir la
+  // transaccion (la subida no prolonga el lock y el reintento por reutiliza el mismo
+  // objeto por content-address). Si la subida falla, la marcacion se rechaza con 503 y
+  // no queda ningun base64 en la base.
+  if (evidenceStorage.writeEnabled()) {
+    input = await evidenceStorage.preparePunchEvidence({ tenantId, input });
+  }
+
   // Reintenta solo fallos transitorios de adquisicion/serializacion de transaccion.
   let lastError = null;
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -3121,7 +3296,10 @@ async function createOwnPunch(tenantId, user, input) {
   await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
   // Antes de crear nada: una marcacion de la app sin telefono registrado,
   // firma valida o selfie se rechaza aqui y no queda a medias.
-  const identity = mobileIdentity.verifyPunchIdentity({ employee, user, input });
+  // `await` obligatorio: la inspeccion de la selfie decodifica con sharp para decidir si el
+  // visor puede pintarla. Sin el await la promesa se colaba como metadata y la marcacion se
+  // guardaba sin identidad ni evidencia.
+  const identity = await mobileIdentity.verifyPunchIdentity({ employee, user, input });
   // El telefono acepta cualquier dedo inscrito en el: si quedo registrado para
   // dos empleados, cualquiera de los dos marca por el otro. Registros dobles
   // anteriores a esta regla se bloquean hasta que un administrador restablezca.
@@ -3397,7 +3575,7 @@ async function createCrewPunch(tenantId, user, deviceId, input = {}) {
   // marcacion propia, evaluadas para la persona que marca (no para quien tiene la sesion).
   await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, member.employee, routeInput));
 
-  const verification = sharedDeviceIdentity.verifyCrewAssertion({
+  const verification = await sharedDeviceIdentity.verifyCrewAssertion({
     device,
     employeeId,
     input,
@@ -3467,7 +3645,13 @@ async function enrollOwnFace(tenantId, user, input = {}) {
   }
   const photo = input.photo && typeof input.photo === "object" ? input.photo : null;
   if (!photo?.base64 && !photo?.base64_data) throw validationError("Toma la foto de tu rostro.", 400, "FOTO_REQUERIDA");
-  const { stored } = mobileIdentity.normalizeSelfie(photo, { maxBytes: MAX_FACE_PHOTO_BYTES });
+  // normalizeSelfie es asincronica (decodifica con sharp) y puede rechazar o degradar la foto.
+  const normalized = await mobileIdentity.normalizeSelfie(photo, { maxBytes: MAX_FACE_PHOTO_BYTES });
+  if (normalized.hard_rejection) throw normalized.hard_rejection;
+  const stored = normalized.stored;
+  if (!stored?.has_base64_data || !stored.base64_data) {
+    throw validationError("No se pudo leer la foto. Toma otra de frente, con buena luz, en JPG o PNG.", 422, "FOTO_NO_LEGIBLE");
+  }
   const analysis = await faceIdentity.enrollmentFromImage(faceIdentity.dataUrlBytes(stored.base64_data));
   if (!analysis.ok) throw validationError(analysis.message, 422, analysis.code);
   const now = new Date();
@@ -3734,6 +3918,10 @@ async function getRouteTracking(tenantId, id, query = {}) {
         ...routeScope,
         punched_at: { gte: dateStart, lt: endOfDay(dateStart) }
       },
+      // El seguimiento de la ruta pinta puntos en el mapa, no la selfie: 500 filas crudas
+      // eran hasta 2,8 MB por marcacion cruzando el pooler (MAR-109). La evidencia se sigue
+      // pidiendo por id en `/hr/monitor-evidence`.
+      select: SELF_PUNCH_SELECT,
       orderBy: { punched_at: "asc" },
       take: 500
     });
@@ -3784,16 +3972,8 @@ async function getOperationsMap(tenantId, query = {}) {
         take: 200
       }),
       prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } }, take: 500 }),
-      prisma.gpsPing.findMany({
-        where: { captured_at: { gte: day, lt: endOfDay(day) } },
-        orderBy: { captured_at: "desc" },
-        take: pingLimit
-      }),
-      prisma.timePunch.findMany({
-        where: { date: { gte: day, lt: endOfDay(day) } },
-        orderBy: { punched_at: "desc" },
-        take: punchLimit
-      }),
+      monitorEvidenceRows.readDayGpsPings(prisma, tenantId, day, endOfDay(day), pingLimit),
+      monitorEvidenceRows.readDayEvidencePunches(prisma, tenantId, day, endOfDay(day), punchLimit),
       prisma.workActivity.findMany({
         where: { occurred_at: { gte: day, lt: endOfDay(day) } },
         include: { activity_type: true, evidence: { select: monitorEvidenceSelect } },
@@ -3804,11 +3984,7 @@ async function getOperationsMap(tenantId, query = {}) {
 
     // Solo obtener huella extendida si es modo historico; en vivo los pings de hoy son suficientes
     const lastFootprints = footprintDays > 0 && !isLiveWindow && query.footprint_days !== "0"
-      ? await prisma.gpsPing.findMany({
-          where: { captured_at: { gte: new Date(day.getTime() - footprintDays * 86400000), lt: endOfDay(day) } },
-          orderBy: { captured_at: "desc" },
-          take: 1000
-        })
+      ? await monitorEvidenceRows.readDayGpsPings(prisma, tenantId, new Date(day.getTime() - footprintDays * 86400000), endOfDay(day), 1000)
       : pings;
 
     const employeeByAlias = new Map();
@@ -3946,7 +4122,7 @@ async function getOperationsMap(tenantId, query = {}) {
           late_minutes: Number(punch.metadata?.late_minutes || 0),
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorPunchEvidence(punch, true),
+          extra_evidence: monitorPunchEvidenceFlag(punch),
           identity_evidence: monitorEvidenceSummary(mobileIdentity.identityEvidenceOf(punch) || {}, { id: punch.id, source: "identity" }),
           metadata: punchMonitorMetadata(mobileIdentity.publicPunchMetadata(punch.metadata || {}))
         });
@@ -3989,7 +4165,7 @@ async function getOperationsMap(tenantId, query = {}) {
           late_minutes: Number(punch.metadata?.late_minutes || 0),
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorPunchEvidence(punch, true),
+          extra_evidence: monitorPunchEvidenceFlag(punch),
           identity_evidence: monitorEvidenceSummary(mobileIdentity.identityEvidenceOf(punch) || {}, { id: punch.id, source: "identity" }),
           metadata: punchMonitorMetadata(mobileIdentity.publicPunchMetadata(punch.metadata || {}))
         })),
@@ -4071,15 +4247,41 @@ function nextPunchType(punches) {
   return idx >= 0 && idx < order.length - 1 ? order[idx + 1] : null;
 }
 
+// La escalera (entrada → inicio → fin → salida) la fija el servidor en los dos canales: es el
+// control de asistencia. La UNICA via fuera de ella es la correccion administrativa explicita,
+// que solo existe en `/hr/time-punches` porque el ambito lo determina el servidor (`ownScope`),
+// no el payload. Sin esa via, un eslabon perdido dejaba la jornada sin cierre todo el dia: medido
+// en produccion, 39 rechazos de escalera sobre 14 operarios y ningun boton para destrabarlos.
+// Es pura a proposito: levantar la app en un test deja el proceso colgado de la conexion a la base.
+function resolvePunchLadder({ ownScope, expectedType, type, input }) {
+  if (ownScope) return null;
+  const source = input && typeof input === "object" ? input : {};
+  const metadata = source.metadata && typeof source.metadata === "object" ? source.metadata : {};
+  const requested = source.correccion_administrativa ?? metadata.correccion_administrativa;
+  if (!requested) return null;
+  const motivo = String(source.motivo_correccion || metadata.motivo_correccion || "").trim();
+  if (!motivo) {
+    throw validationError("Una correccion administrativa de marcacion exige un motivo legible.", 422, "MOTIVO_CORRECCION_REQUERIDO", {
+      field: "motivo_correccion"
+    });
+  }
+  // `salto` nombra lo que la escalera esperaba: es lo que un supervisor lee despues en la novedad
+  // para saber si corrigio un hueco o re-emplazo una marcacion que estaba en orden.
+  const salto = !expectedType ? "jornada_completa" : type !== expectedType ? `esperada:${expectedType}` : "en_orden";
+  return { motivo: motivo.slice(0, 300), salto };
+}
+
 async function listAttendance(tenantId, query = {}) {
   const range = boundedReportRange(query);
   return prisma.runWithTenant(tenantId, async () => {
-    const punches = await prisma.timePunch.findMany({
-      where: {
-        date: { gte: range.start, lt: range.end },
-        ...(query.user_name || query.usuario ? { user_name: query.user_name || query.usuario } : {})
-      },
-      orderBy: [{ user_name: "asc" }, { punched_at: "asc" }]
+    // El reporte pinta la evidencia, pero no necesita traerla: pide el archivo por id
+    // (`HrTimelineEvidence` -> `/hr/monitor-evidence/:source/:id`). Leer la fila entera hacia
+    // medir 28 MB en un solo dia del tenant del horario 336 (MAR-109).
+    const punches = await monitorEvidenceRows.readPunchRowsProjected(prisma, tenantId, {
+      start: range.start,
+      end: range.end,
+      userName: query.user_name || query.usuario || null,
+      orderBy: "user_name"
     });
     if (query.flat === "1" || query.legacy === "1") {
       return punches.map((punch) => ({
@@ -4106,7 +4308,7 @@ async function listAttendance(tenantId, query = {}) {
       route_id: rows[0]?.route_id || null,
       last_type: rows[rows.length - 1].type || "sin_marcar",
       next_type: nextPunchType(rows),
-      punches: rows
+      punches: rows.map(announceProjectedPunchEvidence)
     }));
   });
 }
@@ -4118,6 +4320,10 @@ async function listOwnAttendance(tenantId, user, query = {}) {
   const end = query.fecha_fin ? endOfDay(query.fecha_fin) : endOfDay(day);
   const aliases = aliasesForEmployee(employee);
   return prisma.runWithTenant(tenantId, async () => {
+    // La pantalla de marcacion arma su linea de tiempo con id, tipo, hora, placa y ruta; la
+    // selfie que guarda `extra_evidence` no la consume nadie por esta via (se pide por id en
+    // /hr/monitor-evidence). Sin el `select`, cada apertura del horario arrastraba 106 KB de
+    // media y 2,8 MB en el peor caso por marcacion del dia a traves del pooler.
     const punches = await prisma.timePunch.findMany({
       where: {
         date: { gte: start, lt: end },
@@ -4126,6 +4332,7 @@ async function listOwnAttendance(tenantId, user, query = {}) {
           ...(aliases.length ? [{ user_name: { in: aliases } }] : [])
         ]
       },
+      select: SELF_PUNCH_SELECT,
       orderBy: [{ punched_at: "asc" }]
     });
     if (query.flat === "1" || query.legacy === "1") {
@@ -4153,7 +4360,7 @@ async function listOwnAttendance(tenantId, user, query = {}) {
       route_id: rows[0]?.route_id || null,
       last_type: rows[rows.length - 1].type || "sin_marcar",
       next_type: nextPunchType(rows),
-      punches: rows
+      punches: rows.map(announceRescuedPunchEvidence)
     }));
   });
 }
@@ -4164,7 +4371,10 @@ async function processDay(tenantId, input = {}) {
     const [employees, schedules, punches, nightParameters] = await Promise.all([
       prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } } }),
       prisma.workSchedule.findMany({ where: { active: true } }),
-      prisma.timePunch.findMany({ where: { date: { gte: day, lt: endOfDay(day) } }, orderBy: { punched_at: "asc" } }),
+      // El cierre solo suma tiempos: nunca abrio la evidencia y, igual que el reporte, pagaba
+      // el binario de cada marcacion (MAR-109). `processWorkday` lee escalares y `late_minutes`
+      // de `metadata`, que la proyeccion conserva.
+      monitorEvidenceRows.readPunchRowsProjected(prisma, tenantId, { start: day, end: endOfDay(day) }),
       activeLaborParameterValues(tenantId, day, ["JORNADA_NOCTURNA_INICIO", "JORNADA_NOCTURNA_FIN"])
     ]);
     const defaultSchedule = schedules[0];
@@ -8522,6 +8732,9 @@ module.exports = {
   __setRouteLockWaitMsForTests: setRouteLockWaitMsForTests,
   __setContentionLockWaitMsForTests: setContentionLockWaitMsForTests,
   __monthlyOrdinaryHoursForDate: monthlyOrdinaryHoursForDate,
+  // Contrato de la escalera y de su unica excepcion administrativa. Se exporta para poder
+  // afirmarlo sin levantar la app: `build()` deja el proceso colgado de la conexion a la base.
+  __resolvePunchLadder: resolvePunchLadder,
   listSchedules,
   createSchedule,
   updateSchedule,

@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { formatRegionalMoney } from "@/lib/regionalFormat";
 import { CheckCircle2, Plus, Save, Search, Trash2, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type OrgBranch = { code: string; name: string; active: boolean; society_code: string | null };
 type OrgCenter = { code: string; name: string; active: boolean; branch_code: string | null; society_code: string | null };
@@ -33,11 +33,15 @@ const currentMonth = () => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 };
 
-export default function AccountingPygBudget({ defaultPeriod, onSaved }: { defaultPeriod: string; onSaved: () => void }) {
+export default function AccountingPygBudget({ defaultPeriod, organization, onSaved }: {
+  defaultPeriod: string;
+  organization: { branches: OrgBranch[]; cost_centers: OrgCenter[] } | null;
+  onSaved: () => void;
+}) {
   const canWrite = hasStoredRolePermission("accounting", "write");
   const [period, setPeriod] = useState(defaultPeriod || currentMonth());
-  const [branches, setBranches] = useState<OrgBranch[]>([]);
-  const [centers, setCenters] = useState<OrgCenter[]>([]);
+  const branches = useMemo(() => organization?.branches.filter((row) => row.active) ?? [], [organization]);
+  const centers = useMemo(() => organization?.cost_centers.filter((row) => row.active) ?? [], [organization]);
   const [rows, setRows] = useState<EditorRow[]>([]);
   const [savedRows, setSavedRows] = useState<BudgetRowDto[]>([]);
   const [saving, setSaving] = useState(false);
@@ -46,17 +50,6 @@ export default function AccountingPygBudget({ defaultPeriod, onSaved }: { defaul
   const [loading, setLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
   const nextKey = useRef(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    api<{ branches: OrgBranch[]; cost_centers: OrgCenter[] }>("/api/v1/accounting/organization-tree", { cache: "no-store", signal: controller.signal })
-      .then((tree) => {
-        setBranches(tree.branches.filter((row) => row.active));
-        setCenters(tree.cost_centers.filter((row) => row.active));
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, []);
 
   useEffect(() => {
     const controller = new AbortController();

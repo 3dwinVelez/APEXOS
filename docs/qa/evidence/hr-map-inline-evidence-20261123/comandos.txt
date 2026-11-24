@@ -1,0 +1,36 @@
+Intervencion: plan de choque disco/costos, Fase F.2 y F.3
+Rama: desarrollo
+Fecha: 2026-11-23
+
+El retiro del binario incrustado en el panel de la marca del mapa se certifica en cuatro niveles.
+Cada linea es el comando exacto; la salida esta en el archivo de al lado.
+
+1) Guard estructural del fuente (4/4)
+   cd apps/web && node --test test/hr-map-no-inline-evidence.test.mjs
+   -> guard-test.txt
+
+2) Regresion HR completa del modulo (166/166)
+   cd apps/web && node --test test/hr-*.test.mjs
+   -> hr-regression.txt
+
+3) Tipo y estilo sin regresiones
+   cd apps/web && npx tsc -p tsconfig.typecheck.json --noEmit   (exit 0, sin salida)
+   cd apps/web && npx eslint app/dashboard/talento-humano/mapa/page.tsx test/hr-map-no-inline-evidence.test.mjs
+   -> typecheck.txt, eslint.txt
+   El unico aviso es `react-hooks/exhaustive-deps` en mapa/page.tsx:431 (visibleBounds): existente
+   antes del retiro y ajeno a la linea cambiada.
+
+4) Artefacto servido (4/4, 1203 archivos leidos, build cy3GbaZZL0HPF3JcOKYEu)
+   cd apps/web && npm run build
+   node scripts/certifications/hr-map-inline-evidence-artifact-local.js            -> artifact-scan-*.json
+   node scripts/certifications/hr-map-inline-evidence-artifact-local.js --selftest
+
+   Los dos ultimos comandos son la puerta y su control positivo. El selftest escribe dos corpora
+   sinteticos y comprueba que el mismo escaner encuentra la cadena retirada cuando existe, no la
+   inventa cuando no existe y se declara incapaz (0 archivos) ante un corpus vacio. Sin eso, la
+   ausencia medida en los bundles seria decorativa.
+
+Limitacion declarada: no hay certificacion de navegador de la pantalla. La verificacion es de
+fuente y de artefacto servido. La medicion que sostiene que la rama retirada estaba muerta es de
+SQL de solo lectura: `metadata ? 'evidence'` no aparece en ninguna fila de `TimePunch` en
+produccion (jzbwzmkidfthknsohhnr) ni en QA (jbirkghkekuifgfsgquq); ver seccion 12 del brief.

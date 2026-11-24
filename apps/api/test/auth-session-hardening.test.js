@@ -46,6 +46,20 @@ function fixture(overrides = {}) {
   }
 
   const prisma = {
+    // validateAuthorization decide con una sola sentencia (AUTHORIZATION_SNAPSHOT). El mock
+    // reproduce sus condiciones de verdad, no el texto del SQL: usuario por id, tenant por el id
+    // del usuario y sesion admitida solo si es del mismo usuario.
+    async $queryRawUnsafe(_sql, sid, uid) {
+      if (!state.user || state.user.id !== uid) return [];
+      const { role, ...columns } = state.user;
+      const hit = sid ? state.sessions.find((session) => session.id === sid && session.user_id === state.user.id) : null;
+      return [{
+        user: columns,
+        role: role ? { ...role, permissions: role.permissions || [] } : null,
+        tenant: state.tenant,
+        session: hit ? { ...hit } : null
+      }];
+    },
     user: {
       async findFirst({ where }) {
         if (where?.email) return state.user && state.user.email === where.email ? state.user : null;

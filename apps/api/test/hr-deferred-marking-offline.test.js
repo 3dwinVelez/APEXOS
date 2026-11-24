@@ -5,6 +5,22 @@ const test = require("node:test");
 
 process.env.DISABLE_REDIS = "true";
 
+// `6e3a795f` convirtio la marcacion propia de entrada en un flujo que exige selfie y, cuando
+// se llega despues del horario, motivo + detalle + evidencia fotografica. Estas pruebas marcan
+// a las 22:40 sobre un horario de 08:00, asi que declaran el sustento como lo haria el
+// dispositivo; lo que siguen certificando es la aceptacion dentro de la ventana diferida.
+const SELFIE_BYTES = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(400, 7)]);
+function webSelfie() {
+  return { name: "selfie.jpg", type: "image/jpeg", size: SELFIE_BYTES.length, base64: `data:image/jpeg;base64,${SELFIE_BYTES.toString("base64")}` };
+}
+function lateJustification() {
+  return {
+    extra_reason: "Sin senal durante la ruta",
+    extra_detail: "La marcacion salio de la cola del dispositivo al recuperar conexion.",
+    extra_evidence: webSelfie()
+  };
+}
+
 function loadHrService(fakePrisma) {
   const prismaPath = require.resolve("../src/core/prisma");
   const servicePath = require.resolve("../src/modules/hr/service");
@@ -96,6 +112,9 @@ function prismaFor(current, routes, tx, capture) {
     },
     workSession: { findFirst: async () => null },
     timePunch: { findFirst: async () => null },
+    // Huella propia y maestro de rostros: sin registros (la marcacion queda "sin_registro").
+    hrWebauthnCredential: { findMany: async () => [], update: async () => ({}) },
+    hrFaceEnrollment: { findFirst: async () => null },
     $transaction: async (callback) => callback(tx),
     $executeRaw: async (strings, ...values) => { capture.raw.push({ sql: strings.join("?"), values }); },
     $queryRaw: async (strings) => (String(strings?.join ? strings.join("") : strings).includes("pg_try_advisory_xact_lock") ? [{ acquired: true }] : [])
@@ -120,6 +139,8 @@ test("la marcacion diferida del dia anterior dentro de la ventana se acepta cont
       type: "entrada",
       punched_at: new Date(`${yesterday.day}T22:40:00-05:00`).toISOString(),
       idempotency_key: "qa-deferred-0001",
+      identity_photo: webSelfie(),
+      ...lateJustification(),
       metadata: { queued_at: new Date().toISOString(), gps_unavailable: true, gps_unavailable_reason: "sin_senal" }
     });
     assert.equal(result.ok, true);
@@ -263,7 +284,9 @@ test("la marcacion propia del dia en curso no genera ajuste manual", async () =>
       route_id: 17,
       type: "entrada",
       punched_at: new Date(Date.now() - 60000).toISOString(),
-      idempotency_key: "qa-own-today-0001"
+      idempotency_key: "qa-own-today-0001",
+      identity_photo: webSelfie(),
+      ...lateJustification(),
     });
     assert.equal(result.ok, true);
     assert.equal(

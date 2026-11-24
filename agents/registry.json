@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-13",
+  "generated_at": "2026-11-23",
   "canonical_root": ".qoder/skills",
   "mirror_root": "agents",
   "semver_policy": {
@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.14.0",
-      "updated_at": "2026-11-13",
-      "sha256": "b3f553653290274a12c69a35567a55677da62a5fed488fc0b1983b14d381b9c7",
+      "version": "2.24.0",
+      "updated_at": "2026-11-23",
+      "sha256": "d9ce117ced11cf124bd025e001255424dda02615d60c4153b9bedc7b3f7c4252",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -84,15 +84,22 @@
         "modos-tema-enum-tres-capas",
         "almacen-driver-configurado",
         "fallo-dependencia-conserva-codigo",
-        "401-es-credencial-403-es-alcance"
+        "401-es-credencial-403-es-alcance",
+        "evidencia-storage-antes-de-transaccion",
+        "rango-timepunch-solo-por-lector-proyectado",
+        "ingesta-publica-con-buzon-honesto",
+        "exencion-de-evidencia-con-contrato",
+        "congestion-prisma-503-con-retry-after",
+        "cuenta-inactiva-sigue-siendo-administrable",
+        "clave-publica-en-esquema-con-forma"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.55.0",
-      "updated_at": "2026-11-13",
-      "sha256": "bf4aa02edf3221e4c69535180daf55b77660f405421f92f175bf28c321298c36",
+      "version": "2.82.0",
+      "updated_at": "2026-11-23",
+      "sha256": "76dabd768d0a2bc59ebcef2a3a9470bc47b22696c552131af587ab6ed2d23a37",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -136,15 +143,34 @@
         "brief-corte-portafolio-listas-exactas",
         "brief-brecha-despliegue-reconstruccion",
         "brief-evidencia-qa-paquete-documental",
-        "brief-ventana-ejecutada-y-deltas-atribuidos"
+        "brief-ventana-ejecutada-y-deltas-atribuidos",
+        "brief-marca-casillas-con-commit-medido",
+        "brief-post-checkpoint-narra-incidente-y-aplazamientos",
+        "exclusion-vence-y-autorizacion-se-cita",
+        "brief-cierra-con-ambiente-verificado",
+        "brief-de-acote-separa-rama-de-nube",
+        "cifra-de-brief-con-hora-e-ids",
+        "autorizacion-de-mecanismo-con-premisas-verificadas",
+        "sonda-se-nombra-segun-lo-que-demuestra",
+        "pregunta-de-alcance-contestada-en-el-brief",
+        "brief-declara-el-estado-actual-del-mundo",
+        "cierre-de-corte-con-run-del-pipeline",
+        "excepcion-contada-en-filas",
+        "manifiesto-una-sola-fuente-de-filas",
+        "pendiente-con-inventario-barrido",
+        "pendiente-irrecuperable-con-cifra-y-brief-aparte",
+        "censo-en-brief-con-poblacion-medida",
+        "lo-que-se-afirma-del-instrumento-se-pasa-en-limpio",
+        "pendiente-con-dependencia-de-despliegue",
+        "particion-de-residuo-con-tres-duenos"
       ]
     },
     {
       "name": "apexos-db-nube",
       "role": "experto-base-datos-nube",
-      "version": "2.4.0",
-      "updated_at": "2026-11-13",
-      "sha256": "4ec7d0ccb37751d50cd064529511c8cd5e650aa5d951aef60ed9d54c756fe042",
+      "version": "2.7.0",
+      "updated_at": "2026-11-18",
+      "sha256": "e7c12432a2f0095b32a2e21351c960298121dc49d5ed8371dc4643d2d5d36f1c",
       "source": ".qoder/skills/apexos-db-nube/SKILL.md",
       "mirror": "agents/apexos-db-nube/SKILL.md",
       "controls": [
@@ -161,15 +187,17 @@
         "indices-tenant",
         "dinero-decimal",
         "ddl-quirurgico-ledger-en-lf",
-        "rename-vista-compatibilidad-y-filas-posteriores"
+        "rename-vista-compatibilidad-y-filas-posteriores",
+        "sincronizacion-multi-ambiente",
+        "rescate-jsonb-indice-ligero-sha256"
       ]
     },
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.30.0",
-      "updated_at": "2026-11-13",
-      "sha256": "e4b7ae3bd72c454253104150576f8cacd176e08f1e7e8f03b62352cc62ee222d",
+      "version": "2.41.0",
+      "updated_at": "2026-11-23",
+      "sha256": "4cba34811b05b952b2776afd30faa5bc150d5f33e33bfe31b0ebf95ba2be33c3",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -203,15 +231,25 @@
         "piel-operacion-medida-en-dom",
         "saludo-hero-capsula-con-identidad",
         "portafolio-publicado-catalogo",
-        "capa-visual-rebasada-y-recertificada"
+        "capa-visual-rebasada-y-recertificada",
+        "evidencia-perezosa-por-referencia",
+        "fallo-tecnico-no-es-ventana-estado-de-dato",
+        "contador-sin-lectura-no-es-cero",
+        "validacion-en-linea-no-ventanilla-nativa",
+        "evidencia-desprendida-antes-de-reenviar",
+        "pregunta-del-usuario-en-el-sitio-del-dato",
+        "contrato-multilineo-sobre-crlf",
+        "lint-de-ci-como-compuerta-local",
+        "route-api-mismo-contrato-de-pantalla",
+        "marca-durable-sobrevive-al-cierre"
       ]
     },
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.17.0",
-      "updated_at": "2026-11-13",
-      "sha256": "598c1309336127c7fdc035e2757aad5ed8bbd37adecf07ddefd94cb04101c79d",
+      "version": "2.28.0",
+      "updated_at": "2026-11-23",
+      "sha256": "a8b5c800aab216103e32b39b6e21423efb38f2ca90918ef70b7e6f068fd55d7b",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -235,15 +273,23 @@
         "evidencia-retirada-declarada",
         "candidato-reconstruido-se-audita-por-archivo",
         "promocion-a-main-sin-pr",
-        "evidencia-de-manifiesto-resuelta-contra-su-directorio"
+        "evidencia-de-manifiesto-resuelta-contra-su-directorio",
+        "paquete-transportado-se-compara-por-archivo",
+        "checkpoint-anti-barrido",
+        "commit-citado-sale-de-un-comando",
+        "un-commit-funcional-por-candidato",
+        "merge-publicado-tras-dos-verificaciones",
+        "worktree-sin-node-modules-copiado",
+        "barrido-con-causa-identificada",
+        "evidencia-de-corrida-sin-identidad-con-firma-del-manifiesto"
       ]
     },
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.16.0",
-      "updated_at": "2026-11-12",
-      "sha256": "077944dbc43e61246fed6de1733efa6bc05aa41eb8f64e076adbb2322f7e78f2",
+      "version": "2.22.0",
+      "updated_at": "2026-11-23",
+      "sha256": "66944bbe92ac44b636c284e03a5266b45d17faf6da1e57cadbcafeaca105bb23",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -267,15 +313,17 @@
         "torre-umbrales-fuente-unica",
         "torre-presupuesto-por-ambiente",
         "torre-rejilla-y-punto-inspeccionable",
-        "torre-historia-medida-por-monitor"
+        "torre-historia-medida-por-monitor",
+        "sonda-transporte-con-lector-del-producto",
+        "latencia-se-mide-en-ambiente-desplegado"
       ]
     },
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.67.0",
-      "updated_at": "2026-11-13",
-      "sha256": "b76e3eb4cba9e5259116148d27a5b1a091682933e81863b24e7361274c5dde7a",
+      "version": "2.103.0",
+      "updated_at": "2026-11-23",
+      "sha256": "4074224566e9655301619b47cc846a6d265258705aab717764387b03b131af28",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -332,15 +380,48 @@
         "arnes-mide-pintura-y-fixtures-cors",
         "smoke-capa-visual-completa-en-el-despliegue",
         "compuerta-main-evidencia-qa-equivalencia",
-        "smoke-produccion-supabase-auth-y-latencia"
+        "smoke-produccion-supabase-auth-y-latencia",
+        "certificacion-ambiente-anclada-al-commit",
+        "purga-se-certifica-con-lector-stubbeado",
+        "ausencia-se-certifica-con-tormenta-fabricada",
+        "puerta-de-presupuesto-se-demuestra-roja",
+        "columna-antes-en-el-ambiente-desplegado",
+        "pierna-main-por-identidad-de-blob",
+        "control-positivo-de-ventanillas-nativas",
+        "arnes-con-la-forma-del-incidente",
+        "identidad-disfrazada-en-evidencia",
+        "arnes-declara-su-error",
+        "tema-forzado-y-nodo-medido",
+        "marcador-discrimina-estado-no-rama",
+        "instrumento-irreversible-se-certifica-por-su-bloqueo",
+        "marcador-en-area-de-contenido",
+        "certificacion-sobre-el-arbol-del-candidato",
+        "despues-anclado-al-commit-desplegado",
+        "ingesta-probada-por-la-fila-escrita",
+        "equivalencia-por-blob-y-hunkeo",
+        "compuerta-contra-el-arbol-que-aterriza",
+        "produccion-verificada-por-artefacto",
+        "barrido-de-familia-con-autoverificacion",
+        "sustrato-declara-el-incidente",
+        "rojo-heredado-se-clasifica-y-se-repara",
+        "rojo-atribuido-por-insumos",
+        "lista-vacia-es-lectura-ciega",
+        "control-negro-contra-el-mismo-ambiente",
+        "interruptor-certificado-en-los-dos-sentidos",
+        "salida-del-arnes-atada-a-lo-impreso",
+        "correccion-de-conteo-certificada-sin-cambiar-los-demas",
+        "pierna-por-argumento-con-residuo-del-antes",
+        "asercion-del-arnes-que-puede-fallar-demostrada-en-rojo",
+        "cero-de-campo-se-desambigua",
+        "antes-y-despues-de-la-corrida-de-escritura"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.26.0",
-      "updated_at": "2026-11-13",
-      "sha256": "905376e1dab9cb4e098d031b839f5c6b40c9bcfe25ea973d17184df27fc99aa0",
+      "version": "2.36.0",
+      "updated_at": "2026-11-23",
+      "sha256": "80db53ff7e04231238aa69064bde59ef67f3f4f7aa8427f9c232943f8749490d",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -372,15 +453,22 @@
         "lectura-anonima-solo-almacen-local",
         "reclasificacion-401-con-caso-espejo-medido",
         "promocion-de-bloque-reconstruida",
-        "anillo-persistido-sin-dato-de-empresa"
+        "anillo-persistido-sin-dato-de-empresa",
+        "almacen-privado-rutas-saneadas",
+        "sonda-de-produccion-sin-contenido",
+        "boca-anonima-sin-tenant-en-el-cuerpo",
+        "exencion-angosta-con-negativos",
+        "detalle-proveedor-no-va-en-el-cuerpo",
+        "ampliar-lectura-conserva-tenant-y-login",
+        "identificador-declarado-no-es-identidad"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.39.0",
-      "updated_at": "2026-11-13",
-      "sha256": "63652087e52c0e58db62c6c25887b95437503a9c9c55d52659fa7f2238c1e700",
+      "version": "2.60.0",
+      "updated_at": "2026-11-23",
+      "sha256": "170b0914d2e567e405faead52191d920ddd3180e62c2c5f804cbb168926ce53d",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -415,7 +503,22 @@
         "historia-sin-retrorelleno-y-herramienta-viva",
         "nota-visual-capa-exclusiva",
         "protagonismo-dato-jerarquia-visual",
-        "curaduria-portafolio-por-evidencia"
+        "curaduria-portafolio-por-evidencia",
+        "evidencia-de-ambiente-es-intervencion-completa",
+        "arbol-barrido-se-reconstruye-y-se-publica",
+        "garantia-de-experiencia-traducida-a-numero",
+        "inventario-de-manifiesto-contra-el-tip",
+        "cierre-con-ambiente-servido",
+        "autorizacion-abierta-no-alcanza-la-nube",
+        "rojo-repetido-es-causa-raiz",
+        "premisas-de-dato-y-canal-antes-del-desbloqueo",
+        "recurso-de-prueba-se-construye-y-defectos-se-separan",
+        "premisa-re-medida-antes-de-autorizar",
+        "privilegio-retirado-en-el-almacen",
+        "lente-vuelta-a-medir-antes-de-reusar-la-medicion",
+        "vacio-declarado-convertido-en-instrumento-versionado",
+        "tres-estados-de-la-telemetria",
+        "residuo-de-despliegue-cuantificado-en-campo"
       ]
     }
   ],
@@ -477,8 +580,8 @@
     {
       "name": "Filosofía de producto UI",
       "path": "docs/project/filosofia-producto-ui.md",
-      "updated_at": "2026-08-21",
-      "sha256": "2a557d7e92a9256847ba71f02f5fa4b00a8364accc92115a2145bc34dd652594"
+      "updated_at": "2026-11-18",
+      "sha256": "d3792f3ab38fea1064b2012d16e75fc079a141f578d20ec6107359b0b671fd21"
     },
     {
       "name": "Modelo de amenazas",

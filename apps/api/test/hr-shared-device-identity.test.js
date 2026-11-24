@@ -18,8 +18,9 @@ const TENANT = "tenant-qa";
 const ADMIN = { id: 7, role: { name: "APEX_ADMIN" } };
 const DEVICE_ID = "web-7b1c2d3e4f5a6b7c";
 const NOW = new Date("2026-11-21T14:00:00.000Z");
-const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(400, 7)]);
-const JPEG_2 = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(400, 9)]);
+// JPEG real (24x24, generado con sharp): la compuerta de evidencia de mobile-identity.js decodifica la selfie.
+const JPEG = Buffer.from("/9j/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAYABgDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAT/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFgEBAQEAAAAAAAAAAAAAAAAAAAID/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AlAZrAAAAAAf/2Q==", "base64");
+const JPEG_2 = Buffer.from("/9j/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAYABgDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFgEBAQEAAAAAAAAAAAAAAAAAAAQF/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AjANFIAAAAAA//9k=", "base64");
 
 const sha256 = (data) => crypto.createHash("sha256").update(data).digest();
 const b64url = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -114,6 +115,11 @@ function rejects(fn, code) {
   assert.throws(fn, (error) => error.code === code, `debia fallar con ${code}`);
 }
 
+// verifyCrewAssertion es asincronica (la selfie se decodifica con sharp).
+async function rejectsAsync(fn, code) {
+  await assert.rejects(fn, (error) => error.code === code, `debia fallar con ${code}`);
+}
+
 const verify = (dev, body, extra = {}) =>
   shared.verifyCrewAssertion({ device: dev, employeeId: body.employee_id, input: body, ...CONFIG, now: NOW, ...extra });
 
@@ -152,9 +158,9 @@ test("registro con algoritmo distinto de ES256 o llave invalida se rechaza", () 
 
 // ------------------------------------------------------------------ marcacion
 
-test("marcacion firmada por el celular registrado queda device_verified con la selfie", () => {
+test("marcacion firmada por el celular registrado queda device_verified con la selfie", async () => {
   const key = authenticator();
-  const result = verify(device(key), crewPunch(key));
+  const result = await verify(device(key), crewPunch(key));
   assert.equal(result.metadata.identity_verification.status, "device_verified");
   assert.equal(result.metadata.identity_verification.channel, "shared_device");
   assert.equal(result.metadata.identity_verification.vehicle_plate, "XYZ987");
@@ -163,46 +169,46 @@ test("marcacion firmada por el celular registrado queda device_verified con la s
   assert.equal(result.metadata.identity_photo.sha256, sha256(JPEG).toString("hex"));
 });
 
-test("la firma no se puede reusar para OTRA persona, otro tipo u otra selfie", () => {
+test("la firma no se puede reusar para OTRA persona, otro tipo u otra selfie", async () => {
   const key = authenticator();
   // firmado para 463 pero enviado como 512: el empleado lo fija el servidor y cambia el mensaje
-  rejects(() => verify(device(key), crewPunch(key, { employeeId: 512, signedEmployeeId: 463 })), "FIRMA_NO_CORRESPONDE");
-  rejects(() => verify(device(key), crewPunch(key, { type: "salida", signedType: "entrada" })), "FIRMA_NO_CORRESPONDE");
-  rejects(() => verify(device(key), crewPunch(key, { selfie: JPEG_2, signedSelfie: JPEG })), "FIRMA_NO_CORRESPONDE");
+  await rejectsAsync(() => verify(device(key), crewPunch(key, { employeeId: 512, signedEmployeeId: 463 })), "FIRMA_NO_CORRESPONDE");
+  await rejectsAsync(() => verify(device(key), crewPunch(key, { type: "salida", signedType: "entrada" })), "FIRMA_NO_CORRESPONDE");
+  await rejectsAsync(() => verify(device(key), crewPunch(key, { selfie: JPEG_2, signedSelfie: JPEG })), "FIRMA_NO_CORRESPONDE");
 });
 
-test("firma de otro celular, celular revocado o credencial distinta se rechaza", () => {
+test("firma de otro celular, celular revocado o credencial distinta se rechaza", async () => {
   const key = authenticator();
   const intruder = authenticator();
-  rejects(() => verify(device(key), crewPunch(key, { signer: intruder })), "FIRMA_BIOMETRICA_INVALIDA");
-  rejects(() => verify(device(key, { active: false }), crewPunch(key)), "CELULAR_NO_REGISTRADO");
-  rejects(() => verify(null, crewPunch(key)), "CELULAR_NO_REGISTRADO");
-  rejects(() => verify(device(key, { credential_id: intruder.credentialId }), crewPunch(key)), "CELULAR_NO_COINCIDE");
-  rejects(() => verify(device(key), crewPunch(key, { deviceId: "web-otro-celular-01" })), "CELULAR_NO_COINCIDE");
+  await rejectsAsync(() => verify(device(key), crewPunch(key, { signer: intruder })), "FIRMA_BIOMETRICA_INVALIDA");
+  await rejectsAsync(() => verify(device(key, { active: false }), crewPunch(key)), "CELULAR_NO_REGISTRADO");
+  await rejectsAsync(() => verify(null, crewPunch(key)), "CELULAR_NO_REGISTRADO");
+  await rejectsAsync(() => verify(device(key, { credential_id: intruder.credentialId }), crewPunch(key)), "CELULAR_NO_COINCIDE");
+  await rejectsAsync(() => verify(device(key), crewPunch(key, { deviceId: "web-otro-celular-01" })), "CELULAR_NO_COINCIDE");
 });
 
-test("origen ajeno, dominio distinto o sin huella verificada se rechaza", () => {
+test("origen ajeno, dominio distinto o sin huella verificada se rechaza", async () => {
   const key = authenticator();
-  rejects(() => verify(device(key), crewPunch(key, { origin: "https://evil.example" })), "WEBAUTHN_ORIGEN_NO_PERMITIDO");
-  rejects(() => verify(device(key), crewPunch(key, { rpId: "evil.example" })), "WEBAUTHN_RP_NO_COINCIDE");
-  rejects(() => verify(device(key), crewPunch(key, { flags: 0x01 })), "HUELLA_NO_VERIFICADA");
+  await rejectsAsync(() => verify(device(key), crewPunch(key, { origin: "https://evil.example" })), "WEBAUTHN_ORIGEN_NO_PERMITIDO");
+  await rejectsAsync(() => verify(device(key), crewPunch(key, { rpId: "evil.example" })), "WEBAUTHN_RP_NO_COINCIDE");
+  await rejectsAsync(() => verify(device(key), crewPunch(key, { flags: 0x01 })), "HUELLA_NO_VERIFICADA");
 });
 
-test("sin selfie o sin firma se rechaza", () => {
+test("sin selfie o sin firma se rechaza", async () => {
   const key = authenticator();
-  rejects(() => verify(device(key), crewPunch(key, { mutate: (b) => { delete b.identity_photo; } })), "SELFIE_REQUERIDA");
-  rejects(() => verify(device(key), crewPunch(key, { mutate: (b) => { delete b.metadata.identity.signature; } })), "IDENTIDAD_REQUERIDA");
+  await rejectsAsync(() => verify(device(key), crewPunch(key, { mutate: (b) => { delete b.identity_photo; } })), "SELFIE_REQUERIDA");
+  await rejectsAsync(() => verify(device(key), crewPunch(key, { mutate: (b) => { delete b.metadata.identity.signature; } })), "IDENTIDAD_REQUERIDA");
 });
 
-test("el contador de firmas que no avanza se senala para auditoria sin bloquear", () => {
+test("el contador de firmas que no avanza se senala para auditoria sin bloquear", async () => {
   const key = authenticator();
-  const ok = verify(device(key, { sign_count: 4 }), crewPunch(key, { signCount: 5 }));
+  const ok = await verify(device(key, { sign_count: 4 }), crewPunch(key, { signCount: 5 }));
   assert.equal(ok.sign_count, 5);
   assert.equal(ok.metadata.identity_verification.sign_count_regression, undefined);
-  const replay = verify(device(key, { sign_count: 5 }), crewPunch(key, { signCount: 5 }));
+  const replay = await verify(device(key, { sign_count: 5 }), crewPunch(key, { signCount: 5 }));
   assert.equal(replay.metadata.identity_verification.sign_count_regression, true);
   assert.equal(replay.sign_count, 5);
-  const zero = verify(device(key, { sign_count: 0 }), crewPunch(key, { signCount: 0 }));
+  const zero = await verify(device(key, { sign_count: 0 }), crewPunch(key, { signCount: 0 }));
   assert.equal(zero.metadata.identity_verification.sign_count_regression, undefined, "0 = autenticador sin contador");
 });
 

@@ -1,0 +1,54 @@
+# Suites del corte de lecturas restantes + puerta de presupuesto (2026-11-19T04:24:28Z)
+
+## apps/api — dominio HR
+# tests 266
+# pass 266
+# fail 0
+# cancelled 0
+# skipped 0
+
+## apps/web — dominio HR
+# tests 143
+# pass 143
+# fail 0
+# cancelled 0
+# skipped 0
+
+## apps/web — typecheck
+tsc --noEmit: exit 0 (limpio)
+
+## selftest del gate
+OK   gordo-rojo -> Listado con binario inline: 46556774 bytes superan el presupuesto de 4194304 | Listado con binario inline: p95 de 7740 ms supera el presupuesto de 3000 ms | Listado con binario inline: 1 binario(s) inline en el listado (peor 2097175 caracteres)
+OK   anunciado-verde
+OK   lento-rojo -> Listado anunciado pero lento: p95 de 5200 ms supera el presupuesto de 3000 ms
+OK   volumen-rojo -> Listado gordo sin data URL: 12582912 bytes superan el presupuesto de 4194304
+SELFTEST APROBADO: el gate falla con binario inline o latencia fuera de presupuesto y pasa con el aviso por referencia.
+
+## sonda de rango produccion 2026-11-18
+{
+ "cruda": {
+  "filas": 53,
+  "bytes": 32119048,
+  "ms": 2916,
+  "selfies": 27,
+  "soporte": 9,
+  "binario": 27
+ },
+ "proyectada": {
+  "filas": 53,
+  "bytes": 80193,
+  "ms": 736,
+  "selfies": 27,
+  "soporte": 9,
+  "binario": 0
+ },
+ "reduction": {
+  "bytes_x": 400.5,
+  "ms_delta": 2180,
+  "ms_x": 4
+ },
+ "ids_iguales": true
+}
+
+## Recertificacion tras el cierre documental (2026-11-19T04:45Z)
+api 266/266 · web 143/143 (las dos pruebas nuevas del contrato nulo-versus-cero) · typecheck exit 0 · selftest del gate 4/4 · agents:sync/check/test:agents (46/46)/preflight/coverage en verde contra origin/desarrollo @ 0b1ba6f8. Ver `agents-gates.txt`.

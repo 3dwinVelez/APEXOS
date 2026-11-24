@@ -1,0 +1,43 @@
+{
+  "instrumento": "hr-map-inline-evidence-artifact-local",
+  "fecha": "2026-11-23T15:37:22.736Z",
+  "rama": "desarrollo",
+  "build_id": "cy3GbaZZL0HPF3JcOKYEu",
+  "archivos_escaneados": 1203,
+  "marcadores": {
+    "retirado": "Evidencia operativa",
+    "pantalla": "Mapa en vivo de rutas y marcaciones"
+  },
+  "checks": [
+    {
+      "name": "la_fuente_del_mapa_no_lleva_la_rama_de_binarios",
+      "ok": true
+    },
+    {
+      "name": "la_fuente_conserva_la_evidencia_por_referencia",
+      "ok": true
+    },
+    {
+      "name": "el_bundle_servido_no_lleva_el_alt_retirado",
+      "ok": true,
+      "payload": {
+        "archivos": 1203,
+        "coincidencias": []
+      }
+    },
+    {
+      "name": "el_escaner_lee_archivos_de_verdad",
+      "ok": true,
+      "payload": {
+        "archivos": 1203,
+        "chunks_con_la_pantalla": [
+          "chunks\\20om9509x9gam.js",
+          "chunks\\ssr\\apps_web_app_dashboard_talento-humano_mapa_page_tsx_1op8u-i._.js"
+        ]
+      }
+    }
+  ],
+  "passed": 4,
+  "failed": 0,
+  "total": 4
+}

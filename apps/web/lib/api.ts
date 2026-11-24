@@ -1,9 +1,11 @@
-import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
+import { assertActiveSession, clearSession, keepSessionAlive, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
+import { emitPlatformDiagnostic } from "./platformAlerts";
 import { clearSupabaseFetchCache, getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 import { API_BASE_URL } from "./apiBaseUrl";
 import { scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleTrackingMode, scheduleMonitorUsesOperationalSource } from "./hrScheduleMonitor";
 import { validateServiceReferenceImport } from "./serviceReferenceImport";
+import { readInstallationId } from "./installationIdentity";
 
 const API_URL = API_BASE_URL;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
@@ -166,13 +168,14 @@ function failureFromJsonBody(body: { error?: string; message?: string; code?: st
 }
 
 // Ventana corta de texto para el throw: la regresion FM-02 mide el contrato desde el literal.
-function friendlyFailure(path: string, status: number, method: string, failure: FailureEnvelope) {
-  return requestErrorMessage(path, status, failure.detail, method, failure.code, failure.requestId);
+function friendlyFailure(status: number, method: string, failure: FailureEnvelope) {
+  return requestErrorMessage(status, failure.detail, method, failure.code, failure.requestId);
 }
 
-// Mensaje para el operario: que paso, si su trabajo se perdio y que hacer. El detalle tecnico queda
-// en la alerta global y en platform-logs, no en el banner.
-function requestErrorMessage(path: string, status: number, detail: string, method = "GET", code = "", requestId = "") {
+// Mensaje para el operario: que paso, si su trabajo se perdio y que hacer. La ruta, el estado HTTP
+// y el detalle crudo del servidor no entran aqui: van al diagnostico y a platform-logs, porque esta
+// cadena se pinta en la pantalla del cliente.
+function requestErrorMessage(status: number, detail: string, method = "GET", code = "", requestId = "") {
   const reference = requestId ? ` Referencia para soporte: ${requestId}.` : "";
   const writing = isWriteRequest(method);
   const action = writing ? "guardar" : "cargar";
@@ -181,7 +184,7 @@ function requestErrorMessage(path: string, status: number, detail: string, metho
   if (status === 403 && SESSION_SCOPE_CODES.includes(code)) return "Tu cuenta no tiene una empresa activa asociada, por eso la administración no carga. Elige una empresa en el selector o pide que te asignen una. Tu sesión sigue activa.";
   if (status === 403 && code === "ROL_NO_DEFINIDO") return "Tu usuario no tiene un rol definido, por eso la administración no carga. Pide a un administrador que le asigne un rol. Tu sesión sigue activa.";
   if (status === 403) return writing ? "No tienes permiso para guardar este registro. Pide el acceso a tu administrador." : "No tienes permiso para ver esta información. Pide el acceso a tu administrador.";
-  if (status === 404) return writing ? "El registro que intentabas modificar ya no está disponible. Refresca la lista e inténtalo de nuevo." : `No encontramos la información solicitada en ${path}.`;
+  if (status === 404) return writing ? "El registro que intentabas modificar ya no está disponible. Refresca la lista e inténtalo de nuevo." : "No encontramos la información que pediste. Recarga la pantalla y, si sigue sin aparecer, avisa a soporte.";
   if (RETRYABLE_BUSY_CODES.includes(code)) {
     return writing
       ? "Otra persona está guardando ese mismo registro en este momento. Espera unos segundos e inténtalo de nuevo: tu información no se perdió."
@@ -205,15 +208,20 @@ function alertsAreSilenced(options: ApiRequestOptions) {
 }
 
 function isPlatformLogsPath(path: string) {
-  return path.includes("/admin/platform-logs");
+  return path.includes("/admin/platform-logs") || path.includes("/public/telemetry/client-logs");
 }
 
+// Un fallo de red, un 5xx o un 429 no son una ventana: son un registro. Viajan a platform-logs
+// (reportClientFailure), quedan en consola solo en desarrollo y solo abren una tarjeta si soporte
+// encendio el modo diagnostico en ese navegador. La pantalla que fallo ya muestra su propio estado.
 function alertRequestFailure(path: string, status: number | null, detail: string) {
   if (isPlatformLogsPath(path)) return;
-  emitAppAlert({
+  const technical = `Ruta: ${path}${status ? ` | Estado: ${status}` : ""}${detail ? ` | Detalle: ${detail}` : ""}`;
+  safeDevLog(`Solicitud fallida (${status ?? "sin respuesta"}).`, detail);
+  emitPlatformDiagnostic({
     title: status === 401 ? "Sesion invalida" : "Fallo tecnico detectado",
-    message: status === 401 ? "La sesion actual ya no es valida. Debes autenticarte otra vez." : `No fue posible completar la solicitud solicitada por el modulo actual.`,
-    technical: `Ruta: ${path}${status ? ` | Estado: ${status}` : ""}${detail ? ` | Detalle: ${detail}` : ""}`,
+    message: status === 401 ? "La sesion actual ya no es valida. Debes autenticarte otra vez." : "No fue posible completar la solicitud del modulo actual.",
+    technical,
     level: status === 401 || (status !== null && status >= 500) ? "error" : "warning"
   });
 }
@@ -224,31 +232,95 @@ function platformModuleFromPath(path: string) {
   return parts[apiIndex + 1] || parts[0] || "frontend";
 }
 
-function reportClientFailure(path: string, status: number | null, detail: string, method = "GET") {
+const CLIENT_LOG_ENDPOINT = "/api/v1/admin/platform-logs/client";
+const CLIENT_LOG_PUBLIC_ENDPOINT = "/api/v1/public/telemetry/client-logs";
+
+// Medido en produccion sobre 8 dias (evidencia
+// `docs/qa/evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json`):
+// 974 eventos de 21 usuarios decian todos "Backend no disponible desde frontend",
+// cuando la causa real ya estaba escrita en el propio `detail` y eran tres cosas
+// distintas. 478x "La plataforma no respondio a tiempo..." era NUESTRO timeout de
+// 20 s (`API_TIMEOUT_MS`), 317x "Load failed" era la red de iOS Safari y 179x
+// "Failed to fetch" era Chrome/CORS/DNS. Un mensaje para tres causas es la razon
+// por la que el triage tenia que adivinar. La clase sale del detalle que YA viaja:
+// no se inventa ninguna medicion nueva.
+export type ClientFailureCause = "timeout" | "offline" | "request_rejected" | "unknown";
+
+export function classifyClientFailureCause(status: number | null, detail: string): ClientFailureCause {
+  const text = String(detail || "");
+  // El servidor contesto: la peticion llego y fue rechazada. No es caida ni timeout.
+  if (typeof status === "number" && status > 0) return "request_rejected";
+  if (/no respondio a tiempo|tardo demasiado|timed?.?out|abort/i.test(text)) return "timeout";
+  if (/failed to fetch|load failed|networkerror|net::|err_network|econn|err_/i.test(text)) return "offline";
+  return "unknown";
+}
+
+// La frase para el operario sigue siendo espanol plano y NO depende de la clase:
+// lo que cambia es el registro, no lo que lee quien esta en una ruta.
+const CLIENT_FAILURE_MESSAGES: Record<ClientFailureCause, string> = {
+  timeout: "La plataforma tardo demasiado en responder desde el navegador",
+  offline: "El navegador no pudo conectar con la plataforma",
+  request_rejected: "Solicitud frontend fallida",
+  unknown: "Backend no disponible desde frontend"
+};
+
+function reportClientFailure(path: string, status: number | null, detail: string, method = "GET", code = "") {
   if (typeof window === "undefined" || isPlatformLogsPath(path)) return;
   if (!HAS_CONFIGURED_API_URL) return;
   const token = localStorage.getItem("token");
-  if (!token) return;
-  const payload = {
-    source: "frontend",
+  const cause = classifyClientFailureCause(status, detail);
+  const technical = {
     module: platformModuleFromPath(path),
     route: path,
     method,
     status_code: status,
-    message: status === null ? "Backend no disponible desde frontend" : "Solicitud frontend fallida",
-    detail: String(detail || "").slice(0, 1600),
+    // El codigo de negocio del rechazo es lo unico que distingue en el registro un 409 de escalera
+    // de un 400 de foto. Sin el, los 4xx reportados por el navegador llegaban todos con `code`
+    // vacio y el triage tenia que adivinar por la ruta (medido el 2026-11-19: 42x409 y 17x400 sin
+    // causa). El servidor ya lo acepta (`/admin/platform-logs/client` y el buzon publico).
+    code: String(code || "").slice(0, 60),
+    message: status === null ? CLIENT_FAILURE_MESSAGES[cause] : CLIENT_FAILURE_MESSAGES.request_rejected,
+    detail: String(detail || "").slice(0, 1600)
+  };
+  // Sin sesion no hay tenant que atribuir y el correo del navegador tampoco es evidencia: el
+  // reporte anonimo lleva solo la ruta tecnica, mas el id del navegador. Ese id es lo unico que
+  // permite juntar, dias despues, un intento sin sesion con el empleado que luego marco
+  // autenticado desde el mismo telefono. Se omite cuando el navegador no lo deja persistir
+  // (modo privado, cotas): el esquema del buzon publico solo admite UUID canonico, nunca vacio.
+  const deviceId = readInstallationId();
+  const identidadDispositivo = deviceId ? { device_id: deviceId } : {};
+  const anonymousPayload = {
+    ...technical,
+    metadata: { href: window.location.pathname, provider: localStorage.getItem("auth_provider") || "local", failure_cause: cause, ...identidadDispositivo }
+  };
+  const post = (endpoint: string, payload: unknown, withSession: boolean) => fetch(`${API_URL}${endpoint}`, {
+    method: "POST",
+    keepalive: true,
+    headers: withSession && token
+      ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
+      : { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!token) {
+    post(CLIENT_LOG_PUBLIC_ENDPOINT, anonymousPayload, false).catch(() => undefined);
+    return;
+  }
+  const authenticatedPayload = {
+    source: "frontend",
+    ...technical,
     metadata: {
       href: window.location.href,
       user_email: localStorage.getItem("user_email") || "",
-      provider: localStorage.getItem("auth_provider") || "local"
+      provider: localStorage.getItem("auth_provider") || "local",
+      failure_cause: cause,
+      // La misma marca del lado autenticado: sin esta fila no hay nada con que cruzar el id, y el
+      // intento anonimo seguiria siendo un telefono sin dueno.
+      ...identidadDispositivo
     }
   };
-  fetch(`${API_URL}/api/v1/admin/platform-logs/client`, {
-    method: "POST",
-    keepalive: true,
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(payload)
-  }).catch(() => undefined);
+  post(CLIENT_LOG_ENDPOINT, authenticatedPayload, true)
+    .then((response) => (response.status === 401 || response.status === 403 ? post(CLIENT_LOG_PUBLIC_ENDPOINT, anonymousPayload, false) : undefined))
+    .catch(() => undefined);
 }
 
 function shouldPreferOperationalApi(path: string) {
@@ -371,18 +443,18 @@ export async function authorizedJson<T>(input: string, options: ApiRequestOption
   if (!response.ok) {
     if (response.status >= 500) {
       const failure = readFailurePayload(await response.text().catch(() => ""));
-      const message = friendlyFailure(input, response.status, method, failure);
+      const message = friendlyFailure(response.status, method, failure);
       if (!silenced) alertRequestFailure(input, response.status, failure.detail);
-      reportClientFailure(input, response.status, failure.detail, method);
+      reportClientFailure(input, response.status, failure.detail, method, failure.code);
       const failureError = Object.assign(new Error(message), { status: response.status, retryable: true });
       Object.assign(failureError, { code: failure.code, request_id: failure.requestId });
       throw failureError;
     }
     const body = await response.json().catch(() => ({ error: response.statusText }));
     const detail = body.error || body.message || response.statusText;
-    const message = friendlyFailure(input, response.status, method, failureFromJsonBody(body));
+    const message = friendlyFailure(response.status, method, failureFromJsonBody(body));
     if (!silenced) alertRequestFailure(input, response.status, detail);
-    reportClientFailure(input, response.status, detail, method);
+    reportClientFailure(input, response.status, detail, method, typeof body.code === "string" ? body.code : "");
     throw Object.assign(new Error(message), {
       status: response.status,
       code: typeof body.code === "string" ? body.code : "",
@@ -1295,6 +1367,18 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
   } finally {
     globalThis.clearTimeout(timeout);
   }
+}
+
+// Un "Failed to fetch" o un AbortError del navegador no le dicen nada al operario, y en ingles
+// mucho menos. El detalle crudo se registra; lo que se lanza es una frase accionable.
+function browserNetworkNotice(error: unknown) {
+  const message = error instanceof Error ? String(error.message || "") : "";
+  const name = error instanceof Error ? String(error.name || "") : "";
+  if (name === "AbortError" || /abort/i.test(message)) return "La plataforma tardo demasiado en responder. Vuelve a intentar en unos segundos.";
+  if (/failed to fetch|networkerror|load failed|net::|econn|err_/i.test(message)) {
+    return "No fue posible conectar con el servicio. Revisa tu conexion e intenta de nuevo: tu informacion no se perdio.";
+  }
+  return message;
 }
 
 function currentSupabaseUserId() {
@@ -4643,11 +4727,12 @@ async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, ret
       }
     });
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "Backend no disponible.";
-    if (!silenced) alertRequestFailure(path, null, detail);
-    reportClientFailure(path, null, detail, String(options.method || "GET"));
-    if (error instanceof Error) throw error;
-    throw new Error("API no disponible. Revisa el servicio backend.");
+    const raw = error instanceof Error ? error.message : "Backend no disponible.";
+    if (!silenced) alertRequestFailure(path, null, raw);
+    reportClientFailure(path, null, raw, String(options.method || "GET"));
+    const notice = browserNetworkNotice(error);
+    if (notice === raw && error instanceof Error) throw error;
+    throw new Error(notice);
   }
 
   if (response.status === 401 && typeof window !== "undefined") {
@@ -4671,9 +4756,9 @@ async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, ret
 
     if (response.status >= 500) {
       const failure = readFailurePayload(await response.text().catch(() => ""));
-      const message = friendlyFailure(path, response.status, method, failure);
+      const message = friendlyFailure(response.status, method, failure);
       if (!silenced) alertRequestFailure(path, response.status, failure.detail);
-      reportClientFailure(path, response.status, failure.detail, method);
+      reportClientFailure(path, response.status, failure.detail, method, failure.code);
       const failureError = Object.assign(new Error(message), { status: response.status, retryable: true });
       Object.assign(failureError, { code: failure.code, request_id: failure.requestId });
       throw failureError;
@@ -4681,9 +4766,9 @@ async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, ret
 
     const body = await response.json().catch(() => ({ error: response.statusText }));
     const detail = body.error || body.message || response.statusText;
-    const message = friendlyFailure(path, response.status, method, failureFromJsonBody(body));
+    const message = friendlyFailure(response.status, method, failureFromJsonBody(body));
     if (!silenced) alertRequestFailure(path, response.status, detail);
-    reportClientFailure(path, response.status, detail, String(options.method || "GET"));
+    reportClientFailure(path, response.status, detail, String(options.method || "GET"), typeof body.code === "string" ? body.code : "");
     throw Object.assign(new Error(message), {
       status: response.status,
       code: typeof body.code === "string" ? body.code : "",

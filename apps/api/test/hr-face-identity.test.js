@@ -14,7 +14,8 @@ const CONFIG = { enabled: true, matchThreshold: 0.55, antispoofMin: 0, livenessM
 const A = Array.from({ length: 8 }, (_, i) => (i % 2 ? 1 : 0.5));
 const A_NEAR = A.map((v, i) => v + (i === 0 ? 0.1 : 0));
 const B = Array.from({ length: 8 }, (_, i) => (i % 2 ? -1 : 0.7));
-const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(400, 7)]);
+// JPEG real (24x24, generado con sharp): la compuerta de evidencia de mobile-identity.js decodifica la selfie.
+const JPEG = Buffer.from("/9j/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAYABgDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAT/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFgEBAQEAAAAAAAAAAAAAAAAAAAID/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AlAZrAAAAAAf/2Q==", "base64");
 const jpegDataUrl = `data:image/jpeg;base64,${JPEG.toString("base64")}`;
 
 function withDetector(result, fn) {

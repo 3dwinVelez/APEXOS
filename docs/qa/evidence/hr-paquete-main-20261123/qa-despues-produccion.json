@@ -1,0 +1,97 @@
+{
+  "artefacto": "despues-produccion-del-paquete-hr",
+  "change_id": "hr-paquete-main-20261123",
+  "sondado_en_utc": "2026-11-23T17:49:56Z",
+  "ambiente": "PROD",
+  "project_ref": "0afe38cc-6080-49d2-aa24-2d5625250ac2",
+  "servicios_observados": [
+    "apexos-api-prod (7096734e-9a49-4542-be26-b4285b429f17)",
+    "apexos-web-prod"
+  ],
+  "candidato_promovido": "336f28b0a695e6817df1270cc0d0456ac002fe72",
+  "baseline_anterior": "c53f857c1d996aceaf9fcda4649cbcd9ed7dccab",
+  "forma_de_promocion": "fast-forward de la cadena docs+replay sobre el tip medido, push desde la rama auxiliar codex/qa-hr-paquete-main-20261123 con APEXOS_PROMOTION_AUTH; sin merge de rama y sin force",
+  "compuertas_previas": {
+    "qa_promotion_scope": "ALCANCE DE PROMOCION VALIDO: hr-paquete-main-20261123 (63 rutas)",
+    "qa_approval_evidence": "APROBACION QA VALIDA: hr-paquete-main-20261123",
+    "certificacion_de_campo_qa": "APROBADO, 26 piernas verdes (corrida 20261123171846 sobre el build 914d1721965d)"
+  },
+  "despliegue": {
+    "disparado_por": "push a main; Railway construye y despliega apexos-api-prod y apexos-web-prod desde el repo",
+    "api_estado_observado": "Online",
+    "web_estado_observado": "Online",
+    "salud_antes": {
+      "commit": "c53f857c1d99",
+      "modules": 19,
+      "status": "OK"
+    },
+    "salud_despues": {
+      "commit": "336f28b0a695",
+      "modules": 19,
+      "status": "OK"
+    },
+    "secuencia_de_sondeo": [
+      "intento 1: api commit c53f857c1d99 (el despliegue aun no caia)",
+      "intento 2: api commit 336f28b0a695 (el candidato servido)"
+    ]
+  },
+  "sonda_de_artefacto_web": {
+    "metodo": "descargar las paginas servidas y los chunks que referencian, y buscar los literales exactos del codigo fuente del paquete; con control de ruta inexistente",
+    "control_ruta_inexistente_http": 404,
+    "control_ruta_inexistente_coincidencias_marker": 0,
+    "paginas_http": {
+      "/dashboard/talento-humano": 200,
+      "/dashboard/talento-humano/bancos": 200,
+      "/dashboard/talento-humano/liquidacion-trabajador": 200,
+      "/dashboard/talento-humano/nomina": 200,
+      "/dashboard/talento-humano/empleados": 200,
+      "/dashboard/talento-humano/rutas": 200,
+      "/dashboard/talento-humano/marcacion": 200
+    },
+    "chunks_descargados": 14,
+    "bytes_inspeccionados_pagina_bancos": 944397,
+    "bytes_inspeccionados_bajo_hr": 6983109,
+    "marcadores_encontrados": {
+      "Maestro de bancos": 8,
+      "Bancos registrados": 1,
+      "Codigo nacional": 1,
+      "Nombre del banco": 1,
+      "Banco activo": 1,
+      "Revisión del salario pendiente": 1,
+      "Concepto manual": 1,
+      "Registrar concepto": 1,
+      "Seleccionar concepto": 1,
+      "Ir al maestro de empleados": 1,
+      "Cancelar edicion": 1,
+      "Horarios con eventos": 1,
+      "Asignar horario": 1,
+      "selfie": 2
+    },
+    "marcadores_no_encontrados_declarados": {
+      "Horarios unificados": 0,
+      "Periodicidad": 0,
+      "Nota": "no son literales del codigo fuente; la busqueda con esos términos no puede fallar como evidencia y se retira del marcador, no del paquete. Los marcadores usables exigen deletreo exacto del arbol (Codigo nacional y Cancelar edicion van sin acento en el fuente)."
+    }
+  },
+  "sonda_de_endpoints_prod": {
+    "metodo": "lectura sin credenciales contra el API desplegado; la existencia de la ruta se prueba por el codigo de estado, no por el cuerpo. Control: ruta inventada y ruta que solo admite POST.",
+    "resultados": {
+      "GET /api/v1/talento-humano/bancos": 401,
+      "POST /api/v1/talento-humano/bancos": 400,
+      "GET /api/v1/talento-humano/liquidacion-trabajador/revision-dias": 401,
+      "GET /api/v1/talento-humano/nomina/ajustes": 401,
+      "GET /api/v1/talento-humano/nomina/reportes/conceptos": 401,
+      "GET /api/v1/hr/routes": 401,
+      "GET /api/v1/talento-humano/no-existe": 404,
+      "GET /api/v1/hr/payroll/period-closures/validate": 404,
+      "GET /api/v1/talento-humano/configuracion-laboral/conceptos-nomina": 404
+    },
+    "lectura": "el maestro de bancos, la revision de dias y los ajustes de nomina existen en Produccion y estan detras de la autenticacion; el 400 del POST sin cuerpo es Fastify validando el esquema antes del preHandler, el mismo orden que la corrida de QA midio en QA."
+  },
+  "limites_declarados": [
+    "No se ejecuto ninguna escritura en Produccion: las 26 piernas de campo corrieron en QA contra el contenido blob-identico al que ahora sirve main, y esta sonda prueba el artefacto servido, no el flujo de negocio en el tenant real de clientes.",
+    "No se aplico ni se revirtio migracion alguna: el paquete no toca apps/api/prisma/** y el inventario no declara ninguna D.",
+    "modules=19 en /health es el conteo del registro de modulos del servicio, no el portafolio visible del lobby; no cambio con esta pata y no se usa como evidencia de nada."
+  ],
+  "residuos_de_produccion": "ninguno: la pata en Produccion fue solo lectura (health, paginas, chunks y endpoints sin credenciales). No se crearon cuentas, fichas, bancos, mallas ni marcaciones en el tenant de clientes."
+}

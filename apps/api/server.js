@@ -166,7 +166,17 @@ async function build() {
   bootLog("Registered audit hook");
 
   bootLog("Registering platform technical log hooks");
-  const { recordPlatformLog, routeModule } = require("./src/fabric/platformLogs");
+  const { recordPlatformLog, rejectionDetailFrom, rejectionFromPayload, routeModule } = require("./src/fabric/platformLogs");
+  // El 4xx hay que poder nombrarlo: el codigo de negocio y el detalle diagnostico (campo, MIME
+  // declarado vs olido, longitud contra tope, siguiente marcacion esperada) se capturan aqui, sobre
+  // la respuesta ya serializada y con lista blanca, porque un hook que responde sin lanzar nunca
+  // pasa por `onError`. El cuerpo completo nunca se persiste.
+  fastify.addHook("onSend", (request, reply, payload, done) => {
+    if (reply.statusCode >= 400 && reply.statusCode < 500 && !request.rejection) {
+      request.rejection = rejectionFromPayload(payload);
+    }
+    done(null, payload);
+  });
   fastify.addHook("onError", async (request, reply, error) => {
     request.platformErrorLogged = true;
     await recordPlatformLog({
@@ -179,6 +189,7 @@ async function build() {
       status_code: error.statusCode || reply.statusCode || 500,
       code: error.code || "",
       message: error.message,
+      detail: rejectionDetailFrom(error),
       stack: error.stack,
       request_id: request.id,
       ip: request.ip,
@@ -187,6 +198,7 @@ async function build() {
   });
   fastify.addHook("onResponse", async (request, reply) => {
     if (request.platformErrorLogged || reply.statusCode < 400) return;
+    const rejection = request.rejection || { code: "", detail: "" };
     await recordPlatformLog({
       tenant_id: request.user?.tenant_id,
       user_id: request.user?.id,
@@ -195,8 +207,9 @@ async function build() {
       route: request.routeOptions?.url || request.url,
       method: request.method,
       status_code: reply.statusCode,
-      code: reply.statusCode >= 500 ? "HTTP_ERROR" : "REQUEST_REJECTED",
+      code: rejection.code || (reply.statusCode >= 500 ? "HTTP_ERROR" : "REQUEST_REJECTED"),
       message: reply.statusCode >= 500 ? "Respuesta de error del API" : "Solicitud rechazada por validacion o permisos",
+      detail: rejection.detail,
       request_id: request.id,
       ip: request.ip,
       user_agent: request.headers["user-agent"]
@@ -273,6 +286,8 @@ async function build() {
   registerRoutes("onboarding", require("./src/modules/onboarding/routes"), { prefix: "/api/v1" });
   registerRoutes("brain", require("./src/modules/brain/routes"), { prefix: "/api/v1" });
   registerRoutes("admin", require("./src/modules/admin/routes"), { prefix: "/api/v1" });
+  // Reporte de fallo tecnico desde el navegador sin sesion valida: scope aparte, sin auth, con buzon propio.
+  registerRoutes("admin-public", require("./src/modules/admin/public-routes"), { prefix: "/api/v1" });
   registerRoutes("inventory", require("./src/modules/inventory/routes"), { prefix: "/api/v1" });
   registerRoutes("accounting", require("./src/modules/accounting/routes"), { prefix: "/api/v1" });
   registerRoutes("purchases", require("./src/modules/purchases/routes"), { prefix: "/api/v1" });
@@ -427,6 +442,9 @@ async function build() {
     // La tabla de traduccion vive en core/api-error.js, que es lo que cubren las pruebas
     // (levantar la app completa deja el proceso del test colgado de un handle).
     const outcome = mapApiError(error, request, requestId);
+    // El 503 de congestion trae presupuesto de reintento en la cabecera: el cliente
+    // reintenta con ese ritmo en vez de reintentar a ciegas contra el servidor saturado.
+    if (outcome.retryAfter) reply.header("retry-after", String(outcome.retryAfter));
     if (outcome.log) fastify.log.error(outcome.log, "Unhandled API error");
     return reply.code(outcome.statusCode).send(outcome.payload);
   });
