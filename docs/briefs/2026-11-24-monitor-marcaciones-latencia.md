@@ -679,3 +679,59 @@ del manifiesto** (`docs/qa/manifests`), así que apuntaban a `docs/certification
 Cierre medido, sobre el árbol congelado `bb2b29f6`: `ALCANCE DE PROMOCION VALIDO: monitor-latencia-sesion-20261124
 (61 rutas, origen verificado contra origin/desarrollo)`, `AUTORIZACION PRE-QA VALIDA: monitor-latencia-sesion-20261124`
 y `INVARIANTES DE REPLAY VALIDAS: 51/51`.
+
+## 15. QA sobre el candidato servido: la puerta estuvo a punto de aprobarse sobre 0 KB (2026-11-24, pata `develop -> main`)
+
+`origin/develop` sirve `3303a95532a35603f53f1eced0300f4febb0eab3` y el despliegue de QA lo confirmó por
+`GET /health` (`{"modules":19,"commit":"3303a95532a3","service_certification":"products-v2"}`). Sobre ese
+binario, no sobre el árbol local, se corrió la certificación funcional. Índice completo en
+`docs/qa/evidence/auth-session-path-20261124/qa-cierre.md`.
+
+| Instrumento | Veredicto | Número |
+|---|---|---|
+| `certify:auth-session` | verde | 200 en login, `/auth/me` y `/services/orders`; **5/5 rechazos** en 401; revocación medida, no exigida |
+| `certify:hr-monitor-evidence:qa` | verde | **12/12** controles, incluido `cross_tenant_evidence_denied` (404 del tenant vecino) y el 403 del rol solo-marcación |
+| `certify:hr-auth-latency:qa` | verde | **18 casos, 0 divergencias**, mediana **407 ms vs 1.538 ms**, factor **0,26** |
+| `certify:hr-monitor-budget:qa` (NYVORA, día 2026-11-23) | verde | mapa **52 KB · p95 1.152 ms**; contadores con fecha **3 KB** vs **7 KB** sin fecha; asistencia **24 KB**; **0 binarios inline** |
+| `certify:hr-monitor-budget:qa` (tenant del arnés, día de corrida) | verde | mapa **17 KB**, asistencia **8 KB**, **0 binarios inline** con dos evidencias escritas minutos antes |
+
+### 15.1 La credencial de QA ya no existía: se construyó el recurso
+
+`certify:hr-monitor-budget:qa` respondía `El ambiente no acepto la sesion de medicion (HTTP 401)`. No era
+un problema del paquete: la cuenta que usaba (`nyvora.real.admin.202607141705@internal.apexos.local`, del
+archivo ignorado `config/nyvora-real-test-credentials.env`, generado el 2026-07-14) **no está en la base de
+QA** —censo de solo lectura: 0 filas para ese correo sobre 554 usuarios y 27 empresas, y las cuentas
+`qa.paquete.*` / `cert.*` del tenant NYVORA figuran todas `active = false`, retiradas por sus rondas—. Como
+dicta la política de no dejar pendientes construibles, se provisionó la sesión con el propio servicio del
+producto (`admin.createUser`, rol `APEX_ADMIN` de NYVORA `1d162ffd`, user `845`) en vez de declarar el
+bloqueo, y las tres cuentas de medición se retiraron al cerrar con control de login **200 antes / 401
+después** (`qa-retiro-cuentas.json`).
+
+### 15.2 El verde que no medía: umbral sin volumen
+
+La primera corrida del portón de presupuesto dio **0 KB en las cuatro lecturas** y `GATE DE PRESUPUESTO EN
+VERDE`. Dos causas medidas: el arnés resolvió el tenant `fd3e2802` («NYVORA QA ISOLATION CONTROL», sin
+antigüedad) por su `contains:"NYVORA"`, y se le pasó `--date=2026-11-23` cuando el único día con filas de ese
+tenant era el de la propia corrida. Un presupuesto que no tiene datos que aprobar no puede fallar, así que esa
+salida no sirve como evidencia. Se re-corrió contra el día cargado del tenant real (2026-11-23, el de 20
+marcaciones sobre **113 en 120 días**) y quedó escrito el fondo, para que nadie lea el `0 KB` como mérito ni
+el factor de aceleración donde no hay volumen: la comparación gruesa existe en Producción.
+
+### 15.3 Dos defectos del instrumento versionado, y lo que no sube con este paquete
+
+`scripts/certifications/hr-monitor-evidence-demand-qa.js` tenía su analizador de argumentos sin soporte para
+`--flag=value`: con esa forma la corrida pedía `--api-url=https://...` y terminaba contra
+`http://127.0.0.1:3100` (`cause=ECONNREFUSED`), y la misma forma le habría pisado la evidencia versionada por
+defecto (`docs/qa/evidence/hr-monitor-evidence-demand-20260824/certification.json`). La caída ocurrió en el
+primer `fetch`, antes de abrir el bloque que escribe, así que no tocó datos ni evidencia (el archivo conserva
+su `generated_at` del 2026-08-24 y el árbol de git está limpio). El segundo: mandaba los almuerzos sin selfie
+esperando 200, y develop ya responde `SELFIE_REQUERIDA` por `WEB_SELFIE_REQUIRED_TYPES`. Se arregló el parser,
+se mandó la foto y se agregó el control positivo del rechazo; el arnés pasó de fallar a **12/12**.
+
+Ambas rutas son de herramienta y **no viajan** en este paquete (no están en las 61). Lo mismo hay que decir de
+`apps/api/src/modules/hr/mobile-identity.js`, que tampoco está en el inventario y cuyo blob difiere
+(`756b0572178bb137…` en `origin/main` contra `f9e8ea27bb32e929…` en `origin/desarrollo`): con esta promoción
+Producción **no** va a exigir selfie en las cuatro marcaciones web. Es deliberate —el paquete es de latencia y
+camino de sesión—, pero queda escrito para que la corrida de QA no se lea como si certificara una regla que el
+destino no sirve.
+
