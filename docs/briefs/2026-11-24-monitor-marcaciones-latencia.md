@@ -364,6 +364,20 @@ entregadas. Mientras tanto el acceso operativo correcto es `www.apexos.com.co`.
       no pueden colarse como transversales) con manifiesto de alcance v2, `qa:promotion:scope`,
       `qa:preqa:evidence` y despliegue en QA. §13 **no se promociona aparte**: es el mismo módulo `auth`
       y las mismas dos rutas de producto, y separarlo produciría dos candidatos que tocan el mismo blob.
+- [ ] **Preparación medida del manifiesto (2026-11-24, sin promocionar).** `docs/qa/manifests/
+      monitor-latencia-sesion-20261124-scope.json` declara las **52 rutas exactas** del paquete
+      (`41134bf4` + `ba00d9f7` + `ce654d10` + `f3e85f1a`) contra el tip actual `origin/develop = b59f286d`,
+      `allowed_deletions: []` y `approval.status: pendiente`. Dos hallazgos que cambian el método:
+      **(a)** el portón corriendo el tip contra el tip responde `ALCANCE DE PROMOCION INVALIDO` con
+      **1.043 rutas fuera de alcance** (`puerta-alcance-origin-develop.txt`): `desarrollo` va 252 commits por
+      delante y `develop` tiene **119 propios**, así que no hay fusión de rama posible para este paquete;
+      **(b)** **13 de las 51 rutas tienen avance propio en `develop` respecto del merge-base `36111a6a`**, y
+      verificar por contenido (no por ancestro) encontró una regresión concreta: `cd3a88e5` —
+      *reject schedule updates outside the authenticated tenant* — vive solo en `develop`, y
+      `origin/desarrollo:apps/api/src/modules/hr/service.js` **no** contiene `HORARIO_NO_ENCONTRADO` ni el
+      `where { id, tenant_id }` de `updateRoute`. Copiar archivos de `desarrollo` sobre `develop` borraría un
+      arreglo de aislamiento de tenant. El método obligatorio queda escrito en el manifiesto: candidato
+      reconstruido en worktree auxiliar con fusión a tres vías, jamás `git checkout desarrollo -- <ruta>`.
 - [ ] Promoción `develop → main` con `qa:approval:evidence` y aprobación funcional de QA.
 - [ ] Habilitar `HR_EVIDENCE_STORAGE_ENABLED` en QA/Producción (variables de Railway/Supabase).
 - [ ] Ejecutar el backfill C.1 con `--execute --pilot` y luego la purga C.2 y `VACUUM` C.3 en la nube.

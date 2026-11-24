@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.89.0",
+      "version": "2.90.0",
       "updated_at": "2026-11-24",
-      "sha256": "65a174722d77a7f68cd371c3939ca205d25544688f51557ca92cb6dfbe1194cc",
+      "sha256": "df49cfb8eaf4e234ed7c272ce2a9f7dbfa3178359f56a317d935f352c9e04bc4",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -171,7 +171,8 @@
         "lenguaje-cercano-al-dueno",
         "instrumento-nuevo-entra-al-inventario",
         "brief-de-contingencia-con-normas-mecanicas",
-        "cifra-de-brief-con-artefacto-reproducible"
+        "cifra-de-brief-con-artefacto-reproducible",
+        "promocion-pendiente-con-veredicto-medido"
       ]
     },
     {
