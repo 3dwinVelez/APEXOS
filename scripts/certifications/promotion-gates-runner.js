@@ -72,13 +72,21 @@ function runGate(root, label, command, args) {
   const stdout = String(result.stdout || "");
   const stderr = String(result.stderr || "");
   const exit = result.error ? -1 : result.status;
+  // El veredicto es la ultima linea que el instrumento escribio a proposito. Las advertencias
+  // de Node (`(node:1234) [UNDICI-EHPA] ...` y su pista de `--trace-warnings`) se colaban aqui
+  // y tapaban el `ALCANCE DE PROMOCION VALIDO` que es lo que un lector necesita ver.
+  const lineas = (stdout + stderr)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !/^\(node:\d+\)/.test(line) && !/^\(Use `node --trace-warnings/.test(line));
   return {
     label,
     command: [path.basename(command), ...args].join(" "),
     started_at: started,
     exit_code: exit,
     passed: exit === 0,
-    veredicto: (stdout + stderr).trim().split(/\r?\n/).filter(Boolean).slice(-1)[0] || "(sin salida)",
+    veredicto: lineas.slice(-1)[0] || "(sin salida)",
     stdout: stdout.trim(),
     stderr: stderr.trim(),
     error: result.error ? String(result.error.message || result.error) : null
