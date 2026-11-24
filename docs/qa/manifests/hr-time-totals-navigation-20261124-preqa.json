@@ -1,0 +1,173 @@
+{
+  "change_id": "hr-time-totals-navigation-20261124",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "50bffa7d5d33d1e240f93e2ddaecc82295a2463e",
+  "commit": "75e19717c0e65f2042d6e02b4db6e633977f18ba",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-time-totals-navigation-20261124-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-time-totals-navigation-20261124-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-time-totals-navigation-20261124-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-time-totals-navigation-20261124-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-time-totals-navigation-20261124-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-time-totals-navigation-local.js",
+    "evidence": [
+      "hr-time-totals-navigation-20261124-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-time-totals-navigation-local.js",
+    "evidence": [
+      "hr-time-totals-navigation-20261124-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario",
+    "approved_at": "2026-11-24T20:24:49.615Z",
+    "statement": "necesito que el reporte de tiempo totalice los tiempos y cuando termines despliega a qa lo que hemos hecho",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "functional_commit": "75e19717c0e65f2042d6e02b4db6e633977f18ba",
+    "certification": {
+      "environment": "LOCAL",
+      "commit": "75e19717c0e65f2042d6e02b4db6e633977f18ba",
+      "status": "passed",
+      "started_at": "2026-11-24T20:20:01.176Z",
+      "checks": [
+        "hr-time-report-local.js",
+        "hr-hide-web-marking-local.js",
+        "scoped-regression"
+      ],
+      "certificates": {
+        "hr-time-report-local.js": {
+          "functional": {
+            "environment": "LOCAL",
+            "status": "passed",
+            "started_at": "2026-11-24T20:20:26.580Z",
+            "checks": [
+              "report derives day/night overtime, ordinary night and holidays from the payroll engine even when every punch extra_minutes is zero",
+              "authentication, forbidden role, tenant separation and invalid ranges fail explicitly",
+              "browser merges APK and web identities, shows all classified columns, filters overtime and reopens details after reload",
+              "downloaded Excel includes each separate concept and 18 minutes exports as 0.30 hours",
+              "a real interrupted summary request is visible and retry restores the calculated data",
+              "reading and exporting never changes punches, processed hours or payroll documents"
+            ],
+            "finished_at": "2026-11-24T20:21:25.459Z"
+          },
+          "isolation": {
+            "status": "passed",
+            "environment": "LOCAL",
+            "database": "apexos_cert_hr_assoc_1795551611748",
+            "source_database_modified": false,
+            "fixture_schema_hunks": [
+              "20261016123000_sedes_replace_origins: sections 1-2 only",
+              "20260919110000_time_route_kind_descanso",
+              "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+            ],
+            "exit_code": 0,
+            "unexpected_5xx": [],
+            "checked_at": "2026-11-24T20:21:25.533Z"
+          }
+        },
+        "hr-hide-web-marking-local.js": {
+          "functional": {
+            "environment": "LOCAL",
+            "status": "passed",
+            "started_at": "2026-11-24T20:21:41.618Z",
+            "checks": [
+              "self attendance is authenticated and tenant scoped",
+              "desktop HR hub, command search and administration remove marking shortcuts while retaining management navigation",
+              "mobile navigation keeps its remaining links without a marking button",
+              "browser sees other-device entry by polling, lunch by focus and stale-click preflight without duplicate writes",
+              "final server sequence persists once and other tenants see none of it"
+            ],
+            "finished_at": "2026-11-24T20:22:51.617Z"
+          },
+          "isolation": {
+            "status": "passed",
+            "environment": "LOCAL",
+            "database": "apexos_cert_hr_assoc_1795551685765",
+            "source_database_modified": false,
+            "fixture_schema_hunks": [
+              "20261122120000_hr_webauthn_credentials",
+              "20261122060000_hr_face_enrollments",
+              "20261016123000_sedes_replace_origins: sections 1-2 only",
+              "20260919110000_time_route_kind_descanso",
+              "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+            ],
+            "exit_code": 0,
+            "unexpected_5xx": [],
+            "checked_at": "2026-11-24T20:22:51.696Z"
+          }
+        }
+      },
+      "test_files": [
+        "apps/web/test/command-palette-module-functions.test.mjs",
+        "apps/web/test/hr-landing-information-architecture.test.mjs",
+        "apps/web/test/hr-marking-only-access.test.mjs",
+        "apps/web/test/hr-time-report.test.mjs",
+        "apps/web/test/hr-reports-xlsx.test.mjs",
+        "apps/web/test/hr-report-punch-alerts.test.mjs",
+        "apps/web/test/hr-schedule-monitor.test.mjs",
+        "apps/web/test/hr-route-write-fallback.test.mjs",
+        "apps/api/test/hr-deferred-marking-offline.test.js",
+        "apps/api/test/hr-marking-concurrency.test.js",
+        "apps/api/test/hr-marking-only-rbac.test.js",
+        "apps/api/test/hr-marking-declared-employee.test.js",
+        "apps/api/test/hr-punch-mobile-evidence.test.js",
+        "apps/api/test/hr-payroll-workdays.test.js"
+      ],
+      "finished_at": "2026-11-24T20:22:55.983Z"
+    },
+    "unit_regression": {
+      "passed": 100,
+      "failed": 0
+    },
+    "typecheck": "passed: full QA candidate",
+    "eslint": {
+      "errors": 0,
+      "preexisting_warnings": 4
+    },
+    "tested_source_match": "All functional files match the certified Git tree after standard Windows line-ending normalization.",
+    "api_implementation": "Unchanged from current QA target.",
+    "regression_block_resolution": "Current QA already contains the corrected selfie/late justification fixtures. Operational locks and the six existing financial serialization locks are verified separately; no backend implementation changed.",
+    "local_environment": "Candidate-schema Prisma client generated only under ignored test directory; existing WebAuthn and face DDL applied only to disposable local DB. No remote migrations or shared node_modules changes."
+  }
+}

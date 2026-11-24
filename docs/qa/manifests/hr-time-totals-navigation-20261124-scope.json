@@ -1,0 +1,190 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-time-totals-navigation-20261124",
+  "base_commit": "50bffa7d5d33d1e240f93e2ddaecc82295a2463e",
+  "base_commits": {
+    "develop": "50bffa7d5d33d1e240f93e2ddaecc82295a2463e"
+  },
+  "target_head": "50bffa7d5d33d1e240f93e2ddaecc82295a2463e",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "certified_commit": "75e19717c0e65f2042d6e02b4db6e633977f18ba",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "75e19717c0e65f2042d6e02b4db6e633977f18ba",
+    "implementation_commits": [
+      "a5b5373f9c52d4f1cab800c2c87696ea9cbd884a",
+      "b2f427463b7e3852826fd647b34830303a6031ea"
+    ],
+    "reconstruction": "Reviewed hunks on current QA, preserving APK device and face masters and processed-hours comparison."
+  },
+  "certified_functional_paths": [
+    "apps/api/test/hr-marking-concurrency.test.js",
+    "apps/web/app/dashboard/administracion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/components/brain/AiExperienceLayer.tsx",
+    "apps/web/components/shell/MobileNav.tsx",
+    "apps/web/lib/hrTimeReport.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/lib/reportExports.ts",
+    "apps/web/test/command-palette-module-functions.test.mjs",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
+    "apps/web/test/hr-reports-xlsx.test.mjs",
+    "apps/web/test/hr-time-report.test.mjs",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-hide-web-marking-local.js",
+    "scripts/certifications/hr-landing-hub-local.js",
+    "scripts/certifications/hr-test-prisma-local.js",
+    "scripts/certifications/hr-time-report-local.js",
+    "scripts/certifications/hr-time-totals-navigation-local.js"
+  ],
+  "change_intent": {
+    "summary": "Total filtered report durations in browser and precise Excel footer; remove web marking shortcuts while retaining attendance APIs and current QA capabilities.",
+    "modules": [
+      "hr",
+      "shared-report-exports"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/test/hr-marking-concurrency.test.js",
+    "apps/web/app/dashboard/administracion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/components/brain/AiExperienceLayer.tsx",
+    "apps/web/components/shell/MobileNav.tsx",
+    "apps/web/lib/hrTimeReport.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/lib/reportExports.ts",
+    "apps/web/test/command-palette-module-functions.test.mjs",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
+    "apps/web/test/hr-reports-xlsx.test.mjs",
+    "apps/web/test/hr-time-report.test.mjs",
+    "docs/qa/manifests/hr-time-totals-navigation-20261124-preqa.json",
+    "docs/qa/manifests/hr-time-totals-navigation-20261124-scope.json",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-hide-web-marking-local.js",
+    "scripts/certifications/hr-landing-hub-local.js",
+    "scripts/certifications/hr-test-prisma-local.js",
+    "scripts/certifications/hr-time-report-local.js",
+    "scripts/certifications/hr-time-totals-navigation-local.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-marking-concurrency.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/administracion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/brain/AiExperienceLayer.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/MobileNav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrTimeReport.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/reportExports.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/command-palette-module-functions.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-reports-xlsx.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-time-report.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-time-totals-navigation-20261124-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-time-totals-navigation-20261124-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-hide-web-marking-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-landing-hub-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-test-prisma-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-time-report-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-time-totals-navigation-local.js"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Filtered worked/overtime/surcharge totals, pending and empty rows, precise Excel export",
+      "status": "passed",
+      "evidence": [
+        "hr-time-totals-navigation-20261124-preqa.json"
+      ]
+    },
+    {
+      "name": "Desktop/mobile navigation, command palette, existing APK device/face management",
+      "status": "passed",
+      "evidence": [
+        "hr-time-totals-navigation-20261124-preqa.json"
+      ]
+    },
+    {
+      "name": "Attendance synchronization, duplicate prevention, offline recovery, permissions and tenant isolation",
+      "status": "passed",
+      "evidence": [
+        "hr-time-totals-navigation-20261124-preqa.json"
+      ]
+    },
+    {
+      "name": "Operational lock deadlines and existing payroll/benefit serialization contracts",
+      "status": "passed",
+      "evidence": [
+        "hr-time-totals-navigation-20261124-preqa.json"
+      ]
+    }
+  ]
+}
