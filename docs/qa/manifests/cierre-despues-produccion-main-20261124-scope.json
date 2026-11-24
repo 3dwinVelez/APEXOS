@@ -12,12 +12,12 @@
   },
   "base_commit": "cf2adc59d44693f368418fb20cb66a06a388daa3",
   "target_head": "cf2adc59d44693f368418fb20cb66a06a388daa3",
-  "certified_commit": "cf2adc59d44693f368418fb20cb66a06a388daa3",
+  "certified_commit": "5729a1980af2bbada1b7cee62b8b31963fad4a16",
   "candidate_source": {
     "branch": "desarrollo",
-    "commit": "6ce8bff18422ee86dbc55ddc22fd691962fdf3b6"
+    "commit": "7b781e226ac15208fed00ca8e26dfc551aff5190"
   },
-  "naturaleza": "Capa de documentacion: cierre contable del DESPUES medido en Produccion. Cero rutas de producto, cero rutas de instrumentacion, cero migraciones. El paquete funcional ya esta publicado en main (cf2adc59d446); lo que faltaba era la evidencia que lo cuenta.",
+  "naturaleza": "Capa de documentacion y cierre contable del DESPUES medido en Produccion: quince rutas, todas bajo docs/, cero rutas de producto. El paquete funcional ya esta publicado en main (cf2adc59d446) y verificado por artefacto servido; aqui sube el relato medido y sus instrumentos de porton.",
   "change_intent": {
     "modules": [
       "documentacion",
@@ -76,6 +76,10 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/manifests/cierre-despues-produccion-main-20261124-approval.json"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/manifests/cierre-despues-produccion-main-20261124-scope.json"
     },
     {
@@ -96,6 +100,7 @@
     "docs/qa/evidence/auth-session-path-20261124/sondeo-produccion.txt",
     "docs/qa/evidence/auth-session-path-20261124/veredicto-main.md",
     "docs/qa/manifests/cierre-despues-produccion-develop-20261124-scope.json",
+    "docs/qa/manifests/cierre-despues-produccion-main-20261124-approval.json",
     "docs/qa/manifests/cierre-despues-produccion-main-20261124-scope.json",
     "docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json"
   ],
@@ -109,7 +114,7 @@
         "../evidence/auth-session-path-20261124/replay-cierre-docs-main.json",
         "../evidence/auth-session-path-20261124/candidato-main.txt"
       ],
-      "notes": "git diff --name-only cf2adc59d446..punta filtrado por ^(apps|scripts|packages|infra)/ devolvio 0 rutas. Las 14 rutas del inventario viven bajo docs/briefs, docs/qa/evidence, docs/qa/manifests y docs/qa/specs."
+      "notes": "git diff --name-only cf2adc59d446..punta filtrado por ^(apps|scripts|packages|infra)/ devolvio 0 rutas. Las quince rutas del inventario viven bajo docs/briefs, docs/qa/evidence, docs/qa/manifests y docs/qa/specs."
     },
     {
       "name": "Las invariantes del replay siguen validas en el arbol del cierre",
@@ -147,7 +152,8 @@
   ],
   "deriva_declarada": [
     "El ciclo pre-QA de cinco chequeos (functional, error, support_scripts, regression, platform_regression) no se corre: el diff no contiene una sola ruta ejecutable, y certificaria una ejecucion que este commit no puede provocar. Precedentes del mismo dia: 9d13cae0, b08699e3 y 406c517e.",
-    "La aprobacion funcional que respalda este push es la de la pata que ya esta publicada en main: el paquete monitor-latencia-sesion-20261124 paso por docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json con QA 174/174 y DESPUES por artefacto servido. Este manifiesto no promociona codigo: promociona el relato medido de ese codigo."
+    "La aprobacion funcional que respalda este push es la de la pata que ya esta publicada en main: el paquete monitor-latencia-sesion-20261124 paso por docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json con QA 174/174 y DESPUES por artefacto servido. Este manifiesto no promociona codigo: promociona el relato medido de ese codigo.",
+    "Los dos instrumentos del porton de cierre (este manifiesto y cierre-despues-produccion-main-20261124-approval.json) quedan en main y en desarrollo: develop recibio la version del manifiesto con la que se gateo su propio avance (406c517e y 4381c08d), que es historia exacta de esa rama y no deriva de producto."
   ],
   "verificado_local": "Inventario medido ruta por ruta contra cf2adc59d446: 14 rutas, todas bajo docs/. Filtro de producto sobre el diff neto: 0. Blobs identicos a origin/desarrollo.",
   "approval": {

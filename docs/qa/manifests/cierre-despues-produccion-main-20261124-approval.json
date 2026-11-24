@@ -1,0 +1,119 @@
+{
+  "change_id": "cierre-despues-produccion-main-20261124",
+  "commit": "5729a1980af2bbada1b7cee62b8b31963fad4a16",
+  "tree_evaluated": "Capa funcional del cierre 5729a1980af2 (doce rutas) mas la capa de porton encima, en la rama auxiliar codex/qa-monitor-latencia-sesion-main-20261124: capa de documentacion de cierre sobre origin/main cf2adc59d446. Quince rutas, todas bajo docs/: el brief con las secciones 16 y 17, el veredicto con el DESPUES medido, las tres lecturas de Produccion, los dos reportes de compuertas de develop, el diff del brief, los dos manifiestos de cierre, el manifiesto de avance de develop, el spec de replay y esta aprobacion. Ningun archivo bajo apps/, scripts/, packages/ o infra/ cambia de blob respecto de la punta servida en Produccion.",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-25T03:05:00-05:00",
+    "scope": "promotion_to_main",
+    "instruction": "procede con la promocion controlada de esta intervencion alineado las 3 ramas al finalizar brindame un resumen en lenguaje natural de lo que se hizo sin dejar pendientes abiertos",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "El codigo ya esta publicado y verificado en Produccion sobre cf2adc59d446 (health.commit medido). Lo que sube es la contabilidad: sin ella main contaba el paquete con un brief anterior a las secciones 16 y 17 y con un veredicto que prometia una re-medicion que no existia. Las quince rutas son blob-identicas a origin/desarrollo."
+    },
+    "authorization_basis": "La orden del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas y la verificacion en QA y Produccion. No otorga force push, reescritura de historia, borrado de ramas ajenas, migraciones remotas de esquema ni cambios de infraestructura o secretos.",
+    "limits": "Se exigen y se corren: manifiesto v2 con inventario exacto, qa:promotion:scope contra la punta, qa:approval:evidence sobre este archivo, el instrumento de invariantes contra el indice del candidato y el filtro ^(apps|scripts|packages|infra)/ en cero. La verificacion post-push es por blob por ruta contra el canon de desarrollo y por /health del API servido."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/qa-cierre.md",
+        "../evidence/auth-session-path-20261124/despues-produccion.json",
+        "../evidence/auth-session-path-20261124/veredicto-main.md"
+      ],
+      "notes": "Certificacion funcional del paquete, leida del ambiente desplegado: 12/12 de evidencia bajo demanda en QA sobre el binario 3303a95532a3 y, despues del push a main, presupuesto de reloj sobre la punta servida cf2adc59d446 con los contadores del dia fijado bajando de 6,5 KB / p95 3.500 ms a 0,1 KB / p95 1.851 ms. Este cierre no cambia una linea ejecutable: reusa la certificacion publicada en monitor-latencia-sesion-20261124-main-approval.json y le anade la lectura del DESPUES."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/despues-auth-produccion.json",
+        "../evidence/auth-session-path-20261124/qa-auth-session.json",
+        "../evidence/auth-session-path-20261124/sondeo-produccion.txt",
+        "../evidence/auth-session-path-20261124/veredicto-main.md"
+      ],
+      "notes": "Camino de sesion sobre Produccion: login 200, /auth/me 200, consulta autenticada 200 y cinco de cinco rechazos en 401 (sin token, token basura, alg:none, clave ajena, firma alterada) anclados al sha servido. El sondeo dejo registrado ademas que el 403 inicial era portafolio de modulos del tenant y no defecto de sesion: la ruta se declaro con CERT_PROBE_PATH y la exigencia no se relajo."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-main.json",
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-develop.json",
+        "../evidence/auth-session-path-20261124/suites-candidato-main.txt",
+        "../evidence/auth-session-path-20261124/puertas-develop.json",
+        "../evidence/auth-session-path-20261124/puertas-develop-forma-roja.json"
+      ],
+      "notes": "Los instrumentos del cierre corrieron sobre el arbol del candidato: promotion-migration-check con el spec de la pata main (73/73) y con el de la pata develop (51/51), mas las compuertas de forma de develop con su rojo intencional documentado. Las suitas del paquete (70 pruebas, 69 pasan, 0 fallan, 1 SKIP preexistente) se corrieron en la pata funcional y su reporte viaja en este mismo arbol."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-main.json",
+        "../evidence/auth-session-path-20261124/replay-arbol-candidato-main.json",
+        "../evidence/auth-session-path-20261124/invariantes-replay-main.json",
+        "../evidence/auth-session-path-20261124/candidato-main.txt"
+      ],
+      "notes": "Regresion re-medida en el cierre: contra la punta publicada cf2adc59 la corrida devolvio 71/73 y los dos rotos eran el brief y el veredicto; con las quince rutas del cierre en el indice la misma corrida vuelve a 73/73 (49 carry byte a byte contra origin/desarrollo y 24 rutas ajenas que siguen ausentes). Ningun hunks de producto se toca."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/replay-cierre-docs-main.json",
+        "../evidence/auth-session-path-20261124/sentencias-production.json",
+        "../evidence/auth-session-path-20261124/despues-produccion.json",
+        "../evidence/auth-session-path-20261124/veredicto-main.md"
+      ],
+      "notes": "Cero migraciones, cero cambios de esquema, cero rutas de Prisma en el diff. La lectura de sentencias en Produccion se hizo con transaccion READ ONLY, statement_timeout y lock_timeout y 0 escrituras. Consecuencia declarada: el despliegue de main reconstruye y /health.commit pasa a la punta del cierre, con el arbol de producto identico blob por blob al de cf2adc59d446."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-monitor-byte-budget.js",
+    "evidence": [
+      "../evidence/auth-session-path-20261124/despues-produccion.json",
+      "../evidence/auth-session-path-20261124/qa-monitor-budget.json",
+      "../evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json",
+      "../evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json"
+    ],
+    "controls": 12,
+    "passed": 12,
+    "failed": 0,
+    "substrate": "Certificacion leida del ambiente desplegado: QA sobre 3303a95532a3 (12/12) y Produccion sobre cf2adc59d446 (cuatro lecturas, 0 binarios inline en los dos lados de la mesa). El instrumento exige volumen real en el dia medido y su autocontrol de mutacion corre aparte."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/auth-session-path-20261124/replay-cierre-docs-main.json",
+      "../evidence/auth-session-path-20261124/replay-cierre-docs-develop.json",
+      "../evidence/auth-session-path-20261124/replay-arbol-candidato-main.json",
+      "../evidence/auth-session-path-20261124/replay-tip-congelado-develop.json"
+    ],
+    "basis": "El instrumento de invariantes corre sobre el indice de cada candidato de cierre y su salida viaja dentro del mismo arbol (73/73 en main, 51/51 en develop). La re-medicion contra la punta commiteada se corre despues del push con --against=commit --ref=<punta>: no puede contener su propio commit, asi que su resultado se declara en veredicto-main.md y en agents/CHANGELOG.md de desarrollo."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-monitor-byte-budget.js",
+    "evidence": [
+      "../evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json",
+      "../evidence/auth-session-path-20261124/qa-monitor-budget.json",
+      "../evidence/auth-session-path-20261124/qa-cierre.md",
+      "../evidence/auth-session-path-20261124/despues-produccion.json"
+    ],
+    "notes": "La empresa modelo real NYVORA es el tenant de las lecturas de QA (presupuesto en el dia cargado, 0 binarios inline) y de la cuenta de medicion de Produccion, que se provisiono con el servicio del producto y se retiro por el endpoint con control login 200 antes / 401 despues."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "cf2adc59d44693f368418fb20cb66a06a388daa3",
+    "trigger": "Si despues del despliegue el API de Produccion deja de responder /health, si /health.commit no corresponde a la punta publicada, si alguna ruta bajo apps/ o scripts/ aparece en el diff del commit de cierre o si el monitor de marcaciones deja de listar el dia pedido.",
+    "notes": "Revert controlado de los dos commits de documentacion (git revert, sin reescribir historia compartida) que devuelve el arbol exactamente a cf2adc59d446, el binario hoy servido. El tag backup/precierre-main-20261125 conserva esa punta. No hay migraciones que deshacer ni tablas tocadas."
+  }
+}
