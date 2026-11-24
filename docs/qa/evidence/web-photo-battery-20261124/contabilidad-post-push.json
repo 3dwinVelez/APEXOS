@@ -40,7 +40,13 @@
     "lectura_2": { "hora_utc": "2026-11-24T21:58:34Z", "cuerpo": "{\"status\":\"OK\",\"version\":\"2.0\",\"modules\":19,\"commit\":\"e3c2ad171946\",\"service_certification\":\"products-v2\"}" },
     "lectura_3": { "hora_utc": "2026-11-24T22:04:46Z", "cuerpo": "{\"status\":\"OK\",\"version\":\"2.0\",\"modules\":19,\"commit\":\"e3c2ad171946\",\"service_certification\":\"products-v2\"}" },
     "lectura_web": { "hora_utc": "2026-11-24T22:04:46Z", "url": "https://apexos-web-prod-production.up.railway.app/", "estado_http": 200 },
-    "identidad_del_contenido": "Las 13 rutas del candidato son, blob por blob, las de origin/desarrollo. mobile-identity.js del arbol servido es el binario que paso la mesa de 34 controles en QA."
+    "identidad_del_contenido": "Las 13 rutas del candidato son, blob por blob, las de origin/desarrollo. La mesa hostil de 34 controles se corrio contra el binario desplegado de QA (c0fbb4b9c50c); lo que sirve Produccion es un arbol reconstruido sobre main, asi que la equivalencia no se insinua: el blob de apps/api/src/modules/hr/mobile-identity.js servido es el mismo blob que se certifico, y eso lo verifico el porton en modo transporte puntual.",
+    "verificacion_extra_solo_lectura": {
+      "de_que_va": "el login endurecido contra correos repetidos que subio en la misma pata (readAuthorizationSnapshot compartido por /auth/me, login, refresh y huella) necesita saber si hay colisiones vivas antes de que un operario se quede afuera",
+      "instrumento": "node scripts/security/auth-email-collision-census.js --env-file=<ambiente>, lectura pura",
+      "produccion_hoy": "[censo] production: SIN_COLISION | correos en varias empresas: 0 | usuarios: 217",
+      "qa": "la ultima lectura versionada decia 7 colisiones vivas; no se volvio a tomar hoy, por eso queda como pendiente y no como cifra"
+    }
   },
 
   "prueba_de_campo": {
@@ -60,7 +66,13 @@
 
   "pendientes_con_dueno": [
     {
-      "pendiente": "DESPUÉS de campo en Producción sobre el turno del 2026-11-25",
+      "pendiente": "Rehacer el censo de colisiones de correo en QA y decidir cual registro es el verdadero antes de usar esas cuentas en una mesa de login",
+      "porque": "el endurecido exige un unico registro por correo; en Produccion el censo de hoy dio SIN_COLISION sobre 217 usuarios, pero en QA la ultima lectura versionada decia 7 correos en varias empresas y no se volvio a tomar. Sin esa lectura no se puede afirmar cuantas siguen vivas.",
+      "como": "node scripts/security/auth-email-collision-census.js --env-file=config/qa.env y, por cuenta, inactivar la duplicada o cambiarle el correo. No se inactiva nada sin decision expresa del dueno.",
+      "dueno": "apexos-backend con el dueno"
+    },
+    {
+      "pendiente": "DESPUES de campo en Produccion sobre el turno del 2026-11-25",
       "como": "node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/production.env --date=2026-11-25 --days=1 --sin-nombres, con denominador de marcaciones mayor que cero",
       "dueno": "apexos-qa con el dueno"
     },
