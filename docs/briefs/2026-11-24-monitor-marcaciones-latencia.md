@@ -758,16 +758,16 @@ blobs de `develop` sobre `main`, y la respuesta es concreta:
 
 La transformación quedó escrita como invariante y no como narrativa
 (`docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json`), medida con
-`npm run qa:promotion:migration` sobre el índice del candidato: **carry 46 + delete 24 = 70 invariantes**. Los
+`npm run qa:promotion:migration` sobre el índice del candidato: **carry 49 + delete 24 = 73 invariantes**. Los
 `delete` son las rutas ajenas que tienen que seguir ausentes (biometría, webauthn, dispositivos compartidos,
 las dos pantallas nuevas de Talento Humano, `recovery-readiness` y las rutas de gobernanza `agents/**`).
 
 | Capa | Rutas | Cómo se probó |
 |---|---|---|
-| carry desde `origin/desarrollo` | 45 | blob igual, medido archivo por archivo |
+| carry desde `origin/desarrollo` | 48 | blob igual, medido archivo por archivo |
 | carry desde `origin/develop` | 1 (`talento-humano/rutas/page.tsx`) | el blob servido a QA es `c79f3da7`; el de `desarrollo` (`df9fd61d`) trae 53 líneas de otra intervención sin certificar |
 | replay propio | 3 (`auth/service.js`, `hr/routes.js`, `hr/service.js`) | blob de `main` + los hunks de `41134bf4` y `f3e85f1a` (`31a36e77` ya estaba en `main`) |
-| commit de documentación | 5 | el spec, su reporte, los dos manifiestos y el veredicto |
+| spec y su reporte | 2 | no se auto-miden: el archivo que declara la invariante no puede certificar su propio blob, queda declarado en `rutas_del_tip_sin_invariante_carry` |
 
 Las cuatro excepciones de origen del portón se justifican con medida y no con intención
 (`docs/qa/evidence/auth-session-path-20261124/invariantes-replay-main.json`):
@@ -792,3 +792,12 @@ al inventario: Producción sigue sirviendo `756b0572`). El DESPUÉS de Producci�
 afirmación: solo cuenta cuando `GET https://apexos-api-prod-production.up.railway.app/health` devuelva el sha
 promovido, y entonces se corren `certify:hr-monitor-budget:production` y `certify:auth-session` anclados a ese
 sha.
+
+La base se movió a mitad de camino y el portón lo avisó. El primer candidato (funcional `65b9dd7a`) se ancló a
+`3baf8e4a` y `qa:promotion:scope` respondió `ALCANCE DE PROMOCION INVALIDO: el destino origin/main cambio desde
+el baseline aprobado`: `main` había avanzado a `b08699e3`, un commit de documentación de dos rutas ajenas a este
+paquete y sin traslape con ninguna de sus rutas. El candidato se reconstruyó con `git reset --soft` sobre el tip
+nuevo —nunca por merge ni con un snapshot viejo del árbol, que es como se reintroducen regeneraciones— y se
+volvieron a medir las invariantes y el inventario de blobs contra la base nueva. El funcional quedó en `66d2765a`
+con 50 rutas y la capa de documentación (dos manifiestos, el veredicto y el reporte del replay) viajó encima, en
+su propio commit, porque esas cuatro rutas solo pueden escribirse con las medidas del commit que certifican.

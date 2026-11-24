@@ -28,9 +28,11 @@ Change id: `monitor-latencia-sesion-main-20261124`. Candidato: rama auxiliar loc
 | replay por hunks sobre el blob de `main` | 3 · `auth/service.js`, `hr/routes.js`, `hr/service.js` | 0 líneas añadidas huérfanas + paridad de cuerpo de función |
 | capa de documentación (viaja dentro del carry) | 4 | los dos manifiestos, este veredicto y el reporte del replay, en su propio commit encima del funcional |
 
-Invariante del replay (`npm run qa:promotion:migration`, `--against index`): **70/70 válidas** — 46 `carry` y
-24 `delete` de rutas ajenas que siguen ausentes. Re-medición contra la punta: `replay-punta-main.json`, salida
-declarada (no puede viajar en el commit que describe).
+Invariante del replay (`npm run qa:promotion:migration`, `--against index` sobre las 54 rutas del índice):
+**73/73 válidas** — 49 `carry` (48 desde `origin/desarrollo` y 1 desde `origin/develop`) y 24 `delete` de rutas
+ajenas que siguen ausentes en lo que se publica. El reporte viaja en `replay-arbol-candidato-main.json`; la
+re-medición contra la punta commiteada (`--against commit`) es `replay-punta-main.json`, salida declarada que
+no puede viajar en el commit que describe y se sube con la evidencia del DESPUÉS.
 
 Fusión medida en `invariantes-replay-main.json`:
 
