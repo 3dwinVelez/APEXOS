@@ -1,0 +1,187 @@
+# suites web apuntadas, arbol del candidato de main (replay sobre e68eed4c)
+# comando: node --test <archivos> (web: sin base de datos, contratos del cliente)
+# archivos:
+#   apps/web/test/hr-marking-lateness-selfie.test.mjs
+#   apps/web/test/hr-punch-mobile-evidence.test.mjs
+#   apps/web/test/hr-report-punch-selfie.test.mjs
+#   apps/web/test/hr-attendance-state.test.mjs
+#   apps/web/test/hr-marking-unassigned-gate.test.mjs
+(node:7152) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+TAP version 13
+# (node:16204) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:16204) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/apexos-cand-web-selfie-main-20261124/apps/web/lib/hrAttendanceState.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-web-selfie-main-20261124\\apps\\web\\package.json.
+# Subtest: name and code groups combine the same employee and schedule across devices
+ok 1 - name and code groups combine the same employee and schedule across devices
+  ---
+  duration_ms: 5.584
+  type: 'test'
+  ...
+# Subtest: different schedules, unassigned punches and other explicit employees remain isolated
+ok 2 - different schedules, unassigned punches and other explicit employees remain isolated
+  ---
+  duration_ms: 0.4649
+  type: 'test'
+  ...
+# Subtest: server and pending local copies never advance a type twice
+ok 3 - server and pending local copies never advance a type twice
+  ---
+  duration_ms: 0.3787
+  type: 'test'
+  ...
+# Subtest: explicit employee identity supports an older display name without accepting others
+ok 4 - explicit employee identity supports an older display name without accepting others
+  ---
+  duration_ms: 0.3852
+  type: 'test'
+  ...
+# (node:18196) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la llegada tarde se sustenta con motivo, texto y foto, igual que la extension
+ok 5 - la llegada tarde se sustenta con motivo, texto y foto, igual que la extension
+  ---
+  duration_ms: 2.1232
+  type: 'test'
+  ...
+# Subtest: la tolerancia del horario es la que decide si hay que justificar
+ok 6 - la tolerancia del horario es la que decide si hay que justificar
+  ---
+  duration_ms: 0.7097
+  type: 'test'
+  ...
+# Subtest: las cuatro marcaciones web requieren una selfie propia de ese paso
+ok 7 - las cuatro marcaciones web requieren una selfie propia de ese paso
+  ---
+  duration_ms: 1.0244
+  type: 'test'
+  ...
+# Subtest: la camara frontal es lo que hace que la selfie sea selfie
+ok 8 - la camara frontal es lo que hace que la selfie sea selfie
+  ---
+  duration_ms: 26.4789
+  type: 'test'
+  ...
+# Subtest: la selfie sale del localStorage a IndexedDB como las demas evidencias
+ok 9 - la selfie sale del localStorage a IndexedDB como las demas evidencias
+  ---
+  duration_ms: 0.3192
+  type: 'test'
+  ...
+# Subtest: abrir jornada con vehiculo pide kilometraje inicial
+ok 10 - abrir jornada con vehiculo pide kilometraje inicial
+  ---
+  duration_ms: 0.3469
+  type: 'test'
+  ...
+# Subtest: el reporte muestra la justificacion de la llegada tarde, no solo la de extension
+ok 11 - el reporte muestra la justificacion de la llegada tarde, no solo la de extension
+  ---
+  duration_ms: 35.0254
+  type: 'test'
+  ...
+# Subtest: el monitor nombra el retardo aparte de los minutos extra
+ok 12 - el monitor nombra el retardo aparte de los minutos extra
+  ---
+  duration_ms: 44.752
+  type: 'test'
+  ...
+# (node:6832) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la ficha se lee sola, antes que las otras lecturas y sin alerta global
+ok 13 - la ficha se lee sola, antes que las otras lecturas y sin alerta global
+  ---
+  duration_ms: 4.3997
+  type: 'test'
+  ...
+# Subtest: sin ficha no se lanzan las lecturas que dependen de ella
+ok 14 - sin ficha no se lanzan las lecturas que dependen de ella
+  ---
+  duration_ms: 3.3722
+  type: 'test'
+  ...
+# Subtest: el panel unico reemplaza la ventana de marcado y dice que no es una falla
+ok 15 - el panel unico reemplaza la ventana de marcado y dice que no es una falla
+  ---
+  duration_ms: 2.2858
+  type: 'test'
+  ...
+# Subtest: el modo respaldo nunca bloquea: sin conexion se sigue marcando
+ok 16 - el modo respaldo nunca bloquea: sin conexion se sigue marcando
+  ---
+  duration_ms: 2.7672
+  type: 'test'
+  ...
+# (node:6008) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:6008) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/apexos-cand-web-selfie-main-20261124/apps/web/lib/hrScheduleMonitor.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-web-selfie-main-20261124\\apps\\web\\package.json.
+# Subtest: monitor uses TimePunch operational endpoints and never a legacy table after failure
+not ok 17 - monitor uses TimePunch operational endpoints and never a legacy table after failure
+  ---
+  duration_ms: 3.218
+  type: 'test'
+  location: 'C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-web-selfie-main-20261124\\apps\\web\\test\\hr-punch-mobile-evidence.test.mjs:4:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/mq1/Documents/Proyectos/apexos-cand-web-selfie-main-20261124/apps/web/test/hr-punch-mobile-evidence.test.mjs:6:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+  ...
+# Subtest: web normalizes mobile photos through the same reader and keeps legacy supports
+ok 18 - web normalizes mobile photos through the same reader and keeps legacy supports
+  ---
+  duration_ms: 2.0548
+  type: 'test'
+  ...
+# (node:9924) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: las marcaciones ya no tienen evidencias fijas en cero
+ok 19 - las marcaciones ya no tienen evidencias fijas en cero
+  ---
+  duration_ms: 1.7559
+  type: 'test'
+  ...
+# Subtest: lee la selfie en las dos formas en que puede estar guardada
+ok 20 - lee la selfie en las dos formas en que puede estar guardada
+  ---
+  duration_ms: 0.3399
+  type: 'test'
+  ...
+# Subtest: cuenta selfie y soporte de horas extra, también cuando el listado solo los anuncia
+ok 21 - cuenta selfie y soporte de horas extra, también cuando el listado solo los anuncia
+  ---
+  duration_ms: 0.3735
+  type: 'test'
+  ...
+# Subtest: muestra la selfie y la insignia de identidad verificada
+ok 22 - muestra la selfie y la insignia de identidad verificada
+  ---
+  duration_ms: 0.5727
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 21
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 731.6153

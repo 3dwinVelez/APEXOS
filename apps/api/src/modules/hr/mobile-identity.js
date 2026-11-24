@@ -21,6 +21,7 @@ const { punchPhotoItems } = require("./punchEvidence");
 // probarlas sin infraestructura. hr/service.js las conecta con Prisma.
 const crypto = require("node:crypto");
 const { EVIDENCE_FAILURE_CODES, isHardContentRejection, validateEvidenceContent } = require("../../security/policy");
+const { normalizePunchType } = require("./timeLogic");
 const evidenceStorage = require("./evidenceStorage");
 
 // Lectura del tope en CADA llamada: el modulo se carga con el proceso y las pruebas y los
@@ -59,7 +60,19 @@ const HISTORY_LIMIT = 20;
 // La selfie valida quien abre y quien cierra la jornada. El almuerzo y el
 // retorno son cortes internos del mismo turno: ya hay una entrada verificada
 // detras, y pedir cuatro fotos solo llenaba el monitor de caras repetidas.
+//
+// Esto rige SOLO el canal firmado de la app. Cambiarlo rompe las versiones ya
+// instaladas: esas firman el almuerzo y el retorno contra `NO_PHOTO_SHA256`, asi
+// que exigirles foto se convierte en `FIRMA_BIOMETRICA_INVALIDA`, no en un pedido
+// de selfie. Para la web existe `WEB_SELFIE_REQUIRED_TYPES`, que es el otro canal.
 const SELFIE_REQUIRED_TYPES = new Set(["entrada", "salida"]);
+// En la web no hay chip que firme: la unica prueba de quien marco es la cara. El
+// equipo marca las cuatro desde el navegador, asi que las cuatro piden selfie.
+// Ventana de contingencia (brief 2026-11-24): este es el unico lugar donde se
+// declara el requisito. Un segundo filtro de selfie en el camino de la marcacion
+// web queda prohibido, porque se adelanta a la validacion por clase y reintroduce
+// el rechazo por formato que costo jornadas.
+const WEB_SELFIE_REQUIRED_TYPES = new Set(["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"]);
 // Hash que firma la app cuando la marcacion no lleva selfie. Es el sha256 del
 // vacio: la firma sigue cubriendo tipo, hora e idempotencia, asi que una
 // marcacion de almuerzo tampoco se puede reusar ni reordenar.
@@ -499,6 +512,13 @@ function selfieRequiredFor(type) {
   return SELFIE_REQUIRED_TYPES.has(String(type || ""));
 }
 
+// Requisito del canal web. Normaliza el tipo porque la web manda el nombre canonico
+// pero el esquema no lo restringe; la normalizacion NO toca la firma de la app, que
+// sigue usando `type` en crudo dentro de `punchMessage`.
+function webSelfieRequiredFor(type) {
+  return WEB_SELFIE_REQUIRED_TYPES.has(normalizePunchType(type));
+}
+
 // El dispositivo despega la foto de una marcacion cuando el propio servidor ya la
 // rechazo con un codigo de evidencia (la rama `retry_without_photo` de la cola web).
 // Sin leer esa declaracion, el reenvio sin foto caia en el mismo `SELFIE_REQUERIDA`
@@ -523,15 +543,21 @@ function declaredEvidenceDetachment(input) {
 // no tiene chip que firme. Sirve para que el supervisor vea quien marco, no
 // para probarlo, y por eso la marcacion no queda como "verified".
 //
-// Aqui la jornada NUNCA se pierde por la foto: si el archivo no pertenece a la clase imagen
-// decodificable, la marcacion se guarda igual y la fila queda `photo_only` con
-// `identity_photo.evidence_status = "degraded"` y su codigo de fallo. La proyeccion publica
-// (`publicPunchMetadata`) no anuncia evidencia en ese caso.
+// Las cuatro marcaciones la piden (`WEB_SELFIE_REQUIRED_TYPES`): sin firma, la cara es
+// la unica prueba de quien marco, y el almuerzo tampoco puede quedarse ciego.
+//
+// Aqui la jornada NUNCA se pierde por el FORMATO de la foto. La validacion es por clase:
+// un HEIC, AVIF, PNG o WebP de camara real se acepta aunque el navegador anuncie otro MIME,
+// y si el visor no puede pintarlo la marcacion se guarda igual con
+// `identity_photo.evidence_status = "degraded"` y su codigo de fallo. Lo unico que se
+// rechaza de plano es que no sea una imagen (video, PDF, texto, SVG) o que los bytes no se
+// puedan decodificar. La proyeccion publica (`publicPunchMetadata`) no anuncia evidencia
+// en el caso degradado.
 async function webIdentity({ input, type, now }) {
   const photo = input.identity_photo && typeof input.identity_photo === "object" ? input.identity_photo : null;
   if (!photo?.base64 && !photo?.base64_data) {
     const detached = declaredEvidenceDetachment(input);
-    if (selfieRequiredFor(type) && !detached) {
+    if (webSelfieRequiredFor(type) && !detached) {
       throw fail(400, "SELFIE_REQUERIDA", "Toma la selfie de validacion para registrar esta marcacion.");
     }
     return {
@@ -766,6 +792,8 @@ module.exports = {
   MAX_IDENTITY_PHOTO_BYTES,
   NO_PHOTO_SHA256,
   SELFIE_REQUIRED_TYPES,
+  WEB_SELFIE_REQUIRED_TYPES,
+  webSelfieRequiredFor,
   EVIDENCE_STATUS,
   EVIDENCE_DEGRADATION_CODES,
   VERIFIED_EVIDENCE_DEGRADED,
@@ -788,5 +816,8 @@ module.exports = {
   webIdentity,
   verifyPunchIdentity,
   publicPunchMetadata,
-  identityEvidenceOf
+  identityEvidenceOf,
+  // Reutilizados por shared-device-identity.js (celular compartido del camion).
+  publicKeyFrom,
+  normalizeSelfie
 };

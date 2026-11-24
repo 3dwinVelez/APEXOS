@@ -1,0 +1,298 @@
+{
+  "certification": "hr-web-selfie-field",
+  "version": 1,
+  "ambiente": "PRODUCCION",
+  "instruccion": "Cuatro marcaciones web con etiqueta mentirosa, medidas sobre el binario desplegado",
+  "generado_en": "2026-11-24T17:15:54.480Z",
+  "env_file": "config/production.env",
+  "api_host": "apexos-api-prod-production.up.railway.app",
+  "script_sha256": "13a70fc92b4f6544e0e4f3ffcad4ebc968944666f7d3463d7e1050ba616134f3",
+  "dia_operativo": "2026-11-24",
+  "run": "0554373",
+  "formas": [
+    {
+      "tipo": "entrada",
+      "nombre": "jpeg-declarado-png",
+      "bytes": 36862,
+      "declarado": "image/png"
+    },
+    {
+      "tipo": "inicio_almuerzo",
+      "nombre": "png-declarado-jpeg",
+      "bytes": 120303,
+      "declarado": "image/jpeg"
+    },
+    {
+      "tipo": "fin_almuerzo",
+      "nombre": "jpeg-honesto",
+      "bytes": 36862,
+      "declarado": "image/jpeg"
+    },
+    {
+      "tipo": "salida",
+      "nombre": "reenvio-sin-foto",
+      "bytes": 0,
+      "declarado": null
+    }
+  ],
+  "compromiso_del_arreglo": {
+    "fix_de_referencia": "52a8d9a799e5acb7b2707871791206c1355a7f39",
+    "servidor_lee": "git merge-base --is-ancestor"
+  },
+  "cheques": [
+    {
+      "name": "health_ancla_el_commit_servido",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "e68eed4c63f4",
+        "ancla": "defecto"
+      }
+    },
+    {
+      "name": "operario_efimero_con_sesion",
+      "ok": true,
+      "detail": {
+        "login": 200,
+        "rol": "Empleado"
+      }
+    },
+    {
+      "name": "pierna_entrada_jpeg-declarado-png",
+      "ok": true,
+      "detail": {
+        "esperado": "defecto",
+        "observado": "defecto",
+        "ancla": "defecto",
+        "exigida": true,
+        "fallos": [],
+        "status": 400,
+        "code": "SELFIE_INVALIDA",
+        "asentada": false
+      }
+    },
+    {
+      "name": "pierna_inicio_almuerzo_png-declarado-jpeg",
+      "ok": true,
+      "detail": {
+        "esperado": "defecto",
+        "observado": "defecto",
+        "ancla": "defecto",
+        "exigida": true,
+        "fallos": [],
+        "status": 400,
+        "code": "SELFIE_INVALIDA",
+        "asentada": false
+      }
+    },
+    {
+      "name": "pierna_fin_almuerzo_jpeg-honesto_informativa",
+      "ok": true,
+      "detail": {
+        "observado": "ciego",
+        "status": 409,
+        "code": "MARCACION_FUERA_DE_SECUENCIA",
+        "asentada": false,
+        "motivo": "el defecto bloquea la jornada antes de esta pierna"
+      }
+    },
+    {
+      "name": "pierna_salida_reenvio-sin-foto_informativa",
+      "ok": true,
+      "detail": {
+        "observado": "ciego",
+        "status": 400,
+        "code": "SELFIE_REQUERIDA",
+        "asentada": false,
+        "motivo": "el defecto bloquea la jornada antes de esta pierna"
+      }
+    },
+    {
+      "name": "las_dos_formas_con_etiqueta_mentirosa_reproducen_el_rechazo",
+      "ok": true,
+      "detail": {
+        "detalle": [
+          {
+            "forma": "jpeg-declarado-png",
+            "code": "SELFIE_INVALIDA",
+            "status": 400
+          },
+          {
+            "forma": "png-declarado-jpeg",
+            "code": "SELFIE_INVALIDA",
+            "status": 400
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_lectura_del_dia_no_inventa_piernas",
+      "ok": true,
+      "detail": {
+        "filas": 0,
+        "esperadas": 4
+      }
+    },
+    {
+      "name": "toda_escritura_dentro_del_presupuesto",
+      "ok": true,
+      "detail": {
+        "peor": 4160,
+        "presupuesto_ms": 30000
+      }
+    },
+    {
+      "name": "cuenta_efimera_retirada",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "login_tras_retiro": 401,
+        "admin_retirado": 200
+      }
+    }
+  ],
+  "tiempos": [
+    {
+      "ruta": "/health",
+      "method": "GET",
+      "status": 200,
+      "ms": 1091
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 3421
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 400,
+      "ms": 2397
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 400,
+      "ms": 2369
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 409,
+      "ms": 4160
+    },
+    {
+      "ruta": "/api/v1/hr/self/time-punches",
+      "method": "POST",
+      "status": 400,
+      "ms": 2313
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "ms": 3425
+    },
+    {
+      "ruta": "/api/v1/admin/users/273/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 6212
+    },
+    {
+      "ruta": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 401,
+      "ms": 1000
+    },
+    {
+      "ruta": "/api/v1/admin/users/274/status",
+      "method": "PATCH",
+      "status": 200,
+      "ms": 5586
+    }
+  ],
+  "ids": {
+    "usuarios": [
+      273,
+      274
+    ],
+    "empleados": [
+      566
+    ]
+  },
+  "presupuesto_ms": 30000,
+  "despliegue": {
+    "status": 200,
+    "commit_servido": "e68eed4c63f4",
+    "codigo_servido_contiene_el_fix": "defecto"
+  },
+  "efimeros": {
+    "user_id": 273,
+    "employee_id": 566,
+    "rol": "Empleado",
+    "login": 200
+  },
+  "piernas": [
+    {
+      "forma": "jpeg-declarado-png",
+      "tipo": "entrada",
+      "status": 400,
+      "code": "SELFIE_INVALIDA",
+      "observado": "defecto",
+      "exigida": true,
+      "hora_asentada": false,
+      "verificacion": null,
+      "evidence_status": null,
+      "evidence_failure_code": null,
+      "foto_guardada": false
+    },
+    {
+      "forma": "png-declarado-jpeg",
+      "tipo": "inicio_almuerzo",
+      "status": 400,
+      "code": "SELFIE_INVALIDA",
+      "observado": "defecto",
+      "exigida": true,
+      "hora_asentada": false,
+      "verificacion": null,
+      "evidence_status": null,
+      "evidence_failure_code": null,
+      "foto_guardada": false
+    },
+    {
+      "forma": "jpeg-honesto",
+      "tipo": "fin_almuerzo",
+      "status": 409,
+      "code": "MARCACION_FUERA_DE_SECUENCIA",
+      "observado": "ciego",
+      "exigida": false,
+      "hora_asentada": false,
+      "verificacion": null,
+      "evidence_status": null,
+      "evidence_failure_code": null,
+      "foto_guardada": false
+    },
+    {
+      "forma": "reenvio-sin-foto",
+      "tipo": "salida",
+      "status": 400,
+      "code": "SELFIE_REQUERIDA",
+      "observado": "ciego",
+      "exigida": false,
+      "hora_asentada": false,
+      "verificacion": null,
+      "evidence_status": null,
+      "evidence_failure_code": null,
+      "foto_guardada": false
+    }
+  ],
+  "veredicto": {
+    "total": 10,
+    "pasaron": 10,
+    "fallaron": 0,
+    "esperado": "defecto",
+    "estado": "APROBADO"
+  }
+}

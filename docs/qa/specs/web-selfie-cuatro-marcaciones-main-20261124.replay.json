@@ -1,0 +1,29 @@
+{
+  "promocion": "web-selfie-cuatro-marcaciones-a-main-20261124",
+  "destino": "main",
+  "base_ref": "origin/main",
+  "origin_ref": "origin/desarrollo",
+  "carry": [
+    { "file": "apps/api/src/modules/hr/mobile-identity.js", "motivo": "la regla de las cuatro marcaciones web y la tolerancia por clase de formato: sobre main el blob solo aporta 37 lineas y no toca el canal firmado de la app" },
+    { "file": "apps/api/test/hr-mobile-identity.test.js", "motivo": "los casos de comportamiento que nacen en la rama de trabajo" },
+    { "file": "apps/api/test/hr-single-selfie-gate.test.js", "motivo": "la guarda estructural que prohibe una segunda compuerta; main nunca la tuvo" },
+    { "file": "scripts/certifications/hr-mobile-identity-local.js", "motivo": "el certificador hermetico que el manifiesto de aprobacion cita como certificado y que genera las cuatro formas con etiquetas mintosas" },
+    { "file": "scripts/certifications/hr-web-selfie-field.js", "motivo": "el instrumento de campo que midio el ANTES en Produccion y mide el DESPUES" },
+    { "file": "scripts/certifications/promotion-migration-check.js", "motivo": "gobernanza: el porton exige que el script citado como regresacion este versionado en el candidato" },
+    { "file": "scripts/certifications/promotion-gates-runner.js", "motivo": "gobernanza: el ejecutor de las tres puertas, citado en la evidencia; no es producto" },
+    { "file": "scripts/test/promotion-replay-instruments.test.js", "motivo": "la prueba de los dos instrumentos de compuerta" }
+  ],
+  "delete": [
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-web-punch-selfie.test.js"
+  ],
+  "edit": [
+    {
+      "file": "apps/api/src/modules/hr/service.js",
+      "remove_lines": [
+        "input = require(\"./webPunchSelfie\").prepareWebPunchSelfie(input);"
+      ],
+      "motivo": "retirar el unico enganche de la compuerta alterna; el blob de desarrollo no se puede llevar porque main trae su propio contenido de Servicios, liquidacion y telemetria"
+    }
+  ]
+}

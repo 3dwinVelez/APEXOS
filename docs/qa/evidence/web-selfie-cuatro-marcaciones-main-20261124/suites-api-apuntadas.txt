@@ -1,0 +1,658 @@
+# suites API apuntadas, arbol del candidato de main (replay sobre e68eed4c)
+# comando: node --test <archivos> 2>&1 (DATABASE_URL base de pruebas aislada apexos_cand_main @127.0.0.1:55442)
+# archivos:
+#   apps/api/test/hr-mobile-identity.test.js
+#   apps/api/test/hr-single-selfie-gate.test.js
+#   apps/api/test/hr-punch-mobile-evidence.test.js
+#   apps/api/test/hr-evidence-resilience.test.js
+#   apps/api/test/hr-evidence-storage-gate.test.js
+#   apps/api/test/hr-administrative-punch-correction.test.js
+#   apps/api/test/hr-route-assignment-lock.test.js
+#   scripts/test/promotion-replay-instruments.test.js
+#   scripts/test/validate-promotion-scope.test.js
+#   scripts/test/validate-preqa-promotion-evidence.test.js
+(node:12820) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+TAP version 13
+# (node:19052) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: el canal propio nunca puede declararse correccion administrativa
+ok 1 - el canal propio nunca puede declararse correccion administrativa
+  ---
+  duration_ms: 17.2384
+  type: 'test'
+  ...
+# Subtest: sin declaracion explicita manda la escalera en la ruta administrativa
+ok 2 - sin declaracion explicita manda la escalera en la ruta administrativa
+  ---
+  duration_ms: 0.8957
+  type: 'test'
+  ...
+# Subtest: una correccion sin motivo se rechaza con codigo y campo
+ok 3 - una correccion sin motivo se rechaza con codigo y campo
+  ---
+  duration_ms: 5.2988
+  type: 'test'
+  ...
+# Subtest: la correccion nombra que esperaba la escalera
+ok 4 - la correccion nombra que esperaba la escalera
+  ---
+  duration_ms: 0.5512
+  type: 'test'
+  ...
+# Subtest: el motivo se acota: no es un vertedero de texto
+ok 5 - el motivo se acota: no es un vertedero de texto
+  ---
+  duration_ms: 0.7476
+  type: 'test'
+  ...
+# Subtest: la bandera tambien se acepta dentro de metadata (el canal que usa la app)
+ok 6 - la bandera tambien se acepta dentro de metadata (el canal que usa la app)
+  ---
+  duration_ms: 0.4222
+  type: 'test'
+  ...
+# (node:18420) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la selfie recibida se guarda verbatim: ningun byte re-codificado
+ok 7 - la selfie recibida se guarda verbatim: ningun byte re-codificado
+  ---
+  duration_ms: 98.6165
+  type: 'test'
+  ...
+# Subtest: el canal movil queda verified sobre la JPEG firmada y su hash coincide
+ok 8 - el canal movil queda verified sobre la JPEG firmada y su hash coincide
+  ---
+  duration_ms: 16.9436
+  type: 'test'
+  ...
+# Subtest: una AVIF real de camara queda available conservando sus bytes y su tipo olido
+ok 9 - una AVIF real de camara queda available conservando sus bytes y su tipo olido
+  ---
+  duration_ms: 115.8731
+  type: 'test'
+  ...
+# Subtest: un WEBP real queda available y conserva el hash firmado
+ok 10 - un WEBP real queda available y conserva el hash firmado
+  ---
+  duration_ms: 25.1983
+  type: 'test'
+  ...
+# Subtest: un HEIC con marca HEVC real degrada la evidencia y no cuesta la marcacion
+ok 11 - un HEIC con marca HEVC real degrada la evidencia y no cuesta la marcacion
+  ---
+  duration_ms: 8.4393
+  type: 'test'
+  ...
+# Subtest: un TIFF degrada en lugar de rechazar
+ok 12 - un TIFF degrada en lugar de rechazar
+  ---
+  duration_ms: 14.0331
+  type: 'test'
+  ...
+# Subtest: PNG declarado jpeg pero ileible degrada con su motivo machine-readable
+ok 13 - PNG declarado jpeg pero ileible degrada con su motivo machine-readable
+  ---
+  duration_ms: 20.3095
+  type: 'test'
+  ...
+# Subtest: el transporte roto se tolera y se registra en normalization_applied
+ok 14 - el transporte roto se tolera y se registra en normalization_applied
+  ---
+  duration_ms: 50.3292
+  type: 'test'
+  ...
+# Subtest: el alfabeto url-safe se tolera y la firma sigue cerrando
+ok 15 - el alfabeto url-safe se tolera y la firma sigue cerrando
+  ---
+  duration_ms: 31.4134
+  type: 'test'
+  ...
+# Subtest: un PDF o un mp4 disfrazados de selfie se rechazan con codigo y detalle
+ok 16 - un PDF o un mp4 disfrazados de selfie se rechazan con codigo y detalle
+  ---
+  duration_ms: 26.092
+  type: 'test'
+  ...
+# Subtest: un payload con alfabeto invalido se rechaza, no se degrada
+ok 17 - un payload con alfabeto invalido se rechaza, no se degrada
+  ---
+  duration_ms: 3.865
+  type: 'test'
+  ...
+# Subtest: el rechazo por clase llega al cliente con el motivo machine-readable en el detalle
+ok 18 - el rechazo por clase llega al cliente con el motivo machine-readable en el detalle
+  ---
+  duration_ms: 3.1414
+  type: 'test'
+  ...
+# Subtest: el tope de bytes sigue rechazando y nombra el limite que disparo
+ok 19 - el tope de bytes sigue rechazando y nombra el limite que disparo
+  ---
+  duration_ms: 33.3762
+  type: 'test'
+  ...
+# Subtest: el canal web usa su propio tope de 2 MB y lo nombra
+ok 20 - el canal web usa su propio tope de 2 MB y lo nombra
+  ---
+  duration_ms: 102.231
+  type: 'test'
+  ...
+# Subtest: la compuerta del almacen y la de la selfie afirman lo mismo sobre el mismo payload
+ok 21 - la compuerta del almacen y la de la selfie afirman lo mismo sobre el mismo payload
+  ---
+  duration_ms: 61.9243
+  type: 'test'
+  ...
+# Subtest: la web guarda la foto buena como photo_only y degrada la ilegible sin perder la marcacion
+ok 22 - la web guarda la foto buena como photo_only y degrada la ilegible sin perder la marcacion
+  ---
+  duration_ms: 44.1677
+  type: 'test'
+  ...
+# Subtest: la pantalla distingue un rechazo de secuencia de un rechazo de foto
+ok 23 - la pantalla distingue un rechazo de secuencia de un rechazo de foto
+  ---
+  duration_ms: 4.2701
+  type: 'test'
+  ...
+# Subtest: un rechazo de evidencia llega al cliente con codigo y detalle, no con una frase suelta
+ok 24 - un rechazo de evidencia llega al cliente con codigo y detalle, no con una frase suelta
+  ---
+  duration_ms: 1.5686
+  type: 'test'
+  ...
+# (node:18960) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la escritura y la lectura del almacen se activan por separado
+ok 25 - la escritura y la lectura del almacen se activan por separado
+  ---
+  duration_ms: 7.6298
+  type: 'test'
+  ...
+# Subtest: pathForEvidence respeta la precedencia: bandera de rescate, legado, ruta declarada
+ok 26 - pathForEvidence respeta la precedencia: bandera de rescate, legado, ruta declarada
+  ---
+  duration_ms: 0.8478
+  type: 'test'
+  ...
+# Subtest: hasRescuedRef distingue identidad de evidencia extra por la bandera y el legado
+ok 27 - hasRescuedRef distingue identidad de evidencia extra por la bandera y el legado
+  ---
+  duration_ms: 0.4754
+  type: 'test'
+  ...
+# Subtest: uploadInline sube por ruta declarada o content-addressed y toda falla es 503
+ok 28 - uploadInline sube por ruta declarada o content-addressed y toda falla es 503
+  ---
+  duration_ms: 7.3787
+  type: 'test'
+  ...
+# Subtest: preparePunchEvidence cambia los bytes por referencias y con subida fallida la marcacion no se crea
+ok 29 - preparePunchEvidence cambia los bytes por referencias y con subida fallida la marcacion no se crea
+  ---
+  duration_ms: 24.6464
+  type: 'test'
+  ...
+# Subtest: la referencia purgada se anuncia sin bytes y cuenta una sola vez
+ok 30 - la referencia purgada se anuncia sin bytes y cuenta una sola vez
+  ---
+  duration_ms: 1.0786
+  type: 'test'
+  ...
+# Subtest: una marcacion rescatada y purgada recupera sus bytes desde el almacen
+ok 31 - una marcacion rescatada y purgada recupera sus bytes desde el almacen
+  ---
+  duration_ms: 1002.7972
+  type: 'test'
+  ...
+# (node:12452) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: registra el telefono con una firma valida de la huella
+ok 32 - registra el telefono con una firma valida de la huella
+  ---
+  duration_ms: 33.0268
+  type: 'test'
+  ...
+# Subtest: no se vuelve a registrar sin que un supervisor restablezca
+ok 33 - no se vuelve a registrar sin que un supervisor restablezca
+  ---
+  duration_ms: 4.1669
+  type: 'test'
+  ...
+# Subtest: el registro exige que la firma sea de la llave enviada
+ok 34 - el registro exige que la firma sea de la llave enviada
+  ---
+  duration_ms: 2.7454
+  type: 'test'
+  ...
+# Subtest: el registro firmado para otro usuario no sirve
+ok 35 - el registro firmado para otro usuario no sirve
+  ---
+  duration_ms: 1.9705
+  type: 'test'
+  ...
+# Subtest: solo acepta llaves EC P-256
+ok 36 - solo acepta llaves EC P-256
+  ---
+  duration_ms: 126.7687
+  type: 'test'
+  ...
+# Subtest: un registro con la hora muy corrida se rechaza
+ok 37 - un registro con la hora muy corrida se rechaza
+  ---
+  duration_ms: 1.7116
+  type: 'test'
+  ...
+# Subtest: un identificador de telefono raro se rechaza
+ok 38 - un identificador de telefono raro se rechaza
+  ---
+  duration_ms: 1.7627
+  type: 'test'
+  ...
+# Subtest: la marcacion de la app firmada en el telefono registrado queda verificada
+ok 39 - la marcacion de la app firmada en el telefono registrado queda verificada
+  ---
+  duration_ms: 206.08
+  type: 'test'
+  ...
+# Subtest: la selfie se guarda como data URL canonico aunque llegue sin prefijo
+ok 40 - la selfie se guarda como data URL canonico aunque llegue sin prefijo
+  ---
+  duration_ms: 24.7506
+  type: 'test'
+  ...
+# Subtest: acepta selfie PNG declarada PNG
+ok 41 - acepta selfie PNG declarada PNG
+  ---
+  duration_ms: 30.1098
+  type: 'test'
+  ...
+# Subtest: la web guarda la selfie pero no la da por verificada
+ok 42 - la web guarda la selfie pero no la da por verificada
+  ---
+  duration_ms: 44.949
+  type: 'test'
+  ...
+# Subtest: la web no puede marcar ninguna de las cuatro sin selfie
+ok 43 - la web no puede marcar ninguna de las cuatro sin selfie
+  ---
+  duration_ms: 10.7472
+  type: 'test'
+  ...
+# Subtest: la web reenvia una entrada sin foto cuando el servidor ya rechazo esa foto
+ok 44 - la web reenvia una entrada sin foto cuando el servidor ya rechazo esa foto
+  ---
+  duration_ms: 1.4057
+  type: 'test'
+  ...
+# Subtest: la excepcion de la foto desprendida no se compra con una declaracion inventada
+ok 45 - la excepcion de la foto desprendida no se compra con una declaracion inventada
+  ---
+  duration_ms: 1.3574
+  type: 'test'
+  ...
+# Subtest: el almuerzo de la web se marca con su selfie y queda photo_only
+ok 46 - el almuerzo de la web se marca con su selfie y queda photo_only
+  ---
+  duration_ms: 35.3501
+  type: 'test'
+  ...
+# Subtest: la web acepta la foto real aunque el navegador la anuncie con el formato equivocado
+ok 47 - la web acepta la foto real aunque el navegador la anuncie con el formato equivocado
+  ---
+  duration_ms: 137.5576
+  type: 'test'
+  ...
+# Subtest: la web sigue rechazando lo que no es una foto
+ok 48 - la web sigue rechazando lo que no es una foto
+  ---
+  duration_ms: 12.5687
+  type: 'test'
+  ...
+# Subtest: la app sin telefono registrado no puede marcar
+ok 49 - la app sin telefono registrado no puede marcar
+  ---
+  duration_ms: 2.9851
+  type: 'test'
+  ...
+# Subtest: una version vieja de la app (sin firma) no puede marcar
+ok 50 - una version vieja de la app (sin firma) no puede marcar
+  ---
+  duration_ms: 1.2927
+  type: 'test'
+  ...
+# Subtest: desde otro telefono no se puede marcar
+ok 51 - desde otro telefono no se puede marcar
+  ---
+  duration_ms: 1.4047
+  type: 'test'
+  ...
+# Subtest: con la llave de otro telefono la firma no pasa
+ok 52 - con la llave de otro telefono la firma no pasa
+  ---
+  duration_ms: 8.4917
+  type: 'test'
+  ...
+# Subtest: cambiar la selfie despues de firmar invalida la marcacion
+ok 53 - cambiar la selfie despues de firmar invalida la marcacion
+  ---
+  duration_ms: 11.2614
+  type: 'test'
+  ...
+# Subtest: cambiar el tipo de marcacion despues de firmar la invalida
+ok 54 - cambiar el tipo de marcacion despues de firmar la invalida
+  ---
+  duration_ms: 5.3263
+  type: 'test'
+  ...
+# Subtest: sin selfie la app no puede marcar entrada ni salida
+ok 55 - sin selfie la app no puede marcar entrada ni salida
+  ---
+  duration_ms: 2.5594
+  type: 'test'
+  ...
+# Subtest: el almuerzo se marca sin selfie pero firmado
+ok 56 - el almuerzo se marca sin selfie pero firmado
+  ---
+  duration_ms: 3.3465
+  type: 'test'
+  ...
+# Subtest: quitarle la selfie a una entrada firmada con foto no la cuela como almuerzo
+ok 57 - quitarle la selfie a una entrada firmada con foto no la cuela como almuerzo
+  ---
+  duration_ms: 1.393
+  type: 'test'
+  ...
+# Subtest: una app vieja todavia marca el almuerzo con foto, pero la foto no se guarda
+ok 58 - una app vieja todavia marca el almuerzo con foto, pero la foto no se guarda
+  ---
+  duration_ms: 24.974
+  type: 'test'
+  ...
+# Subtest: en el almuerzo la firma sigue atada al telefono registrado
+ok 59 - en el almuerzo la firma sigue atada al telefono registrado
+  ---
+  duration_ms: 10.7885
+  type: 'test'
+  ...
+# Subtest: una selfie que no es imagen se rechaza
+ok 60 - una selfie que no es imagen se rechaza
+  ---
+  duration_ms: 3.048
+  type: 'test'
+  ...
+# Subtest: una selfie declarada JPEG pero con contenido PNG real es evidencia disponible
+ok 61 - una selfie declarada JPEG pero con contenido PNG real es evidencia disponible
+  ---
+  duration_ms: 10.4339
+  type: 'test'
+  ...
+# Subtest: un PNG declarado jpeg que el navegador no puede decodificar degrada, no rechaza
+ok 62 - un PNG declarado jpeg que el navegador no puede decodificar degrada, no rechaza
+  ---
+  duration_ms: 5.1437
+  type: 'test'
+  ...
+# Subtest: una selfie demasiado grande se rechaza
+ok 63 - una selfie demasiado grande se rechaza
+  ---
+  duration_ms: 14.1478
+  type: 'test'
+  ...
+# Subtest: restablecer pasa el registro al historial sin la llave
+ok 64 - restablecer pasa el registro al historial sin la llave
+  ---
+  duration_ms: 1.0997
+  type: 'test'
+  ...
+# Subtest: el historial de registros no crece sin limite
+ok 65 - el historial de registros no crece sin limite
+  ---
+  duration_ms: 0.8741
+  type: 'test'
+  ...
+# Subtest: los listados no llevan el contenido de la selfie ni la firma cruda
+ok 66 - los listados no llevan el contenido de la selfie ni la firma cruda
+  ---
+  duration_ms: 16.4335
+  type: 'test'
+  ...
+# Subtest: una fila degradada jamas anuncia evidencia en los listados, aunque lleve bytes
+ok 67 - una fila degradada jamas anuncia evidencia en los listados, aunque lleve bytes
+  ---
+  duration_ms: 0.6119
+  type: 'test'
+  ...
+# Subtest: la selfie se entrega al monitor como evidencia
+ok 68 - la selfie se entrega al monitor como evidencia
+  ---
+  duration_ms: 12.25
+  type: 'test'
+  ...
+# Subtest: la evidencia degradada tambien llega al monitor, con su motivo
+ok 69 - la evidencia degradada tambien llega al monitor, con su motivo
+  ---
+  duration_ms: 8.1332
+  type: 'test'
+  ...
+# Subtest: las selfies guardadas antes del despliegue tambien llegan al monitor
+ok 70 - las selfies guardadas antes del despliegue tambien llegan al monitor
+  ---
+  duration_ms: 1.2514
+  type: 'test'
+  ...
+# Subtest: lo que ve el empleado de su registro nunca incluye la llave
+ok 71 - lo que ve el empleado de su registro nunca incluye la llave
+  ---
+  duration_ms: 2.1895
+  type: 'test'
+  ...
+# (node:15408) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: mobile identity photo is read from TimePunch metadata with either base64 spelling
+ok 72 - mobile identity photo is read from TimePunch metadata with either base64 spelling
+  ---
+  duration_ms: 3.2058
+  type: 'test'
+  ...
+# Subtest: identity and overtime support are retained, deduplicated and unsafe content ignored
+ok 73 - identity and overtime support are retained, deduplicated and unsafe content ignored
+  ---
+  duration_ms: 1.9165
+  type: 'test'
+  ...
+# Subtest: summary counters include mobile photos for linked and unlinked marks
+ok 74 - summary counters include mobile photos for linked and unlinked marks
+  ---
+  duration_ms: 78.1734
+  type: 'test'
+  ...
+# Subtest: single monitor keeps the mobile photo bytes and the batch stays an index without them
+ok 75 - single monitor keeps the mobile photo bytes and the batch stays an index without them
+  ---
+  duration_ms: 93.2212
+  type: 'test'
+  ...
+# Subtest: legacy document supports are not discarded while identity remains photo-only
+ok 76 - legacy document supports are not discarded while identity remains photo-only
+  ---
+  duration_ms: 0.6058
+  type: 'test'
+  ...
+# (node:13488) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: crear mallas concurrentes superpuestas se serializa por advisory lock y una sola gana
+ok 77 - crear mallas concurrentes superpuestas se serializa por advisory lock y una sola gana
+  ---
+  duration_ms: 299.4695
+  type: 'test'
+  ...
+# Subtest: crear mallas masivas adquiere locks por empleado y fecha antes de validar y crear
+ok 78 - crear mallas masivas adquiere locks por empleado y fecha antes de validar y crear
+  ---
+  duration_ms: 15.1782
+  type: 'test'
+  ...
+# Subtest: una jornada de descanso no se bloquea por una malla de trabajo superpuesta
+ok 79 - una jornada de descanso no se bloquea por una malla de trabajo superpuesta
+  ---
+  duration_ms: 5.1506
+  type: 'test'
+  ...
+# Subtest: editar malla adquiere lock y excluye la malla editada del chequeo de solapamiento
+not ok 80 - editar malla adquiere lock y excluye la malla editada del chequeo de solapamiento
+  ---
+  duration_ms: 6.0109
+  type: 'test'
+  location: 'C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-web-selfie-main-20261124\\apps\\api\\test\\hr-route-assignment-lock.test.js:237:1'
+  failureType: 'testCodeFailure'
+  error: 'prisma.timeRoute.findFirst is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    C:\Users\mq1\Documents\Proyectos\apexos-cand-web-selfie-main-20261124\apps\api\src\modules\hr\service.js:1576:47
+    Object.runWithTenant (C:\Users\mq1\Documents\Proyectos\apexos-cand-web-selfie-main-20261124\apps\api\test\hr-route-assignment-lock.test.js:128:45)
+    Object.updateRoute (C:\Users\mq1\Documents\Proyectos\apexos-cand-web-selfie-main-20261124\apps\api\src\modules\hr\service.js:1575:17)
+    TestContext.<anonymous> (C:\Users\mq1\Documents\Proyectos\apexos-cand-web-selfie-main-20261124\apps\api\test\hr-route-assignment-lock.test.js:253:26)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: fix P2028: las transacciones de mallas declaran timeout y maxWait ampliados
+ok 81 - fix P2028: las transacciones de mallas declaran timeout y maxWait ampliados
+  ---
+  duration_ms: 9.9377
+  type: 'test'
+  ...
+# Subtest: fix P2028: contencion externa del lock se reintenta y la creacion termina guardando la malla
+ok 82 - fix P2028: contencion externa del lock se reintenta y la creacion termina guardando la malla
+  ---
+  duration_ms: 430.2672
+  type: 'test'
+  ...
+# Subtest: fix P2028: si el lock no se libera en la ventana, falla 503 ROUTE_ASSIGNMENT_BUSY y no P2028
+ok 83 - fix P2028: si el lock no se libera en la ventana, falla 503 ROUTE_ASSIGNMENT_BUSY y no P2028
+  ---
+  duration_ms: 657.9899
+  type: 'test'
+  ...
+# (node:18056) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la marcacion web no puede volver a tener dos compuertas de selfie
+ok 84 - la marcacion web no puede volver a tener dos compuertas de selfie
+  ---
+  duration_ms: 26.6967
+  type: 'test'
+  ...
+# Subtest: la guarda detecta la compuerta alterna que rompio produccion
+ok 85 - la guarda detecta la compuerta alterna que rompio produccion
+  ---
+  duration_ms: 83.6004
+  type: 'test'
+  ...
+# Subtest: la guarda detecta un motivo de selfie dictaminado fuera de la compuerta unica
+ok 86 - la guarda detecta un motivo de selfie dictaminado fuera de la compuerta unica
+  ---
+  duration_ms: 47.5301
+  type: 'test'
+  ...
+# Subtest: la compuerta unica es la que decide en que marcaciones se exige selfie
+ok 87 - la compuerta unica es la que decide en que marcaciones se exige selfie
+  ---
+  duration_ms: 104.1744
+  type: 'test'
+  ...
+# (node:12776) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: el control de mutacion del verificador de replay detecta las tres derivas
+ok 88 - el control de mutacion del verificador de replay detecta las tres derivas
+  ---
+  duration_ms: 4776.418
+  type: 'test'
+  ...
+# Subtest: el verificador se niega a pisar evidencia existente sin decirlo
+ok 89 - el verificador se niega a pisar evidencia existente sin decirlo
+  ---
+  duration_ms: 3889.0469
+  type: 'test'
+  ...
+# Subtest: las compuertas se corren por codigo y un rojo no se publica como verde
+ok 90 - las compuertas se corren por codigo y un rojo no se publica como verde
+  ---
+  duration_ms: 527.1484
+  type: 'test'
+  ...
+# Subtest: el analizador de banderas acepta las dos formas y no se traga la salida
+ok 91 - el analizador de banderas acepta las dos formas y no se traga la salida
+  ---
+  duration_ms: 5.0897
+  type: 'test'
+  ...
+# (node:13008) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:12876) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: aprueba evidencia local completa para desarrollo a develop
+ok 92 - aprueba evidencia local completa para desarrollo a develop
+  ---
+  duration_ms: 803.3146
+  type: 'test'
+  ...
+# Subtest: bloquea un manifiesto que intenta usar la compuerta pre-QA hacia main
+ok 93 - bloquea un manifiesto que intenta usar la compuerta pre-QA hacia main
+  ---
+  duration_ms: 377.4535
+  type: 'test'
+  ...
+# Subtest: bloquea evidencia incompleta o no ejecutada
+ok 94 - bloquea evidencia incompleta o no ejecutada
+  ---
+  duration_ms: 388.9243
+  type: 'test'
+  ...
+# (node:15020) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: solo acepta rutas exactas o prefijos declarados
+ok 95 - solo acepta rutas exactas o prefijos declarados
+  ---
+  duration_ms: 2.1069
+  type: 'test'
+  ...
+# Subtest: rechaza cambios laterales y eliminaciones implicitas
+ok 96 - rechaza cambios laterales y eliminaciones implicitas
+  ---
+  duration_ms: 7.1634
+  type: 'test'
+  ...
+# Subtest: el esquema v2 exige el inventario exacto incluso dentro de un prefijo permitido
+ok 97 - el esquema v2 exige el inventario exacto incluso dentro de un prefijo permitido
+  ---
+  duration_ms: 5.3432
+  type: 'test'
+  ...
+# Subtest: el esquema v2 rechaza una intencion o un inventario incompletos
+ok 98 - el esquema v2 rechaza una intencion o un inventario incompletos
+  ---
+  duration_ms: 10.92
+  type: 'test'
+  ...
+1..98
+# tests 98
+# suites 0
+# pass 97
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14906.4062
+# --- cierre declarado (no es salida del arnes) ---
+# tests 98 / pass 97 / fail 1
+# el unico rojo es: editar malla adquiere lock y excluye la malla editada del chequeo de solapamiento (apps/api/test/hr-route-assignment-lock.test.js:237)
+# error: prisma.timeRoute.findFirst is not a function, servido por apps/api/src/modules/hr/service.js:1576 (la guarda de tenant de updateRoute)
+# es pre-existente en main: el arbol e68eed4c ya tiene la guarda y un stub que solo provee findMany; este replay no toca ese archivo (git status lo confirma).
+# se probo llevar el stub de origin/desarrollo: verdeja la suite (8/8) pero son 43 lineas agregadas y 1 eliminada de un frente ajeno, asi que NO se metio de contrabando y se declara como pendiente con dueno (backend/qa).
+# las suites propias del frente (hr-mobile-identity 40, hr-single-selfie-gate, hr-punch-mobile-evidence, hr-evidence-resilience, hr-evidence-storage-gate, hr-administrative-punch-correction y los tres instrumentos de promocion) pasan.
