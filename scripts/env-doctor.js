@@ -24,7 +24,7 @@ const ENVIRONMENTS = {
     requiredLocalUrl: false,
     requiredSupabaseUrl: "https://jzbwzmkidfthknsohhnr.supabase.co",
     requiredApiUrl: "https://apexos-api-prod-production.up.railway.app",
-    requiredFrontendUrl: "https://apexos-web-prod-production.up.railway.app"
+    requiredFrontendUrl: "https://www.apexos.com.co"
   }
 };
 
@@ -124,8 +124,8 @@ function validate(envName, env, config) {
     if (isPlaceholder(env[key])) addFailure(failures, `${key} faltante o placeholder`);
   }
   if (envName !== "local") {
-    if (expectedEnvironment !== envName || env.TARGET_ENV !== envName) {
-      addFailure(failures, `EXPECTED_ENVIRONMENT y TARGET_ENV deben ser ${envName}`);
+    if (expectedEnvironment !== config.target || env.TARGET_ENV !== config.target) {
+      addFailure(failures, `EXPECTED_ENVIRONMENT y TARGET_ENV deben ser ${config.target}`);
     }
     if (isPlaceholder(expectedProjectRef)) addFailure(failures, "EXPECTED_SUPABASE_PROJECT_REF faltante o placeholder");
     const actualRef = projectRefFromUrl(supabaseUrl || publicSupabaseUrl);

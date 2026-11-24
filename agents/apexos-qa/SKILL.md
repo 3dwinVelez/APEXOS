@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.103.0
+version: 2.104.0
 updated_at: 2026-11-23
 contract: 2
 ---
@@ -338,6 +338,8 @@ Antes de actuar, leer en este orden:
     - **El inventario de alcance declara sus propias rutas y el commit de evidencia posterior trae su delta.** Las 63 rutas del primer manifiesto incluían `docs/qa/manifests/hr-paquete-main-20261123-{scope,approval}.json`; el `docs(qa)` que llevó el DESPUÉS a `main` no amplió ese inventario: recalculó `base_commits.main` contra el tip ya promovido y quedó en **4 rutas**. Un manifiesto que se ensancha para que pase el diff ya no es alcance.
     - **Un marcador de artefacto servido se copia literal del fuente, o el verde no puede fallar.** La sonda de Producción buscaba `Horarios unificados` y `Periodicidad`: cero coincidencias, y no porque el frente no viajara, sino porque el código escribe `Horarios con eventos` y `Codigo nacional` (sin acento). Los marcadores retirados se declaran como retirados; se conservan los 14 que sí aparecen en los 6 983 109 bytes de chunks servidos, con el control de la ruta inventada dando `404` y cero coincidencias.
     Por qué: el dueño autoriza la promoción leyendo «en Producción ya no pasa», y tanto un retiro que no se midió como un marcador que no puede fallar producen exactamente esa frase sobre un hecho que nadie observó.
+
+116. **Una compuerta que no puede ponerse verde es peor que no tener compuerta, y se detecta intentándola en el ambiente que se cree correcto: antes de citar roja una guarda, verificar si la roja es del producto o de la comparación.** `scripts/env-doctor.js --env prod` devolvía dos fallos —`EXPECTED_ENVIRONMENT y TARGET_ENV deben ser prod` y `EXPECTED_SUPABASE_PROJECT_REF faltante`— que se venían leyendo como «guardas que inyecta el arnés de certificación, ajenas al corte». No había arnés: los únicos llamadores son los scripts `env:doctor:local|qa|prod` de `package.json`. Al contrastar los tres archivos, **QA pasaba entero y PROD no podía pasar nunca**: la guarda comparaba `TARGET_ENV` contra el alias de línea de comandos (`prod`) en vez de contra `ENVIRONMENTS.prod.target` (`production`, que es lo que el runtime necesita), y `config/production.env` nunca declaró las dos autodeclaraciones que `config/qa.env` sí declara desde siempre. Se corrigió el comparador y se añadieron las variables; hoy `local`, `qa` y `prod` devuelven `ok: true` con 0 fallos. Dos disciplinas: **(a)** ante una guarda roja, correr la misma guarda en un ambiente sabido-bueno —si el bueno pasa y el mío no, la sospecha va primero a la comparación, no al ambiente—; **(b)** no redactar en evidencia «esto falla por el arnés» sin nombrar el arnés con su archivo y línea, porque una causa prestada clausura la investigación. Por qué: una compuerta permanentemente roja deja de ser compuerta y pasa a ser ruido que el siguiente operador aprende a ignorar, justo cuando se la necesita para un corte de dominio.
 
 ## Checklist de intervención
 

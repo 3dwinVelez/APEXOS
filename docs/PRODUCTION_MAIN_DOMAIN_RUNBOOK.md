@@ -202,6 +202,30 @@ Rollback:
 - Keep previous DNS records documented before change.
 - Keep Supabase backup/snapshot before first production write.
 
+## Corte real ejecutado en apexos.com.co (2026-11-23)
+
+Este runbook planeaba `app.<domain>` y `api.<domain>`. El corte real fue distinto y esta es la forma vigente:
+
+| Pieza | Valor real |
+|---|---|
+| Web en Railway | `https://www.apexos.com.co` (dominio custom, certificado valido) |
+| Raiz `apexos.com.co` | **sin resolver a Railway**: sigue aparcada en GoDaddy |
+| API | `https://apexos-api-prod-production.up.railway.app` (sin dominio propio) |
+| `NEXT_PUBLIC_API_URL` (web) | el dominio del API de arriba, quemado en el bundle |
+| `NEXT_PUBLIC_WS_URL` (web) | `wss://apexos-api-prod-production.up.railway.app` |
+| `ALLOWED_ORIGINS` / `CORS_ORIGIN` (API) | `https://www.apexos.com.co,https://apexos.com.co,https://apexos-web-prod-production.up.railway.app` |
+| `FRONTEND_URL` (API) | `https://www.apexos.com.co` |
+| `EXPECTED_ENVIRONMENT` / `EXPECTED_SUPABASE_PROJECT_REF` (registro local del operador, `config/production.env`) | `production` / `jzbwzmkidfthknsohhnr` |
+
+Lecciones medidas, en el orden en que habria que comprobarlas:
+
+1. **Mover la web de dominio sin declarar el origen nuevo en el API corta toda la herramienta.** `api()` llama siempre cross-origin y el API en produccion arma su allowlist solo con `ALLOWED_ORIGINS`, `CORS_ORIGIN` y `FRONTEND_URL`. El sintoma es sesion activa con los listados vacios, porque la sesion cae al respaldo de Supabase y ese respaldo no tiene la restriccion.
+2. **La base de datos no depende del dominio.** `DATABASE_URL` viaja por el pooler `aws-1-sa-east-1.pooler.supabase.com:5432` y `SUPABASE_URL` por el ref del proyecto: ninguno menciona el dominio del sitio. Verificado el 2026-11-23 con consultas de solo lectura y con los logs de la aplicacion sin un solo error de conexion.
+3. **El API conserva su dominio de Railway.** Las guardas de certificacion que exigen `apexos-api-prod-production.up.railway.app` siguen validas y no se aflojan; si algun dia el API tome `api.apexos.com.co`, esas guardas se actualizan antes del cambio, no despues.
+4. **El raiz aparcado se ve funcional por caché.** Una captura anterior del navegador muestra la app en `apexos.com.co` aunque el DNS hoy entregue el lander de GoDaddy; se comprueba contra el origen resuelto hoy.
+5. **Los redirects de Auth de Supabase no estan en la ruta.** El arbol no usa `generateLink`, `resetPasswordForEmail` ni `redirectTo`: la recuperacion de clave no viaja por GoTrue, asi que el `SITE_URL` del proyecto no es una pieza del corte (las secciones de Auth de este runbook quedan sin aplicar).
+6. **`env-doctor --env prod` no podia ponerse verde.** Comparaba `TARGET_ENV`/`EXPECTED_ENVIRONMENT` contra el alias de CLI (`prod`) y no contra `ENVIRONMENTS.prod.target` (`production`), y el registro del operador nunca declaraba las dos autodeclaraciones que `config/qa.env` si declara. Corregido el comparador y anadidas las variables: `local`, `qa` y `prod` devuelven `ok: true` con cero fallos.
+
 ## Open Decisions Needed
 
 - Final domain name and DNS provider.

@@ -4,7 +4,9 @@ export const dynamic = "force-dynamic";
 
 const API_BY_WEB_HOST: Record<string, string> = {
   "apexos-web-qa-production.up.railway.app": "https://apexos-api-qa-production.up.railway.app",
-  "apexos-web-prod-production.up.railway.app": "https://apexos-api-prod-production.up.railway.app"
+  "apexos-web-prod-production.up.railway.app": "https://apexos-api-prod-production.up.railway.app",
+  "www.apexos.com.co": "https://apexos-api-prod-production.up.railway.app",
+  "apexos.com.co": "https://apexos-api-prod-production.up.railway.app"
 };
 
 function configuredApiOrigin() {
