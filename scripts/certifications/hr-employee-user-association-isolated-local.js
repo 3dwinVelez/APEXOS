@@ -4,8 +4,9 @@ const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
 const certificate = process.argv.find(arg => arg.startsWith('--certificate='))?.slice(14) || 'hr-employee-user-link-local.js';
-if (!['hr-schedule-employee-source-local.js', 'hr-cross-device-sync-local.js', 'hr-termination-day-review-local.js', 'hr-employee-banks-local.js', 'hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js', 'hr-payroll-markings-local.js', 'hr-marking-existing-employee-local.js', 'hr-termination-document-search-local.js', 'hr-termination-complete-local.js'].includes(certificate)) throw Error('Unsupported certification script');
+if (!['hr-time-report-local.js', 'hr-schedule-employee-source-local.js', 'hr-cross-device-sync-local.js', 'hr-termination-day-review-local.js', 'hr-employee-banks-local.js', 'hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js', 'hr-payroll-markings-local.js', 'hr-marking-existing-employee-local.js', 'hr-termination-document-search-local.js', 'hr-termination-complete-local.js'].includes(certificate)) throw Error('Unsupported certification script');
 const outputDirectories = {
+  "hr-time-report-local.js": "hr-time-report",
   "hr-schedule-employee-source-local.js": "hr-schedule-employee-source",
   "hr-cross-device-sync-local.js": "hr-cross-device",
   'hr-termination-day-review-local.js': 'hr-day-review',
@@ -42,11 +43,11 @@ const hasRouteKind = docker(['exec', container, 'psql', '-U', 'apex', '-d', data
 if (!hasRouteKind) apply(fs.readFileSync(path.join(root, 'apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql')));
 // The historical local snapshot used TEXT, while the versioned authorization
 // migration creates UUID. Match that contract only in the disposable fixture.
-const sessionIdType = certificate === 'hr-schedule-employee-source-local.js'
+const sessionIdType = ['hr-time-report-local.js', 'hr-schedule-employee-source-local.js'].includes(certificate)
   ? docker(['exec', container, 'psql', '-U', 'apex', '-d', database, '-Atc', "SELECT data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='AuthorizationSession' AND column_name='id'"]).toString().trim()
   : null;
 if (sessionIdType === 'text') apply('ALTER TABLE "AuthorizationSession" ALTER COLUMN "id" TYPE uuid USING "id"::uuid;');
-const connectionOptions = certificate.startsWith('hr-termination-') || certificate === 'hr-schedule-employee-source-local.js' || certificate === 'hr-cross-device-sync-local.js' || certificate === 'hr-employee-banks-local.js' ? '?connection_limit=3&connect_timeout=20&pool_timeout=45' : '';
+const connectionOptions = certificate === 'hr-time-report-local.js' || certificate.startsWith('hr-termination-') || certificate === 'hr-schedule-employee-source-local.js' || certificate === 'hr-cross-device-sync-local.js' || certificate === 'hr-employee-banks-local.js' ? '?connection_limit=3&connect_timeout=20&pool_timeout=45' : '';
 const localUrl = `postgresql://apex:${encodeURIComponent(password)}@127.0.0.1:55432/${database}${connectionOptions}`;
 const log = fs.openSync(path.join(output, 'certification.log'), 'w');
 const result = spawnSync(process.execPath, [path.join(__dirname, certificate), '--output=' + path.join(output, 'certification.json')], {

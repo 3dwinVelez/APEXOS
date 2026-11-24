@@ -3820,6 +3820,28 @@ function resolvePunchLadder({ ownScope, expectedType, type, input }) {
   return { motivo: motivo.slice(0, 300), salto };
 }
 
+// Read-only: use the same raw-punch projection, schedules and calendar as payroll.
+async function timeReportSummary(tenantId, query = {}) {
+  const range = boundedReportRange(query);
+  return prisma.runWithTenant(tenantId, async () => {
+    const [employees, config, calendarDays] = await Promise.all([
+      prisma.employee.findMany({ where: { tenant_id: tenantId, __includeInactive: true }, select: { id: true, code: true, metadata: true, user: { select: { name: true, email: true } } } }),
+      getPayrollConfig(tenantId),
+      activeCalendarDaysByDate(tenantId, range.start, new Date(range.end.getTime() - 86400000), query.country || "CO")
+    ]);
+    const days = await loadPayrollWorkdays({ db: prisma, tenantId, employees, start: range.start, endExclusive: range.end, parameters: { ...DEFAULT_PARAMS, ...config.parameters }, calendarDays });
+    const fields = ["ordinary_day_minutes", "ordinary_night_minutes", "ordinary_sunday_holiday_day_minutes", "ordinary_sunday_holiday_night_minutes", "overtime_day_minutes", "overtime_night_minutes", "overtime_sunday_holiday_day_minutes", "overtime_sunday_holiday_night_minutes"];
+    return days.map(day => ({
+      employee_id: day.employee_id,
+      date: new Date(day.date).toISOString().slice(0, 10),
+      ...Object.fromEntries(fields.map(field => [field, Number(day[field] || 0)])),
+      worked_minutes: fields.reduce((sum, field) => sum + Number(day[field] || 0), 0),
+      overtime_minutes: fields.filter(field => field.startsWith("overtime_")).reduce((sum, field) => sum + Number(day[field] || 0), 0),
+      alerts: day.alerts || []
+    }));
+  });
+}
+
 async function listAttendance(tenantId, query = {}) {
   const range = boundedReportRange(query);
   return prisma.runWithTenant(tenantId, async () => {
@@ -8349,6 +8371,7 @@ module.exports = {
   listActiveGps,
   listGpsHistory,
   listAttendance,
+  timeReportSummary,
   listOwnAttendance,
   processDay,
   listWorkdays,
