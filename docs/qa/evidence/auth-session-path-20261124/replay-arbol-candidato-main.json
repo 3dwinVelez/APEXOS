@@ -1,14 +1,14 @@
 {
   "instrumento": "promotion-migration-check",
-  "ejecutado_en": "2026-11-24T18:37:18.249Z",
+  "ejecutado_en": "2026-11-24T18:44:53.352Z",
   "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-monitor-sesion-main-20261124",
   "spec": "docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json",
-  "base_ref": "3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
+  "base_ref": "b08699e3214a41f946cf3080b313cbfe637e33dd",
   "origin_ref": "origin/desarrollo",
   "contra": "indice del arbol candidato",
   "label": "invariantes del replay",
   "passed": true,
-  "total": 70,
+  "total": 73,
   "rotos": 0,
   "results": [
     {
@@ -126,8 +126,8 @@
     {
       "tipo": "carry",
       "file": "docs/qa/evidence/auth-session-path-20261124/candidato-main.txt",
-      "esperado": "54ffa0c0db43abd9f51d9fa9ddd19e51e33b1d5f",
-      "actual": "54ffa0c0db43abd9f51d9fa9ddd19e51e33b1d5f",
+      "esperado": "7f4ca297688e3ddc3ffb1d9d117f84019ac6bc4a",
+      "actual": "7f4ca297688e3ddc3ffb1d9d117f84019ac6bc4a",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -158,8 +158,8 @@
     {
       "tipo": "carry",
       "file": "docs/qa/evidence/auth-session-path-20261124/invariantes-replay-main.json",
-      "esperado": "29a9351cf8413c94a446d8f9f190d5f4bcde1baf",
-      "actual": "29a9351cf8413c94a446d8f9f190d5f4bcde1baf",
+      "esperado": "ba3df3edcecf4b29c37f4c8367057271f82738c5",
+      "actual": "ba3df3edcecf4b29c37f4c8367057271f82738c5",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -285,6 +285,14 @@
     },
     {
       "tipo": "carry",
+      "file": "docs/qa/evidence/auth-session-path-20261124/veredicto-main.md",
+      "esperado": "4f85159553e61d86680c02cf931a21c9622bc427",
+      "actual": "4f85159553e61d86680c02cf931a21c9622bc427",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
       "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json",
       "esperado": "49a52d67f7768aa81097e06dbf3753082396ddb0",
       "actual": "49a52d67f7768aa81097e06dbf3753082396ddb0",
@@ -328,6 +336,22 @@
       "file": "docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json",
       "esperado": "7b60d257929a9ab3be9f5b7e9d0d0d67a5a8e779",
       "actual": "7b60d257929a9ab3be9f5b7e9d0d0d67a5a8e779",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json",
+      "esperado": "ce942cbffa661064e828392620d73c38cf441178",
+      "actual": "ce942cbffa661064e828392620d73c38cf441178",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json",
+      "esperado": "7de9afe41bfb716f728232126f60fe4df080209b",
+      "actual": "7de9afe41bfb716f728232126f60fe4df080209b",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
