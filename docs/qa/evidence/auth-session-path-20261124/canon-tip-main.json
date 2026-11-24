@@ -1,0 +1,19 @@
+{
+  "titulo": "Re-medicion del canon de agentes contra la punta publicada",
+  "medido": "2026-11-24T14:32:00-05:00",
+  "instrumento": "promotion-migration-check",
+  "spec": "docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json",
+  "modo": "invariantes del replay",
+  "contra": "commit origin/main",
+  "ref": "origin/main",
+  "head": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+  "origin_ref": "origin/desarrollo",
+  "passed": true,
+  "total": 73,
+  "rotos": 0,
+  "desglose": {
+    "carry/ok": 49,
+    "delete/ok": 24
+  },
+  "nota": "Se corre despues del push porque describe una punta que no puede contenerse a si misma (regla 54 de apexos-git-guardian). El porton del canon a develop es 50bffa7d; la paridad del cierre sigue 51/51 y 73/73."
+}
