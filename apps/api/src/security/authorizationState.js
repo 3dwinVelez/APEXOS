@@ -114,14 +114,18 @@ function dateOrNull(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-async function validateAuthorization(payload) {
+// Lee el estado vivo de autorizacion en UNA sentencia. `validateAuthorization` decide con ella y
+// quien necesite el perfil (por ejemplo `/auth/me`) la reusa: cada viaje al pooler cuesta ~660 ms
+// desde Railway, asi que volver a traer usuario+rol+permisos+tenant por otra via pagaba cuatro
+// sentencias por algo ya resuelto. Las fechas salen como texto desde jsonb: se normalizan aqui.
+async function readAuthorizationSnapshot(userId, sid = null) {
   // El sid viene de una columna uuid creada por el propio sistema, asi que se pasa tal cual: un
   // valor mal formado hace fallar el cast y el middleware responde 401, igual que hoy.
-  const sid = payload.sid ? String(payload.sid) : null;
+  const sessionParam = sid ? String(sid) : null;
   const rows = await prisma.$queryRawUnsafe(
     AUTHORIZATION_SNAPSHOT.replace("__SID__", "$1").replace("__UID__", "$2"),
-    sid,
-    Number(payload.id)
+    sessionParam,
+    Number(userId)
   );
   const row = rows[0] || null;
   const user = row?.user ? { ...row.user, role: row.role || null } : null;
@@ -129,6 +133,11 @@ async function validateAuthorization(payload) {
   const session = row?.session
     ? { ...row.session, revoked_at: dateOrNull(row.session.revoked_at), expires_at: dateOrNull(row.session.expires_at) }
     : null;
+  return { user, tenant, session };
+}
+
+async function validateAuthorization(payload) {
+  const { user, tenant, session } = await readAuthorizationSnapshot(payload.id, payload.sid || null);
   const reason = authorizationDecision(payload, user, tenant, session);
 
   if (reason) recordMismatch(reason, payload, session);
@@ -198,6 +207,7 @@ module.exports = {
   createSession,
   rotateSession,
   validateAuthorization,
+  readAuthorizationSnapshot,
   revokeSession,
   revokeAllUserSessions,
   revokeRoleUsers

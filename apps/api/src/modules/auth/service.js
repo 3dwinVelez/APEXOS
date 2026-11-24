@@ -205,18 +205,20 @@ async function fingerprintLogin(input = {}, fastify, request = {}) {
   }
 }
 
+// El middleware ya resolvio usuario, rol, permisos y tenant en UNA sentencia
+// (`AUTHORIZATION_SNAPSHOT`). Releerlos con `include` hacia cuatro viajes mas al pooler —~2,6 s de
+// piso en cada apertura de pantalla, porque el dashboard consulta /auth/me en cada ruta— sin traer
+// un dato nuevo. Se lee el mismo snapshot: sigue siendo estado vivo de la base, y `publicUser` /
+// `publicTenant` son la unica proyeccion que sale (la fila cruda trae hash de clave).
 async function me(user) {
-  const current = await prisma.user.findUnique({
-    where: { id: user.id },
-    include: { role: { include: { permissions: true } } }
-  });
+  const snapshot = await authorizationState.readAuthorizationSnapshot(user.id);
+  const current = snapshot.user;
   if (!current || !current.active) {
     const err = new Error("Usuario no disponible");
     err.statusCode = 401;
     throw err;
   }
-  const tenant = await prisma.tenant.findUnique({ where: { id: current.tenant_id } });
-  return { tenant: publicTenant(tenant), user: publicUser(current) };
+  return { tenant: publicTenant(snapshot.tenant), user: publicUser(current) };
 }
 
 async function refresh(input, fastify) {

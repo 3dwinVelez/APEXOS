@@ -121,7 +121,7 @@ async function hrRoutes(fastify) {
   fastify.post("/hr/labor-entities/:id/link-accounting-party", { schema: schemas.laborEntityLinkSchema, preHandler: requirePermission("hr", "write") }, (request) => service.linkLaborEntityAccountingParty(request.user?.tenant_id, request.params.id, request.body, request.user));
 
   fastify.get("/hr/routes", { preHandler: requirePermission("hr", "read") }, (request) => service.listRoutes(request.user?.tenant_id, request.query));
-  fastify.get("/hr/routes/event-summaries", { preHandler: requirePermission("hr", "read") }, (request) => service.listRouteEventSummaries(request.user?.tenant_id));
+  fastify.get("/hr/routes/event-summaries", { preHandler: requirePermission("hr", "read") }, (request) => service.listRouteEventSummaries(request.user?.tenant_id, request.query));
   fastify.post("/hr/routes/prevalidate", { schema: schemas.routePrevalidateSchema, preHandler: requirePermission("hr", "write") }, (request) => service.prevalidateRoutes(request.user?.tenant_id, request.body));
   fastify.get("/hr/routes/assignments", { preHandler: requirePermission("hr", "read") }, (request) => service.listDateAssignments(request.user?.tenant_id, request.query));
   fastify.post("/hr/routes", { schema: schemas.routeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createRoute(request.user?.tenant_id, request.body));

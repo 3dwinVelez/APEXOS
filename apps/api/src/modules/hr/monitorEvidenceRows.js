@@ -53,9 +53,11 @@ const PUNCH_COLUMNS = [
 // que se reconstruye desde las marcaciones del dia) tampoco necesitan la selfie: el cliente
 // pinta tipo, hora, placa y ruta, y `ensureWorkSessionFromPunches` lee id, empleado, ruta y
 // timestamps. Medido el 2026-11-17: `extra_evidence` es 106 KB de media y 2,8 MB en el peor
-// caso por fila, mientras `metadata` mide 532 B y alli viven `late_minutes` y la
-// verificacion de identidad que la pantalla si muestra. Se conserva por lo tanto toda la
-// fila menos la evidencia, en lugar de enumerar un punado de campos que la pantalla aun no
+// caso por fila. `metadata` NO mide 532 B: esa cifra se heredo del parrafo anterior sin
+// re-chequeo y la medicion del 2026-11-18 le puso numero real -414 KB de media y 2,6 MB el peor
+// caso desde que el flujo movil escribe la selfie alli dentro-, por eso la columna sale
+// proyectada y custodiada por tamano. Se conserva por lo tanto toda la fila menos la evidencia,
+// en lugar de enumerar un punado de campos que la pantalla aun no
 // usa y que un cambio de schema borraria en silencio.
 const SELF_PUNCH_SELECT = Object.fromEntries(PUNCH_COLUMNS
   .filter((column) => column !== "extra_evidence")
@@ -68,9 +70,15 @@ const GPS_COLUMNS = [
   "longitude", "accuracy_meters", "source", "captured_at", "metadata"
 ];
 
+// Un contenedor con el binario VACIO (`{"base64":""}` sin ruta) no es una evidencia: si se le
+// aplica la huella, `punchPhotoItems` ve una cadena no vacia, le inventa un `data:image/jpeg` y el
+// listado anuncia un archivo que `getMonitorEvidence` responde 404. La guarda de longitud mantiene
+// el conteo en lo que la fila realmente tiene. Medido en Produccion el 2026-11-24: hoy no existe
+// ninguna marcacion en ese estado (0 de 2.676), asi que es un defecto latente del contrato, no el
+// motivo de la demora.
 function shrinkKey(target, key) {
   const text = `${target}->>'${key}'`;
-  return `CASE WHEN jsonb_typeof(${target}->'${key}') = 'string' THEN `
+  return `CASE WHEN jsonb_typeof(${target}->'${key}') = 'string' AND length(coalesce(${text}, '')) > 0 THEN `
     + `jsonb_set(${target}, '{${key}}', `
     + `to_jsonb(left(${text}, ${HEADER_KEEP}) || '${SHA_MARK}' || md5(${text}))) `
     + `ELSE ${target} END`;
@@ -91,12 +99,30 @@ function evidenceProjection(column) {
     + ` ELSE ${column} END`;
 }
 
+// Umbral por debajo del cual `extra_evidence` se devuelve crudo. Reescribir el jsonb obliga a
+// abrirlo (y a detoastearlo cuando no cabe en la pagina), y el unico caso en que eso paga es la
+// fila que trae binario: la referencia mas corta que escribe el producto mide 75 B y una foto real
+// no baja de decenas de KB. Medido en Produccion el 2026-11-24 sobre las 2.676 marcaciones: 58
+// filas con binario en `extra_evidence` y 337 ya referenciadas, es decir que la proyeccion sin
+// guarda reescribia ~2.600 contenedores vacios o flacos por barrido para proteger 58.
+// El numero corta por encima de cualquier cabecera de data URL util (un base64 de 4.096 caracteres
+// son ~3 KB de archivo) y muy por debajo del peor caso medido (2,8 MB), asi que lo unico que puede
+// colar por la guarda es un soporte pequeno que ya viajaba antes del corte.
+const EVIDENCE_SHRINK_MIN_BYTES = 4096;
+
+function guardedEvidenceProjection(column) {
+  return `CASE WHEN pg_column_size(${column}) > ${EVIDENCE_SHRINK_MIN_BYTES} `
+    + `THEN (${evidenceProjection(column)}) ELSE ${column} END`;
+}
+
 // El mismo cálculo en JS, para que la equivalencia se pueda probar sin base de datos.
 function projectEvidenceItem(item) {
   if (!item || typeof item !== "object" || Array.isArray(item)) return item;
   const projected = { ...item };
   for (const key of ["base64_data", "base64"]) {
-    if (typeof projected[key] === "string") {
+    // Espejo de `shrinkKey`: un binario vacio no recibe huella, porque la huella lo volveria
+    // un archivo anunciado que el endpoint de evidencia no puede entregar.
+    if (typeof projected[key] === "string" && projected[key].length) {
       projected[key] = `${projected[key].slice(0, HEADER_KEEP)}${SHA_MARK}${require("crypto").createHash("md5").update(projected[key], "utf8").digest("hex")}`;
     }
   }
@@ -133,8 +159,7 @@ function toRow(row) {
 // contaria evidencias de otras empresas.
 function readRouteEvidence(prisma, tenantId, routeIds) {
   if (!Array.isArray(routeIds) || !routeIds.length) return Promise.resolve([]);
-  const projection = Prisma.raw(evidenceProjection('"TimePunch"."extra_evidence"'));
-  const metadata = Prisma.raw(evidenceFreeMetadata('"TimePunch"."metadata"'));
+  const projection = Prisma.raw(guardedEvidenceProjection('"TimePunch"."extra_evidence"'));  const metadata = Prisma.raw(evidenceFreeMetadata('"TimePunch"."metadata"'));
   return prisma.$queryRaw(Prisma.sql`
     SELECT "TimePunch"."route_id" AS "route_id",
            ${projection}::text AS "extra_evidence",
@@ -181,7 +206,7 @@ function evidenceFreeMetadata(column) {
 // el costo no es encontrar las filas sino transferir el TOAST por el pooler, asi que
 // ningun indice lo arregla: lo arregla no pedir los bytes.
 function readRoutePunchEvidence(prisma, tenantId, routeId) {
-  const evidence = Prisma.raw(evidenceProjection('"TimePunch"."extra_evidence"'));
+  const evidence = Prisma.raw(guardedEvidenceProjection('"TimePunch"."extra_evidence"'));
   const metadata = Prisma.raw(evidenceFreeMetadata('"TimePunch"."metadata"'));
   return prisma.$queryRaw(Prisma.sql`
     SELECT "TimePunch"."id" AS "id",
@@ -331,7 +356,7 @@ function readRouteActivityEvidence(prisma, tenantId, routeId) {
 // mismas ventanas de fecha, el mismo orden y el mismo limite.
 function readUnlinkedEvidence(prisma, tenantId, dateWindows) {
   if (!Array.isArray(dateWindows) || !dateWindows.length) return Promise.resolve([]);
-  const projection = Prisma.raw(evidenceProjection('"TimePunch"."extra_evidence"'));
+  const projection = Prisma.raw(guardedEvidenceProjection('"TimePunch"."extra_evidence"'));
   const windows = Prisma.join(dateWindows.map((window) => Prisma.sql`(
       "TimePunch"."date" >= ${window.gte} AND "TimePunch"."date" < ${window.lt})`), " OR ");
   const metadata = Prisma.raw(evidenceFreeMetadata('"TimePunch"."metadata"'));
@@ -354,6 +379,7 @@ function readUnlinkedEvidence(prisma, tenantId, dateWindows) {
 
 module.exports = {
   EVIDENCE_PRESENT_MIN_BYTES,
+  EVIDENCE_SHRINK_MIN_BYTES,
   GPS_COLUMNS,
   HEADER_KEEP,
   METADATA_SHRINK_MIN_BYTES,
@@ -363,6 +389,7 @@ module.exports = {
   UNLINKED_LIMIT,
   evidenceFreeMetadata,
   evidenceProjection,
+  guardedEvidenceProjection,
   projectEvidence,
   readDayEvidencePunches,
   readDayGpsPings,
