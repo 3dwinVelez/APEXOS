@@ -73,5 +73,6 @@
     ],
     "lineas_huerfanas": "Cero por construcción: el blob promocionado es el mismo blob que existe en origin/desarrollo, así que ninguna línea puede haber nacido en el candidato."
   },
-  "salida_del_porton_despues_del_cambio": "PENDIENTE_CON_DUEÑO: se pega verbatim en la evidencia del portón (porton-main.json) y en el commit de contabilidad, porque describe una punta que todavía no existe dentro del commit que la describe."
+  "salida_del_porton_despues_del_cambio": "ALCANCE DE PROMOCION VALIDO: cero-rechazos-foto-web-bateria-20261124 (13 rutas, transporte puntual: cada blob verificado contra origin/desarrollo, origen verificado contra origin/desarrollo). Reproducida despues del empuje con npm run qa:promotion:scope -- docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json e3c2ad171946621c4e167404ef5c56c466f43e4f e4595dce8a25b9d83a6fd917613bbc76fcf6554f, es decir contra el destino que el manifiesto declara como base aprobada: con el tip actual de origin/main el diff seria vacio y el porton daria verde sin probar nada. Ver contabilidad-post-push.json.",
+  "codigo_de_salida_reproducido": 0
 }

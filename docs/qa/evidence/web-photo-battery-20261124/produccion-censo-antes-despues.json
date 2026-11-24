@@ -1,0 +1,100 @@
+{
+  "instrumento": "SELECT puro sobre auditLog (module=platform_logs) y timePunch en la base de Produccion; la bateria hostil esta prohibida aqui y no se corrio",
+  "generado_en": "2026-11-24T22:06:45.605Z",
+  "ambiente": "production",
+  "host_base": "aws-1-sa-east-1.pooler.supabase.com",
+  "ventana_leida": {
+    "desde": "2026-11-18T05:00:00.000Z",
+    "hasta": "2026-11-24T22:06:45.605Z",
+    "registros_plataforma": 1719
+  },
+  "despliegue_medido": {
+    "commit_main": "e3c2ad171946621c4e167404ef5c56c466f43e4f",
+    "fecha_commit": "2026-11-24T21:49:36.000Z",
+    "corte": "2026-11-24T21:49:36.000Z",
+    "health_1": {
+      "hora_lectura": "2026-11-24T21:55:07Z",
+      "commit_servido": "e3c2ad171946"
+    },
+    "health_2": {
+      "hora_lectura": "2026-11-24T21:58:34Z",
+      "commit_servido": "e3c2ad171946"
+    }
+  },
+  "rechazos_de_foto_antes": {
+    "total": 91,
+    "usuarios": 4,
+    "por_clase": [
+      {
+        "clave": "(el cliente no trajo codigo) | El contenido del archivo no coincide con el formato declarado.",
+        "ocurrencias": 59
+      },
+      {
+        "clave": "SELFIE_INVALIDA | El contenido del archivo no coincide con el formato declarado.",
+        "ocurrencias": 24
+      },
+      {
+        "clave": "SELFIE_REQUERIDA | Toma la selfie de validacion para registrar esta marcacion.",
+        "ocurrencias": 8
+      }
+    ],
+    "por_usuario": [
+      {
+        "user_id": 231,
+        "rechazos": 79,
+        "aparatos": [
+          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36",
+          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Mobile Safari/537.36"
+        ],
+        "primero": "2026-11-18T11:51:04.032Z",
+        "ultimo": "2026-11-24T14:11:55.339Z"
+      },
+      {
+        "user_id": 222,
+        "rechazos": 6,
+        "aparatos": [
+          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36"
+        ],
+        "primero": "2026-11-18T18:55:51.950Z",
+        "ultimo": "2026-11-19T20:01:52.039Z"
+      },
+      {
+        "user_id": 271,
+        "rechazos": 3,
+        "aparatos": [
+          "node (cuenta de certificacion interna)"
+        ],
+        "primero": "2026-11-24T17:14:05.263Z",
+        "ultimo": "2026-11-24T17:14:14.938Z"
+      },
+      {
+        "user_id": 273,
+        "rechazos": 3,
+        "aparatos": [
+          "node (cuenta de certificacion interna)"
+        ],
+        "primero": "2026-11-24T17:16:02.617Z",
+        "ultimo": "2026-11-24T17:16:12.030Z"
+      }
+    ],
+    "ultimo_rechazo_operario_real": "2026-11-24T14:11:55.339Z"
+  },
+  "rechazos_de_foto_despues": {
+    "total": 0,
+    "minutos_servidos_al_momento_de_la_lectura": 17,
+    "marcaciones_aceptadas_en_la_ventana": 0,
+    "registros_de_plataforma_en_la_ventana": 0,
+    "ultima_marcacion_del_dia": "2026-11-24T21:34:38.798Z"
+  },
+  "veredicto_despues_produccion": {
+    "estado": "NO_CERTIFICA_TODAVIA",
+    "porque": "El binario nuevo lleva 17 minutos servido y en esos minutos Produccion no recibi ni una marcacion (la ultima del dia fue 2026-11-24T21:34:38.798Z, turno cerrado). Un conteo de cero rechazos sobre cero intentos es un control que no puede fallar, asi que no se vende como prueba de campo.",
+    "prueba_de_campo_que_si_existe": "bateria hostil sobre el binario desplegado de QA (c0fbb4b9c50c): 34/34, con las cinco formas con etiqueta mentirosa entrando en 200 y el reenvio sin foto devolviendo la hora",
+    "repeticion": {
+      "cuando": "despues del turno del 2026-11-25 (jornada colombiana completa sobre el binario desplegado)",
+      "comando": "node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/production.env --date=2026-11-25 --days=1 --sin-nombres",
+      "se_lee": "las lineas RECHAZOS por codigo/ruta: SELFIE_INVALIDA y 'El contenido del archivo no coincide con el formato declarado' deben ser cero sobre un denominador de marcaciones mayor que cero",
+      "dueno": "apexos-qa con el dueno"
+    }
+  }
+}

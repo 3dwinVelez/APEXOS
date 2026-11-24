@@ -1,0 +1,88 @@
+{
+  "change_id": "cero-rechazos-foto-web-bateria-20261124",
+  "pieza": "contabilidad despues del empuje a main",
+  "para_que": "El manifiesto de alcance y su evidencia se escribieron antes de que existiera el commit que describen. Este archivo consigna lo que solo se puede decir despues del empuje, y dice solo lo que se pudo reproducir aqui.",
+  "generado": "2026-11-24T22:03:00Z",
+  "autoria": "apexos-qa con apexos-git-guardian, intervencion del dueno 2026-11-24",
+
+  "puntas": {
+    "origin_desarrollo_antes_de_esta_contabilidad": "4788972620e3c7129e57a8499fd17da04a8fa9b6",
+    "origin_desarrollo_ultima_declarada_en_el_manifiesto": "ebe5dabe (base_commits.desarrollo del manifiesto: la punta vigente cuando se escribio el inventario, no la de hoy)",
+    "origin_develop": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+    "origin_main": "e3c2ad171946621c4e167404ef5c56c466f43e4f",
+    "main_antes_del_empuje": "e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+    "respaldo_pushed": "refs/tags/backup/premain-cero-rechazos-foto-web-20261124 -> e4595dce8a25b9d83a6fd917613bbc76fcf6554f"
+  },
+
+  "salida_porton_de_alcance_reproducida_post_empuje": {
+    "comando": "npm run qa:promotion:scope -- docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json e3c2ad171946621c4e167404ef5c56c466f43e4f e4595dce8a25b9d83a6fd917613bbc76fcf6554f",
+    "salida": "ALCANCE DE PROMOCION VALIDO: cero-rechazos-foto-web-bateria-20261124 (13 rutas, transporte puntual: cada blob verificado contra origin/desarrollo, origen verificado contra origin/desarrollo)",
+    "codigo_de_salida": 0,
+    "porque_con_el_commit_viejo_de_destino": "Despues del empuje, origin/main ya ES el candidato: medir alcance contra la punta actual daria un diff vacio y un porton verde que no prueba nada. Se reproduce contra e4595dce, que es el destino que el manifiesto declara como base aprobada, y el porton vuelve a exigir las 13 rutas y los 13 blobs de desarrollo.",
+    "hora_de_la_reproduccion": "2026-11-24T21:59Z"
+  },
+
+  "salida_porton_de_aprobacion_reproducida_post_empuje": {
+    "comando": "npm run qa:approval:evidence -- docs/qa/manifests/cero-rechazos-foto-web-main-20261124-approval.json",
+    "salida": "APROBACION QA VALIDA: cero-rechazos-foto-web-bateria-20261124-main",
+    "codigo_de_salida": 0,
+    "nota": "El validador exige status=passed en certificacion, certificacion de regresion y certificacion de empresa modelo, y que cada archivo de evidencia exista en el arbol. Las tres certificaciones se citan por ruta versionada."
+  },
+
+  "guardian_de_gobernanza": {
+    "autorizacion_usada_en_el_empuje": "APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DEVELOP_A_MAIN, otorgada por el dueno en la orden del 2026-11-24",
+    "reproducible_ahora": false,
+    "porque_no": "node scripts/git-governance-guard.js promote develop-to-main empieza con assertCleanWorktree y el arbol compartido tiene ediciones en curso de otra sesion (apps/api/src/modules/hr/service.js, apps/api/test/hr-list-truncation.test.js, apps/api/test/hr-operations-map-contract.test.js, package.json y tres archivos nuevos del monitor). No se guarda ni se limpia trabajo ajeno para lucir una salida verde, asi que aqui no se consigna su linea; solo queda consignada la autorizacion con la que se empujo."
+  },
+
+  "produccion_servida": {
+    "lectura_1": { "hora_utc": "2026-11-24T21:55:07Z", "cuerpo": "{\"status\":\"OK\",\"version\":\"2.0\",\"modules\":19,\"commit\":\"e3c2ad171946\",\"service_certification\":\"products-v2\"}" },
+    "lectura_2": { "hora_utc": "2026-11-24T21:58:34Z", "cuerpo": "{\"status\":\"OK\",\"version\":\"2.0\",\"modules\":19,\"commit\":\"e3c2ad171946\",\"service_certification\":\"products-v2\"}" },
+    "lectura_3": { "hora_utc": "2026-11-24T22:04:46Z", "cuerpo": "{\"status\":\"OK\",\"version\":\"2.0\",\"modules\":19,\"commit\":\"e3c2ad171946\",\"service_certification\":\"products-v2\"}" },
+    "lectura_web": { "hora_utc": "2026-11-24T22:04:46Z", "url": "https://apexos-web-prod-production.up.railway.app/", "estado_http": 200 },
+    "identidad_del_contenido": "Las 13 rutas del candidato son, blob por blob, las de origin/desarrollo. mobile-identity.js del arbol servido es el binario que paso la mesa de 34 controles en QA."
+  },
+
+  "prueba_de_campo": {
+    "qa_sobre_binario_desplegado": "bateria hostil de 34 controles contra c0fbb4b9c50c: 34/34, con jpeg de 3 MB y png de 2,4 MB entrando con la hora y las cinco formas con etiqueta mentirosa aceptadas; lo que no es imagen sigue rechazandose y todo rechazo se reenvia sin foto sin perder la hora",
+    "produccion_sobre_trafico_organico": "NO CERTIFICA TODAVIA: el binario nuevo esta servido pero el turno del dia ya cerro, asi que la ventana servida no tiene ni un intento de marcacion. Vease produccion-censo-antes-despues.json.",
+    "ventana_servida_medida": {
+      "desde": "2026-11-24T21:52:00.000Z",
+      "hasta": "2026-11-24T22:04:08.937Z",
+      "registros_de_plataforma": 0,
+      "rechazos_de_foto": 0,
+      "marcaciones_aceptadas": 0,
+      "ultima_marcacion_del_dia": { "utc": "2026-11-24T21:34:38.798Z", "type": "salida", "colombia": "16:34:38" },
+      "que_significa": "Cero rechazos sobre cero intentos es un control que no puede fallar: no prueba que el fix funcione en campo, solo que aun no hay trafico. El DESPUES de campo se toma sobre el turno del 2026-11-25."
+    },
+    "baseline_antes_del_fix_en_produccion": "91 rechazos de foto en seis dias, 83 de ellos por el formato declarado y 8 porque la pantalla no pedía la foto; los concentraron dos operarios reales con Android/Chrome y dos cuentas internas de certificación"
+  },
+
+  "pendientes_con_dueno": [
+    {
+      "pendiente": "DESPUÉS de campo en Producción sobre el turno del 2026-11-25",
+      "como": "node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/production.env --date=2026-11-25 --days=1 --sin-nombres, con denominador de marcaciones mayor que cero",
+      "dueno": "apexos-qa con el dueno"
+    },
+    {
+      "pendiente": "Promover a develop el candado de origen enderezado (scripts/validate-promotion-scope.js con el modo transporte puntual y sus 13 controles)",
+      "porque": "main y develop conservan la copia vieja del candado; esta pata se certifico desde el arbol de desarrollo",
+      "dueno": "apexos-git-guardian con el dueno"
+    },
+    {
+      "pendiente": "Viajar el reenvio sin foto del cliente web (retry_without_photo / detachEvidence) a develop y main",
+      "porque": "es codigo de apps/web y no subio en esta pata; el servidor ya tolera la foto grande, pero el boton de reenvio del navegador sigue sin viaje certificado",
+      "dueno": "apexos-frontend con apexos-qa"
+    },
+    {
+      "pendiente": "Declarar HR_EVIDENCE_INLINE_MAX_BYTES y confirmar API_BODY_LIMIT_BYTES y HR_IDENTITY_PHOTO_MAX_BYTES en Railway",
+      "porque": "HR_EVIDENCE_INLINE_MAX_BYTES no existe en ningun ambiente; hoy el tope de 2 MB de la web y el degrade operan con los valores por defecto del codigo",
+      "dueno": "apexos-performance con el dueno"
+    },
+    {
+      "pendiente": "Borrar las ramas y worktrees auxiliares de esta intervencion, entre ellas codex/qa-cero-rechazos-foto-web-{develop,main}-20261124",
+      "porque": "el borrado exige autorizacion expresa e independiente",
+      "dueno": "el dueno"
+    }
+  ]
+}

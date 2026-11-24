@@ -102,7 +102,7 @@ Las cuatro salidas se le presentaron al dueño con números: enderezar el candad
 No afloja nada: cambia la prueba de ascendencia por la prueba de contenido, que es la que de verdad dice que sube lo certificado. Exige las cuatro cosas a la vez, y cada una tiene su prueba que puede fallar (`scripts/test/validate-promotion-scope.test.js`, 13 controles):
 
 1. El `certified_commit` declarado **vive en `origin/desarrollo`** (aquí `25f8b32e`). Un commit inventado o nacido en otra rama se rechaza.
-2. **Cada ruta del diff es, blob por blob, la que esa ruta tiene en `origin/desarrollo`.** Medido en este portón: **12/12 idénticos**, incluidas `apps/api/src/modules/hr/mobile-identity.js` (`863bd6a6`) y su suite (`9a3198ea`).
+2. **Cada ruta del diff es, blob por blob, la que esa ruta tiene en `origin/desarrollo`.** Medido en este portón al cerrar el inventario: **13/13 idénticos**, incluidas `apps/api/src/modules/hr/mobile-identity.js` (`863bd6a6`) y su suite (`9a3198ea`). La decimotercera ruta es el manifiesto de aprobación, que entró cuando el validador exigió los tres `status: passed`.
 3. **Cero `origin_waivers`.** Sin ascendencia no hay nada perdonable: una excepción declarada en modo replay invalida el portón.
 4. El `replay_baseline` declarado es el punto real de divergencia entre destino y commit certificado (`git merge-base origin/main 25f8b32e` = `180a2b21`). Inventárselo invalida.
 
@@ -113,3 +113,24 @@ La medida complementaria, la que dice que el replay no arrastra trabajo propio d
 - **Un transporte puntual se declara, no se disimula.** Quien lleve archivos a una rama atrasada escribe `transport: replay_puntual`, `certified_commit` de la línea de desarrollo y `replay_baseline` resuelto por comando. Nadie pone el sha del propio candidato en `certified_commit` para que la ascendencia se cumpla sola: eso sería un verde que no puede fallar.
 - **La mezcla vacía está prohibida como vía de promoción.** `git merge -s ours` con el árbol del destino hace ancestro al commit certificado sin llevar su contenido; rompe la contabilidad de la próxima mezcla real y repone el accidente del 23-11 con otra cara.
 - **Cambiar un candado bloqueante es una intervención con dueño, control de mutación y evidencia**, no un ajuste de forma para pasar un portón. Si el candado rechaza un transporte legítimo, se trae la decisión al dueño con las opciones medidas; si el candado rechaza un transporte ilegítimo, se obedece.
+
+## 14. Cierre de la pata main: qué se publicó, qué se midió y qué el campo todavía no prueba
+
+Publicado y servido, con las tres puntas verificadas contra el remoto:
+
+| Rama | Punta | Qué lleva |
+|---|---|---|
+| `desarrollo` | `47889726` | el fix, la mesa de 34 controles, el candado enderezado con sus 13 controles y esta documentación |
+| `develop` | `c0fbb4b9` | el fix certificado por portón de ascendencia normal |
+| `main` | `e3c2ad17` | el mismo contenido por transporte puntual (13 rutas, blob por blob las de desarrollo) |
+
+`https://apexos-api-prod-production.up.railway.app/health` respondió `commit":"e3c2ad171946"` en las lecturas de las 21:55:07Z, 21:58:34Z y 22:04:46Z, y la web devolvió 200. Los dos portones volvieron a dar verde reproducidos **después** del empuje, midiendo el candidato contra `e4595dce` (el destino que el manifiesto declara como base): contra la punta actual de `main` el diff sería vacío y un verde ahí no probaría nada.
+
+Lo que **sí** tiene prueba de campo: la batería hostil sobre el binario desplegado de QA (`c0fbb4b9c50c`), **34/34**, con jpeg de 3 MB y png de 2,4 MB entrando con la hora, las cinco formas con etiqueta mentirosa aceptadas, lo que no es imagen sigue rechazándose y todo rechazo reenviado sin foto devuelve la hora.
+
+Lo que **no** tiene prueba de campo todavía: Producción. La lectura pura (SELECT sobre `auditLog` con `module=platform_logs` y sobre `TimePunch`, sin batería) deja un **ANTES** de **91 rechazos de foto** en seis días —83 con la frase «El contenido del archivo no coincide con el formato declarado», 24 de ellos con el código `SELFIE_INVALIDA` y 59 que el cliente reportó sin código, más 8 `SELFIE_REQUERIDA`—, concentrados en dos operarios reales con Android/Chrome (79 y 6 rechazos; el último a las 09:11 de Colombia, antes del despliegue) y dos cuentas internas de certificación con `user_agent node` (3 y 3). El **DESPUÉS** es **0 rechazos sobre 0 intentos**: el binario nuevo llevaba doce minutos servido y el turno del día cerró a las 16:34 de Colombia (última marcación `salida` 21:34:38Z). Cero sobre cero es un control que no puede fallar, así que se declara pendiente y se deja el instrumento versionado con su comando para el turno del 2026-11-25. Detalle en `docs/qa/evidence/web-photo-battery-20261124/produccion-censo-antes-despues.json` y `contabilidad-post-push.json`.
+
+Dos errores propios de este cierre, declarados aquí:
+
+- Leí la hora UTC del puesto como si fuera la de Colombia y el primer corte de la ventana quedó en el futuro: el «DESPUÉS 0» habría salido verde sin haber medido nada. Se corrigió el corte a la hora real del despliegue y se añadió el denominador (marcaciones aceptadas y registros de plataforma en la ventana), que es lo que revela que no hay tráfico.
+- Una edición a medias dejó el JSON de contabilidad inválido (comillas sin escapar) porque el arreglo escribía antes de validar. Se recompuso el archivo y ahora todos los JSON de la evidencia se validan al parser antes de darse por cerrados.

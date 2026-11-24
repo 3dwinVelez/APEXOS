@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.99.0",
-      "updated_at": "2026-11-25",
-      "sha256": "a57911d6440505625a36103e446e9b60d9df8201720bdb5a2e3ae7114b722991",
+      "version": "2.99.1",
+      "updated_at": "2026-11-24",
+      "sha256": "5ed06c1c0c1eec47734efe623eb0e62170d856ce7719192ea4ef142d8f45dfc2",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -260,9 +260,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.40.0",
-      "updated_at": "2026-11-25",
-      "sha256": "ace759714464a9aa864e774a972ced992f1816e5d9152a59ac7696675e03ab64",
+      "version": "2.41.0",
+      "updated_at": "2026-11-24",
+      "sha256": "b4d5d00a0faa075af833e0f2fde5167ffb22ddc3a2c99c96c1f0e127f2e28aa9",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -339,9 +339,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.120.0",
-      "updated_at": "2026-11-25",
-      "sha256": "9fa5253a67e6376f9518adaa2c18de17c6da9f39ed47aacf5c70bfd19d5a0a7a",
+      "version": "2.121.0",
+      "updated_at": "2026-11-24",
+      "sha256": "841a1a3ed97bd8e2da68db19d3e218fa01847bc01ca6c4c321232d376bab3f55",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -491,9 +491,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.67.0",
-      "updated_at": "2026-11-25",
-      "sha256": "fdf9f4d72cbb43f11e5750e81d89de311a16fa52b11cd9cf04efc3d2c6ac6153",
+      "version": "2.67.1",
+      "updated_at": "2026-11-24",
+      "sha256": "948f92388d323a4fb93a2f3880271f36010643c5b8c93c31e98c1a224e7d54e2",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
