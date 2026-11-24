@@ -121,6 +121,16 @@ El ejecutor es `scripts/certifications/hr-marking-rescue-apply.js`: por defecto 
 Dos cosas se aprendieron midiendo, no leyendo: **"Produccion" no se reconoce por marcadores de texto.** La primera version del guard comparaba el host contra una lista escrita a mano (`nyvora.co`, `apexos-api-production`) y ninguno de esos cadenas esta en el host real `apexos-api-prod-production.up.railway.app`: el guard habria devuelto "no es produccion" justo en produccion, y QA dice `-production` en el mismo literal, asi que ningun substring sirve. Hoy el guard compara el hostname contra el API que el propio `config/production.env` declara, y el selftest afirma el host real de cada ambiente (produccion `true`, QA `false`). Y **el rescate no puede escribirse todavia**: la excepcion de la escalera para correcciones administrativas (`resolvePunchLadder`) existe solo en `desarrollo` (3 ocurrencias) y no esta en `origin/develop` ni en `origin/main` (0 en las dos, medido con `git grep` por rama), de modo que el API desplegado rechaza hoy cualquier pierna que no sea la siguiente. Antes de la Fase 0 hace falta la promocion con sus puertas, y una sesion administrativa de Produccion que este puesto no tiene.
 
 
+## Identidad en la marcacion web: huella, rostro y celular del camion (2026-11-23)
+
+- **Web movil (PWA aparte, repositorio `AppApexos`).** Al tocar *Marcar* el celular pide PRIMERO la huella (WebAuthn, llave ES256 registrada por cada empleado con su usuario en *Marcar jornada*) y DESPUES la selfie. La huella firma usuario, tipo, hora, idempotencia y llave (`apexos-web-punch|v2|...`, sin selfie); la selfie se compara con el rostro registrado.
+- **Rostro (`face-identity.js`, Human 3.3.6).** Registro unico con autorizacion de datos biometricos (`face-consent.js`); el celular compara al instante y bloquea si no coincide; el servidor vuelve a comparar y, si no coincide, la marcacion queda registrada pero SENALADA (`identity_verification.face_match`). Umbral `FACE_MATCH_THRESHOLD` 0.55, a calibrar con fotos reales.
+- **Huella (`personal-webauthn.js`).** `GET/POST /hr/self/webauthn`, `POST /hr/self/webauthn/registration-challenge`, `DELETE /hr/employees/:id/webauthn` (administrador). Firma invalida = 403; sin firma = `fingerprint.status: no_presentada`. Reportes muestra «Huella verificada» / «SIN HUELLA».
+- **Ingreso con huella.** `POST /auth/webauthn/challenge` y `POST /auth/webauthn/login`: reto de un solo uso (2 min) y la misma sesion que `/auth/login`.
+- **Celular del camion (`shared-device-identity.js`).** Un celular registrado por placa marca para la tripulacion de la malla del dia, con huella del celular y selfie de quien marca.
+- **Limite.** El lector del telefono acepta cualquier dedo inscrito en el: la huella prueba celular y llave, no persona; por eso marcar exige tambien el rostro. Las llaves quedan atadas al dominio de la web movil.
+- **Requisitos por ambiente.** Migraciones `hr_shared_devices`, `hr_face_enrollments`, `hr_webauthn_credentials` y variables `WEBAUTHN_ORIGINS` / `WEBAUTHN_RP_IDS` en la API. Al 2026-11-23 solo existen en `desarrollo`.
+
 ## Validaciones esperadas
 
 - Registrar ingreso, almuerzo, retorno y cierre con GPS.

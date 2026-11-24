@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.24.0",
+      "version": "2.25.0",
       "updated_at": "2026-11-23",
-      "sha256": "d9ce117ced11cf124bd025e001255424dda02615d60c4153b9bedc7b3f7c4252",
+      "sha256": "fb4e8488312d3c55771dee0afb386a5f6fba3ac0144d8b9eaacd15fcc1e20562",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -97,9 +97,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.82.0",
+      "version": "2.83.0",
       "updated_at": "2026-11-23",
-      "sha256": "76dabd768d0a2bc59ebcef2a3a9470bc47b22696c552131af587ab6ed2d23a37",
+      "sha256": "df7a1252934a35c56a3590e607d5f5fe9dfe88b18abbdb1ade97fbceb65536c6",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -168,9 +168,9 @@
     {
       "name": "apexos-db-nube",
       "role": "experto-base-datos-nube",
-      "version": "2.7.0",
-      "updated_at": "2026-11-18",
-      "sha256": "e7c12432a2f0095b32a2e21351c960298121dc49d5ed8371dc4643d2d5d36f1c",
+      "version": "2.8.0",
+      "updated_at": "2026-11-23",
+      "sha256": "ca55fbdbe8cdc5eedd7fde9ce0424e76aa02d26de3996aae61dece55b7390755",
       "source": ".qoder/skills/apexos-db-nube/SKILL.md",
       "mirror": "agents/apexos-db-nube/SKILL.md",
       "controls": [
@@ -195,9 +195,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.41.0",
+      "version": "2.42.0",
       "updated_at": "2026-11-23",
-      "sha256": "4cba34811b05b952b2776afd30faa5bc150d5f33e33bfe31b0ebf95ba2be33c3",
+      "sha256": "766ec985e47cf7389730d63bc24a0bb8444171f36b51bfd37195b91dd72d1ac2",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -419,9 +419,9 @@
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.36.0",
+      "version": "2.37.0",
       "updated_at": "2026-11-23",
-      "sha256": "80db53ff7e04231238aa69064bde59ef67f3f4f7aa8427f9c232943f8749490d",
+      "sha256": "4210b0d9cef78aa53685eecb02530065dd01d71133e395a15420f56fc73db5cc",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [

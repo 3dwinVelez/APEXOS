@@ -2,7 +2,7 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, homologación visual y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos, homologación de pantallas.
-version: 2.41.0
+version: 2.42.0
 updated_at: 2026-11-23
 contract: 2
 ---
@@ -150,6 +150,8 @@ Si el catálogo no cubre el patrón, se detiene y propone la ampliación del cat
     - Retirar el bloque muerto no puede dejar huérfano lo vivo: el `import { Image }` sigue consumido en otro bloque de la misma pantalla (`mapa/page.tsx:244`) y la foto del detalle la sirve `HrTimelineEvidence` por referencia (`:694`). El guard fija las dos cosas, y la aseveración de que la referencia sigue ahí es la que impide que una limpieza borre el camino bueno.
     - Un retiro de superficie se certifica en lo que el navegador recibe, no en el fuente: 1.203 archivos del build leídos con `scripts/certifications/hr-map-inline-evidence-artifact-local.js`, el alt retirado en 0 y el marcador de la pantalla presente en los chunks. Y cuando no hay navegador, se declara la limitación (así quedó esta vez) en vez de deducir la pintura desde el build.
     Por qué: la línea parecía un defecto de costo y era un defecto de legibilidad del código; confundirlos produce un commit que «baja megas» sin bajar ninguna.
+
+56. **Al resolver un conflicto en una pantalla del monitor se extiende el tipo del remoto, no se reemplaza, y la nota de verificación combina sus fuentes.** El 2026-11-23 `talento-humano/reportes/page.tsx` chocó entre la nota de rostro y huella (`faceMatchNote`: «Rostro coincide», «SIN HUELLA») y la degradación de evidencia y corrección administrativa del remoto. La resolución conserva los campos del remoto (`degradation`, `correction`, `storage_path`) y agrega `face_match`/`fingerprint` al tipo de `identity_verification`; el detalle de la línea de tiempo une la nota con el retardo. Elegir un lado entero habría borrado en silencio una capacidad ya publicada.
 
 ## Checklist de intervención
 
