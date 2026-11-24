@@ -24,3 +24,25 @@ export const timeReportColumns = [
   { key: "ordinary_sunday_holiday_night_minutes", label: "Recargo dom/fest nocturno" }
 ] as const;
 export type TimeReportSummary = { employee_id: number | string; date: string; worked_minutes: number; overtime_minutes: number; alerts: string[] } & Record<(typeof timeReportColumns)[number]["key"], number>;
+
+export function totalTimeReport(rows: readonly { workedMinutes: number; overtimeMinutes: number; timeSummary?: TimeReportSummary; liquidatedOvertimeMinutes?: number | null; events?: readonly unknown[] }[]) {
+  const totals = {
+    rows: rows.length, pending: 0, workedMinutes: 0, overtimeMinutes: 0, events: 0,
+    liquidatedOvertimeMinutes: null as number | null, overtimeDifferenceMinutes: 0,
+    concepts: Object.fromEntries(timeReportColumns.map(column => [column.key, 0])) as Record<(typeof timeReportColumns)[number]["key"], number>
+  };
+  for (const row of rows) {
+    totals.workedMinutes += row.workedMinutes;
+    totals.events += row.events?.length || 0;
+    if (!row.timeSummary) totals.pending++;
+    else {
+      totals.overtimeMinutes += row.overtimeMinutes;
+      for (const column of timeReportColumns) totals.concepts[column.key] += row.timeSummary[column.key];
+    }
+    if (row.liquidatedOvertimeMinutes != null) {
+      totals.liquidatedOvertimeMinutes = (totals.liquidatedOvertimeMinutes ?? 0) + row.liquidatedOvertimeMinutes;
+      totals.overtimeDifferenceMinutes += row.overtimeMinutes - row.liquidatedOvertimeMinutes;
+    }
+  }
+  return totals;
+}

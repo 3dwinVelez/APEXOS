@@ -13,12 +13,14 @@ const dashboardRoot = path.join(root, "app/dashboard");
 // Rutas estaticas reales del dashboard. Se excluyen la raiz, la redireccion de
 // configuracion y el alias de mallas (reexport de rutas), que no son destinos propios.
 const ALIASES = new Set(["/dashboard/configuracion", "/dashboard/talento-humano/mallas", "/dashboard/transporte/maestros", "/dashboard/administracion/maestros-transporte", "/dashboard/transporte/pyg"]);
+// Intentionally retained for compatibility, without a web navigation shortcut.
+const HIDDEN_ROUTES = new Set(["/dashboard/talento-humano/marcacion"]);
 const routePath = (href) => new URL(href, "http://apex.local").pathname;
 const staticRoutes = fs.readdirSync(dashboardRoot, { recursive: true })
   .map((entry) => String(entry).replace(/\\/g, "/"))
   .filter((entry) => entry.endsWith("/page.tsx") || entry === "page.tsx")
   .map((entry) => `/dashboard${entry === "page.tsx" ? "" : `/${entry.replace(/\/page\.tsx$/, "")}`}`)
-  .filter((route) => !route.includes("[") && route !== "/dashboard" && !ALIASES.has(route));
+  .filter((route) => !route.includes("[") && route !== "/dashboard" && !ALIASES.has(route) && !HIDDEN_ROUTES.has(route));
 
 const functionsSource = read("lib/moduleFunctions.ts");
 const modulesSource = read("lib/modules.ts");
@@ -80,6 +82,11 @@ test("el buscador ofrece las funciones clave del modulo de talento humano", () =
   assert.equal(byLabel.get("Ver mapa operativo")?.href, "/dashboard/talento-humano/mapa");
   assert.match(byLabel.get("Horarios y mallas")?.keywords || "", /marcacion/);
   assert.equal(byLabel.get("Gestionar bancos de empleados")?.href, "/dashboard/talento-humano/bancos");
+});
+
+test("marcacion conserva su pagina pero no se ofrece como atajo web", () => {
+  assert.ok(fs.existsSync(path.join(root, "app/dashboard/talento-humano/marcacion/page.tsx")));
+  assert.ok(!functionEntries.some(entry => HIDDEN_ROUTES.has(routePath(entry.href))));
 });
 
 test("los alias excluidos si son redirecciones y no destinos propios", () => {
