@@ -7,6 +7,8 @@ const jwt = require("../../security/jwt");
 const { assertPasswordPolicy } = require("../../security/policy");
 const accountingService = require("../accounting/service");
 const authorizationState = require("../../security/authorizationState");
+const personalWebauthn = require("../hr/personal-webauthn");
+const { webauthnConfig } = require("../hr/shared-device-identity");
 
 const SEED_MODULES = ["M-01", "M-03", "M-04", "M-05", "M-07", "M-22"];
 const ALL_MODULES = Array.from({ length: 27 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`);
@@ -140,6 +142,11 @@ async function login(input, fastify, request = {}) {
   }
 
   registerLoginSuccess(email, request.ip);
+  return startSession(user);
+}
+
+// Sesion de un usuario ya autenticado (clave o huella): misma respuesta en ambos casos.
+async function startSession(user) {
   await prisma.user.update({ where: { id: user.id }, data: { last_login: new Date() } });
   const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
   const session = await authorizationState.createSession(user, tenant);
@@ -148,6 +155,54 @@ async function login(input, fastify, request = {}) {
   const refresh = jwt.sign({ ...claims, role: undefined, type: "refresh" }, { expiresIn: "30d" });
 
   return { token, refresh, tenant: publicTenant(tenant), user: publicUser(user) };
+}
+
+// ---------------------------------------------------------------- ingreso con huella
+// La web movil entra con la llave WebAuthn que el empleado registro en Marcar jornada
+// (hr/personal-webauthn.js). El reto lleva empresa y usuario firmados por el servidor.
+function fingerprintLoginConfig() {
+  const config = webauthnConfig();
+  if (!config.allowedOrigins.length || !config.allowedRpIds.length) {
+    const err = new Error("El ingreso con huella no esta habilitado en este servidor.");
+    err.statusCode = 503;
+    err.code = "WEBAUTHN_NO_CONFIGURADO";
+    throw err;
+  }
+  return config;
+}
+
+async function fingerprintChallenge(input = {}) {
+  fingerprintLoginConfig();
+  return personalWebauthn.issueLoginChallenge({ tenantId: input.tenant_id, userId: input.user_id, secret: process.env.JWT_SECRET });
+}
+
+async function fingerprintLogin(input = {}, fastify, request = {}) {
+  const config = fingerprintLoginConfig();
+  const { tenantId, userId } = personalWebauthn.consumeLoginChallenge(input.challenge, { secret: process.env.JWT_SECRET });
+  const guardKey = `huella:${tenantId}:${userId}`;
+  assertLoginAllowed(guardKey, request.ip);
+  try {
+    const credential = await prisma.hrWebauthnCredential.findFirst({
+      where: { tenant_id: tenantId, credential_id: String(input.credential_id || ""), active: true }
+    });
+    const verified = personalWebauthn.verifyLoginAssertion({ credential, userId, input, ...config });
+    const user = await prisma.user.findFirst({
+      where: { id: userId, tenant_id: tenantId },
+      include: { role: { include: { permissions: true } } }
+    });
+    if (!user || !user.active) {
+      const err = new Error("No fue posible entrar con tu huella. Entra con tu correo y clave.");
+      err.statusCode = 401;
+      err.code = "HUELLA_USUARIO_NO_DISPONIBLE";
+      throw err;
+    }
+    await prisma.hrWebauthnCredential.update({ where: { id: credential.id }, data: { sign_count: verified.sign_count, last_used_at: new Date() } });
+    registerLoginSuccess(guardKey, request.ip);
+    return startSession(user);
+  } catch (error) {
+    if (error.statusCode === 401) registerLoginFailure(guardKey, request.ip);
+    throw error;
+  }
 }
 
 async function me(user) {
@@ -256,4 +311,4 @@ async function revokeSession(user, sessionId) {
   return authorizationState.revokeSession(user.id, sessionId, "user_requested");
 }
 
-module.exports = { registerTenant, login, me, refresh, changePassword, logout, revokeSession };
+module.exports = { registerTenant, login, fingerprintChallenge, fingerprintLogin, me, refresh, changePassword, logout, revokeSession };

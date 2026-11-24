@@ -14,7 +14,22 @@ async function authRoutes(fastify) {
     return service.login(request.body, fastify, request);
   });
 
-  fastify.get("/auth/me", { preHandler: fastify.authenticate }, async (request) => {
+  // Ingreso con la huella registrada en el celular (web movil). Publicas como /auth/login.
+  fastify.post("/auth/webauthn/challenge", {
+    schema: schemas.fingerprintChallengeSchema,
+    config: { rateLimit: { max: 20, timeWindow: "1 minute" } }
+  }, async (request) => {
+    return service.fingerprintChallenge(request.body);
+  });
+
+  fastify.post("/auth/webauthn/login", {
+    schema: schemas.fingerprintLoginSchema,
+    config: { rateLimit: { max: 10, timeWindow: "1 minute" } }
+  }, async (request) => {
+    return service.fingerprintLogin(request.body, fastify, request);
+  });
+
+  fastify.get("/auth/me",{ preHandler: fastify.authenticate }, async (request) => {
     return service.me(request.user);
   });
 
