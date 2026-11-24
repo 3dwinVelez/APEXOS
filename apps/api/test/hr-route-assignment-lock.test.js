@@ -130,7 +130,12 @@ function buildFakePrisma() {
     // El pre-chequeo de solapamiento (fuera de la transaccion) usa el cliente raiz,
     // igual que produccion; el chequeo definitivo ocurre dentro del lock con tx.timeRoute.
     timeRoute: {
-      findMany: timeRouteFindMany
+      findMany: timeRouteFindMany,
+      // `runWithTenant` es identidad en el cliente raiz: el fake filtra por tenant para que la
+      // proteccion de `updateRoute` se pruebe y no se simule.
+      findFirst: async ({ where } = {}) => routes.find(
+        (route) => route.id === where?.id && route.tenant_id === where?.tenant_id
+      ) || null
     },
     $transaction: async (callback, options) => {
       transactionCalls.push(options ?? null);
@@ -297,6 +302,43 @@ test("fix P2028: contencion externa del lock se reintenta y la creacion termina 
     assert.equal(fakePrisma.routes.length, 1);
     const attempts = fakePrisma.events.filter((event) => event.kind === "lock" && event.scope === scope);
     assert.ok(attempts.length >= 2, "debe haberse reintentado el try-lock antes de adquirirlo");
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("arreglo de aislamiento: otro tenant no edita una malla ajena y el dueno si puede", async () => {
+  const fakePrisma = buildFakePrisma();
+  fakePrisma.routes.push({
+    id: 9,
+    tenant_id: "tenant-qa",
+    date: new Date("2026-09-25T05:00:00.000Z"),
+    employees: ["EMP-41"],
+    start_time: "08:00",
+    end_time: "17:00",
+    tolerance_minutes: 15,
+    per_diem: 0,
+    notes: "",
+    status: "active"
+  });
+  const loaded = loadHrService(fakePrisma);
+  try {
+    const antes = structuredClone({ ...fakePrisma.routes[0], date: fakePrisma.routes[0].date.toISOString() });
+    await assert.rejects(
+      () => loaded.service.updateRoute("tenant-otro", 9, { ...routeInput, tolerance_minutes: 44 }),
+      (error) => {
+        assert.equal(error.statusCode, 404, "el cruzamiento de tenant no puede responder 200 ni 500");
+        assert.equal(error.code, "HORARIO_NO_ENCONTRADO");
+        return true;
+      }
+    );
+    assert.equal(fakePrisma.events.filter((event) => event.kind === "update").length, 0, "el rechazo no puede escribir");
+    const despues = { ...fakePrisma.routes[0] };
+    despues.date = despues.date.toISOString();
+    assert.deepEqual(despues, antes, "la malla del tenant dueno queda intacta");
+
+    const editada = await loaded.service.updateRoute("tenant-qa", 9, { ...routeInput, tolerance_minutes: 22 });
+    assert.equal(editada.tolerance_minutes, 22, "el dueno conserva su edicion");
   } finally {
     loaded.restore();
   }
