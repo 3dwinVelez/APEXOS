@@ -14,15 +14,27 @@
   "certified_commit": "3303a95532a35603f53f1eced0300f4febb0eab3",
   "naturealeza": "Avance de documentacion, cero rutas de producto. El brief del paquete de latencia gano 122 lineas durante la pata main (seccion 16: por que el transporte fue replay, las cuatro roturas que se midieron antes de commitear, el re-anclaje de la base cuando el porton de alcance rechazo el baseline viejo y las invariantes re-medidas). Esas lineas ya viven en origin/desarrollo y en origin/main cf2adc59; develop se quedo con la version anterior del archivo. El commit que se promociona trae solo esa ruta y este manifiesto.",
   "change_intent": {
-    "modules": ["documentacion", "qa-evidencia"],
+    "modules": [
+      "documentacion",
+      "qa-evidencia"
+    ],
     "summary": "Poner al dia el brief 2026-11-24-monitor-marcaciones-latencia.md en develop para que las tres ramas cuenten la misma intervencion. No cambia una linea de codigo, de esquema ni de instrumentacion: el diff neto es una ruta de docs/briefs y este manifiesto."
   },
   "expected_changes": [
-    { "path": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md", "change": "M" },
-    { "path": "docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json", "change": "A" }
+    {
+      "status": "M",
+      "file": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json"
+    }
   ],
   "allowed_deletions": [],
-  "allowed_paths": ["docs/briefs/", "docs/qa/manifests/"],
+  "allowed_paths": [
+    "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
+    "docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json"
+  ],
   "origin_waivers": [],
   "protected_capabilities": [
     "El arbol de producto de develop no se mueve: 0 rutas bajo apps/ y 0 bajo scripts/ en el diff neto.",
