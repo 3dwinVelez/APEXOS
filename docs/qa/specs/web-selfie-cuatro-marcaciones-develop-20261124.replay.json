@@ -1,0 +1,25 @@
+{
+  "promocion": "web-selfie-cuatro-marcaciones-a-develop-20261124",
+  "destino": "develop",
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "carry": [
+    { "file": "apps/api/src/modules/hr/mobile-identity.js", "motivo": "la regla de las cuatro marcaciones web y la tolerancia por clase de formato" },
+    { "file": "apps/api/test/hr-mobile-identity.test.js", "motivo": "los casos de comportamiento que nacen en la rama de trabajo" },
+    { "file": "apps/api/test/hr-single-selfie-gate.test.js", "motivo": "la guarda estructural que prohíbe una segunda compuerta" },
+    { "file": "scripts/certifications/hr-mobile-identity-local.js", "motivo": "el certificador hermético que siembra sus fichas y manda la foto en la raíz del cuerpo" }
+  ],
+  "delete": [
+    "apps/api/src/modules/hr/webPunchSelfie.js",
+    "apps/api/test/hr-web-punch-selfie.test.js"
+  ],
+  "edit": [
+    {
+      "file": "apps/api/src/modules/hr/service.js",
+      "remove_lines": [
+        "input = require(\"./webPunchSelfie\").prepareWebPunchSelfie(input);"
+      ],
+      "motivo": "retirar el único enganche de la compuerta alterna; el blob de desarrollo no se puede llevar porque develop tiene su propio contenido"
+    }
+  ]
+}
