@@ -1,6 +1,6 @@
 {
   "instrumento": "promotion-migration-check",
-  "ejecutado_en": "2026-11-24T18:47:31.889Z",
+  "ejecutado_en": "2026-11-24T18:48:26.179Z",
   "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-monitor-sesion-main-20261124",
   "spec": "docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json",
   "base_ref": "b08699e3214a41f946cf3080b313cbfe637e33dd",
@@ -350,8 +350,8 @@
     {
       "tipo": "carry",
       "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json",
-      "esperado": "1c9ca592dd9dca6dd9f3df35b122baaa7a4e322c",
-      "actual": "1c9ca592dd9dca6dd9f3df35b122baaa7a4e322c",
+      "esperado": "9c67cc9277c8ffb9847506fe43a4c6651cde2117",
+      "actual": "9c67cc9277c8ffb9847506fe43a4c6651cde2117",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
