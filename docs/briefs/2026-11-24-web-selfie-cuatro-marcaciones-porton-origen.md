@@ -307,6 +307,9 @@ y "verificadas y probadas que no existirán rechazos". La orden incluye verifica
   la cuenta efímera retirada con login 401 después (`docs/qa/evidence/web-selfie-cuatro-marcaciones-main-20261124/produccion-despues.json`).
   La corrida de evidencia viajó a `main` como commit de documentación encima del tip promocionado, con el
   mismo precedente que ya se usó en `9d13cae0`: el manifiesto no se reescribe para que pareciera completo.
+  Producción sirve hoy `3baf8e4a409b` y `https://www.apexos.com.co` responde 200 en 0,35 s; entre el árbol
+  medido (`45809d87`) y el servido no cambia ni una ruta de producto (`git diff --name-only 45809d87 3baf8e4a -- apps scripts`
+  = 0 rutas, y los cuatro blobs del frente son idénticos), así que el DESPUÉS describe lo que está en línea.
 
 ### 15.3 Lo que este frente no arregla, dicho con su dueño
 
