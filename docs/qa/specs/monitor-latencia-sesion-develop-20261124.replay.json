@@ -1,0 +1,207 @@
+{
+  "promocion": "monitor-latencia-sesion-a-develop-20261124",
+  "destino": "develop",
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "nota": "Las cuatro rutas de producto no son carry: son fusion a tres vias del avance de desarrollo sobre el contenido propio de develop (cd3a88e5 y la marcacion web), y se declaran como origin_waivers en el manifiesto de alcance. Todo lo demas viaja byte a byte desde origin/desarrollo.",
+  "carry": [
+    {
+      "file": ".qoder/skills/apexos-backend/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": ".qoder/skills/apexos-brief/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": ".qoder/skills/apexos-db-nube/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": ".qoder/skills/apexos-frontend/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": ".qoder/skills/apexos-performance/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": ".qoder/skills/apexos-qa/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": ".qoder/skills/apexos-seguridad/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": ".qoder/skills/equipo-apexos/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "agents/CHANGELOG.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "agents/apexos-backend/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "agents/apexos-brief/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "agents/apexos-db-nube/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "agents/apexos-frontend/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "agents/apexos-git-guardian/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "agents/apexos-performance/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "agents/apexos-qa/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "agents/apexos-seguridad/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "agents/equipo-apexos/SKILL.md",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "agents/registry.json",
+      "motivo": "el contexto vivo del equipo, canonico en desarrollo"
+    },
+    {
+      "file": "apps/api/src/modules/auth/service.js",
+      "motivo": "el cambio de producto escrito y certificado en desarrollo"
+    },
+    {
+      "file": "apps/api/src/modules/hr/monitorEvidenceRows.js",
+      "motivo": "el cambio de producto escrito y certificado en desarrollo"
+    },
+    {
+      "file": "apps/api/src/security/authorizationState.js",
+      "motivo": "el cambio de producto escrito y certificado en desarrollo"
+    },
+    {
+      "file": "apps/api/test/auth-me-single-statement.test.js",
+      "motivo": "las pruebas que nacen con el cambio"
+    },
+    {
+      "file": "apps/api/test/auth-session-hardening.test.js",
+      "motivo": "las pruebas que nacen con el cambio"
+    },
+    {
+      "file": "apps/api/test/auth-webauthn-login.test.js",
+      "motivo": "las pruebas que nacen con el cambio"
+    },
+    {
+      "file": "apps/api/test/authorization-status-codes.test.js",
+      "motivo": "las pruebas que nacen con el cambio"
+    },
+    {
+      "file": "apps/api/test/hr-evidence-backfill-tool.test.js",
+      "motivo": "las pruebas que nacen con el cambio"
+    },
+    {
+      "file": "apps/api/test/hr-list-truncation.test.js",
+      "motivo": "las pruebas que nacen con el cambio"
+    },
+    {
+      "file": "apps/api/test/hr-monitor-evidence-columns.test.js",
+      "motivo": "las pruebas que nacen con el cambio"
+    },
+    {
+      "file": "apps/web/test/hr-monitor-refresh.test.mjs",
+      "motivo": "las pruebas que nacen con el cambio"
+    },
+    {
+      "file": "docs/PERFORMANCE_ANTI_PATTERNS.md",
+      "motivo": "el cambio de producto escrito y certificado en desarrollo"
+    },
+    {
+      "file": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
+      "motivo": "el brief de la intervencion"
+    },
+    {
+      "file": "docs/project/talento-humano-implementacion-seguimiento.md",
+      "motivo": "el cambio de producto escrito y certificado en desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-production.json",
+      "motivo": "la evidencia versionada que sostiene el veredicto"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-qa.json",
+      "motivo": "la evidencia versionada que sostiene el veredicto"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt",
+      "motivo": "la evidencia versionada que sostiene el veredicto"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-production.json",
+      "motivo": "la evidencia versionada que sostiene el veredicto"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-qa.json",
+      "motivo": "la evidencia versionada que sostiene el veredicto"
+    },
+    {
+      "file": "docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json",
+      "motivo": "la evidencia versionada que sostiene el veredicto"
+    },
+    {
+      "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json",
+      "motivo": "la evidencia versionada que sostiene el veredicto"
+    },
+    {
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json",
+      "motivo": "la evidencia versionada que sostiene el veredicto"
+    },
+    {
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527496487.json",
+      "motivo": "la evidencia versionada que sostiene el veredicto"
+    },
+    {
+      "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json",
+      "motivo": "la evidencia versionada que sostiene el veredicto"
+    },
+    {
+      "file": "docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json",
+      "motivo": "la evidencia versionada que sostiene el veredicto"
+    },
+    {
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json",
+      "motivo": "el manifiesto de alcance que declara esta promocion"
+    },
+    {
+      "file": "scripts/hr-evidence-backfill-storage.js",
+      "motivo": "el instrumento de certificacion o de guard"
+    },
+    {
+      "file": "scripts/security/auth-email-collision-census.js",
+      "motivo": "el instrumento de certificacion o de guard"
+    },
+    {
+      "file": "scripts/security/auth-session-sql-guard.js",
+      "motivo": "el instrumento de certificacion o de guard"
+    }
+  ],
+  "delete": [],
+  "edit": []
+}
