@@ -1,0 +1,121 @@
+{
+  "change_id": "monitor-latencia-sesion-main-20261124",
+  "commit": "65b9dd7a9d66565b7f728124c4208f484bc58c07",
+  "tree_evaluated": "punta de codex/qa-monitor-latencia-sesion-main-20261124: replay puntual del paquete sobre origin/main 3baf8e4a (51 rutas funcionales) mas los dos manifiestos y el veredicto. Ninguna ruta de producto cambia entre el commit certificado y la punta.",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-24T22:20:00-05:00",
+    "scope": "promotion_to_main",
+    "instruction": "procede con la promocion controlada de esta intervencion alineado las 3 ramas al finalizar brindame un resumen en lenguaje natural de lo que se hizo sin dejar pendientes abiertos",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "Main esta a 859 commits de develop, asi que el transporte es replay de 51 rutas y no fusion. Las rutas del paquete son blob-identicas al arbol que QA certifico en campo sobre el binario 3303a95532a3 (5/5 rechazos, 12/12 de evidencia bajo demanda, 18 casos de latencia sin divergencia, presupuesto verde con volumen) y los tres archivos de fusion conservan el codigo productivo de main medido por marcador: pg_advisory_xact_lock 6, buildEmployeeTerminationLiquidation 4."
+    },
+    "authorization_basis": "La orden del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas y la verificacion en los ambientes QA y Produccion, incluidas las lecturas de los servicios desplegados y el retiro de las cuentas efimeras que el arnes creo. No otorga force push, reescritura de historia, borrado de ramas, migraciones remotas de esquema ni cambios de infraestructura o secretos.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen y se corren manifiesto v2, qa:promotion:scope contra la punta, qa:approval:evidence, el instrumento de replay contra el indice y contra la punta, y la verificacion de Produccion por artefacto servido anclada al sha."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/qa-cierre.md",
+        "../evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json",
+        "../evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json",
+        "../evidence/auth-session-path-20261124/veredicto-main.md"
+      ],
+      "notes": "Certificacion funcional contra el API desplegado en QA (ancla health_commit 3303a95532a3, leida del /health de la propia corrida): 12/12 controles de evidencia bajo demanda, incluido cross_tenant_evidence_denied con 404 del tenant vecino y el 403 del rol solo-marcacion; y presupuesto de reloj en verde con volumen (mapa 52 KB con p95 1.152 ms, contadores 3 KB con fecha contra 7 KB sin fecha, asistencia 24 KB, 0 binarios inline). Las cuatro lecturas se releyeron del ambiente, no del cuerpo de la respuesta."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/qa-auth-session.json",
+        "../evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json",
+        "../evidence/auth-session-path-20261124/censo-correos-qa.json",
+        "../evidence/auth-session-path-20261124/qa-retiro-cuentas.json",
+        "../evidence/auth-session-path-20261124/veredicto-main.md"
+      ],
+      "notes": "Rechazos medidos y no exigidos: 5/5 en 401 (sin token, token basura, alg:none, clave ajena, firma alterada) sobre el binario servido, con login/me/orders en 200. La evidencia bajo demanda devuelve 404 para el id inexistente y 404 para el id del tenant vecino, y 403 para el rol que solo marca. El camino del correo repetido se curo con censo: 7 correos colisionados vivos en QA y 0 en Produccion, y el 401 unico para inexistente, inactivo y empate (medido con bcrypt sobre cada fila, que es lo que impide que el login sea un oraculo de correos)."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/suites-candidato-main.txt",
+        "../evidence/auth-session-path-20261124/suites-camino-sesion.json",
+        "../evidence/auth-session-path-20261124/suite-plataforma-candidato.json",
+        "../specs/monitor-latencia-sesion-main-20261124.replay.json"
+      ],
+      "notes": "Suitas corriendo sobre el arbol candidato a main (no sobre el puesto de trabajo): 70 pruebas, 69 pasan, 0 fallan y 1 SKIP explicito y preexistente en authorization-status-codes.test.js. Incluye las dos pruebas nuevas del paquete (auth-me-single-statement y hr-evidence-backfill-tool) y la web hr-monitor-refresh 7/7. El autocontrol del instrumento de presupuesto corre aparte y exige sus rojos: falla con binario inline o latencia fuera de presupuesto y pasa con el aviso por referencia."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/invariantes-replay-main.json",
+        "../evidence/auth-session-path-20261124/candidato-main.txt",
+        "../evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt",
+        "../evidence/auth-session-path-20261124/qa-cierre.md"
+      ],
+      "notes": "Regresion del replay, medida tres veces: (a) 46 rutas carry blob contra blob con su rama de referencia y 24 rutas ajenas verificadas ausentes (biometria, webauthn, dispositivos compartidos, las dos pantallas nuevas, recovery-readiness y la gobernanza); (b) 0 lineas anadidas huerfanas en los tres archivos de fusion, con los cuerpos de login, startSession, me, refresh y listRouteEventSummaries identicos caracter por caracter a la rama certificada; (c) los marcadores productivos de main sin moverse y los contadores de lo que no viaja en 0. La paridad de producto contra el arbol servido en QA ya estaba medida en la pata develop (equivalencia-producto-candidato.txt)."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/candidato-main.txt",
+        "../evidence/auth-session-path-20261124/replay-arbol-candidato-main.json",
+        "../evidence/auth-session-path-20261124/sentencias-production.json",
+        "../evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json",
+        "../evidence/auth-session-path-20261124/veredicto-main.md"
+      ],
+      "notes": "El replay no toca Prisma, no anade migracion y no cambia el esquema: las tablas de marcaciones, novelties, sesiones e identidades quedan como estan, y las tres migraciones del frente de biometria siguen ausentes del arbol promovido. La lectura de sentencias se hizo en Produccion con transaccion READ ONLY, statement_timeout y lock_timeout, 0 escrituras, y el backfill de evidencia corre en modo dry (prod-dry) sin escribir binarios. El piso real por peticion autenticada sigue siendo el viaje al pooler (about 660 ms), medido y escrito: este paquete quita viajes, no los vuelve cero."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-monitor-byte-budget.js",
+    "evidence": [
+      "../evidence/auth-session-path-20261124/qa-monitor-budget.json",
+      "../evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json",
+      "../evidence/auth-session-path-20261124/qa-monitor-budget-harness.json",
+      "../evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json",
+      "../evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json"
+    ],
+    "controls": 12,
+    "passed": 12,
+    "failed": 0,
+    "substrate": "ambiente QA desplegado desde la promocion a develop (API servido 3303a95532a3, health_commit medido dentro de la propia corrida); la columna foto se relee del ambiente y el presupuesto exige volumen en el dia medido, no un 0 KB verde"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/auth-session-path-20261124/replay-arbol-candidato-main.json",
+      "../evidence/auth-session-path-20261124/invariantes-replay-main.json",
+      "../evidence/auth-session-path-20261124/candidato-main.txt",
+      "../evidence/auth-session-path-20261124/suites-candidato-main.txt"
+    ],
+    "basis": "El instrumento de invariante corre sobre el arbol del candidato (46 carry + 24 delete = 70 invariantes validas) y su propio autocontrol de mutacion exige los tres rojos que justifica su existencia: anadir una linea en un hunks, tocar un archivo llevado y revivir una ruta borrada. La re-medicion contra la punta del candidato se guarda en una ruta nueva para no pisar la corrida buena, y su salida va textual en veredicto-main.md. Las suitas del paquete se corrieron con el NODE_PATH del arbol principal porque la worktree auxiliar no tiene node_modules: se copia ni se enlaza, que es como se vaciaron 1.173 archivos una vez."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-monitor-byte-budget.js",
+    "evidence": [
+      "../evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json",
+      "../evidence/auth-session-path-20261124/qa-monitor-budget.json",
+      "../evidence/auth-session-path-20261124/qa-cierre.md"
+    ],
+    "notes": "Corrida sobre la empresa modelo real NYVORA en QA (tenant 1d162ffd), apuntada al dia cargado 2026-11-23 del tenant medido y no al tenant de control de aislamiento: mapa 52 KB con p95 1.152 ms, contadores 3 KB con fecha, asistencia 24 KB y 0 binarios inline. La cuenta de medicion se provisiono con el propio servicio del producto y se retiro al cerrar con control login 200 antes / 401 despues; el arnes no escribe mas alla de lo que esa cuenta efimera produce."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
+    "trigger": "Si en Produccion el monitor de marcaciones deja de listar el dia pedido, si vuelve a viajar binario inline en la respuesta o pasa el presupuesto de 30 s, si un login legitimo empieza a recibir 401, si /auth/me responde con un perfil incompleto o si el retiro o la liquidacion de main dejan de calcular con su advisory lock.",
+    "notes": "Revert controlado del replay (git revert del commit de promocion, sin reescribir historia compartida) y redeploy de apexos-api-prod y apexos-web-prod. Como el candidato se construyo hunkeando sobre el blob de main, el revert devuelve exactamente ese blob: no hay migraciones de esquema que deshacer y ninguna tabla se toca. El spec de replay y su reporte quedan en el arbol, asi que el revert es simetrico y verificable ruta por ruta, y el tag backup/premain-monitor-latencia-sesion-20261124 conserva la punta anterior."
+  }
+}

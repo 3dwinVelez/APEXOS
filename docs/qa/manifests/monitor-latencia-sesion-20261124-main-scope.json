@@ -1,0 +1,225 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "monitor-latencia-sesion-main-20261124",
+  "creado": "2026-11-24T22:10:00-05:00",
+  "autorizado": "2026-11-24T20:40:00-05:00",
+  "target_branch": "main",
+  "source_branch": "develop",
+  "base_commits": {
+    "main": "3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
+    "develop": "3303a95532a35603f53f1eced0300f4febb0eab3",
+    "merge_base_develop_main": "180a2b21d21a152a9937c099c6e46500a3774908",
+    "distancia_commits_main_desde_develop": 859
+  },
+  "base_commit": "3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
+  "target_head": "3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
+  "certified_commit": "65b9dd7a9d66565b7f728124c4208f484bc58c07",
+  "candidate_tip": "La punta que se empuja es el commit de documentacion que trae estos dos manifiestos y el veredicto, encima del funcional 65b9dd7a. El funcional es fast-forward sobre 3baf8e4a y no toca ninguna de las tres rutas que ese commit sirvio; la diferencia entre las dos capas esta escrita en deriva_declarada y no detras de un numero redondo. La re-medicion del replay sobre la punta queda en docs/qa/evidence/auth-session-path-20261124/ (regla 124 de apexos-qa: medir solo el certificado dejaria pasar una ruta carry revertida por el commit de docs).",
+  "promotion_branch": "codex/qa-monitor-latencia-sesion-main-20261124",
+  "candidate_source": {
+    "branch": "develop",
+    "commit": "3303a95532a35603f53f1eced0300f4febb0eab3",
+    "replay_sobre": "origin/main 3baf8e4a409bae6a9fe32f5f2191a8cd560cbf23",
+    "origen_del_contenido": "origin/desarrollo para las 45 rutas carry y los cuatro instrumentos, origin/develop para la pantalla de rutas (blob c79f3da7, el que QA sirvio y certifico) y replay por hunks sobre el blob de main para los tres archivos de fusion",
+    "replay_de_commits": ["41134bf4", "f3e85f1a", "31a36e77"],
+    "linaje": "41134bf4 trae el acote del resumen de eventos y el camino de sesion en una sentencia; f3e85f1a cierra el login con correos repetidos y el refresh sin relectura; 31a36e77 (guarda de tenant en updateRoute) ya estaba en main, medida en su blob, por eso no se re-aplico."
+  },
+  "change_intent": {
+    "modules": ["talento-humano", "auth", "rendimiento", "platform-seguridad", "qa-evidencia"],
+    "resumen": "Bajar el piso de latencia del monitor de marcaciones y del camino de sesion: el resumen de eventos deja de leer el mes entero, /auth/me /login /refresh pasan de cuatro sentencias a una, la pantalla fija el dia consultado y la evidencia de foto se sirve por referencia en vez de viajar inline."
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/auth/service.js",
+    "apps/api/src/modules/hr/monitorEvidenceRows.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/security/authorizationState.js",
+    "apps/api/test/auth-me-single-statement.test.js",
+    "apps/api/test/auth-session-hardening.test.js",
+    "apps/api/test/authorization-status-codes.test.js",
+    "apps/api/test/hr-evidence-backfill-tool.test.js",
+    "apps/api/test/hr-list-truncation.test.js",
+    "apps/api/test/hr-monitor-evidence-columns.test.js",
+    "apps/api/test/hr-route-assignment-lock.test.js",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/test/hr-monitor-refresh.test.mjs",
+    "docs/PERFORMANCE_ANTI_PATTERNS.md",
+    "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md",
+    "docs/project/talento-humano-implementacion-seguimiento.md",
+    "docs/qa/evidence/auth-session-path-20261124/",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json",
+    "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795543145867.json",
+    "docs/qa/evidence/hr-evidence-backfill-20261124/",
+    "docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json",
+    "docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json",
+    "docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json",
+    "scripts/certifications/hr-monitor-byte-budget.js",
+    "scripts/hr-evidence-backfill-storage.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {"status": "M", "file": "apps/api/src/modules/auth/service.js"},
+    {"status": "M", "file": "apps/api/src/modules/hr/monitorEvidenceRows.js"},
+    {"status": "M", "file": "apps/api/src/modules/hr/routes.js"},
+    {"status": "M", "file": "apps/api/src/modules/hr/service.js"},
+    {"status": "M", "file": "apps/api/src/security/authorizationState.js"},
+    {"status": "A", "file": "apps/api/test/auth-me-single-statement.test.js"},
+    {"status": "M", "file": "apps/api/test/auth-session-hardening.test.js"},
+    {"status": "M", "file": "apps/api/test/authorization-status-codes.test.js"},
+    {"status": "A", "file": "apps/api/test/hr-evidence-backfill-tool.test.js"},
+    {"status": "M", "file": "apps/api/test/hr-list-truncation.test.js"},
+    {"status": "M", "file": "apps/api/test/hr-monitor-evidence-columns.test.js"},
+    {"status": "M", "file": "apps/api/test/hr-route-assignment-lock.test.js"},
+    {"status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"},
+    {"status": "M", "file": "apps/web/test/hr-monitor-refresh.test.mjs"},
+    {"status": "M", "file": "docs/PERFORMANCE_ANTI_PATTERNS.md"},
+    {"status": "A", "file": "docs/briefs/2026-11-24-monitor-marcaciones-latencia.md"},
+    {"status": "M", "file": "docs/project/talento-humano-implementacion-seguimiento.md"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/candidato-develop.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/candidato-main.txt"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-production.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-qa.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/invariantes-replay-main.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-auth-session.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-cierre.md"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget-harness.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-budget.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/qa-retiro-cuentas.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-main.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/replay-candidato-develop.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-production.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/sentencias-qa.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/suite-plataforma-candidato.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/suites-camino-sesion.json"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/suites-candidato-main.txt"},
+    {"status": "A", "file": "docs/qa/evidence/auth-session-path-20261124/veredicto-main.md"},
+    {"status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-production-1795528571910.json"},
+    {"status": "A", "file": "docs/qa/evidence/hr-auth-latency-20261119/diferencial-qa-1795543145867.json"},
+    {"status": "A", "file": "docs/qa/evidence/hr-evidence-backfill-20261124/prod-dry-1795527962441.json"},
+    {"status": "A", "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527496487.json"},
+    {"status": "A", "file": "docs/qa/evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json"},
+    {"status": "A", "file": "docs/qa/evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json"},
+    {"status": "A", "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json"},
+    {"status": "A", "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json"},
+    {"status": "A", "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json"},
+    {"status": "A", "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json"},
+    {"status": "A", "file": "docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json"},
+    {"status": "A", "file": "docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json"},
+    {"status": "M", "file": "scripts/certifications/hr-monitor-byte-budget.js"},
+    {"status": "A", "file": "scripts/hr-evidence-backfill-storage.js"}
+  ],
+  "certified_functional_paths": "Las 51 rutas del commit funcional 65b9dd7a (apps, scripts, brief, spec de replay y evidencia). expected_changes declara 54: las tres restantes son los dos manifiestos y el veredicto, que solo pueden escribirse con las medidas del commit que certifican y no pueden citarse a si mismos.",
+  "origin_waivers": [
+    {
+      "file": "apps/api/src/modules/hr/service.js",
+      "reason": "Main conserva codigo productivo propio que develop no tiene (motor de liquidacion y retiro). El candidato parte del blob de main y anade unicamente los hunks de 41134bf4 sobre listRouteEventSummaries: 32 lineas anadidas con 0 huerfanas contra origin/desarrollo, y el cuerpo de la funcion sale byte a byte igual (5.445 caracteres). Los marcadores de main no se movieron: pg_advisory_xact_lock 6, buildEmployeeTerminationLiquidation 4, boundedReportRange 6.",
+      "approval": "El propietario autorizo la promocion controlada de esta intervencion con las tres ramas alineadas el 2026-11-24; la divergencia no es contenido nuevo, es el blob del destino conservado."
+    },
+    {
+      "file": "apps/api/src/modules/auth/service.js",
+      "reason": "La version de origin/desarrollo trae login por huella, webauthn personal e identidad de dispositivo compartido, ninguno de ellos promocionado a main. El candidato parte del blob de main y aplica los hunks de 41134bf4 y f3e85f1a: 46 lineas anadidas con 0 huerfanas, y login (1.899), startSession (711), me (353) y refresh (2.610) identicos caracter por caracter a los de la rama certificada. Contadores de lo que no viaja: fingerprintLogin 0, personal-webauthn 0, shared-device-identity 0.",
+      "approval": "Misma autorizacion del propietario; llevar el blob de desarrollo habria pedido require(\"../hr/personal-webauthn\") en un arbol donde esa ruta no existe, es decir Produccion no arranca."
+    },
+    {
+      "file": "apps/api/src/modules/hr/routes.js",
+      "reason": "origin/desarrollo declara 24 rutas mas (webauthn, rostros, dispositivos compartidos) que no se promocionan. El candidato parte del blob de main y anade una sola linea, byte a byte la de develop: fastify.get(\"/hr/routes/event-summaries\", ...) con su requirePermission(\"hr\", \"read\"). Contadores webauthn 0 y face 0 en el blob indexado.",
+      "approval": "Misma autorizacion del propietario; la linea es identica a la que QA midio en 12/12 y no abre ninguna superficie nueva."
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+      "reason": "Viaja el blob de origin/develop (c79f3da7) y no el de origin/desarrollo (df9fd61d): develop es el arbol que QA certifica en campo, y el blob de desarrollo anade 53 lineas de otro frente (error del maestro de empleados y titulo conmutado de mallas) que nunca se certifico para promocion. Medida: 41 lineas anadidas contra main con 0 huerfanas respecto de origin/develop y EVIDENCE_FETCH_CONCURRENCY presente.",
+      "approval": "Misma autorizacion del propietario; declarar la procedencia en vez de silenciarla es la regla 126 de apexos-qa nacida de esta pata."
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Marcaciones del dia sin perdida por acote y evidencia por referencia",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-monitor-byte-budget-20261124-production/presupuesto-antes.json",
+        "../evidence/auth-session-path-20261124/qa-monitor-budget.json",
+        "../evidence/auth-session-path-20261124/qa-monitor-budget-dia-cargado.json",
+        "../evidence/auth-session-path-20261124/qa-monitor-evidence-demand.json"
+      ],
+      "notes": "266 marcaciones leidas sin acote contra las del rango pedido, y cero binarios inline en las corridas de QA con volumen (mapa 52 KB, asistencia 24 KB, contadores 3 KB con fecha)."
+    },
+    {
+      "name": "Camino de sesion en una sentencia sin perder rechazo",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/qa-auth-session.json",
+        "../evidence/auth-session-path-20261124/sentencias-qa.json",
+        "../evidence/auth-session-path-20261124/sentencias-production.json",
+        "../evidence/auth-session-path-20261124/invariantes-replay-main.json"
+      ],
+      "notes": "5/5 rechazos en 401 sobre el binario servido y el cuerpo de login/me/refresh byte a byte en el arbol candidato."
+    },
+    {
+      "name": "Login no-oraculo con correos repetidos y retiro de cuentas de medicion",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/censo-correos-qa.json",
+        "../evidence/auth-session-path-20261124/censo-correos-production.json",
+        "../evidence/auth-session-path-20261124/qa-retiro-cuentas.json"
+      ],
+      "notes": "Censo: 7 correos colisionados vivos en QA y 0 en Produccion, por eso el mismo 401 y el mismo trabajo para inexistente, inactivo y empate. Las tres cuentas de medicion quedaron retiradas con login 200 antes y 401 despues."
+    },
+    {
+      "name": "Liquidacion y retiro de main intactos bajo el replay",
+      "status": "passed",
+      "evidence": [
+        "../evidence/auth-session-path-20261124/candidato-main.txt",
+        "../evidence/auth-session-path-20261124/invariantes-replay-main.json",
+        "../evidence/auth-session-path-20261124/replay-arbol-candidato-main.json"
+      ],
+      "notes": "pg_advisory_xact_lock sigue 6 veces y buildEmployeeTerminationLiquidation 4 en el blob indexado; la guarda de tenant de updateRoute (31a36e77) ya estaba en main y no se re-aplico."
+    }
+  ],
+  "compuertas_exigidas": [
+    "node scripts/validate-promotion-scope.js docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json <punta-del-candidato> origin/main",
+    "node scripts/validate-change-approval-evidence.js docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json",
+    "npm run qa:promotion:migration -- --spec docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json --against index --output docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-main.json",
+    "re-medicion del replay contra la PUNTA (regla 124): npm run qa:promotion:migration -- --spec docs/qa/specs/monitor-latencia-sesion-main-20261124.replay.json --against commit --ref <punta> --output docs/qa/evidence/auth-session-path-20261124/replay-punta-main.json",
+    "node scripts/git-governance-guard.js promote develop-to-main desde el arbol limpio del candidato con APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DEVELOP_A_MAIN",
+    "DESPUES del despliegue, condicionado al sha servido: GET /health tiene que devolver el sha promocionado antes de correr certify:hr-monitor-budget:production y certify:auth-session anclados a ese sha"
+  ],
+  "deriva_declarada": [
+    "Las dos capas del inventario: 51 rutas en el commit funcional y 54 en la punta. La diferencia son los dos manifiestos y el veredicto, que no pueden citarse a si mismos.",
+    "La salida de las compuertas (alcance, aprobacion, gates) no viaja en el commit que describen: queda declarada y se cita verbatim en veredicto-main.md.",
+    "No viajan las 20 rutas de gobernanza del paquete (agents/** y .qoder/skills/**): main no tiene arbol agents/ y su canon de skills es anterior. La canonia vive en desarrollo y develop.",
+    "No viajan scripts/security/auth-session-sql-guard.js ni auth-email-collision-census.js: los dos piden ./recovery-readiness.js, ruta que nunca llego a main, y llevados solos dejan un instrumento que revienta al ejecutarlo. Tampoco viaja recovery-readiness.js.",
+    "No viaja la reparacion de scripts/certifications/hr-monitor-evidence-demand-qa.js: main conserva 726ee951 y la reparacion 6208f982 queda en desarrollo. La evidencia 12/12 que esa corrida produjo si viaja, con el comando que la remide.",
+    "No viaja la regla de selfie en las cuatro marcaciones web: mobile-identity.js no esta en el inventario y conserva su blob de main (756b0572). Produccion no va a exigir selfie en las cuatro con esta promocion, y la corrida de QA no se presenta como si certificara esa regla en el destino.",
+    "No viaja ninguna migracion: las tres de dispositivos compartidos, rostros y credenciales webauthn quedan ausentes, igual que sus tablas en la base de Produccion.",
+    "La fusion de main queda 859 commits detras de develop a proposito: este paquete no alinea arboles completos, alinea el contenido del paquete verificando por funcion y por marcador que el destino conserva lo suyo.",
+    "authorization-status-codes.test.js tiene 6 pruebas y una es un SKIP explicito y preexistente (integracion que exige AUTH_STATUS_INTEGRATION), no un rojo absorbido."
+  ],
+  "verificado_local": {
+    "arbol_candidato": "70 pruebas, 69 pasan, 0 fallan, 1 SKIP preexistente (suites-candidato-main.txt). Autocontrol del instrumento de presupuesto en verde.",
+    "replay": "70/70 invariantes validas (46 carry + 24 rutas ajenas que siguen ausentes) medidas contra el indice del candidato (replay-arbol-candidato-main.json).",
+    "fusion": "0 lineas anadidas huerfanas en los tres archivos de fusion y paridad byte a byte de los cuerpos de funcion (invariantes-replay-main.json).",
+    "sintaxis_y_requisitos": "node --check en las rutas JS del candidato y todos los require locales resueltos contra el indice: 0 modulos huerfanos, que es lo que habria caido al cargar el API en Produccion.",
+    "ramas": "desarrollo conserva el paquete completo mas las rutas de gobernanza y las reparaciones de herramienta que no suben; develop sirve 3303a95532a3 con el paquete certificado en QA."
+  },
+  "approval": {
+    "status": "authorized",
+    "authorized_by": "Edwin (dueno de APEXOS)",
+    "authorized_at": "2026-11-24T20:40:00-05:00",
+    "instruction": "procede con la promocion controlada de esta intervencion alineado las 3 ramas al finalizar brindame un resumen en lenguaje natural de lo que se hizo sin dejar pendientes abiertos",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "Main esta a 859 commits de develop, asi que el transporte es replay puntual de 51 rutas y no fusion de rama. Las rutas del paquete se verifican byte a byte contra el arbol que QA certifico en campo (5/5 rechazos, 12/12 de evidencia bajo demanda, presupuesto verde con volumen) y los archivos de fusion conservan el codigo productivo de main medido por marcador."
+    },
+    "limits": "La autorizacion cubre el flujo desarrollo -> develop -> main con sus compuertas y la verificacion en los ambientes. No otorga force push, reescritura de historia, borrado de ramas, migraciones remotas de esquema, cambios de infraestructura ni secretos."
+  },
+  "notas": "Este manifiesto declara el alcance exacto de la pata main. La transformacion no se narra en el CHANGELOG de main: se verifica con el instrumento de replay contra el indice y contra la punta, y ese JSON viaja en el mismo arbol que se promociona."
+}
