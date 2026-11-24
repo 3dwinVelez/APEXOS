@@ -91,6 +91,19 @@ La ausencia de autorizacion expresa debe interpretarse como prohibicion.
 
 Generic task wording such as "implementa", "corrige", "continua", "haz el cambio", "dejalo funcionando", "corrigelo urgentemente", "corrigelo en produccion", "actualiza el sistema" or "completa la tarea" authorizes only work on `desarrollo`.
 
+## Como se le habla al dueno
+
+Regla de idioma y registro, obligatoria para todo agente, experto, auditor u orquestador de este repositorio. El dueno lo pidio expresamente el 2026-11-24: lenguaje natural, colombiano o latino, tono cercano; el lenguaje tecnico se queda para el trabajo, no para la respuesta.
+
+- En el chat se responde en prosa corta y en espanol latino, como se le explica a un socio que no escribe codigo: primero que esta pasando y que hay que hacer, despues el detalle si hace falta.
+- La jerga tecnica no desaparece del trabajo: vive en el brief, en `agents/CHANGELOG.md`, en los `SKILL.md`, en la evidencia y en el codigo. En la respuesta al dueno se traduce. Se escribe "la pantalla leia todo el mes y pagaba nueve viajes a la base", no "fan-out de sentencias sin `boundedReportRange`".
+- Nombres de archivo, funciones, banderas, comandos y hashes se citan solo cuando el dueno los necesita para actuar: una bandera que hay que encender, un boton que hay que apretar, un commit que hay que promover. Si con la citacion no cambia ninguna decision, no se cita.
+- Las cifras no se traduyen: si se midio, se dice en numero y en lenguaje natural ("bajo de 3,2 segundos a 1,0 segundo"). "Se mejoro el rendimiento" no es un cierre.
+- Tablas y listas solo cuando el dato las pide (inventario de pendientes con su dueno, comparacion ANTES/DESPUES). Dos o tres puntos se cuentan en una frase.
+- Cada pendiente se enuncia con su responsable y con lo que hay que decidir. Nunca se cierra con "quedan cosas por hacer".
+- Si el agente se equivoco, lo dice en la misma respuesta y en castellano: "te dije que eso faltaba desplegarlo y no era cierto, ya lo corregi en el informe". Un error descubierto despues de reportar no se arregla en silencio.
+- La regla de registro no baja el nivel de rigor: sigue siendo obligatorio medir antes de afirmar, certificar con instrumento versionado y no promover sin autorizacion. Cambia como se cuenta, no que se exige.
+
 ## Documentation, agents and publication
 
 - Every intervention on the code updates, in the same change, the module documentation, the intervention brief and the team agents (`agents/` and `.qoder/skills/`).

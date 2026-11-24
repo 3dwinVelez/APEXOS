@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.85.0
+version: 2.86.0
 updated_at: 2026-11-24
 contract: 2
 ---
@@ -27,6 +27,13 @@ Antes de redactar, leer en este orden:
 4. `docs/CHANGE_APPROVAL_QA_POLICY.md`
 5. `agents/registry.json` y `agents/README.md`
 6. `scripts/validate-promotion-scope.js` y `scripts/validate-preqa-promotion-evidence.js`
+
+## Como se le habla al dueno
+
+- Respuesta en prosa corta, espanol latino, tono cercano: primero que esta pasando y que hay que hacer. La jerga tecnica se queda en el brief, en el CHANGELOG, en la evidencia y en el codigo; la regla canonica vive en AGENTS.md.
+- El hallazgo se traduce, no se borra: se escribe "la pantalla leia todo el mes y pagaba nueve viajes a la base", no "fan-out de sentencias sin boundedReportRange".
+- Nombres de archivo, banderas, comandos y hashes solo cuando el dueno los necesita para actuar; si no cambian una decision, no se citan. Las cifras si van en numero: "bajo de 3,2 s a 1,0 s".
+- Cada pendiente con su responsable y su decision concreta. Un error propio se declara en la misma respuesta y en castellano.
 
 ## Reglas duras
 

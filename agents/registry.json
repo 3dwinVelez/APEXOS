@@ -14,9 +14,9 @@
     {
       "name": "apexos-auditor-marcaciones",
       "role": "auditor-funcional-marcaciones",
-      "version": "2.0.0",
-      "updated_at": "2026-11-03",
-      "sha256": "54103b9e850a17ea1737a38fbe0a22bfe0731b78d7dc5a7eac602c65c2a7a9a0",
+      "version": "2.1.0",
+      "updated_at": "2026-11-24",
+      "sha256": "e65036aa123d43b8a5835c808ea86fd7cc9c1a688eea4268e30b131d76c7169b",
       "source": ".qoder/skills/apexos-auditor-marcaciones/SKILL.md",
       "mirror": "agents/apexos-auditor-marcaciones/SKILL.md",
       "controls": [
@@ -29,15 +29,16 @@
         "tres-pasadas",
         "cita-archivo-linea",
         "reproducir-antes-de-reportar",
-        "sin-veredicto-legal"
+        "sin-veredicto-legal",
+        "lenguaje-cercano-al-dueno"
       ]
     },
     {
       "name": "apexos-auditor-nomina",
       "role": "auditor-funcional-nomina",
-      "version": "2.0.0",
-      "updated_at": "2026-11-03",
-      "sha256": "06b8e19b10b43ac65758dfb2d3731add3b5464f98f2a3c82b697ca34f79a6014",
+      "version": "2.1.0",
+      "updated_at": "2026-11-24",
+      "sha256": "9ec2fa524c326019b35f8b181f0849453c7ccf78fe0e749ef46be019bf9584bf",
       "source": ".qoder/skills/apexos-auditor-nomina/SKILL.md",
       "mirror": "agents/apexos-auditor-nomina/SKILL.md",
       "controls": [
@@ -49,15 +50,16 @@
         "contrato-v2",
         "tres-pasadas",
         "delta-economico",
-        "sin-veredicto-legal"
+        "sin-veredicto-legal",
+        "lenguaje-cercano-al-dueno"
       ]
     },
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.26.0",
+      "version": "2.27.0",
       "updated_at": "2026-11-24",
-      "sha256": "5a35c2a52b8d05851b526ea32d01efe1d1130046bd14189dc84c0730fdc0aee9",
+      "sha256": "61d5d5e1cbd607cffa129a0e2864136c8695bcc5a02f0c53049e9d843086d288",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -91,15 +93,16 @@
         "exencion-de-evidencia-con-contrato",
         "congestion-prisma-503-con-retry-after",
         "cuenta-inactiva-sigue-siendo-administrable",
-        "clave-publica-en-esquema-con-forma"
+        "clave-publica-en-esquema-con-forma",
+        "lenguaje-cercano-al-dueno"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.85.0",
+      "version": "2.86.0",
       "updated_at": "2026-11-24",
-      "sha256": "166736aea1385d142c72bfdd88c54933357eaba20c9483d5a30aa9cd6ece15dc",
+      "sha256": "596f37dc66bce366ab9269e3b8820f6ac488574bf7ad9f6785fd7bb7510d7bdc",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -162,15 +165,16 @@
         "censo-en-brief-con-poblacion-medida",
         "lo-que-se-afirma-del-instrumento-se-pasa-en-limpio",
         "pendiente-con-dependencia-de-despliegue",
-        "particion-de-residuo-con-tres-duenos"
+        "particion-de-residuo-con-tres-duenos",
+        "lenguaje-cercano-al-dueno"
       ]
     },
     {
       "name": "apexos-db-nube",
       "role": "experto-base-datos-nube",
-      "version": "2.9.0",
+      "version": "2.10.0",
       "updated_at": "2026-11-24",
-      "sha256": "065e15c3d182adfacd818f36ef36373251ed7382a17c7e30abcce902819976fa",
+      "sha256": "aee233774a0743d802d99a453210d8c30ab17c929c81875c15dd3df42ed2294b",
       "source": ".qoder/skills/apexos-db-nube/SKILL.md",
       "mirror": "agents/apexos-db-nube/SKILL.md",
       "controls": [
@@ -189,15 +193,16 @@
         "ddl-quirurgico-ledger-en-lf",
         "rename-vista-compatibilidad-y-filas-posteriores",
         "sincronizacion-multi-ambiente",
-        "rescate-jsonb-indice-ligero-sha256"
+        "rescate-jsonb-indice-ligero-sha256",
+        "lenguaje-cercano-al-dueno"
       ]
     },
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.44.0",
+      "version": "2.45.0",
       "updated_at": "2026-11-24",
-      "sha256": "615f93fedde76a4c82d4ba2f5fac557c75de9f4e76bb68cfb0e1d3dea3020b7f",
+      "sha256": "47bcef84bf8c150cd654a64bd5c194b556f8d176e1787214fea58e300d15ab95",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -241,15 +246,16 @@
         "contrato-multilineo-sobre-crlf",
         "lint-de-ci-como-compuerta-local",
         "route-api-mismo-contrato-de-pantalla",
-        "marca-durable-sobrevive-al-cierre"
+        "marca-durable-sobrevive-al-cierre",
+        "lenguaje-cercano-al-dueno"
       ]
     },
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.29.0",
+      "version": "2.30.0",
       "updated_at": "2026-11-24",
-      "sha256": "4d6efad6cc3ab8fb2bf243acc99e6a8a50034615bed54a970fd09c9144983ccd",
+      "sha256": "70634059eb1b833dc434519416e70ed0af7617ee89b3ee30af9048263e27543b",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -281,15 +287,16 @@
         "merge-publicado-tras-dos-verificaciones",
         "worktree-sin-node-modules-copiado",
         "barrido-con-causa-identificada",
-        "evidencia-de-corrida-sin-identidad-con-firma-del-manifiesto"
+        "evidencia-de-corrida-sin-identidad-con-firma-del-manifiesto",
+        "lenguaje-cercano-al-dueno"
       ]
     },
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.23.0",
+      "version": "2.24.0",
       "updated_at": "2026-11-24",
-      "sha256": "eca38e9e660e4726717287a482a3be3a74fd2d58ca35b775c24930d5403cc668",
+      "sha256": "482bb4dcf7308f2ce85d50ab6e5e6ecfee2c227ab89d64984dacd08e8d358681",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -315,15 +322,16 @@
         "torre-rejilla-y-punto-inspeccionable",
         "torre-historia-medida-por-monitor",
         "sonda-transporte-con-lector-del-producto",
-        "latencia-se-mide-en-ambiente-desplegado"
+        "latencia-se-mide-en-ambiente-desplegado",
+        "lenguaje-cercano-al-dueno"
       ]
     },
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.105.0",
+      "version": "2.106.0",
       "updated_at": "2026-11-24",
-      "sha256": "f14a394ee00330229158317e4587463924bf8af8db37937a3cd4ae18b8ff0157",
+      "sha256": "ed611376e63829cc745d3fc7bd5eceba920cf65a8fca998957ec4be4138300c6",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -413,15 +421,16 @@
         "pierna-por-argumento-con-residuo-del-antes",
         "asercion-del-arnes-que-puede-fallar-demostrada-en-rojo",
         "cero-de-campo-se-desambigua",
-        "antes-y-despues-de-la-corrida-de-escritura"
+        "antes-y-despues-de-la-corrida-de-escritura",
+        "lenguaje-cercano-al-dueno"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.38.1",
+      "version": "2.39.0",
       "updated_at": "2026-11-24",
-      "sha256": "1466519bcef423f984d8bf3dffa1893149083f58c59edbde7f8bb47af6b0a669",
+      "sha256": "782c93c2a4f7610ee31050bd0e82a674cbca7e126e4d642dea05391bf510ab0a",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -460,15 +469,16 @@
         "exencion-angosta-con-negativos",
         "detalle-proveedor-no-va-en-el-cuerpo",
         "ampliar-lectura-conserva-tenant-y-login",
-        "identificador-declarado-no-es-identidad"
+        "identificador-declarado-no-es-identidad",
+        "lenguaje-cercano-al-dueno"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.61.0",
+      "version": "2.62.0",
       "updated_at": "2026-11-24",
-      "sha256": "28b7dc90cbfa1ae8147d067c039849b14d884f7a567cad6fff5c0d72cc2624c5",
+      "sha256": "821288adeeddddbe78b3c48c5e518c298ba61bcbf054c0c7224da6fc8a6eca66",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -518,7 +528,8 @@
         "lente-vuelta-a-medir-antes-de-reusar-la-medicion",
         "vacio-declarado-convertido-en-instrumento-versionado",
         "tres-estados-de-la-telemetria",
-        "residuo-de-despliegue-cuantificado-en-campo"
+        "residuo-de-despliegue-cuantificado-en-campo",
+        "lenguaje-cercano-al-dueno"
       ]
     }
   ],
@@ -526,8 +537,8 @@
     {
       "name": "Reglas de agente",
       "path": "AGENTS.md",
-      "updated_at": "2026-11-03",
-      "sha256": "75c4f6641a9f52d8d8d5125f7256afe12c918a8bf448a7bd3b00e45b76e3ce6c"
+      "updated_at": "2026-11-24",
+      "sha256": "d0c9b170992bed2f67930c2d0f1d561e6fdaab78a87c3779a28f2229683f3818"
     },
     {
       "name": "Flujo de ramas",

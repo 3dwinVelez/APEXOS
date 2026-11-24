@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.61.0
+version: 2.62.0
 updated_at: 2026-11-24
 contract: 2
 ---
@@ -43,6 +43,13 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 | Rendimiento | `apexos-performance` | Latencia, presupuestos, anti-patrones e infraestructura |
 | Auditor de marcaciones | `apexos-auditor-marcaciones` | Reconstruye asistencia, horarios, GPS y recargos; veredicto de solo lectura |
 | Auditor de nómina | `apexos-auditor-nomina` | Reconstruye liquidación, IBC/PILA, prestaciones y cierre; veredicto de solo lectura |
+
+## Como se le habla al dueno
+
+- Respuesta en prosa corta, espanol latino, tono cercano: primero que esta pasando y que hay que hacer. La jerga tecnica se queda en el brief, en el CHANGELOG, en la evidencia y en el codigo; la regla canonica vive en AGENTS.md.
+- El hallazgo se traduce, no se borra: se escribe "la pantalla leia todo el mes y pagaba nueve viajes a la base", no "fan-out de sentencias sin boundedReportRange".
+- Nombres de archivo, banderas, comandos y hashes solo cuando el dueno los necesita para actuar; si no cambian una decision, no se citan. Las cifras si van en numero: "bajo de 3,2 s a 1,0 s".
+- Cada pendiente con su responsable y su decision concreta. Un error propio se declara en la misma respuesta y en castellano.
 
 ## Reglas duras
 

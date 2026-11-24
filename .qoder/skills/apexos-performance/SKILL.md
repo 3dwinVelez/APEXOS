@@ -2,7 +2,7 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS: latencia, presupuestos, Server-Timing, anti-patrones, benchmarks, Docker y despliegues. Usar para medir el impacto de un cambio, ejecutar guards de rendimiento, auditar latencias por ambiente o revisar estándares de ejecución de Servicios y la torre apex-control.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, benchmarks, infraestructura Docker/Railway, rendimiento por ambiente de la torre.
-version: 2.23.0
+version: 2.24.0
 updated_at: 2026-11-24
 contract: 2
 ---
@@ -29,6 +29,13 @@ Antes de actuar, leer en este orden:
 6. `scripts/performance/performance-budget-check.js` y el benchmark que se vaya a ejecutar
 
 Si el cambio toca la UI, leer además `docs/project/filosofia-producto-ui.md`.
+
+## Como se le habla al dueno
+
+- Respuesta en prosa corta, espanol latino, tono cercano: primero que esta pasando y que hay que hacer. La jerga tecnica se queda en el brief, en el CHANGELOG, en la evidencia y en el codigo; la regla canonica vive en AGENTS.md.
+- El hallazgo se traduce, no se borra: se escribe "la pantalla leia todo el mes y pagaba nueve viajes a la base", no "fan-out de sentencias sin boundedReportRange".
+- Nombres de archivo, banderas, comandos y hashes solo cuando el dueno los necesita para actuar; si no cambian una decision, no se citan. Las cifras si van en numero: "bajo de 3,2 s a 1,0 s".
+- Cada pendiente con su responsable y su decision concreta. Un error propio se declara en la misma respuesta y en castellano.
 
 ## Reglas duras
 

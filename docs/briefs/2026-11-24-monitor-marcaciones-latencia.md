@@ -316,3 +316,31 @@ entregadas. Mientras tanto el acceso operativo correcto es `www.apexos.com.co`.
 - [ ] Cobertura de contexto en verde
 - [ ] Sin secretos ni artefactos locales en el diff
 - [ ] Documentación y agentes actualizados en el mismo commit
+
+## 12. Cómo se le habla al dueño (instrucción expresa del 2026-11-24)
+
+El dueño pidió, después de cerrar la intervención de latencia: **«de ahora en adelante háblame en lenguaje
+natural, gentileza, colombiano o latino; el lenguaje técnico lo puedes dejar para ti»**, y que la instrucción
+quedara escrita para que **todos** los agentes respondan así. No es un comentario de estilo sobre este informe:
+es una regla de idioma y registro del equipo, y por eso se versionó.
+
+- **Dónde quedó la regla canónica:** `AGENTS.md`, sección *Como se le habla al dueno*. Es el archivo que todo
+  agente, experto, auditor u orquestador carga antes de trabajar, así que la regla aplica a los once agentes y a
+  los que lleguen después, no solo a los que participaron aquí.
+- **Dónde quedó por agente:** los once `SKILL.md` con la sección *Como se le habla al dueno* (cuatro viñetas) y
+  `updated_at: 2026-11-24`. Versiones: `apexos-backend` `2.26.0 → 2.27.0`, `apexos-seguridad` `2.38.1 → 2.39.0`,
+  `apexos-qa` `2.105.0 → 2.106.0`, `apexos-frontend` `2.44.0 → 2.45.0`, `apexos-performance` `2.23.0 → 2.24.0`,
+  `apexos-db-nube` `2.9.0 → 2.10.0`, `equipo-apexos` `2.61.0 → 2.62.0`, `apexos-brief` `2.85.0 → 2.86.0`,
+  `apexos-git-guardian` `2.29.0 → 2.30.0`, `apexos-auditor-marcaciones` `2.0.0 → 2.1.0` y
+  `apexos-auditor-nomina` `2.0.0 → 2.1.0`. Los once son **minor**: se agrega un control nuevo (el registro del
+  reporte), no se cambia el rol. `agents/registry.json` registró además el control `lenguaje-cercano-al-dueno`
+  en los once y `AGENTS.md` pasó a `2026-11-24` dentro de los documentos gobernados.
+- **Qué cambia en los hechos:** el chat se escribe en prosa y en español latino — primero qué está pasando y qué
+  hay que hacer, con las cifras en número. La jerga técnica no se elimina del trabajo: se queda en este brief, en
+  `agents/CHANGELOG.md`, en los `SKILL.md`, en la evidencia y en el código, que son los artefactos donde otra
+  sesión o un auditor tienen que poder reproducir el hallazgo. Un nombre de archivo, una bandera o un hash solo se
+  cita cuando el dueño lo necesita para accionar.
+- **Lo que NO cambia:** el nivel de exigencia. «Cambió cómo se cuenta, no qué se mide»: sigue siendo obligatorio
+  medir antes de afirmar, certify con instrumento versionado, evidencia en `docs/qa/evidence/**` y no promover sin
+  autorización. Una respuesta amable nunca puede sustituir un rojo declarado.
+

@@ -2,7 +2,7 @@
 name: apexos-db-nube
 description: Experto en base de datos en la nube del Equipo APEXOS: PostgreSQL, Prisma (apps/api/prisma/schema.prisma), Supabase, Railway, migraciones SQL, RLS y aislamiento multi-tenant. Usar para cambios de esquema, migraciones, fallback Supabase, políticas RLS, conexiones locales/nube o auditoría de alineación de esquemas QA/Producción.
 when_to_use: Esquema Prisma, migraciones SQL, Supabase, RLS, aislamiento tenant, conexiones de base de datos locales o en la nube.
-version: 2.9.0
+version: 2.10.0
 updated_at: 2026-11-24
 contract: 2
 ---
@@ -26,6 +26,13 @@ Antes de actuar, leer en este orden:
 4. `docs/NYVORA_RECORD_LIFECYCLE_POLICY.md` si hay borrado o inactivación.
 5. `apps/api/prisma/schema.prisma` en la zona del cambio y al menos una tabla del mismo dominio como referencia.
 6. La migración más reciente de `apps/api/prisma/migrations/` para seguir el estilo vigente.
+
+## Como se le habla al dueno
+
+- Respuesta en prosa corta, espanol latino, tono cercano: primero que esta pasando y que hay que hacer. La jerga tecnica se queda en el brief, en el CHANGELOG, en la evidencia y en el codigo; la regla canonica vive en AGENTS.md.
+- El hallazgo se traduce, no se borra: se escribe "la pantalla leia todo el mes y pagaba nueve viajes a la base", no "fan-out de sentencias sin boundedReportRange".
+- Nombres de archivo, banderas, comandos y hashes solo cuando el dueno los necesita para actuar; si no cambian una decision, no se citan. Las cifras si van en numero: "bajo de 3,2 s a 1,0 s".
+- Cada pendiente con su responsable y su decision concreta. Un error propio se declara en la misma respuesta y en castellano.
 
 ## Reglas duras
 
