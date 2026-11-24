@@ -1,12 +1,12 @@
 {
   "change_id": "monitor-latencia-sesion-20261124",
   "descripcion": "Pre-QA de la promocion desarrollo -> develop del paquete de latencia del monitor y camino de sesion, con el guard de tenant retro-integrado",
-  "commit": "228d10289029124a85e8615ff8996e0c8e42de9a",
+  "commit": "6a503dd6",
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
   "qa_status": "pending",
-  "nota_sha": "commit es el arbol de producto contra el que corrieron las suites y el instrumento de replay (228d1028). El sha que se empuja difiere de ese arbol solo en los cuatro archivos de manifiesto, evidencia y spec que este mismo paquete versiona; esa diferencia queda medida en ../evidence/auth-session-path-20261124/puertas-develop.json y en el bloque delta_publicado_debajo_de_certificado del manifiesto de alcance.",
+  "nota_sha": "commit es el arbol de producto contra el que corrieron las suites del paquete (70/70 y 7/7), la suite de plataforma y el porton de replay: 6a503dd6, resultado de absorber por git merge --no-ff el tip 6b42b365 que la sesion concurrente promovio a develop mientras se armaba este candidato. El sha que se empuja es el del espejo final de docs/evidencia sobre ese mismo arbol de producto: no mueve ninguna ruta de apps/ ni scripts/, y eso se prueba en ../evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt. La salida verbatim de las compuertas sobre el sha servido queda en ../evidence/auth-session-path-20261124/puertas-develop.json.",
   "approval": {
     "status": "approved",
     "scope": "promotion_to_develop_for_qa",
@@ -41,6 +41,7 @@
       "detalle": "Instrumentos del paquete corriendo sobre el arbol del candidato: guard de sentencias 16/16, selftest del presupuesto del reloj aprobado, backfill en seco contra QA y Produccion con escrituras 0, y el porton de alcance medido.",
       "evidence": [
         "../evidence/auth-session-path-20261124/candidato-develop.json",
+        "../evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json",
         "../evidence/auth-session-path-20261124/replay-candidato-develop.json",
         "../evidence/auth-session-path-20261124/puerta-alcance-origin-develop.txt",
         "../evidence/hr-evidence-backfill-20261124/qa-dry-1795527882583.json",
@@ -49,7 +50,7 @@
     },
     "regression": {
       "status": "passed",
-      "detalle": "Regresion del frente tocado: las ocho suites de mallas, sesion, evidencia y truncado corren en el arbol del candidato (70/70) y la suite web del monitor 7/7, con el control de que cada guard puede fallar.",
+      "detalle": "Regresion del frente tocado sobre el arbol ya fusionado con develop: las ocho suites de mallas, sesion, evidencia y truncado corren 70/70 y la suite web del monitor 7/7, con el control de que cada guard puede fallar.",
       "evidence": [
         "../evidence/auth-session-path-20261124/candidato-develop.json",
         "../evidence/auth-session-path-20261124/suites-camino-sesion.json",

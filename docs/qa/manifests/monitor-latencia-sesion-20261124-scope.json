@@ -11,7 +11,7 @@
     "merge_base_desarrollo_develop": "36111a6ae1a18c59de0fc72c135bc890c011c1d7"
   },
   "certified_commit": "f3e85f1aff5cb600fdd6bc84e7a40dd0902e191c",
-  "candidate_tip": "el sha que se empuja es el que reportan ../evidence/auth-session-path-20261124/puertas-develop.json y ../evidence/auth-session-path-20261124/candidato-develop.json; el manifiesto no puede citar su propio sha porque viaja dentro del arbol que certifica",
+  "candidate_tip": "el sha que se empuja es el del espejo final de este manifiesto, que es tip de origin/develop por fusion y solo difiere del arbol certificado 6a503dd6 en rutas docs/. Lo reporta ../evidence/auth-session-path-20261124/puertas-develop.json; el manifiesto no puede citar su propio sha porque viaja dentro del arbol que certifica",
   "candidate_source": {
     "branch": "desarrollo",
     "commit": "f3e85f1aff5cb600fdd6bc84e7a40dd0902e191c",
@@ -222,7 +222,15 @@
       "status": "A",
       "file": "docs/qa/evidence/auth-session-path-20261124/candidato-develop.json"
     },
+        {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt"
+    },
     {
+      "status": "A",
+      "file": "docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json"
+    },
+{
       "status": "A",
       "file": "docs/qa/evidence/auth-session-path-20261124/censo-correos-production.json"
     },
@@ -360,8 +368,8 @@
   ],
   "verificado_local": {
     "arbol_candidato": "suitas API del paquete 70/70, suite web 7/7, auth-session-sql-guard --selftest 16/16, hr-monitor-byte-budget --selftest aprobado, node --check en las tres rutas JS de fusion, parseo TSX 0 diagnosticos con control de mutacion 1",
-    "replay": "promotion-migration-check contra el sha del candidato: 51/51 invariantes carry validas, 0 deletes, 0 edits por hunks",
-    "agents": "npm run agents:check OK (11 agentes y 11 documentos), agents:preflight OK, agents:coverage OK (apexos-backend 2.30.0, apexos-qa 2.109.0, apexos-git-guardian 2.33.0)",
+    "replay": "promotion-migration-check contra el arbol del candidato (--against commit --ref HEAD --cwd <worktree>): 51/51 invariantes carry validas, 0 deletes, 0 edits por hunks. La corrida con --ref origin/develop rindio 51 rojos falsos porque ese ref selecciona el arbol medido, no la referencia; esa salida se descarto y no queda como evidencia",
+    "agents": "npm run agents:check OK (11 agentes y 11 documentos), agents:preflight OK, agents:coverage OK (apexos-backend 2.30.0, apexos-qa 2.111.0, apexos-brief 2.92.0, apexos-git-guardian 2.33.0)",
     "guard": "auth-session-sql-guard.js --env-file qa y production -> SENTENCIAS_VALIDAS",
     "censo": "QA COLISION_VIVA (7 correos / 550 usuarios / 27 empresas), Produccion SIN_COLISION (0 / 211 / 9), escrituras 0 en ambos"
   },
@@ -378,8 +386,8 @@
     "la salida verbatim de las compuertas (docs/qa/evidence/auth-session-path-20261124/puertas-develop.json) queda versionada en desarrollo y no viaja dentro del candidato: correr la puerta exige el manifiesto, y el manifiesto no puede contener el archivo que la puerta produce sobre el arbol que el mismo manifiesto describe",
     "la prueba 'fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante' queda roja en el candidato y ya lo estaba en origin/develop y origin/main: son 6 pg_advisory_xact_lock de los modulos de liquidacion (runPayrollLiquidation, runEmployeeTerminationLiquidacion y companeros) que nunca bajaron a desarrollo. El candidato conserva los 6 blobs de develop, no anade ninguno. Migrarlos al helper acotado es intervencion propia con su manifiesto, no se cuela aqui porque exigiria editar por hunks rutas declaradas carry.",
     "la misma promocion queda condicionada a la sesion concurrente: el manifiesto web-selfie-cuatro-marcaciones-develop-20261124-scope.json tambien apunta a develop desde b59f286d y comparte una sola ruta (apps/api/src/modules/hr/service.js). El segundo que empuje rehace su candidato sobre el tip nuevo; nadie empuja a la fuerza.",
-    "el expediente del porton de replay medido sobre el arbol congelado (docs/qa/evidence/auth-session-path-20261124/replay-candidato-develop-6a503dd6.json) queda en desarrollo y no viaja dentro del candidato por la misma razon que las puertas: el instrumento mide el arbol y escribe su salida sobre el, y un archivo no puede contener el informe de su propia medición. Si viaja una corrida anterior (replay-candidato-develop.json, medida sobre el tip viejo b59f286d) como registro historico de por que se rehizo el candidato.",
-    "las suites del candidato se corrieron sobre el arbol de producto 6a503dd6. El commit que espeja docs/evidencia no mueve ninguna ruta de producto: se prueba con git diff --name-only 6a503dd6..<tip congelado> filtrado a apps/ y scripts/, que debe devolver vacio, y ese control queda en docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt (en desarrollo, no viaja)."
+    "el expediente del porton de replay medido sobre el arbol congelado (docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json, 51/51) queda en desarrollo y no viaja dentro del candidato por la misma razon que las puertas: el instrumento mide el arbol y escribe su salida sobre el, y un archivo no puede contener el informe de su propia medición. Si viaja una corrida anterior (replay-candidato-develop.json, medida sobre el tip pre-fusion 228d1028) como registro historico de por que se rehizo el candidato. Las dos corridas con --ref origin/develop se borraron: median el destino, no el candidato.",
+    "las suites del candidato se corrieron sobre el arbol de producto 6a503dd6. Cada commit que espeja docs/evidencia no mueve ninguna ruta de producto: se prueba con git diff --name-only 6a503dd6..<tip congelado> filtrado a apps/ y scripts/, que debe devolver vacio, y ese control queda en docs/qa/evidence/auth-session-path-20261124/equivalencia-producto-candidato.txt (en desarrollo, no viaja). El espejo se rehace despues de cada edicion de manifiesto, por eso el sha servido no es 6a503dd6."
   ],
   "compuertas_exigidas": [
     "node scripts/validate-promotion-scope.js docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json <candidato> origin/develop",

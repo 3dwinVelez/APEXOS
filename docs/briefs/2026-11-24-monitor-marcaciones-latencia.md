@@ -589,7 +589,7 @@ nunca bajaron a desarrollo. El método que se usó:
 - Certificar **el árbol del candidato**, no el de trabajo: suitas del paquete 70/70, suite web del monitor
   7/7, `auth-session-sql-guard --selftest` 16/16, presupuesto de reloj con selftest aprobado,
   `node --check` en las tres rutas JS de fusión y parseo TSX con 0 diagnósticos frente a 1 de control de
-  mutación. El inventario quedó en 58 rutas y solo 3 salieron con excepción nominal de origen.
+  mutación. El inventario quedó en 61 rutas y solo 3 salieron con excepción nominal de origen.
 
 La fusión medida cayó dos veces y las dos se corrigieron antes de publicar: el presupuesto de evidencia del
 monitor perdió la carga del archivo de ambiente (`--env-file=...`) y el párrafo del estado vacío quedó con
@@ -635,3 +635,26 @@ y se promueve como está.
   declara `CERT_LOGIN_EMAIL` / `CERT_LOGIN_PASSWORD` y el certificado necesita una cuenta real de QA. Se
   construye la cuenta si hace falta; la bandera `HR_EVIDENCE_STORAGE_ENABLED` y el ápice DNS siguen sin
   cambio desde §10.
+
+### 14.3 El portón de replay: el `--ref` elige qué árbol se mide, y medir el destino da 51 rojos falsos
+
+Reincertificado el replay sobre el árbol congelado, el instrumento devolvió `ROTO carry` en las cinco
+rutas de producto del paquete. No era el candidato: era la forma de llamarlo. La compuerta compara
+
+```js
+const wanted = blobAt(item.from_ref || spec.origin_ref, item.file, cwd);   // el blob de origin/desarrollo
+const actual = currentBlob(item.file, cwd, against, ref);                  // el arbol que se mide
+```
+
+y el `--ref origin/develop` que se le pasó en la primera corrida selecciona **el árbol medido**, no el de
+referencia. Con esa bandera el portón comparaba `origin/develop` contra `origin/desarrollo` —dos ramas que
+sí divergen— y reportaba 51 invariantes rotas sobre un candidato que no había tocado ninguna de esas rutas.
+La corrida válida es `--against commit --ref HEAD --cwd <worktree-del-candidato>`, desde dentro del árbol
+congelado, y devuelve **51/51 carry válidas, 0 deletes, 0 edits por hunks**
+(`docs/qa/evidence/auth-session-path-20261124/replay-arbol-candidato-develop.json`). Las dos corridas con
+`--ref origin/develop` se descartaron y no quedan como evidencia.
+
+La lección no es del instrumento sino del protocolo: un `ROTO carry` masivo (todas las rutas del inventario,
+incluidas las que nadie tocó) es señal de que se midió el árbol equivocado, no de que el paquete revierta
+trabajo ajeno. Un rojo que aparece en rutas que el candidato no modificó hay que atribuirlo antes de
+creérselo.

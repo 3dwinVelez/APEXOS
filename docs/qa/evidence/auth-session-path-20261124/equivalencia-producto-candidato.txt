@@ -1,0 +1,35 @@
+control de equivalencia de producto del candidato a develop
+paquete: monitor-latencia-sesion-20261124
+destino: origin/develop 6b42b365, el tip que la sesion concurrente promovio mientras se armaba este candidato
+
+arbol de producto certificado (suitas 70/70 y 7/7, suite de plataforma, porton de replay 51/51):
+  6a503dd6 = git merge --no-ff origin/develop sobre el candidato 228d1028, fusion limpia de service.js
+
+lo que se prueba aqui: el commit de espejo solo mueve documentacion. Comando, desde la worktree del
+candidato:
+
+  git diff --name-only 6a503dd6..<tip congelado> | grep -cE '^(apps|scripts)/'      -> 0
+  git diff --name-only 6a503dd6..<tip congelado> | sed -n '1,40p'                   -> solo rutas docs/ y agents/
+
+medicion sobre el tip 02bf5054 (rondas de espejo posteriores se miden igual y se reportan en
+puertas-develop.json, que es evidencia posterior al congelamiento y no viaja dentro del candidato):
+  rutas de apps/ y scripts/ movidas por el commit de espejo: 0
+  rutas movidas (13, todas de documentacion, manifiesto, spec, evidencia o contexto vivo):
+  - .qoder/skills/apexos-brief/SKILL.md
+  - .qoder/skills/apexos-qa/SKILL.md
+  - agents/CHANGELOG.md
+  - agents/apexos-brief/SKILL.md
+  - agents/apexos-qa/SKILL.md
+  - agents/registry.json
+  - docs/briefs/2026-11-24-monitor-marcaciones-latencia.md
+  - docs/qa/evidence/auth-session-path-20261124/candidato-develop.json
+  - docs/qa/evidence/auth-session-path-20261124/replay-candidato-develop.json
+  - docs/qa/evidence/auth-session-path-20261124/suite-plataforma-candidato.json
+  - docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json
+  - docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json
+  - docs/qa/specs/monitor-latencia-sesion-develop-20261124.replay.json
+
+por que el sha servido no es 6a503dd6: cada edicion de manifiesto o de evidencia obliga a rehacer el
+espejo sobre origin/desarrollo (el porton de alcance exige que el blob del candidato sea el de origen),
+y el sha que viaja a develop es el de ese espejo final. Como el espejo esta acotado por inventario,
+ninguna ronda mueve rutas de producto: ese es exactamente el numero que este control mide.
