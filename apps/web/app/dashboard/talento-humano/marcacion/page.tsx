@@ -127,9 +127,12 @@ const latenessReasons = [
   ["otro", "Otro motivo (detallar en el sustento)"]
 ];
 
-// Marcaciones que exigen selfie. El almuerzo no la pide: es un corte interno
-// de la jornada, no una validacion de quien entro o quien salio.
-const selfieRequiredPunches = new Set(["entrada", "salida"]);
+// Marcaciones que exigen selfie DESDE LA WEB. Son las cuatro: sin chip que firme,
+// la unica prueba de quien marco es la cara, y el almuerzo no puede quedar ciego.
+// Tiene que coincidir con `WEB_SELFIE_REQUIRED_TYPES` del API; la app firmada sigue
+// pidiendo solo entrada y salida porque las versiones instaladas firman el almuerzo
+// sin foto. Ventana de contingencia: brief 2026-11-24.
+const selfieRequiredPunches = new Set(["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"]);
 
 const punchOrder = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
 const punchLabels: Record<string, { title: string; desc: string; color: string }> = {
@@ -1667,7 +1670,7 @@ export default function MobilePunchPage() {
               <div className="mt-3">
                 <PhotoCapture
                   facing="user"
-                  label={nextType === "entrada" ? "Selfie de validacion de entrada" : "Selfie de validacion de cierre"}
+                  label={`Selfie de ${punchLabels[nextType ?? ""]?.title || "validacion"}`}
                   onChange={setIdentitySelfie}
                   onUnusable={onSelfieUnusable}
                   required
@@ -1678,7 +1681,7 @@ export default function MobilePunchPage() {
                     {PHOTO_UNUSABLE_COPY} Puedes pulsar el boton de marcar: tu hora si se registra.
                   </p>
                 ) : null}
-                <p className="mt-2 text-xs text-neutral-500">Debe verse tu rostro. El almuerzo y el retorno no piden foto.</p>
+                <p className="mt-2 text-xs text-neutral-500">Debe verse tu rostro. Las cuatro marcaciones piden foto: entrada, salida a almuerzo, retorno y cierre.</p>
               </div>
             ) : null}
             {needsJustification ? (

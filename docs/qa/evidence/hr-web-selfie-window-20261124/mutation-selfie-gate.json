@@ -1,0 +1,277 @@
+{
+  "certification": "hr-mobile-identity-local",
+  "run_id": "20261124153746",
+  "environment": "LOCAL",
+  "database": "postgresql://***@127.0.0.1:55442/apexos",
+  "started_at": "2026-11-24T15:37:46.700Z",
+  "checks": [
+    {
+      "name": "la API real arranca contra el Postgres local",
+      "ok": true,
+      "detail": {
+        "api": "http://127.0.0.1:3198/api/v1"
+      }
+    },
+    {
+      "name": "las fichas de la certificacion existen y estan vinculadas",
+      "ok": true,
+      "detail": {
+        "employee_ids": [
+          10,
+          11,
+          12
+        ]
+      }
+    },
+    {
+      "name": "un tecnico nuevo no tiene telefono registrado",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "payload": {
+          "enrolled": false
+        }
+      }
+    },
+    {
+      "name": "sin registro la app no puede marcar",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "BIOMETRIA_NO_REGISTRADA"
+      }
+    },
+    {
+      "name": "registra su telefono con la firma de la huella",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "payload": {
+          "enrolled": true,
+          "device_id": "and-cert-a-20261124153746",
+          "platform": "android",
+          "device_model": "Cert Pixel",
+          "enrolled_at": "2026-11-24T15:37:54.175Z"
+        }
+      }
+    },
+    {
+      "name": "consulta su registro sin que viaje la llave",
+      "ok": true,
+      "detail": {
+        "payload": {
+          "enrolled": true,
+          "device_id": "and-cert-a-20261124153746",
+          "platform": "android",
+          "device_model": "Cert Pixel",
+          "enrolled_at": "2026-11-24T15:37:54.175Z"
+        }
+      }
+    },
+    {
+      "name": "no puede registrar otro telefono sin que lo restablezcan",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "BIOMETRIA_YA_REGISTRADA"
+      }
+    },
+    {
+      "name": "otro empleado no puede registrarse en un telefono ajeno",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "DISPOSITIVO_DE_OTRO_EMPLEADO"
+      }
+    },
+    {
+      "name": "la llave publica queda en la ficha del empleado",
+      "ok": true,
+      "detail": {
+        "employee_id": 10
+      }
+    },
+    {
+      "name": "desde otro telefono no puede marcar",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "DISPOSITIVO_NO_REGISTRADO"
+      }
+    },
+    {
+      "name": "con otra llave haciendose pasar por su telefono no pasa",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "FIRMA_BIOMETRICA_INVALIDA"
+      }
+    },
+    {
+      "name": "cambiar la selfie despues de firmar invalida la marcacion",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "FIRMA_BIOMETRICA_INVALIDA"
+      }
+    },
+    {
+      "name": "sin selfie la app no puede marcar",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "SELFIE_REQUERIDA"
+      }
+    },
+    {
+      "name": "una version vieja de la app (sin firma) no puede marcar",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "IDENTIDAD_REQUERIDA"
+      }
+    },
+    {
+      "name": "los intentos rechazados no dejaron marcaciones",
+      "ok": true,
+      "detail": {
+        "punches": 0
+      }
+    },
+    {
+      "name": "marca desde su telefono con huella y selfie",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "la marcacion queda verificada con su telefono",
+      "ok": true,
+      "detail": {
+        "identity_verification": {
+          "method": "EC_P256_SHA256",
+          "status": "verified",
+          "channel": "mobile",
+          "device_id": "and-cert-a-20261124153746",
+          "signature": "[presente]",
+          "face_match": {
+            "status": "sin_registro"
+          },
+          "enrolled_at": "2026-11-24T15:37:54.175Z",
+          "verified_at": "2026-11-24T15:37:54.592Z",
+          "signed_sha256": "72d090b598cd1171b382d0c215a9ca99186c97be170951882cf3779789883e6b",
+          "stored_sha256": "72d090b598cd1171b382d0c215a9ca99186c97be170951882cf3779789883e6b",
+          "evidence_status": "degraded",
+          "evidence_failure_code": "EVIDENCIA_NO_DECODIFICABLE"
+        }
+      }
+    },
+    {
+      "name": "la selfie se guarda como data URL con su hash",
+      "ok": true,
+      "detail": {
+        "type": "image/jpeg",
+        "size": 2036
+      }
+    },
+    {
+      "name": "la firma cruda de la app no queda suelta en la metadata",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "reenviar la misma marcacion (cola offline) no la duplica",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "entradas": 1
+      }
+    },
+    {
+      "name": "un telefono que quedo registrado para dos empleados no puede marcar",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "DISPOSITIVO_COMPARTIDO"
+      }
+    },
+    {
+      "name": "la app instalada sigue marcando el almuerzo sin foto",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "el almuerzo firmado queda verificado y sin cara acumulada",
+      "ok": true,
+      "detail": {
+        "identity_verification": {
+          "method": "EC_P256_SHA256",
+          "status": "verified",
+          "channel": "mobile",
+          "device_id": "and-cert-a-20261124153746",
+          "signature": "MEUCIQCP/FTTHkiiDjm75qxwbhjlcEnsiL5ZwqNHXnWpA2Q0KAIgEE5n5PUr3ewdAP3AyTFeUQR/D1mAq2QQ3f8vtY1fh4s=",
+          "enrolled_at": "2026-11-24T15:37:54.175Z",
+          "verified_at": "2026-11-24T15:37:54.824Z"
+        }
+      }
+    },
+    {
+      "name": "la web no puede marcar entrada sin selfie",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "SELFIE_REQUERIDA",
+        "error": "Toma la selfie de validacion para registrar esta marcacion."
+      }
+    },
+    {
+      "name": "la web marca entrada con JPEG real declarado PNG",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "entrada: la marcacion web entro por el canal web",
+      "ok": true,
+      "detail": {
+        "identity_verification": {
+          "status": "photo_only",
+          "channel": "web",
+          "face_match": {
+            "status": "sin_registro"
+          },
+          "captured_at": "2026-11-24T15:37:54.943Z",
+          "fingerprint": {
+            "status": "sin_registro"
+          }
+        }
+      }
+    },
+    {
+      "name": "entrada: la foto verdadero-etiqueta-mentiroso se guarda disponible",
+      "ok": true,
+      "detail": {
+        "status": "photo_only",
+        "evidence_status": "available"
+      }
+    },
+    {
+      "name": "la web no puede marcar inicio_almuerzo sin selfie",
+      "ok": false,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    }
+  ],
+  "finished_at": "2026-11-24T15:37:55.016Z",
+  "passed": false,
+  "api_log_tail": "on\"\n  from \"User\" u\n  left join \"Role\" r on r.id = u.role_id\n  left join lateral (select jsonb_agg(to_jsonb(p)) as perm_rows from \"Permission\" p where p.role_id = r.id) perms on true\n  left join \"Tenant\" t on t.id = u.tenant_id\n  left join \"AuthorizationSession\" s on s.id = cast($1 as uuid) and s.user_id = u.id\n  where u.id = cast($2 as int4)\n  limit 1\nprisma:query SELECT \"public\".\"Employee\".\"id\", \"public\".\"Employee\".\"tenant_id\", \"public\".\"Employee\".\"user_id\", \"public\".\"Employee\".\"party_id\", \"public\".\"Employee\".\"code\", \"public\".\"Employee\".\"user_type\", \"public\".\"Employee\".\"position\", \"public\".\"Employee\".\"department\", \"public\".\"Employee\".\"salary_base\", \"public\".\"Employee\".\"salary_type\", \"public\".\"Employee\".\"hire_date\", \"public\".\"Employee\".\"end_date\", \"public\".\"Employee\".\"contract_type\", \"public\".\"Employee\".\"active\", \"public\".\"Employee\".\"metadata\" FROM \"public\".\"Employee\" WHERE (\"public\".\"Employee\".\"tenant_id\" = $1 AND \"public\".\"Employee\".\"user_id\" = $2 AND \"public\".\"Employee\".\"active\" = $3) LIMIT $4 OFFSET $5\nprisma:query SELECT \"public\".\"User\".\"id\", \"public\".\"User\".\"name\", \"public\".\"User\".\"email\" FROM \"public\".\"User\" WHERE \"public\".\"User\".\"id\" IN ($1) OFFSET $2\nprisma:query SELECT \"public\".\"hr_webauthn_credentials\".\"id\", \"public\".\"hr_webauthn_credentials\".\"tenant_id\", \"public\".\"hr_webauthn_credentials\".\"employee_id\", \"public\".\"hr_webauthn_credentials\".\"user_id\", \"public\".\"hr_webauthn_credentials\".\"credential_id\", \"public\".\"hr_webauthn_credentials\".\"public_key\", \"public\".\"hr_webauthn_credentials\".\"key_algorithm\", \"public\".\"hr_webauthn_credentials\".\"sign_count\", \"public\".\"hr_webauthn_credentials\".\"rp_id\", \"public\".\"hr_webauthn_credentials\".\"device_label\", \"public\".\"hr_webauthn_credentials\".\"active\", \"public\".\"hr_webauthn_credentials\".\"enrolled_at\", \"public\".\"hr_webauthn_credentials\".\"last_used_at\", \"public\".\"hr_webauthn_credentials\".\"revoked_by\", \"public\".\"hr_webauthn_credentials\".\"revoked_at\", \"public\".\"hr_webauthn_credentials\".\"revoke_reason\", \"public\".\"hr_webauthn_credentials\".\"created_at\", \"public\".\"hr_webauthn_credentials\".\"updated_at\" FROM \"public\".\"hr_webauthn_credentials\" WHERE (\"public\".\"hr_webauthn_credentials\".\"tenant_id\" = $1 AND \"public\".\"hr_webauthn_credentials\".\"employee_id\" = $2 AND \"public\".\"hr_webauthn_credentials\".\"active\" = $3) ORDER BY \"public\".\"hr_webauthn_credentials\".\"id\" DESC OFFSET $4\nprisma:query SELECT \"public\".\"hr_face_enrollments\".\"id\", \"public\".\"hr_face_enrollments\".\"tenant_id\", \"public\".\"hr_face_enrollments\".\"employee_id\", \"public\".\"hr_face_enrollments\".\"user_id\", \"public\".\"hr_face_enrollments\".\"embedding\", \"public\".\"hr_face_enrollments\".\"model\", \"public\".\"hr_face_enrollments\".\"reference_photo\", \"public\".\"hr_face_enrollments\".\"consent_version\", \"public\".\"hr_face_enrollments\".\"consent_text_sha256\", \"public\".\"hr_face_enrollments\".\"consent_at\", \"public\".\"hr_face_enrollments\".\"active\", \"public\".\"hr_face_enrollments\".\"enrolled_by\", \"public\".\"hr_face_enrollments\".\"enrolled_at\", \"public\".\"hr_face_enrollments\".\"revoked_by\", \"public\".\"hr_face_enrollments\".\"revoked_at\", \"public\".\"hr_face_enrollments\".\"revoke_reason\", \"public\".\"hr_face_enrollments\".\"created_at\", \"public\".\"hr_face_enrollments\".\"updated_at\" FROM \"public\".\"hr_face_enrollments\" WHERE (\"public\".\"hr_face_enrollments\".\"tenant_id\" = $1 AND \"public\".\"hr_face_enrollments\".\"employee_id\" = $2 AND \"public\".\"hr_face_enrollments\".\"active\" = $3) ORDER BY \"public\".\"hr_face_enrollments\".\"id\" DESC LIMIT $4 OFFSET $5\nprisma:query BEGIN\nprisma:query SELECT \"public\".\"Employee\".\"id\", \"public\".\"Employee\".\"tenant_id\", \"public\".\"Employee\".\"user_id\", \"public\".\"Employee\".\"party_id\", \"public\".\"Employee\".\"code\", \"public\".\"Employee\".\"user_type\", \"public\".\"Employee\".\"position\", \"public\".\"Employee\".\"department\", \"public\".\"Employee\".\"salary_base\", \"public\".\"Employee\".\"salary_type\", \"public\".\"Employee\".\"hire_date\", \"public\".\"Employee\".\"end_date\", \"public\".\"Employee\".\"contract_type\", \"public\".\"Employee\".\"active\", \"public\".\"Employee\".\"metadata\" FROM \"public\".\"Employee\" WHERE (\"public\".\"Employee\".\"tenant_id\" = $1 AND \"public\".\"Employee\".\"user_id\" = $2 AND \"public\".\"Employee\".\"active\" = $3) LIMIT $4 OFFSET $5\nprisma:query SELECT \"public\".\"User\".\"id\", \"public\".\"User\".\"name\", \"public\".\"User\".\"email\" FROM \"public\".\"User\" WHERE \"public\".\"User\".\"id\" IN ($1) OFFSET $2\nprisma:query SELECT pg_try_advisory_xact_lock(hashtextextended($1, 0)) AS acquired\nprisma:query SELECT \"public\".\"TimePunch\".\"id\", \"public\".\"TimePunch\".\"tenant_id\", \"public\".\"TimePunch\".\"employee_id\", \"public\".\"TimePunch\".\"user_name\", \"public\".\"TimePunch\".\"type\", \"public\".\"TimePunch\".\"punched_at\", \"public\".\"TimePunch\".\"date\", \"public\".\"TimePunch\".\"time\", \"public\".\"TimePunch\".\"latitude\", \"public\".\"TimePunch\".\"longitude\", \"public\".\"TimePunch\".\"accuracy_meters\", \"public\".\"TimePunch\".\"vehicle_plate\", \"public\".\"TimePunch\".\"route_id\", \"public\".\"TimePunch\".\"extra_minutes\", \"public\".\"TimePunch\".\"extra_reason\", \"public\".\"TimePunch\".\"extra_detail\", \"public\".\"TimePunch\".\"extra_evidence\", \"public\".\"TimePunch\".\"metadata\", \"public\".\"TimePunch\".\"idempotency_key\", \"public\".\"TimePunch\".\"created_at\" FROM \"public\".\"TimePunch\" WHERE (\"public\".\"TimePunch\".\"tenant_id\" = $1 AND \"public\".\"TimePunch\".\"idempotency_key\" = $2) LIMIT $3 OFFSET $4\nprisma:query SELECT \"public\".\"TimePunch\".\"id\", \"public\".\"TimePunch\".\"tenant_id\", \"public\".\"TimePunch\".\"employee_id\", \"public\".\"TimePunch\".\"user_name\", \"public\".\"TimePunch\".\"type\", \"public\".\"TimePunch\".\"punched_at\", \"public\".\"TimePunch\".\"date\", \"public\".\"TimePunch\".\"time\", \"public\".\"TimePunch\".\"latitude\", \"public\".\"TimePunch\".\"longitude\", \"public\".\"TimePunch\".\"accuracy_meters\", \"public\".\"TimePunch\".\"vehicle_plate\", \"public\".\"TimePunch\".\"route_id\", \"public\".\"TimePunch\".\"extra_minutes\", \"public\".\"TimePunch\".\"extra_reason\", \"public\".\"TimePunch\".\"extra_detail\", \"public\".\"TimePunch\".\"metadata\", \"public\".\"TimePunch\".\"idempotency_key\", \"public\".\"TimePunch\".\"created_at\" FROM \"public\".\"TimePunch\" WHERE (\"public\".\"TimePunch\".\"tenant_id\" = $1 AND (\"public\".\"TimePunch\".\"employee_id\" = $2 OR \"public\".\"TimePunch\".\"user_name\" IN ($3,$4,$5,$6)) AND \"public\".\"TimePunch\".\"date\" >= $7 AND \"public\".\"TimePunch\".\"date\" < $8) ORDER BY \"public\".\"TimePunch\".\"punched_at\" ASC OFFSET $9\nprisma:query INSERT INTO \"public\".\"TimePunch\" (\"tenant_id\",\"employee_id\",\"user_name\",\"type\",\"punched_at\",\"date\",\"time\",\"vehicle_plate\",\"route_id\",\"extra_minutes\",\"extra_evidence\",\"metadata\",\"idempotency_key\",\"created_at\") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING \"public\".\"TimePunch\".\"id\", \"public\".\"TimePunch\".\"tenant_id\", \"public\".\"TimePunch\".\"employee_id\", \"public\".\"TimePunch\".\"user_name\", \"public\".\"TimePunch\".\"type\", \"public\".\"TimePunch\".\"punched_at\", \"public\".\"TimePunch\".\"date\", \"public\".\"TimePunch\".\"time\", \"public\".\"TimePunch\".\"latitude\", \"public\".\"TimePunch\".\"longitude\", \"public\".\"TimePunch\".\"accuracy_meters\", \"public\".\"TimePunch\".\"vehicle_plate\", \"public\".\"TimePunch\".\"route_id\", \"public\".\"TimePunch\".\"extra_minutes\", \"public\".\"TimePunch\".\"extra_reason\", \"public\".\"TimePunch\".\"extra_detail\", \"public\".\"TimePunch\".\"extra_evidence\", \"public\".\"TimePunch\".\"metadata\", \"public\".\"TimePunch\".\"idempotency_key\", \"public\".\"TimePunch\".\"created_at\"\nprisma:query SELECT \"public\".\"RoutePreoperationalChecklist\".\"id\", \"public\".\"RoutePreoperationalChecklist\".\"tenant_id\", \"public\".\"RoutePreoperationalChecklist\".\"route_id\", \"public\".\"RoutePreoperationalChecklist\".\"shift_id\", \"public\".\"RoutePreoperationalChecklist\".\"punch_id\", \"public\".\"RoutePreoperationalChecklist\".\"driver_id\", \"public\".\"RoutePreoperationalChecklist\".\"driver_name\", \"public\".\"RoutePreoperationalChecklist\".\"user_id\", \"public\".\"RoutePreoperationalChecklist\".\"vehicle_id\", \"public\".\"RoutePreoperationalChecklist\".\"plate\", \"public\".\"RoutePreoperationalChecklist\".\"sede\", \"public\".\"RoutePreoperationalChecklist\".\"checklist_status\", \"public\".\"RoutePreoperationalChecklist\".\"risk_level\", \"public\".\"RoutePreoperationalChecklist\".\"started_at\", \"public\".\"RoutePreoperationalChecklist\".\"completed_at\", \"public\".\"RoutePreoperationalChecklist\".\"approved_at\", \"public\".\"RoutePreoperationalChecklist\".\"blocked_at\", \"public\".\"RoutePreoperationalChecklist\".\"approved_by\", \"public\".\"RoutePreoperationalChecklist\".\"created_by\", \"public\".\"RoutePreoperationalChecklist\".\"location_lat\", \"public\".\"RoutePreoperationalChecklist\".\"location_lng\", \"public\".\"RoutePreoperationalChecklist\".\"digital_signature\", \"public\".\"RoutePreoperationalChecklist\".\"mileage_initial\", \"public\".\"RoutePreoperationalChecklist\".\"fuel_level\", \"public\".\"RoutePreoperationalChecklist\".\"observations\", \"public\".\"RoutePreoperationalChecklist\".\"metadata\", \"public\".\"RoutePreoperationalChecklist\".\"created_at\", \"public\".\"RoutePreoperationalChecklist\".\"updated_at\" FROM \"public\".\"RoutePreoperationalChecklist\" WHERE (\"public\".\"RoutePreoperationalChecklist\".\"tenant_id\" = $1 AND \"public\".\"RoutePreoperationalChecklist\".\"driver_id\" = $2 AND \"public\".\"RoutePreoperationalChecklist\".\"checklist_status\" IN ($3,$4)) ORDER BY \"public\".\"RoutePreoperationalChecklist\".\"completed_at\" DESC LIMIT $5 OFFSET $6\nprisma:query SELECT \"public\".\"WorkSession\".\"id\", \"public\".\"WorkSession\".\"tenant_id\", \"public\".\"WorkSession\".\"employee_id\", \"public\".\"WorkSession\".\"user_name\", \"public\".\"WorkSession\".\"date\", \"public\".\"WorkSession\".\"status\", \"public\".\"WorkSession\".\"started_at\", \"public\".\"WorkSession\".\"lunch_started_at\", \"public\".\"WorkSession\".\"lunch_ended_at\", \"public\".\"WorkSession\".\"closed_at\", \"public\".\"WorkSession\".\"entry_punch_id\", \"public\".\"WorkSession\".\"exit_punch_id\", \"public\".\"WorkSession\".\"route_id\", \"public\".\"WorkSession\".\"vehicle_plate\", \"public\".\"WorkSession\".\"preop_checklist_id\", \"public\".\"WorkSession\".\"metadata\", \"public\".\"WorkSession\".\"created_at\", \"public\".\"WorkSession\".\"updated_at\" FROM \"public\".\"WorkSession\" WHERE (\"public\".\"WorkSession\".\"tenant_id\" = $1 AND (\"public\".\"WorkSession\".\"employee_id\" = $2 OR \"public\".\"WorkSession\".\"user_name\" IN ($3,$4,$5,$6)) AND \"public\".\"WorkSession\".\"date\" >= $7 AND \"public\".\"WorkSession\".\"date\" < $8 AND \"public\".\"WorkSession\".\"status\" = $9) ORDER BY \"public\".\"WorkSession\".\"started_at\" DESC LIMIT $10 OFFSET $11\nprisma:query INSERT INTO \"public\".\"WorkSession\" (\"tenant_id\",\"employee_id\",\"user_name\",\"date\",\"status\",\"started_at\",\"entry_punch_id\",\"route_id\",\"vehicle_plate\",\"preop_checklist_id\",\"metadata\",\"created_at\",\"updated_at\") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING \"public\".\"WorkSession\".\"id\", \"public\".\"WorkSession\".\"tenant_id\", \"public\".\"WorkSession\".\"employee_id\", \"public\".\"WorkSession\".\"user_name\", \"public\".\"WorkSession\".\"date\", \"public\".\"WorkSession\".\"status\", \"public\".\"WorkSession\".\"started_at\", \"public\".\"WorkSession\".\"lunch_started_at\", \"public\".\"WorkSession\".\"lunch_ended_at\", \"public\".\"WorkSession\".\"closed_at\", \"public\".\"WorkSession\".\"entry_punch_id\", \"public\".\"WorkSession\".\"exit_punch_id\", \"public\".\"WorkSession\".\"route_id\", \"public\".\"WorkSession\".\"vehicle_plate\", \"public\".\"WorkSession\".\"preop_checklist_id\", \"public\".\"WorkSession\".\"metadata\", \"public\".\"WorkSession\".\"created_at\", \"public\".\"WorkSession\".\"updated_at\"\nprisma:query COMMIT\n[10:37:54.977] \u001b[32mINFO\u001b[39m (3256): \u001b[36mrequest completed\u001b[39m\n    \u001b[35mreqId\u001b[39m: \"req-x\"\n    \u001b[35mres\u001b[39m: {\n      \"statusCode\": 200\n    }\n    \u001b[35mresponseTime\u001b[39m: 37.863899999999376\n[10:37:54.982] \u001b[32mINFO\u001b[39m (3256): \u001b[36mincoming request\u001b[39m\n    \u001b[35mreqId\u001b[39m: \"req-y\"\n    \u001b[35mreq\u001b[39m: {\n      \"method\": \"POST\",\n      \"url\": \"/api/v1/hr/self/time-punches\",\n      \"host\": \"127.0.0.1:3198\",\n      \"remoteAddress\": \"127.0.0.1\",\n      \"remotePort\": 57697\n    }\nprisma:query \n  select to_jsonb(u) as \"user\",\n    case when r.id is null then null\n         else to_jsonb(r) || jsonb_build_object('permissions', coalesce(perms.perm_rows, '[]'::jsonb))\n    end as \"role\",\n    to_jsonb(t) as \"tenant\",\n    case when s.id is null then null else to_jsonb(s) end as \"session\"\n  from \"User\" u\n  left join \"Role\" r on r.id = u.role_id\n  left join lateral (select jsonb_agg(to_jsonb(p)) as perm_rows from \"Permission\" p where p.role_id = r.id) perms on true\n  left join \"Tenant\" t on t.id = u.tenant_id\n  left join \"AuthorizationSession\" s on s.id = cast($1 as uuid) and s.user_id = u.id\n  where u.id = cast($2 as int4)\n  limit 1\nprisma:query SELECT \"public\".\"Employee\".\"id\", \"public\".\"Employee\".\"tenant_id\", \"public\".\"Employee\".\"user_id\", \"public\".\"Employee\".\"party_id\", \"public\".\"Employee\".\"code\", \"public\".\"Employee\".\"user_type\", \"public\".\"Employee\".\"position\", \"public\".\"Employee\".\"department\", \"public\".\"Employee\".\"salary_base\", \"public\".\"Employee\".\"salary_type\", \"public\".\"Employee\".\"hire_date\", \"public\".\"Employee\".\"end_date\", \"public\".\"Employee\".\"contract_type\", \"public\".\"Employee\".\"active\", \"public\".\"Employee\".\"metadata\" FROM \"public\".\"Employee\" WHERE (\"public\".\"Employee\".\"tenant_id\" = $1 AND \"public\".\"Employee\".\"user_id\" = $2 AND \"public\".\"Employee\".\"active\" = $3) LIMIT $4 OFFSET $5\nprisma:query SELECT \"public\".\"User\".\"id\", \"public\".\"User\".\"name\", \"public\".\"User\".\"email\" FROM \"public\".\"User\" WHERE \"public\".\"User\".\"id\" IN ($1) OFFSET $2\nprisma:query SELECT \"public\".\"hr_webauthn_credentials\".\"id\", \"public\".\"hr_webauthn_credentials\".\"tenant_id\", \"public\".\"hr_webauthn_credentials\".\"employee_id\", \"public\".\"hr_webauthn_credentials\".\"user_id\", \"public\".\"hr_webauthn_credentials\".\"credential_id\", \"public\".\"hr_webauthn_credentials\".\"public_key\", \"public\".\"hr_webauthn_credentials\".\"key_algorithm\", \"public\".\"hr_webauthn_credentials\".\"sign_count\", \"public\".\"hr_webauthn_credentials\".\"rp_id\", \"public\".\"hr_webauthn_credentials\".\"device_label\", \"public\".\"hr_webauthn_credentials\".\"active\", \"public\".\"hr_webauthn_credentials\".\"enrolled_at\", \"public\".\"hr_webauthn_credentials\".\"last_used_at\", \"public\".\"hr_webauthn_credentials\".\"revoked_by\", \"public\".\"hr_webauthn_credentials\".\"revoked_at\", \"public\".\"hr_webauthn_credentials\".\"revoke_reason\", \"public\".\"hr_webauthn_credentials\".\"created_at\", \"public\".\"hr_webauthn_credentials\".\"updated_at\" FROM \"public\".\"hr_webauthn_credentials\" WHERE (\"public\".\"hr_webauthn_credentials\".\"tenant_id\" = $1 AND \"public\".\"hr_webauthn_credentials\".\"employee_id\" = $2 AND \"public\".\"hr_webauthn_credentials\".\"active\" = $3) ORDER BY \"public\".\"hr_webauthn_credentials\".\"id\" DESC OFFSET $4\nprisma:query BEGIN\nprisma:query SELECT \"public\".\"Employee\".\"id\", \"public\".\"Employee\".\"tenant_id\", \"public\".\"Employee\".\"user_id\", \"public\".\"Employee\".\"party_id\", \"public\".\"Employee\".\"code\", \"public\".\"Employee\".\"user_type\", \"public\".\"Employee\".\"position\", \"public\".\"Employee\".\"department\", \"public\".\"Employee\".\"salary_base\", \"public\".\"Employee\".\"salary_type\", \"public\".\"Employee\".\"hire_date\", \"public\".\"Employee\".\"end_date\", \"public\".\"Employee\".\"contract_type\", \"public\".\"Employee\".\"active\", \"public\".\"Employee\".\"metadata\" FROM \"public\".\"Employee\" WHERE (\"public\".\"Employee\".\"tenant_id\" = $1 AND \"public\".\"Employee\".\"user_id\" = $2 AND \"public\".\"Employee\".\"active\" = $3) LIMIT $4 OFFSET $5\nprisma:query SELECT \"public\".\"User\".\"id\", \"public\".\"User\".\"name\", \"public\".\"User\".\"email\" FROM \"public\".\"User\" WHERE \"public\".\"User\".\"id\" IN ($1) OFFSET $2\nprisma:query SELECT pg_try_advisory_xact_lock(hashtextextended($1, 0)) AS acquired\nprisma:query SELECT \"public\".\"TimePunch\".\"id\", \"public\".\"TimePunch\".\"tenant_id\", \"public\".\"TimePunch\".\"employee_id\", \"public\".\"TimePunch\".\"user_name\", \"public\".\"TimePunch\".\"type\", \"public\".\"TimePunch\".\"punched_at\", \"public\".\"TimePunch\".\"date\", \"public\".\"TimePunch\".\"time\", \"public\".\"TimePunch\".\"latitude\", \"public\".\"TimePunch\".\"longitude\", \"public\".\"TimePunch\".\"accuracy_meters\", \"public\".\"TimePunch\".\"vehicle_plate\", \"public\".\"TimePunch\".\"route_id\", \"public\".\"TimePunch\".\"extra_minutes\", \"public\".\"TimePunch\".\"extra_reason\", \"public\".\"TimePunch\".\"extra_detail\", \"public\".\"TimePunch\".\"extra_evidence\", \"public\".\"TimePunch\".\"metadata\", \"public\".\"TimePunch\".\"idempotency_key\", \"public\".\"TimePunch\".\"created_at\" FROM \"public\".\"TimePunch\" WHERE (\"public\".\"TimePunch\".\"tenant_id\" = $1 AND \"public\".\"TimePunch\".\"idempotency_key\" = $2) LIMIT $3 OFFSET $4\nprisma:query SELECT \"public\".\"TimePunch\".\"id\", \"public\".\"TimePunch\".\"tenant_id\", \"public\".\"TimePunch\".\"employee_id\", \"public\".\"TimePunch\".\"user_name\", \"public\".\"TimePunch\".\"type\", \"public\".\"TimePunch\".\"punched_at\", \"public\".\"TimePunch\".\"date\", \"public\".\"TimePunch\".\"time\", \"public\".\"TimePunch\".\"latitude\", \"public\".\"TimePunch\".\"longitude\", \"public\".\"TimePunch\".\"accuracy_meters\", \"public\".\"TimePunch\".\"vehicle_plate\", \"public\".\"TimePunch\".\"route_id\", \"public\".\"TimePunch\".\"extra_minutes\", \"public\".\"TimePunch\".\"extra_reason\", \"public\".\"TimePunch\".\"extra_detail\", \"public\".\"TimePunch\".\"metadata\", \"public\".\"TimePunch\".\"idempotency_key\", \"public\".\"TimePunch\".\"created_at\" FROM \"public\".\"TimePunch\" WHERE (\"public\".\"TimePunch\".\"tenant_id\" = $1 AND (\"public\".\"TimePunch\".\"employee_id\" = $2 OR \"public\".\"TimePunch\".\"user_name\" IN ($3,$4,$5,$6)) AND \"public\".\"TimePunch\".\"date\" >= $7 AND \"public\".\"TimePunch\".\"date\" < $8) ORDER BY \"public\".\"TimePunch\".\"punched_at\" ASC OFFSET $9\nprisma:query INSERT INTO \"public\".\"TimePunch\" (\"tenant_id\",\"employee_id\",\"user_name\",\"type\",\"punched_at\",\"date\",\"time\",\"vehicle_plate\",\"route_id\",\"extra_minutes\",\"extra_evidence\",\"metadata\",\"idempotency_key\",\"created_at\") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING \"public\".\"TimePunch\".\"id\", \"public\".\"TimePunch\".\"tenant_id\", \"public\".\"TimePunch\".\"employee_id\", \"public\".\"TimePunch\".\"user_name\", \"public\".\"TimePunch\".\"type\", \"public\".\"TimePunch\".\"punched_at\", \"public\".\"TimePunch\".\"date\", \"public\".\"TimePunch\".\"time\", \"public\".\"TimePunch\".\"latitude\", \"public\".\"TimePunch\".\"longitude\", \"public\".\"TimePunch\".\"accuracy_meters\", \"public\".\"TimePunch\".\"vehicle_plate\", \"public\".\"TimePunch\".\"route_id\", \"public\".\"TimePunch\".\"extra_minutes\", \"public\".\"TimePunch\".\"extra_reason\", \"public\".\"TimePunch\".\"extra_detail\", \"public\".\"TimePunch\".\"extra_evidence\", \"public\".\"TimePunch\".\"metadata\", \"public\".\"TimePunch\".\"idempotency_key\", \"public\".\"TimePunch\".\"created_at\"\nprisma:query SELECT \"public\".\"WorkSession\".\"id\", \"public\".\"WorkSession\".\"tenant_id\", \"public\".\"WorkSession\".\"employee_id\", \"public\".\"WorkSession\".\"user_name\", \"public\".\"WorkSession\".\"date\", \"public\".\"WorkSession\".\"status\", \"public\".\"WorkSession\".\"started_at\", \"public\".\"WorkSession\".\"lunch_started_at\", \"public\".\"WorkSession\".\"lunch_ended_at\", \"public\".\"WorkSession\".\"closed_at\", \"public\".\"WorkSession\".\"entry_punch_id\", \"public\".\"WorkSession\".\"exit_punch_id\", \"public\".\"WorkSession\".\"route_id\", \"public\".\"WorkSession\".\"vehicle_plate\", \"public\".\"WorkSession\".\"preop_checklist_id\", \"public\".\"WorkSession\".\"metadata\", \"public\".\"WorkSession\".\"created_at\", \"public\".\"WorkSession\".\"updated_at\" FROM \"public\".\"WorkSession\" WHERE (\"public\".\"WorkSession\".\"tenant_id\" = $1 AND (\"public\".\"WorkSession\".\"employee_id\" = $2 OR \"public\".\"WorkSession\".\"user_name\" IN ($3,$4,$5,$6)) AND \"public\".\"WorkSession\".\"date\" >= $7 AND \"public\".\"WorkSession\".\"date\" < $8 AND \"public\".\"WorkSession\".\"status\" = $9) ORDER BY \"public\".\"WorkSession\".\"started_at\" DESC LIMIT $10 OFFSET $11\nprisma:query UPDATE \"public\".\"WorkSession\" SET \"lunch_started_at\" = $1, \"updated_at\" = $2 WHERE (\"public\".\"WorkSession\".\"id\" = $3 AND 1=1) RETURNING \"public\".\"WorkSession\".\"id\", \"public\".\"WorkSession\".\"tenant_id\", \"public\".\"WorkSession\".\"employee_id\", \"public\".\"WorkSession\".\"user_name\", \"public\".\"WorkSession\".\"date\", \"public\".\"WorkSession\".\"status\", \"public\".\"WorkSession\".\"started_at\", \"public\".\"WorkSession\".\"lunch_started_at\", \"public\".\"WorkSession\".\"lunch_ended_at\", \"public\".\"WorkSession\".\"closed_at\", \"public\".\"WorkSession\".\"entry_punch_id\", \"public\".\"WorkSession\".\"exit_punch_id\", \"public\".\"WorkSession\".\"route_id\", \"public\".\"WorkSession\".\"vehicle_plate\", \"public\".\"WorkSession\".\"preop_checklist_id\", \"public\".\"WorkSession\".\"metadata\", \"public\".\"WorkSession\".\"created_at\", \"public\".\"WorkSession\".\"updated_at\"\nprisma:query COMMIT\n[10:37:55.008] \u001b[32mINFO\u001b[39m (3256): \u001b[36mrequest completed\u001b[39m\n    \u001b[35mreqId\u001b[39m: \"req-y\"\n    \u001b[35mres\u001b[39m: {\n      \"statusCode\": 200\n    }\n    \u001b[35mresponseTime\u001b[39m: 25.964099999999235\n"
+}

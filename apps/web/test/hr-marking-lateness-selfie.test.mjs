@@ -3,11 +3,23 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-// Reglas de captura de la marcacion web: llegada tarde sustentada, selfie en
-// entrada y cierre, y kilometraje al abrir la jornada con vehiculo.
+// Reglas de captura de la marcacion web: llegada tarde sustentada, selfie en las
+// cuatro marcaciones y kilometraje al abrir la jornada con vehiculo.
 const root = path.resolve(import.meta.dirname, "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
 const marking = read("app/dashboard/talento-humano/marcacion/page.tsx");
+// La lista de requisitos vive en dos lados y tienen que decir lo mismo: el navegador
+// pregunta y el API exige. Cuando divergen aparece el rechazo que costo jornadas.
+const mobileIdentity = fs.readFileSync(
+  path.resolve(root, "../api/src/modules/hr/mobile-identity.js"),
+  "utf8"
+);
+
+function setLiteral(source, declaration) {
+  const match = source.match(new RegExp(`${declaration} = new Set\\(\\[([^\\]]+)\\]\\)`));
+  assert.ok(match, `no se encontro la declaracion ${declaration}`);
+  return match[1].split(",").map((item) => item.trim().replace(/^"|"$/g, "")).sort();
+}
 
 function markBody() {
   const start = marking.indexOf("async function mark(type: string)");
@@ -35,15 +47,24 @@ test("la tolerancia del horario es la que decide si hay que justificar", () => {
   assert.match(marking, /tolerance_minutes\?: number \| null/);
 });
 
-test("entrada y cierre exigen selfie; el almuerzo no lleva foto", () => {
-  assert.match(marking, /const selfieRequiredPunches = new Set\(\["entrada", "salida"\]\)/);
+test("las cuatro marcaciones web exigen selfie y el navegador y el API piden las mismas", () => {
+  const cuatro = ["entrada", "fin_almuerzo", "inicio_almuerzo", "salida"];
+  assert.deepEqual(setLiteral(marking, "selfieRequiredPunches"), cuatro);
+  assert.deepEqual(setLiteral(mobileIdentity, "WEB_SELFIE_REQUIRED_TYPES"), cuatro);
+  // El canal firmado NO cambia con esto: las apps instaladas firman el almuerzo sin
+  // foto, y exigirselas se convierte en firma invalida, no en un pedido de selfie.
+  assert.deepEqual(setLiteral(mobileIdentity, "SELFIE_REQUIRED_TYPES"), ["entrada", "salida"]);
+
   assert.match(marking, /facing="user"/);
-  assert.match(marking, /Selfie de validacion de entrada/);
-  assert.match(marking, /Selfie de validacion de cierre/);
-  assert.match(marking, /El almuerzo y el retorno no piden foto/);
+  // La etiqueta nombra la marcacion que se esta tomando: con cuatro tipos ya no sirve
+  // el viejo "entrada / cierre".
+  assert.match(marking, /label=\{`Selfie de \$\{punchLabels\[nextType/);
+  assert.doesNotMatch(marking, /Selfie de validacion de entrada/);
+  assert.match(marking, /Las cuatro marcaciones piden foto/);
+  assert.doesNotMatch(marking, /El almuerzo y el retorno no piden foto/);
 
   const body = markBody();
-  assert.match(body, /selfieRequiredPunches\.has\(type\) && !identitySelfie/);
+  assert.match(body, /selfieRequiredPunches\.has\(type\) && !identitySelfie && !degradedPhoto/);
   assert.match(body, /payload\.identity_photo = \{ base64: identitySelfie\.base64/);
   // El blob: del navegador no sirve en el servidor ni sobrevive a la cola.
   assert.doesNotMatch(body, /payload\.identity_photo = identitySelfie;/);

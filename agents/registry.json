@@ -57,9 +57,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.28.0",
+      "version": "2.29.0",
       "updated_at": "2026-11-24",
-      "sha256": "3c104dafd9984eba3b3678516f58b469c1fc55cfa942eb3a9adfd46321e195f9",
+      "sha256": "aa9a99f838a16b3c4f12a37afd3026ee8e255914726628c6efa420d52d495f90",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -95,15 +95,16 @@
         "cuenta-inactiva-sigue-siendo-administrable",
         "clave-publica-en-esquema-con-forma",
         "lenguaje-cercano-al-dueno",
-        "camino-sesion-una-sentencia-por-lectura"
+        "camino-sesion-una-sentencia-por-lectura",
+        "una-sola-regla-de-selfie-por-canal"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.87.0",
+      "version": "2.88.0",
       "updated_at": "2026-11-24",
-      "sha256": "37a871c02d4740090007b9c87e757eda5f5908d7d5f6a2bbbca46f36f9859efc",
+      "sha256": "d06fa111d40a202908b516312fc3fedcf64bf4b0277404c15fdf34b0da818fbf",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -168,7 +169,8 @@
         "pendiente-con-dependencia-de-despliegue",
         "particion-de-residuo-con-tres-duenos",
         "lenguaje-cercano-al-dueno",
-        "instrumento-nuevo-entra-al-inventario"
+        "instrumento-nuevo-entra-al-inventario",
+        "brief-de-contingencia-con-normas-mecanicas"
       ]
     },
     {
@@ -202,9 +204,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.45.0",
+      "version": "2.46.0",
       "updated_at": "2026-11-24",
-      "sha256": "47bcef84bf8c150cd654a64bd5c194b556f8d176e1787214fea58e300d15ab95",
+      "sha256": "63eee45738269e3203383d54a1033243fe1c06ceba71f897cb6e24e3cd0baaf2",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -249,15 +251,16 @@
         "lint-de-ci-como-compuerta-local",
         "route-api-mismo-contrato-de-pantalla",
         "marca-durable-sobrevive-al-cierre",
-        "lenguaje-cercano-al-dueno"
+        "lenguaje-cercano-al-dueno",
+        "paridad-de-requisito-contra-el-servidor"
       ]
     },
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.30.0",
+      "version": "2.31.0",
       "updated_at": "2026-11-24",
-      "sha256": "70634059eb1b833dc434519416e70ed0af7617ee89b3ee30af9048263e27543b",
+      "sha256": "2a15294f689777808c4f9a2df68cb5a7963217ad1b33e1748009fbc13007ec8c",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -290,7 +293,8 @@
         "worktree-sin-node-modules-copiado",
         "barrido-con-causa-identificada",
         "evidencia-de-corrida-sin-identidad-con-firma-del-manifiesto",
-        "lenguaje-cercano-al-dueno"
+        "lenguaje-cercano-al-dueno",
+        "porton-de-origen-por-blob"
       ]
     },
     {
@@ -332,9 +336,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.107.0",
+      "version": "2.108.0",
       "updated_at": "2026-11-24",
-      "sha256": "a993164149866a3f18e48698dea7931a48278d3d142e0b80cfa59996cf7618eb",
+      "sha256": "b2680eee37e9920b86eb15917cdc32e34d2d0e6835330ec4c2f555b962a7e10a",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -426,15 +430,16 @@
         "cero-de-campo-se-desambigua",
         "antes-y-despues-de-la-corrida-de-escritura",
         "lenguaje-cercano-al-dueno",
-        "rojo-del-arnes-se-atribuye-y-se-cura"
+        "rojo-del-arnes-se-atribuye-y-se-cura",
+        "certificador-hermetico-con-control-de-mutacion"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.40.0",
+      "version": "2.41.0",
       "updated_at": "2026-11-24",
-      "sha256": "99ac7ba9476d98899bba3c09e4bddbda4e0c5b14f3ca615b5f835abf91742b0a",
+      "sha256": "5757a38ce80e90fd581562a44c6e4482fecd06d4d8f71abe1c2df640eedc5d90",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -475,15 +480,16 @@
         "ampliar-lectura-conserva-tenant-y-login",
         "identificador-declarado-no-es-identidad",
         "lenguaje-cercano-al-dueno",
-        "login-no-es-oraculo-de-correos"
+        "login-no-es-oraculo-de-correos",
+        "cuatro-marcaciones-sin-firma-necesitan-cara"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.63.0",
+      "version": "2.64.0",
       "updated_at": "2026-11-24",
-      "sha256": "319f0b756f4e336a0340a04e381ce56e26391439745933cc97643d77a169d1e8",
+      "sha256": "3a1250e05f9968175dcfd689c4d255c73a71f263fe189e88dbb6ef8bc31be012",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -535,7 +541,8 @@
         "tres-estados-de-la-telemetria",
         "residuo-de-despliegue-cuantificado-en-campo",
         "lenguaje-cercano-al-dueno",
-        "residuo-declarado-se-cierra-en-el-mismo-paquete"
+        "residuo-declarado-se-cierra-en-el-mismo-paquete",
+        "contingencia-se-cierra-con-mecanismo-y-retiro"
       ]
     }
   ],

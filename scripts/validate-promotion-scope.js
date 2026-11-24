@@ -6,8 +6,8 @@ function fail(message) {
   throw new Error(message);
 }
 
-function git(args) {
-  return execFileSync("git", args, { encoding: "utf8" }).trim();
+function git(args, options = {}) {
+  return execFileSync("git", args, { encoding: "utf8", ...options }).trim();
 }
 
 function matchesAllowed(file, allowedPaths) {
@@ -74,6 +74,57 @@ function validateManifest(manifest, manifestDir, changes) {
   }
 }
 
+const ORIGIN_BASELINE = "origin/desarrollo";
+
+function gitQuiet(args, options = {}) {
+  try {
+    return git(args, options) || null;
+  } catch {
+    return null;
+  }
+}
+
+function readBlobAt(ref, file, options) {
+  return gitQuiet(["rev-parse", "--verify", "--quiet", `${ref}:${file}`], options);
+}
+
+function readRefAt(ref, options) {
+  return gitQuiet(["rev-parse", "--verify", "--quiet", ref], options);
+}
+
+// Unica fuente del camino promocional: desarrollo -> develop -> main. Cada ruta del diff
+// se compara contra el blob que esa ruta tiene en `origin/desarrollo`, que es donde el
+// cambio se escribio, se probo y se certifico.
+//
+// Nacio de la caida de produccion del 23-11: `webPunchSelfie.js` se escribio directo en
+// `develop` el 20-11 sin pasar nunca por `desarrollo` y se fundo en `main` sin que nadie
+// lo viera ahi. El porton por rutas no la detecto porque la ruta si estaba declarada en el
+// manifiesto; lo que faltaba exigir era el ORIGEN del contenido, no la ruta.
+function findUnoriginatedChanges(changes, { candidateRef, baselineRef = ORIGIN_BASELINE, cwd } = {}) {
+  const options = cwd ? { cwd } : {};
+  if (!readRefAt(baselineRef, options)) {
+    fail(`no se puede verificar el origen: no existe ${baselineRef}. Ejecute git fetch origin desarrollo y vuelva a intentar`);
+  }
+  if (!readRefAt(candidateRef, options)) fail(`no se puede verificar el origen: no existe ${candidateRef}`);
+  return changes.filter((change) => readBlobAt(candidateRef, change.file, options) !== readBlobAt(baselineRef, change.file, options));
+}
+
+function validateOriginUniqueness(manifest, changes, origin = {}) {
+  const waivers = new Map();
+  for (const waiver of manifest.origin_waivers || []) {
+    if (!waiver || typeof waiver.file !== "string" || !waiver.file.trim()) fail("origin_waivers exige entradas con file");
+    if (!String(waiver.reason || "").trim() || !String(waiver.approval || "").trim()) {
+      fail(`la excepcion de origen de ${waiver.file} debe declarar reason y approval nominales`);
+    }
+    if (waivers.has(waiver.file)) fail(`origin_waivers duplica la excepcion de ${waiver.file}`);
+    waivers.set(waiver.file, waiver);
+  }
+  const unattributed = findUnoriginatedChanges(changes, origin).filter((change) => !waivers.has(change.file));
+  if (!unattributed.length) return;
+  const detail = unattributed.map(({ status, file }) => `${status}:${file}`).join(", ");
+  fail(`contenido sin origen en desarrollo, no se promociona: [${detail}]. Solo sube lo escrito y certificado en desarrollo; una divergencia real exige un origin_waivers con reason y approval`);
+}
+
 function main() {
   const manifestPath = process.argv[2];
   const candidateRef = process.argv[3] || "HEAD";
@@ -98,7 +149,8 @@ function main() {
   }
   const changes = changedFiles(target, candidate);
   validateManifest(manifest, path.dirname(absoluteManifest), changes);
-  console.log(`ALCANCE DE PROMOCION VALIDO: ${manifest.change_id} (${changes.length} rutas)`);
+  validateOriginUniqueness(manifest, changes, { candidateRef: candidate });
+  console.log(`ALCANCE DE PROMOCION VALIDO: ${manifest.change_id} (${changes.length} rutas, origen verificado contra ${ORIGIN_BASELINE})`);
 }
 
 if (require.main === module) {
@@ -110,4 +162,13 @@ if (require.main === module) {
   }
 }
 
-module.exports = { changedFiles, matchesAllowed, validateExpectedChanges, validateManifest };
+module.exports = {
+  changedFiles,
+  findUnoriginatedChanges,
+  matchesAllowed,
+  readBlobAt,
+  readRefAt,
+  validateExpectedChanges,
+  validateManifest,
+  validateOriginUniqueness
+};
