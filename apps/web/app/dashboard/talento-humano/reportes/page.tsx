@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
-import { reportEmployee, reportIdentity, timeReportColumns, type TimeReportSummary } from "@/lib/hrTimeReport";
+import { reportEmployee, reportIdentity, timeReportColumns, totalTimeReport, type TimeReportSummary } from "@/lib/hrTimeReport";
 import HrTimelineEvidence, { type HrTimelinePhoto } from "@/components/hr/HrTimelineEvidence";
 import { Badge } from "@/components/ui/feedback";
 import { downloadXlsxWorkbook } from "@/lib/reportExports";
@@ -610,6 +610,7 @@ export default function HrReportsPage() {
   }), [appliedRange, employeeFilter, journeyFilter, onlyOvertime, query, rows]);
 
   const activeFilters = [employeeFilter !== "all", onlyOvertime, journeyFilter !== "all", Boolean(query.trim())].filter(Boolean).length;
+  const timeTotals = useMemo(() => totalTimeReport(filtered), [filtered]);
 
   function applyDateFilters() {
     const error = reportRangeError(from, to);
@@ -642,8 +643,8 @@ export default function HrReportsPage() {
     setMessage("");
     try {
       const uniqueEmployees = new Set(filtered.map((row) => row.employeeId)).size;
-      const workedHours = filtered.reduce((sum, row) => sum + row.workedMinutes, 0) / 60;
-      const overtimeHours = filtered.reduce((sum, row) => sum + row.overtimeMinutes, 0) / 60;
+      const workedHours = timeTotals.workedMinutes / 60;
+      const overtimeHours = timeTotals.overtimeMinutes / 60;
       await downloadXlsxWorkbook(`apexos-reporte-talento-humano-${appliedRange.from}-${appliedRange.to}.xlsx`, [
         {
           name: "Resumen",
@@ -665,6 +666,11 @@ export default function HrReportsPage() {
         {
           name: "Jornadas",
           title: "Detalle de jornadas",
+          totals: {
+            fecha: "TOTAL", horas_laboradas: workedHours, horas_extra: overtimeHours,
+            ...(timeTotals.liquidatedOvertimeMinutes == null ? {} : { horas_extra_liquidacion: timeTotals.liquidatedOvertimeMinutes / 60, diferencia_extra: timeTotals.overtimeDifferenceMinutes / 60 }),
+            ...Object.fromEntries(timeReportColumns.map(column => [column.key, timeTotals.concepts[column.key] / 60]))
+          },
           subtitle: `Periodo ${appliedRange.from} a ${appliedRange.to} | Exportado con los filtros visibles`,
           columns: [
             { key: "fecha", label: "Fecha", width: 95, numberFormat: "yyyy-mm-dd" }, { key: "empleado", label: "Empleado", width: 180 },
@@ -682,10 +688,10 @@ export default function HrReportsPage() {
             fecha: new Date(`${row.date}T12:00:00-05:00`), empleado: row.employeeName, rol: row.role, documento: row.document, ruta: row.route, vehiculo: row.vehicle,
             entrada: hour(row.entry?.punched_at), almuerzo_inicio: hour(row.lunchStart?.punched_at), almuerzo_fin: hour(row.lunchEnd?.punched_at), cierre: hour(row.exit?.punched_at),
             alerta_entrada: row.punchAlerts.find((alert) => alert.type === "entrada")?.label || "", alerta_cierre: row.punchAlerts.find((alert) => alert.type === "salida")?.label || "",
-            horas_laboradas: Number((row.workedMinutes / 60).toFixed(2)), horas_extra: row.timeSummary ? Number((row.overtimeMinutes / 60).toFixed(2)) : "",
-            ...Object.fromEntries(timeReportColumns.map(column => [column.key, row.timeSummary ? Number((row.timeSummary[column.key] / 60).toFixed(2)) : ""])), estado: row.entry && row.exit ? "Completa" : "Incompleta",
-            horas_extra_liquidacion: row.liquidatedOvertimeMinutes == null ? "" : Number((row.liquidatedOvertimeMinutes / 60).toFixed(2)),
-            diferencia_extra: row.liquidatedOvertimeMinutes == null ? "" : Number(((row.overtimeMinutes - row.liquidatedOvertimeMinutes) / 60).toFixed(2)),
+            horas_laboradas: row.workedMinutes / 60, horas_extra: row.timeSummary ? row.overtimeMinutes / 60 : "",
+            ...Object.fromEntries(timeReportColumns.map(column => [column.key, row.timeSummary ? row.timeSummary[column.key] / 60 : ""])), estado: row.entry && row.exit ? "Completa" : "Incompleta",
+            horas_extra_liquidacion: row.liquidatedOvertimeMinutes == null ? "" : row.liquidatedOvertimeMinutes / 60,
+            diferencia_extra: row.liquidatedOvertimeMinutes == null ? "" : (row.overtimeMinutes - row.liquidatedOvertimeMinutes) / 60,
             motivo_extra: row.overtimeReason, justificacion_extra: row.overtimeDetail, actividades: row.activities.length, eventos: row.events.length
           }))
         },
@@ -999,6 +1005,19 @@ export default function HrReportsPage() {
               ))}
               {!filtered.length ? <tr><td className="px-4 py-8 text-center text-neutral-500" colSpan={13 + timeReportColumns.length}>{loading ? "Cargando..." : "Sin registros para el filtro seleccionado."}</td></tr> : null}
             </tbody>
+            <tfoot className="border-t-2 border-line bg-paper font-semibold" data-time-report-totals>
+              <tr>
+                <th className="px-4 py-3 text-left" scope="row">Totales</th>
+                <td className="px-4 py-3">{timeTotals.rows} jornada(s)</td>
+                {Array.from({ length: 6 }, (_, index) => <td key={index} />)}
+                <td className="whitespace-nowrap px-4 py-3">{loading ? "--" : minutesLabel(timeTotals.workedMinutes)}</td>
+                <td className="whitespace-nowrap px-4 py-3">{loading ? "--" : minutesLabel(timeTotals.overtimeMinutes)}</td>
+                {timeReportColumns.map(column => <td className="whitespace-nowrap px-4 py-3" key={column.key}>{loading ? "--" : minutesLabel(timeTotals.concepts[column.key])}</td>)}
+                <td className="px-4 py-3">{timeTotals.pending ? `${timeTotals.pending} pendiente(s) de clasificar` : ""}</td>
+                <td className="px-4 py-3">{timeTotals.events} evento(s)</td>
+                <td />
+              </tr>
+            </tfoot>
           </table>
         </div>
       </section>

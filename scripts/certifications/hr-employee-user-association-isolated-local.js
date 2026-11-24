@@ -4,8 +4,10 @@ const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
 const certificate = process.argv.find(arg => arg.startsWith('--certificate='))?.slice(14) || 'hr-employee-user-link-local.js';
-if (!['hr-time-report-local.js', 'hr-schedule-employee-source-local.js', 'hr-cross-device-sync-local.js', 'hr-termination-day-review-local.js', 'hr-employee-banks-local.js', 'hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js', 'hr-payroll-markings-local.js', 'hr-marking-existing-employee-local.js', 'hr-termination-document-search-local.js', 'hr-termination-complete-local.js'].includes(certificate)) throw Error('Unsupported certification script');
+const candidateClient = ['hr-time-report-local.js', 'hr-hide-web-marking-local.js'].includes(certificate) ? require('./hr-test-prisma-local')(root) : {};
+if (!['hr-hide-web-marking-local.js', 'hr-time-report-local.js', 'hr-schedule-employee-source-local.js', 'hr-cross-device-sync-local.js', 'hr-termination-day-review-local.js', 'hr-employee-banks-local.js', 'hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js', 'hr-payroll-markings-local.js', 'hr-marking-existing-employee-local.js', 'hr-termination-document-search-local.js', 'hr-termination-complete-local.js'].includes(certificate)) throw Error('Unsupported certification script');
 const outputDirectories = {
+  "hr-hide-web-marking-local.js": "hr-hide-web-marking",
   "hr-time-report-local.js": "hr-time-report",
   "hr-schedule-employee-source-local.js": "hr-schedule-employee-source",
   "hr-cross-device-sync-local.js": "hr-cross-device",
@@ -32,6 +34,16 @@ function apply(input) {
   if (result.status !== 0) throw Error('Isolated database schema preparation failed: ' + result.stderr.slice(-1500));
 }
 apply(schema);
+const identityFixtures = [];
+if (certificate === 'hr-hide-web-marking-local.js') {
+  for (const [table, migration] of [['hr_webauthn_credentials','20261122120000_hr_webauthn_credentials'],['hr_face_enrollments','20261122060000_hr_face_enrollments']]) {
+    const file = path.join(root, 'apps/api/prisma/migrations', migration, 'migration.sql');
+    if (!fs.existsSync(file)) continue;
+    const exists = docker(['exec', container, 'psql', '-U', 'apex', '-d', database, '-Atc', `SELECT to_regclass('public.${table}') IS NOT NULL`]).toString().trim() === 't';
+    if (!exists) { apply(fs.readFileSync(file)); identityFixtures.push(migration); }
+  }
+}
+
 const hasSedes = docker(['exec', container, 'psql', '-U', 'apex', '-d', database, '-Atc', "SELECT to_regclass('public.sedes') IS NOT NULL"]).toString().trim() === 't';
 if (!hasSedes) {
   // The legacy local schema already removed tariff-origin fields. Only the reviewed
@@ -43,15 +55,15 @@ const hasRouteKind = docker(['exec', container, 'psql', '-U', 'apex', '-d', data
 if (!hasRouteKind) apply(fs.readFileSync(path.join(root, 'apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql')));
 // The historical local snapshot used TEXT, while the versioned authorization
 // migration creates UUID. Match that contract only in the disposable fixture.
-const sessionIdType = ['hr-time-report-local.js', 'hr-schedule-employee-source-local.js'].includes(certificate)
+const sessionIdType = ['hr-hide-web-marking-local.js', 'hr-time-report-local.js', 'hr-schedule-employee-source-local.js'].includes(certificate)
   ? docker(['exec', container, 'psql', '-U', 'apex', '-d', database, '-Atc', "SELECT data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='AuthorizationSession' AND column_name='id'"]).toString().trim()
   : null;
 if (sessionIdType === 'text') apply('ALTER TABLE "AuthorizationSession" ALTER COLUMN "id" TYPE uuid USING "id"::uuid;');
-const connectionOptions = certificate === 'hr-time-report-local.js' || certificate.startsWith('hr-termination-') || certificate === 'hr-schedule-employee-source-local.js' || certificate === 'hr-cross-device-sync-local.js' || certificate === 'hr-employee-banks-local.js' ? '?connection_limit=3&connect_timeout=20&pool_timeout=45' : '';
+const connectionOptions = certificate === 'hr-hide-web-marking-local.js' || certificate === 'hr-time-report-local.js' || certificate.startsWith('hr-termination-') || certificate === 'hr-schedule-employee-source-local.js' || certificate === 'hr-cross-device-sync-local.js' || certificate === 'hr-employee-banks-local.js' ? '?connection_limit=3&connect_timeout=20&pool_timeout=45' : '';
 const localUrl = `postgresql://apex:${encodeURIComponent(password)}@127.0.0.1:55432/${database}${connectionOptions}`;
 const log = fs.openSync(path.join(output, 'certification.log'), 'w');
 const result = spawnSync(process.execPath, [path.join(__dirname, certificate), '--output=' + path.join(output, 'certification.json')], {
-  cwd: root, env: { ...process.env, DATABASE_URL: localUrl, DIRECT_URL: localUrl, REDIS_DISABLED: 'true', DISABLE_REDIS: 'true', NODE_ENV: 'test', HR_ASSOCIATION_BROWSER: '1' },
+  cwd: root, env: { ...process.env, ...candidateClient, DATABASE_URL: localUrl, DIRECT_URL: localUrl, REDIS_DISABLED: 'true', DISABLE_REDIS: 'true', NODE_ENV: 'test', HR_ASSOCIATION_BROWSER: '1' },
   stdio: ['ignore', log, log], windowsHide: true, timeout: Number(process.env.CERT_TIMEOUT_MS || 600000)
 });
 fs.closeSync(log);
@@ -61,6 +73,6 @@ for (const line of fs.readFileSync(path.join(output, 'certification.log'), 'utf8
   try { const row = JSON.parse(line); if (row.req) requests.set(row.reqId, row.req.url); if (row.res?.statusCode >= 500) failures.push({ path: requests.get(row.reqId), status: row.res.statusCode }); } catch {}
 }
 const status = result.status === 0 && failures.length === 0 ? 'passed' : 'failed';
-fs.writeFileSync(path.join(output, 'isolated-certification.json'), JSON.stringify({ status, environment: 'LOCAL', database, source_database_modified: false, fixture_schema_hunks: [hasSedes ? null : '20261016123000_sedes_replace_origins: sections 1-2 only', hasRouteKind ? null : '20260919110000_time_route_kind_descanso', sessionIdType === 'text' ? '20260727042000_authorization_versions: AuthorizationSession.id UUID contract' : null].filter(Boolean), exit_code: result.status, unexpected_5xx: failures, checked_at: new Date().toISOString() }, null, 2) + '\n');
+fs.writeFileSync(path.join(output, 'isolated-certification.json'), JSON.stringify({ status, environment: 'LOCAL', database, source_database_modified: false, fixture_schema_hunks: [...identityFixtures, hasSedes ? null : '20261016123000_sedes_replace_origins: sections 1-2 only', hasRouteKind ? null : '20260919110000_time_route_kind_descanso', sessionIdType === 'text' ? '20260727042000_authorization_versions: AuthorizationSession.id UUID contract' : null].filter(Boolean), exit_code: result.status, unexpected_5xx: failures, checked_at: new Date().toISOString() }, null, 2) + '\n');
 console.log(JSON.stringify({ status, database, exit_code: result.status, unexpected_5xx: failures }));
 process.exit(status === 'passed' ? 0 : 1);

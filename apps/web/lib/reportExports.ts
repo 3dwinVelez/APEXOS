@@ -25,6 +25,7 @@ export type XlsxReportSheet = {
   subtitle?: string;
   columns: XlsxReportColumn[];
   rows: Array<Record<string, ReportValue>>;
+  totals?: Record<string, string | number>;
 };
 
 function downloadBlob(filename: string, blob: Blob) {
@@ -124,6 +125,21 @@ export async function buildXlsxWorkbook(sheets: XlsxReportSheet[]) {
     for (let rowNumber = 6; rowNumber <= worksheet.rowCount; rowNumber += 1) {
       worksheet.getRow(rowNumber).height = 20;
       worksheet.getRow(rowNumber).font = { name: "Aptos", size: 10, color: { argb: "FF1F2937" } };
+    }
+    if (sheetDefinition.totals) {
+      const footer = worksheet.getRow(6 + tableRows.length);
+      sheetDefinition.columns.forEach((column, index) => {
+        const value = sheetDefinition.totals?.[column.key];
+        if (value == null) return;
+        const cell = footer.getCell(index + 1);
+        const letter = worksheet.getColumn(index + 1).letter;
+        cell.value = typeof value === "number" && tableRows.length
+          ? { formula: `SUBTOTAL(109,${letter}6:${letter}${5 + tableRows.length})`, result: value }
+          : value;
+      });
+      footer.height = 24;
+      footer.font = { name: "Aptos", size: 10, bold: true, color: { argb: "FF123F38" } };
+      footer.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE4F2EF" } };
     }
     worksheet.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
     worksheet.headerFooter.oddFooter = "APEXOS | &D &T | Pagina &P de &N";

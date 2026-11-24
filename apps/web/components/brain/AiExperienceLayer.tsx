@@ -175,13 +175,6 @@ function stepsForPath(pathname: string): CoachStep[] {
   if (pathname.includes("/dashboard/talento-humano")) {
     return [
       {
-        id: "time-schedule",
-        selector: 'a[href="/dashboard/talento-humano/marcacion"]',
-        title: "Marcacion movil separada",
-        body: "El operario entra a una pantalla simple para ingreso, almuerzo, retorno y cierre con horario asignado.",
-        action: "Abrir marcacion"
-      },
-      {
         id: "time-route-vehicle",
         selector: 'a[href="/dashboard/talento-humano/rutas"]',
         title: "Horarios y mallas",

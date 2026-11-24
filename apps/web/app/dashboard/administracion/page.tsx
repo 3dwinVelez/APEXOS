@@ -596,7 +596,6 @@ const categories: ConfigCategory[] = [
       { key: "transport_settlement_types", title: "Tipos de liquidacion", description: "Politicas de soportes y aprobacion de liquidaciones.", status: "activo", modal: "masters" },
       { key: "transport_carriers", title: "Transportadoras", description: "Transportadoras del maestro existente de la empresa.", status: "activo", modal: "masters" },
       { key: "rutas", title: "Rutas", description: "Planeacion y asignacion operativa.", status: "activo", modal: "info", href: "/dashboard/talento-humano/rutas" },
-      { key: "marcaciones", title: "Marcaciones", description: "Reglas operativas de jornada y trazabilidad.", status: "activo", modal: "info", href: "/dashboard/talento-humano/marcacion" },
       { key: "almacenes-servicio", title: "Almacenes de servicio", description: "Catalogo usado en solicitudes externas y ordenes de servicio.", status: "configurado", modal: "masters" },
       { key: "servicios", title: "Servicios", description: "Ordenes, referencias y parametros de campo.", status: "activo", modal: "info", href: "/dashboard/servicios" }
     ]
