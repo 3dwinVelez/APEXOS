@@ -1,0 +1,260 @@
+{
+  "certification": "mobile-app-url-admin-local",
+  "run_id": "20261125215636",
+  "environment": "LOCAL",
+  "rama": "desarrollo",
+  "head": "c682bdf454b9c02f90dd422ffefb2528416c6edc",
+  "database_servidor": "127.0.0.1:55442",
+  "started_at": "2026-11-25T21:56:36.843Z",
+  "bases_efimeras": [
+    "apex_urlmig_37968176765",
+    "apex_urlsvc_37968176765"
+  ],
+  "migration": "apps/api/prisma/migrations/20261125183000_platform_settings/migration.sql",
+  "migration_sha256": "34031aeb5cf4ba88a514034f05193f169aab10b29da73de666fe91666657ca2a",
+  "navegador": "puppeteer-core + Edge",
+  "checks": [
+    {
+      "chequeo": "migracion_aplicada_en_base_limpia",
+      "etapa": "esquema",
+      "tipo": "producto",
+      "esperado": "psql -f sin errores sobre una base vacia",
+      "resultado": "OK",
+      "detalle": "{\"columnas\":\"id:integer,key:text,value:jsonb,updated_by:text,created_at:timestamp without time zone,updated_at:timestamp without time zone\"}"
+    },
+    {
+      "chequeo": "migracion_idempotente",
+      "etapa": "esquema",
+      "tipo": "producto",
+      "esperado": "aplicarla una segunda vez no crea nada ni falla",
+      "resultado": "OK",
+      "detalle": "{\"tablas\":1,\"indices\":2}"
+    },
+    {
+      "chequeo": "ddl_igual_al_modelo_prisma",
+      "etapa": "esquema",
+      "tipo": "producto",
+      "esperado": "migrate diff no propone ningun cambio sobre platform_settings",
+      "resultado": "OK",
+      "detalle": "{\"lineas_de_diff\":5024,\"menciones_platform_settings\":0}"
+    },
+    {
+      "chequeo": "esquema_completo_disponible",
+      "etapa": "base_de_servicio",
+      "tipo": "producto",
+      "esperado": "prisma db push + la migracion objetivo reaplicada",
+      "resultado": "OK",
+      "detalle": "{\"tabla\":\"platform_settings\",\"origen\":\"apps/api/prisma/migrations/20261125183000_platform_settings/migration.sql\"}"
+    },
+    {
+      "chequeo": "authorization_session_alineada_a_la_nube",
+      "etapa": "base_de_servicio",
+      "tipo": "ambiente",
+      "esperado": "id uuid como en la base desplegada",
+      "resultado": "OK",
+      "detalle": "{\"tipo\":\"uuid\"}"
+    },
+    {
+      "chequeo": "health_ancla_el_commit_evaluado",
+      "etapa": "arranque",
+      "tipo": "producto",
+      "esperado": "200 con commit == HEAD del arbol",
+      "resultado": "OK",
+      "detalle": "{\"commit\":\"c682bdf454b9\"}"
+    },
+    {
+      "chequeo": "tres_roles_sembrados",
+      "etapa": "siembra",
+      "tipo": "producto",
+      "esperado": "superadmin, admin de empresa y lector de configuracion",
+      "resultado": "OK",
+      "detalle": "{\"roles\":[\"APEX_ADMIN\",\"Administrador de empresa\",\"Auditor de configuracion\"]}"
+    },
+    {
+      "chequeo": "login_real_de_los_tres_actores",
+      "etapa": "siembra",
+      "tipo": "producto",
+      "esperado": "200 con token",
+      "resultado": "OK",
+      "detalle": "{\"autenticados\":3}"
+    },
+    {
+      "chequeo": "lectura_publica_sin_sesion",
+      "etapa": "lectura_publica",
+      "tipo": "producto",
+      "esperado": "GET /public/platform/mobile-app responde 200 con un https y no-store",
+      "resultado": "OK",
+      "detalle": "{\"url\":\"https://appapexos-production.up.railway.app\",\"cache_control\":\"no-store\"}"
+    },
+    {
+      "chequeo": "lectura_de_administracion_sin_sesion",
+      "etapa": "rbac",
+      "tipo": "producto",
+      "esperado": "401",
+      "resultado": "OK",
+      "detalle": "{\"status\":401}"
+    },
+    {
+      "chequeo": "escritura_sin_sesion",
+      "etapa": "rbac",
+      "tipo": "producto",
+      "esperado": "401 antes de validar el cuerpo",
+      "resultado": "OK",
+      "detalle": "{\"status\":401}"
+    },
+    {
+      "chequeo": "admin_de_empresa_no_puede_escribir",
+      "etapa": "rbac",
+      "tipo": "producto",
+      "esperado": "403 PLATAFORMA_SOLO_SUPERADMIN y cero escrituras",
+      "resultado": "OK",
+      "detalle": "{\"status\":403,\"code\":\"PLATAFORMA_SOLO_SUPERADMIN\"}"
+    },
+    {
+      "chequeo": "lector_de_configuracion_lee_y_no_escribe",
+      "etapa": "rbac",
+      "tipo": "producto",
+      "esperado": "200 en GET, 403 CAPACIDAD_ROL_DENEGADA en PUT",
+      "resultado": "OK",
+      "detalle": "{\"ambiente\":\"qa\",\"code\":\"CAPACIDAD_ROL_DENEGADA\"}"
+    },
+    {
+      "chequeo": "rechaza_direcciones_torcidas",
+      "etapa": "validacion",
+      "tipo": "producto",
+      "esperado": "400 con nombre propio para cada defecto",
+      "resultado": "OK",
+      "detalle": "{\"rechazados\":[\"http://app.midominio.co:URL_APP_MOVIL_NO_HTTPS\",\"app.midominio.co:URL_APP_MOVIL_INVALIDA\",\":URL_APP_MOVIL_VACIA\",\"https://user:pass@app.midominio.co:URL_APP_MOVIL_CON_CREDENCIALES\",\"https://app.midominio.co/#/x:URL_APP_MOVIL_CON_FRAGMENTO\"]}"
+    },
+    {
+      "chequeo": "superadmin_guarda_y_el_acceso_lo_lee",
+      "etapa": "guardado",
+      "tipo": "producto",
+      "esperado": "200 + ambiente + auditoria + lectura publica con el nuevo valor",
+      "resultado": "OK",
+      "detalle": "{\"url\":\"https://app-certificado.test\",\"ambiente\":\"qa\",\"updated_by\":\"cert.super.37968176765@apexos.local\",\"accion\":\"platform.mobile_app.url.updated\"}"
+    },
+    {
+      "chequeo": "la_lectura_de_administracion_declara_autor_y_fecha",
+      "etapa": "guardado",
+      "tipo": "producto",
+      "esperado": "source=base, updated_at y updated_by poblados",
+      "resultado": "OK",
+      "detalle": "{\"source\":\"base\",\"ambiente\":\"qa\",\"updated_at\":\"2026-11-25T21:56:52.250Z\",\"updated_by\":\"cert.super.37968176765@apexos.local\"}"
+    },
+    {
+      "chequeo": "restaurar_el_destino_por_defecto_es_express",
+      "etapa": "guardado",
+      "tipo": "producto",
+      "esperado": "200 con restaurada=true y el acceso vuelve al quemado",
+      "resultado": "OK",
+      "detalle": "{\"restaurada\":true,\"old_value\":{\"url\":\"https://app-certificado.test\",\"source\":\"base\"}}"
+    },
+    {
+      "chequeo": "valor_torcido_ya_almacenado_no_rompe_el_acceso",
+      "etapa": "guardado",
+      "tipo": "producto",
+      "esperado": "fila escrita por SQL -> la lectura publica cae al respaldo",
+      "resultado": "OK",
+      "detalle": "{\"leido\":\"https://appapexos-production.up.railway.app\"}"
+    },
+    {
+      "chequeo": "build_de_produccion_del_frontend",
+      "etapa": "navegador_preparacion",
+      "tipo": "ambiente",
+      "esperado": "apps/web/.next/BUILD_ID existe",
+      "resultado": "OK",
+      "detalle": "{\"build_id\":\"7RPf_TbXOdwbM2VMO_Wna\"}"
+    },
+    {
+      "chequeo": "el_bundle_servido_contiene_la_lectura_administrada",
+      "etapa": "navegador_preparacion",
+      "tipo": "ambiente",
+      "esperado": "un chunk de .next cita /api/v1/public/platform/mobile-app",
+      "resultado": "OK",
+      "detalle": "{\"chunk\":\".next/static/chunks/3n_1h84yqz-kl.js\"}"
+    },
+    {
+      "chequeo": "frontend_servido",
+      "etapa": "navegador_preparacion",
+      "tipo": "producto",
+      "esperado": "next start responde /login",
+      "resultado": "OK",
+      "detalle": "{\"url\":\"http://127.0.0.1:3311/login\",\"frontend_served_by\":\"next start (build de produccion)\"}"
+    },
+    {
+      "chequeo": "acceso_de_computador_muestra_el_respaldo_antes_de_administrar",
+      "etapa": "navegador_acceso",
+      "tipo": "producto",
+      "esperado": "sin fila en la base, el texto servido es el destino quemado",
+      "resultado": "OK",
+      "detalle": "{\"texto\":\"https://appapexos-production.up.railway.app\",\"href\":null,\"ventanillas\":0,\"fuente_en_base\":\"respaldo\"}"
+    },
+    {
+      "chequeo": "acceso_de_computador_muestra_el_valor_administrado",
+      "etapa": "navegador_acceso",
+      "tipo": "producto",
+      "esperado": "despues de guardar por el API, la pantalla cambia de destino sin esperar el TTL",
+      "resultado": "OK",
+      "detalle": "{\"texto\":\"https://app-certificado.test\",\"antes\":\"https://appapexos-production.up.railway.app\",\"despues\":\"https://app-certificado.test\"}"
+    },
+    {
+      "chequeo": "celular_abre_el_enlace_administrado",
+      "etapa": "navegador_acceso",
+      "tipo": "producto",
+      "esperado": "el ancla lleva el valor de la base, en pestana nueva y sin exponer la ventana",
+      "resultado": "OK",
+      "detalle": "{\"href\":\"https://app-certificado.test\",\"target\":\"_blank\",\"rel\":\"noopener noreferrer\",\"captura\":\"acceso-celular-enlace-administrado\"}"
+    },
+    {
+      "chequeo": "celular_sigue_abriendo_el_respaldo_si_la_base_queda_torcida",
+      "etapa": "navegador_acceso",
+      "tipo": "producto",
+      "esperado": "fila torcida por SQL: la administracion la detecta y el acceso cae al quemado",
+      "resultado": "OK",
+      "detalle": "{\"href\":\"https://appapexos-production.up.railway.app\",\"fuente_en_base\":\"respaldo\",\"cache_ms\":20000}"
+    },
+    {
+      "chequeo": "la_ventana_de_administracion_muestra_el_ambiente_y_guarda",
+      "etapa": "navegador_administracion",
+      "tipo": "producto",
+      "esperado": "sesion real, apartado del catalogo, ambiente 'qa', autor y guardado visible",
+      "resultado": "OK",
+      "detalle": "{\"ambiente\":\"qa\",\"autor_antes\":\"sin cambios todavía\",\"autor_despues\":\"cert.super.37968176765@apexos.local\",\"guardado\":\"https://app-admin-on-line.test\",\"lectura_publica\":\"https://app-admin-on-line.test\",\"confirmacion\":\"Enlace actualizado. El enlace quedó guardado en este ambiente. Ahora es https://app-admin-on-line.test.\",\"captura\":\"ventana-admin-despues\"}"
+    },
+    {
+      "chequeo": "romper_la_capacidad_de_escritura_pone_el_contrato_rojo",
+      "etapa": "control_de_mutacion",
+      "tipo": "producto",
+      "esperado": "quitar requireAdminCapability del PUT => la prueba de contrato falla",
+      "resultado": "OK",
+      "detalle": "{\"rojo\":true,\"salida\":\"not ok 10 - la lectura publica no hereda el authenticate y la escritura exige capacidad\",\"blob_restaurado\":\"9f29a3792873\"}"
+    },
+    {
+      "chequeo": "quemar_el_destino_en_la_banda_pone_el_contrato_rojo",
+      "etapa": "control_de_mutacion",
+      "tipo": "producto",
+      "esperado": "volver a escribir la URL a mano en el componente => la prueba de contrato falla",
+      "resultado": "OK",
+      "detalle": "{\"rojo\":true,\"salida\":\"not ok 11 - en el celular la accion primaria es el enlace a la app, en pestana nueva y sin exponer la ventana | not ok 17 - la banda arranca con el respaldo y toma el enlace administrado cuando responde la plataforma\",\"blob_restaurado\":\"fe30815575bd\"}"
+    }
+  ],
+  "build_id": "7RPf_TbXOdwbM2VMO_Wna",
+  "terminado_at": "2026-11-25T21:57:07.379Z",
+  "capturas": [
+    "acceso-celular-enlace-administrado",
+    "ventana-admin-antes",
+    "ventana-admin-despues"
+  ],
+  "totales": {
+    "checks": 28,
+    "ok": 28,
+    "fallo_producto": 0,
+    "fallo_ambiente": 0
+  },
+  "certification_status": "local_passed",
+  "pendientes": [
+    "aplicar la migracion 20261125183000_platform_settings en QA y Produccion (requiere autorizacion expresa del dueno)",
+    "certificacion en ambiente QA/Produccion con la pantalla de Administracion APEX servida (apexos-qa)"
+  ]
+}
