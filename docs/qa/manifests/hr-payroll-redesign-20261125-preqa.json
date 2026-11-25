@@ -1,0 +1,125 @@
+{
+  "change_id": "hr-payroll-redesign-20261125",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "5fd0ba4e1a4cc22ab8fe6c795d02e8e77ec8ff2d",
+  "commit": "65007dd55eb20b73f97ef1da4e71aa591b0d8581",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-redesign-20261125-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-redesign-20261125-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-redesign-20261125-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-redesign-20261125-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-redesign-20261125-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-payroll-redesign-local.js",
+    "evidence": [
+      "hr-payroll-redesign-20261125-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-payroll-redesign-local.js",
+    "evidence": [
+      "hr-payroll-redesign-20261125-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario",
+    "approved_at": "2026-11-25T21:35:15.225482+00:00",
+    "statement": "despliega a qa",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "functional_commit": "65007dd55eb20b73f97ef1da4e71aa591b0d8581",
+    "certification": {
+      "environment": "LOCAL",
+      "commit": "65007dd55eb20b73f97ef1da4e71aa591b0d8581",
+      "status": "passed",
+      "started_at": "2026-11-25T21:33:00.533Z",
+      "checks": [
+        "Real trial, save, feedback, reload, permissions, isolation and responsive presentation",
+        "Negative net without hours, decimal-hour display, totals and existing IBC/entity UI contracts"
+      ],
+      "functional": {
+        "status": "passed",
+        "environment": "LOCAL",
+        "started_at": "2026-11-25T21:33:28.246Z",
+        "checks": [
+          "preview links three complete days without stored workdays and has no payroll/workday writes",
+          "period boundaries, incomplete day, RBAC and tenant isolation are enforced",
+          "browser payroll trial displays linked days and hours in the requested fortnight",
+          "definitive liquidation persists the same hours and repeated trial remains unchanged",
+          "stale processed rows are replaced in calculation without modifying the stored cache",
+          "approved day correction replaces the raw day without duplicate pay"
+        ],
+        "finished_at": "2026-11-25T21:35:05.652Z"
+      },
+      "isolation": {
+        "status": "passed",
+        "environment": "LOCAL",
+        "database": "apexos_cert_hr_assoc_1795642380792",
+        "source_database_modified": false,
+        "fixture_schema_hunks": [
+          "20261016123000_sedes_replace_origins: sections 1-2 only",
+          "20260919110000_time_route_kind_descanso",
+          "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+        ],
+        "exit_code": 0,
+        "unexpected_5xx": [],
+        "checked_at": "2026-11-25T21:35:05.753Z"
+      },
+      "test_files": [
+        "payroll-display.test.mjs",
+        "ibc-nomina-ui.test.mjs",
+        "payroll-employee-entity-ui.test.mjs"
+      ],
+      "finished_at": "2026-11-25T21:35:06.432Z"
+    },
+    "unit_regression": {
+      "passed": 11,
+      "failed": 0
+    },
+    "typecheck": "passed: current QA candidate",
+    "eslint": {
+      "errors": 0,
+      "preexisting_warnings": 3
+    },
+    "source_verification": "Exact Git archive candidate; LF/CRLF normalized comparison; reconstructed wrapper changes only payroll UUID fixture",
+    "api_implementation": "Unchanged from current QA",
+    "local_fixture": "AuthorizationSession.id UUID alignment only in disposable local database; no remote migrations"
+  }
+}

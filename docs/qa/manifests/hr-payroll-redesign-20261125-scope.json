@@ -1,0 +1,135 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-payroll-redesign-20261125",
+  "base_commit": "5fd0ba4e1a4cc22ab8fe6c795d02e8e77ec8ff2d",
+  "base_commits": {
+    "develop": "5fd0ba4e1a4cc22ab8fe6c795d02e8e77ec8ff2d"
+  },
+  "target_head": "5fd0ba4e1a4cc22ab8fe6c795d02e8e77ec8ff2d",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "certified_commit": "65007dd55eb20b73f97ef1da4e71aa591b0d8581",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "65007dd55eb20b73f97ef1da4e71aa591b0d8581",
+    "implementation_commits": [
+      "0d5ea6f88d496eca182dd687c88c81a1e39a0459",
+      "ff14aaa91eeb132058d092c1c09efe5674b48ada",
+      "0feda6edcbc3d4362c0eabe2d1b9f9c1a459313e"
+    ],
+    "reconstruction": "Only reviewed redesign files on current QA plus payroll-only isolated UUID fixture"
+  },
+  "certified_functional_paths": [
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/payroll.module.css",
+    "apps/web/lib/payrollDisplay.ts",
+    "apps/web/test/payroll-display.test.mjs",
+    "docs/qa/certifications/hr-payroll-redesign-20261125.md",
+    "docs/qa/evidence/hr-payroll-redesign-20261125/certification.json",
+    "docs/qa/evidence/hr-payroll-redesign-20261125/desktop.png",
+    "docs/qa/evidence/hr-payroll-redesign-20261125/mobile.png",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-payroll-markings-local.js",
+    "scripts/certifications/hr-payroll-redesign-local.js"
+  ],
+  "change_intent": {
+    "summary": "Payroll visual redesign with summary, stages, filtered totals, negative-net alerts and responsive adjustments/closure/history",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/payroll.module.css",
+    "apps/web/lib/payrollDisplay.ts",
+    "apps/web/test/payroll-display.test.mjs",
+    "docs/qa/certifications/hr-payroll-redesign-20261125.md",
+    "docs/qa/evidence/hr-payroll-redesign-20261125/certification.json",
+    "docs/qa/evidence/hr-payroll-redesign-20261125/desktop.png",
+    "docs/qa/evidence/hr-payroll-redesign-20261125/mobile.png",
+    "docs/qa/manifests/hr-payroll-redesign-20261125-preqa.json",
+    "docs/qa/manifests/hr-payroll-redesign-20261125-scope.json",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-payroll-markings-local.js",
+    "scripts/certifications/hr-payroll-redesign-local.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/payroll.module.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/payrollDisplay.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/payroll-display.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-payroll-redesign-20261125.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-payroll-redesign-20261125/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-payroll-redesign-20261125/desktop.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-payroll-redesign-20261125/mobile.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-payroll-redesign-20261125-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-payroll-redesign-20261125-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-payroll-markings-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-payroll-redesign-local.js"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Payroll query/trial, filtered totals, alerts, concepts dialog, desktop/mobile layout",
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-redesign-20261125-preqa.json"
+      ]
+    },
+    {
+      "name": "Payroll save, closed-period feedback, pending transaction, interrupted refresh and reload persistence",
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-redesign-20261125-preqa.json"
+      ]
+    },
+    {
+      "name": "Existing period boundaries, corrections, permissions and tenant isolation",
+      "status": "passed",
+      "evidence": [
+        "hr-payroll-redesign-20261125-preqa.json"
+      ]
+    }
+  ]
+}
