@@ -1,0 +1,1789 @@
+{
+  "format": "apexos-app-install-acceso-v1",
+  "started_at": "2026-11-25T19:41:26.425Z",
+  "base": "http://127.0.0.1:3347",
+  "artifact": "app-install-acceso-20261125-mutaciones",
+  "app_url": "https://appapexos-production.up.railway.app",
+  "escenarios": {
+    "acceso-movil-claro": {
+      "device": "movil",
+      "theme": "light",
+      "url": "/login",
+      "acceso_sin_sesion": {
+        "tiene_token": false,
+        "formulario_presente": true
+      },
+      "banda": {
+        "pintada": true,
+        "dentro_del_formulario": true,
+        "boton_type": "button",
+        "boton_ancho": 308,
+        "banda_ancho": 342,
+        "cabe_en_la_ventana": true
+      },
+      "hidratacion": {
+        "hidratado": true,
+        "ms": 611
+      },
+      "painted": true,
+      "band_background": "rgb(255, 255, 255)",
+      "stepCount": 4,
+      "anchorsToApp": 1,
+      "hasCopyButton": false,
+      "hasNote": false,
+      "banda_detras_del_dialogo": true,
+      "text": "Instala APEXOS en tu celular\n\nSe instala desde Chrome y queda con su propio icono.\n\n1\nAbre el enlace en Chrome\nToca «Abrir la app» y espera a que cargue la pantalla de ingreso.\n2\nToca los tres puntos\nEstán arriba a la derecha, dentro del propio Chrome.\n3\nElige «Instalar app»\nEn algunos equipos dice «Añadir a pantalla principal» o «Crear acceso directo».\n4\nConfirma y crea el acceso directo\nLa app queda con su icono en tu pantalla de inicio, como cualquier aplicación.\n\n¿Ya la instalaste? Ábrela desde su icono y entra con el mismo correo y la misma contraseña.\n\nAbrir la app"
+    },
+    "acceso-movil-oscuro": {
+      "device": "movil",
+      "theme": "dark",
+      "url": "/login",
+      "acceso_sin_sesion": {
+        "tiene_token": false,
+        "formulario_presente": true
+      },
+      "banda": {
+        "pintada": true,
+        "dentro_del_formulario": true,
+        "boton_type": "button",
+        "boton_ancho": 308,
+        "banda_ancho": 342,
+        "cabe_en_la_ventana": true
+      },
+      "hidratacion": {
+        "hidratado": true,
+        "ms": 538
+      },
+      "painted": true,
+      "band_background": "rgb(23, 35, 45)",
+      "stepCount": 4,
+      "anchorsToApp": 1,
+      "hasCopyButton": false,
+      "hasNote": false,
+      "banda_detras_del_dialogo": true,
+      "text": "Instala APEXOS en tu celular\n\nSe instala desde Chrome y queda con su propio icono.\n\n1\nAbre el enlace en Chrome\nToca «Abrir la app» y espera a que cargue la pantalla de ingreso.\n2\nToca los tres puntos\nEstán arriba a la derecha, dentro del propio Chrome.\n3\nElige «Instalar app»\nEn algunos equipos dice «Añadir a pantalla principal» o «Crear acceso directo».\n4\nConfirma y crea el acceso directo\nLa app queda con su icono en tu pantalla de inicio, como cualquier aplicación.\n\n¿Ya la instalaste? Ábrela desde su icono y entra con el mismo correo y la misma contraseña.\n\nAbrir la app"
+    },
+    "acceso-escritorio-claro": {
+      "device": "escritorio",
+      "theme": "light",
+      "url": "/login",
+      "acceso_sin_sesion": {
+        "tiene_token": false,
+        "formulario_presente": true
+      },
+      "banda": {
+        "pintada": true,
+        "dentro_del_formulario": true,
+        "boton_type": "button",
+        "boton_ancho": 294,
+        "banda_ancho": 328,
+        "cabe_en_la_ventana": true
+      },
+      "hidratacion": {
+        "hidratado": true,
+        "ms": 521
+      },
+      "painted": true,
+      "band_background": "rgb(255, 255, 255)",
+      "stepCount": 4,
+      "anchorsToApp": 0,
+      "hasCopyButton": true,
+      "hasNote": true,
+      "banda_detras_del_dialogo": true,
+      "text": "Instala APEXOS en tu celular\n\nSe instala desde Chrome y queda con su propio icono.\n\nLa app es exclusiva para celulares. Si la abres desde el computador, APEXOS no te dejará instalarla y te lo dirá en pantalla.\n\n1\nAbre el enlace en Chrome\nToca «Abrir la app» y espera a que cargue la pantalla de ingreso.\n2\nToca los tres puntos\nEstán arriba a la derecha, dentro del propio Chrome.\n3\nElige «Instalar app»\nEn algunos equipos dice «Añadir a pantalla principal» o «Crear acceso directo».\n4\nConfirma y crea el acceso directo\nLa app queda con su icono en tu pantalla de inicio, como cualquier aplicación.\n\nEnvíate el enlace por WhatsApp o correo y ábrelo con Chrome en tu celular. Estos son los pasos que verás allí.\n\nhttps://appapexos-production.up.railway.app\n\nCopiar enlace",
+      "clipboard_permission_granted": true,
+      "copiado_en_ambiente_real": "Tu navegador no permitió copiar. El enlace está escrito abajo: selecciónalo y cópialo.",
+      "copiado_con_grabador": {
+        "grabado": [
+          "https://appapexos-production.up.railway.app"
+        ],
+        "feedback": "Enlace copiado. Ya puedes enviarlo a tu celular."
+      }
+    },
+    "acceso-escritorio-oscuro": {
+      "device": "escritorio",
+      "theme": "dark",
+      "url": "/login",
+      "acceso_sin_sesion": {
+        "tiene_token": false,
+        "formulario_presente": true
+      },
+      "banda": {
+        "pintada": true,
+        "dentro_del_formulario": true,
+        "boton_type": "button",
+        "boton_ancho": 294,
+        "banda_ancho": 328,
+        "cabe_en_la_ventana": true
+      },
+      "hidratacion": {
+        "hidratado": true,
+        "ms": 315
+      },
+      "painted": true,
+      "band_background": "rgb(23, 35, 45)",
+      "stepCount": 4,
+      "anchorsToApp": 0,
+      "hasCopyButton": true,
+      "hasNote": true,
+      "banda_detras_del_dialogo": true,
+      "text": "Instala APEXOS en tu celular\n\nSe instala desde Chrome y queda con su propio icono.\n\nLa app es exclusiva para celulares. Si la abres desde el computador, APEXOS no te dejará instalarla y te lo dirá en pantalla.\n\n1\nAbre el enlace en Chrome\nToca «Abrir la app» y espera a que cargue la pantalla de ingreso.\n2\nToca los tres puntos\nEstán arriba a la derecha, dentro del propio Chrome.\n3\nElige «Instalar app»\nEn algunos equipos dice «Añadir a pantalla principal» o «Crear acceso directo».\n4\nConfirma y crea el acceso directo\nLa app queda con su icono en tu pantalla de inicio, como cualquier aplicación.\n\nEnvíate el enlace por WhatsApp o correo y ábrelo con Chrome en tu celular. Estos son los pasos que verás allí.\n\nhttps://appapexos-production.up.railway.app\n\nCopiar enlace"
+    }
+  },
+  "checks": [
+    {
+      "name": "acceso-movil-claro::el_acceso_pinta_su_formulario",
+      "ok": true,
+      "payload": {
+        "correo": true,
+        "clave": true
+      }
+    },
+    {
+      "name": "acceso-movil-claro::la_banda_vive_sin_sesion",
+      "ok": true,
+      "payload": {
+        "token": false
+      }
+    },
+    {
+      "name": "acceso-movil-claro::banda_visible",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-claro::la_banda_cabe_en_la_columna",
+      "ok": true,
+      "payload": {
+        "ancho_boton": 308,
+        "ancho_banda": 342,
+        "desborde": 0
+      }
+    },
+    {
+      "name": "acceso-movil-claro::la_banda_fuera_del_formulario",
+      "ok": false,
+      "payload": {
+        "dentro": true,
+        "despues": true
+      }
+    },
+    {
+      "name": "acceso-movil-claro::el_boton_no_es_de_envio",
+      "ok": true,
+      "payload": {
+        "type": "button"
+      }
+    },
+    {
+      "name": "acceso-movil-claro::los_campos_nacen_vacios",
+      "ok": true,
+      "payload": {
+        "email": true
+      }
+    },
+    {
+      "name": "acceso-movil-claro::el_acceso_responde_a_un_clic_real",
+      "ok": true,
+      "payload": {
+        "hidratado": true,
+        "ms": 611
+      }
+    },
+    {
+      "name": "acceso-movil-claro::guia_cerrada_antes_del_clic",
+      "ok": true,
+      "payload": {
+        "tituloPresente": false
+      }
+    },
+    {
+      "name": "acceso-movil-claro::boton_abre_la_guia",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-claro::guia_abre",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-claro::el_clic_no_intentara_entrar",
+      "ok": true,
+      "payload": {
+        "url": "/login",
+        "token": false,
+        "envios": 0
+      }
+    },
+    {
+      "name": "acceso-movil-claro::dialogo_pintado_en_pantalla",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-claro::paso_Abre el enlace en ",
+      "ok": true,
+      "payload": {
+        "paso": "Abre el enlace en Chrome"
+      }
+    },
+    {
+      "name": "acceso-movil-claro::paso_Toca los tres punt",
+      "ok": true,
+      "payload": {
+        "paso": "Toca los tres puntos"
+      }
+    },
+    {
+      "name": "acceso-movil-claro::paso_Elige «Instalar ap",
+      "ok": true,
+      "payload": {
+        "paso": "Elige «Instalar app»"
+      }
+    },
+    {
+      "name": "acceso-movil-claro::paso_Confirma y crea el",
+      "ok": true,
+      "payload": {
+        "paso": "Confirma y crea el acceso directo"
+      }
+    },
+    {
+      "name": "acceso-movil-claro::guia_nombra_los_tres_puntos",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-claro::guia_nombra_el_acceso_directo",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-claro::sin_aviso_de_escritorio",
+      "ok": true,
+      "payload": {
+        "aviso": false
+      }
+    },
+    {
+      "name": "acceso-movil-claro::enlace_exacto_a_la_app",
+      "ok": true,
+      "payload": {
+        "href": "https://appapexos-production.up.railway.app/"
+      }
+    },
+    {
+      "name": "acceso-movil-claro::enlace_abre_pestananueva",
+      "ok": true,
+      "payload": {
+        "target": "_blank"
+      }
+    },
+    {
+      "name": "acceso-movil-claro::enlace_sin_exponer_la_ventana",
+      "ok": true,
+      "payload": {
+        "rel": "noopener noreferrer"
+      }
+    },
+    {
+      "name": "acceso-movil-claro::sin_boton_de_copiado",
+      "ok": true,
+      "payload": "en el celular la accion es abrir, no copiar"
+    },
+    {
+      "name": "acceso-movil-claro::dice_como_entrar_despues_de_instalar",
+      "ok": true,
+      "payload": {
+        "trozo": " en tu pantalla de inicio, como cualquier aplicación.\n\n¿Ya la instalaste? Ábrela desde su icono y entra con el mismo correo y la misma contraseña.\n\nAbrir la app"
+      }
+    },
+    {
+      "name": "acceso-movil-claro::el_acceso_sigue_detras_de_la_guia",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-claro::escape_cierra_la_guia",
+      "ok": true,
+      "payload": {
+        "sigueAbierta": false
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::el_acceso_pinta_su_formulario",
+      "ok": true,
+      "payload": {
+        "correo": true,
+        "clave": true
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::la_banda_vive_sin_sesion",
+      "ok": true,
+      "payload": {
+        "token": false
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::banda_visible",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-oscuro::la_banda_cabe_en_la_columna",
+      "ok": true,
+      "payload": {
+        "ancho_boton": 308,
+        "ancho_banda": 342,
+        "desborde": 0
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::la_banda_fuera_del_formulario",
+      "ok": false,
+      "payload": {
+        "dentro": true,
+        "despues": true
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::el_boton_no_es_de_envio",
+      "ok": true,
+      "payload": {
+        "type": "button"
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::los_campos_nacen_vacios",
+      "ok": true,
+      "payload": {
+        "email": true
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::el_acceso_responde_a_un_clic_real",
+      "ok": true,
+      "payload": {
+        "hidratado": true,
+        "ms": 538
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::guia_cerrada_antes_del_clic",
+      "ok": true,
+      "payload": {
+        "tituloPresente": false
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::boton_abre_la_guia",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-oscuro::guia_abre",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-oscuro::el_clic_no_intentara_entrar",
+      "ok": true,
+      "payload": {
+        "url": "/login",
+        "token": false,
+        "envios": 0
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::dialogo_pintado_en_pantalla",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-oscuro::paso_Abre el enlace en ",
+      "ok": true,
+      "payload": {
+        "paso": "Abre el enlace en Chrome"
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::paso_Toca los tres punt",
+      "ok": true,
+      "payload": {
+        "paso": "Toca los tres puntos"
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::paso_Elige «Instalar ap",
+      "ok": true,
+      "payload": {
+        "paso": "Elige «Instalar app»"
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::paso_Confirma y crea el",
+      "ok": true,
+      "payload": {
+        "paso": "Confirma y crea el acceso directo"
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::guia_nombra_los_tres_puntos",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-oscuro::guia_nombra_el_acceso_directo",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-oscuro::sin_aviso_de_escritorio",
+      "ok": true,
+      "payload": {
+        "aviso": false
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::enlace_exacto_a_la_app",
+      "ok": true,
+      "payload": {
+        "href": "https://appapexos-production.up.railway.app/"
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::enlace_abre_pestananueva",
+      "ok": true,
+      "payload": {
+        "target": "_blank"
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::enlace_sin_exponer_la_ventana",
+      "ok": true,
+      "payload": {
+        "rel": "noopener noreferrer"
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::sin_boton_de_copiado",
+      "ok": true,
+      "payload": "en el celular la accion es abrir, no copiar"
+    },
+    {
+      "name": "acceso-movil-oscuro::dice_como_entrar_despues_de_instalar",
+      "ok": true,
+      "payload": {
+        "trozo": " en tu pantalla de inicio, como cualquier aplicación.\n\n¿Ya la instalaste? Ábrela desde su icono y entra con el mismo correo y la misma contraseña.\n\nAbrir la app"
+      }
+    },
+    {
+      "name": "acceso-movil-oscuro::el_acceso_sigue_detras_de_la_guia",
+      "ok": true
+    },
+    {
+      "name": "acceso-movil-oscuro::escape_cierra_la_guia",
+      "ok": true,
+      "payload": {
+        "sigueAbierta": false
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::el_acceso_pinta_su_formulario",
+      "ok": true,
+      "payload": {
+        "correo": true,
+        "clave": true
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::la_banda_vive_sin_sesion",
+      "ok": true,
+      "payload": {
+        "token": false
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::banda_visible",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::la_banda_cabe_en_la_columna",
+      "ok": true,
+      "payload": {
+        "ancho_boton": 294,
+        "ancho_banda": 328,
+        "desborde": 0
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::la_banda_fuera_del_formulario",
+      "ok": false,
+      "payload": {
+        "dentro": true,
+        "despues": true
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::el_boton_no_es_de_envio",
+      "ok": true,
+      "payload": {
+        "type": "button"
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::los_campos_nacen_vacios",
+      "ok": true,
+      "payload": {
+        "email": true
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::el_acceso_responde_a_un_clic_real",
+      "ok": true,
+      "payload": {
+        "hidratado": true,
+        "ms": 521
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::guia_cerrada_antes_del_clic",
+      "ok": true,
+      "payload": {
+        "tituloPresente": false
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::boton_abre_la_guia",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::guia_abre",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::el_clic_no_intentara_entrar",
+      "ok": true,
+      "payload": {
+        "url": "/login",
+        "token": false,
+        "envios": 0
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::dialogo_pintado_en_pantalla",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::paso_Abre el enlace en ",
+      "ok": true,
+      "payload": {
+        "paso": "Abre el enlace en Chrome"
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::paso_Toca los tres punt",
+      "ok": true,
+      "payload": {
+        "paso": "Toca los tres puntos"
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::paso_Elige «Instalar ap",
+      "ok": true,
+      "payload": {
+        "paso": "Elige «Instalar app»"
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::paso_Confirma y crea el",
+      "ok": true,
+      "payload": {
+        "paso": "Confirma y crea el acceso directo"
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::guia_nombra_los_tres_puntos",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::guia_nombra_el_acceso_directo",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::aviso_de_exclusividad",
+      "ok": true,
+      "payload": {
+        "trozo": "Instala APEXOS en tu celular\n\nSe instala desde Chrome y queda con su propio icono.\n\nLa app es exclusiva para celulares. Si la abres desde el computador, APEXOS "
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::cero_enlaces_a_la_app_en_el_documento",
+      "ok": true,
+      "payload": {
+        "encontrados": 0
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::boton_de_copiado_presente",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::enlace_escrito_para_copiarlo_a_mano",
+      "ok": true,
+      "payload": "si el portapapeles esta bloqueado el usuario necesita ver el enlace"
+    },
+    {
+      "name": "acceso-escritorio-claro::el_aviso_es_contenido_no_un_alerta",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::el_enlace_es_un_parrafo_seleccionable",
+      "ok": true,
+      "payload": {
+        "encontrados": 1,
+        "ancho": 471
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::copiar_pulsado",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::el_copiado_reporta_sin_mentir",
+      "ok": true,
+      "payload": {
+        "feedback": "Tu navegador no permitió copiar. El enlace está escrito abajo: selecciónalo y cópialo.",
+        "permiso": true
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::el_copiado_no_abre_ventanilla",
+      "ok": true,
+      "payload": {
+        "nuevas": []
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::el_dialogo_sigue_vivo_despues_del_copiado",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::portapapeles_grabador_armado",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::copia_exactamente_la_url_de_la_app",
+      "ok": true,
+      "payload": {
+        "grabado": [
+          "https://appapexos-production.up.railway.app"
+        ]
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::avisa_exito_cuando_el_navegador_acepta",
+      "ok": true,
+      "payload": {
+        "feedback": "Enlace copiado. Ya puedes enviarlo a tu celular."
+      }
+    },
+    {
+      "name": "acceso-escritorio-claro::el_acceso_sigue_detras_de_la_guia",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-claro::escape_cierra_la_guia",
+      "ok": true,
+      "payload": {
+        "sigueAbierta": false
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::el_acceso_pinta_su_formulario",
+      "ok": true,
+      "payload": {
+        "correo": true,
+        "clave": true
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::la_banda_vive_sin_sesion",
+      "ok": true,
+      "payload": {
+        "token": false
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::banda_visible",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-oscuro::la_banda_cabe_en_la_columna",
+      "ok": true,
+      "payload": {
+        "ancho_boton": 294,
+        "ancho_banda": 328,
+        "desborde": 0
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::la_banda_fuera_del_formulario",
+      "ok": false,
+      "payload": {
+        "dentro": true,
+        "despues": true
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::el_boton_no_es_de_envio",
+      "ok": true,
+      "payload": {
+        "type": "button"
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::los_campos_nacen_vacios",
+      "ok": true,
+      "payload": {
+        "email": true
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::el_acceso_responde_a_un_clic_real",
+      "ok": true,
+      "payload": {
+        "hidratado": true,
+        "ms": 315
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::guia_cerrada_antes_del_clic",
+      "ok": true,
+      "payload": {
+        "tituloPresente": false
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::boton_abre_la_guia",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-oscuro::guia_abre",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-oscuro::el_clic_no_intentara_entrar",
+      "ok": true,
+      "payload": {
+        "url": "/login",
+        "token": false,
+        "envios": 0
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::dialogo_pintado_en_pantalla",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-oscuro::paso_Abre el enlace en ",
+      "ok": true,
+      "payload": {
+        "paso": "Abre el enlace en Chrome"
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::paso_Toca los tres punt",
+      "ok": true,
+      "payload": {
+        "paso": "Toca los tres puntos"
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::paso_Elige «Instalar ap",
+      "ok": true,
+      "payload": {
+        "paso": "Elige «Instalar app»"
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::paso_Confirma y crea el",
+      "ok": true,
+      "payload": {
+        "paso": "Confirma y crea el acceso directo"
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::guia_nombra_los_tres_puntos",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-oscuro::guia_nombra_el_acceso_directo",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-oscuro::aviso_de_exclusividad",
+      "ok": true,
+      "payload": {
+        "trozo": "Instala APEXOS en tu celular\n\nSe instala desde Chrome y queda con su propio icono.\n\nLa app es exclusiva para celulares. Si la abres desde el computador, APEXOS "
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::cero_enlaces_a_la_app_en_el_documento",
+      "ok": true,
+      "payload": {
+        "encontrados": 0
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::boton_de_copiado_presente",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-oscuro::enlace_escrito_para_copiarlo_a_mano",
+      "ok": true,
+      "payload": "si el portapapeles esta bloqueado el usuario necesita ver el enlace"
+    },
+    {
+      "name": "acceso-escritorio-oscuro::el_aviso_es_contenido_no_un_alerta",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-oscuro::el_enlace_es_un_parrafo_seleccionable",
+      "ok": true,
+      "payload": {
+        "encontrados": 1,
+        "ancho": 471
+      }
+    },
+    {
+      "name": "acceso-escritorio-oscuro::el_acceso_sigue_detras_de_la_guia",
+      "ok": true
+    },
+    {
+      "name": "acceso-escritorio-oscuro::escape_cierra_la_guia",
+      "ok": true,
+      "payload": {
+        "sigueAbierta": false
+      }
+    },
+    {
+      "name": "tablero_renderiza_sus_modulos",
+      "ok": true
+    },
+    {
+      "name": "el_tablero_no_ofrece_la_banda",
+      "ok": false,
+      "payload": {
+        "banda": true,
+        "nodos": 1
+      }
+    },
+    {
+      "name": "el_tablero_no_enlaza_a_la_app",
+      "ok": true,
+      "payload": {
+        "enlaces": 0
+      }
+    },
+    {
+      "name": "tema_acceso-movil-claro_distinto_de_acceso-movil-oscuro",
+      "ok": true,
+      "payload": {
+        "claro": "rgb(255, 255, 255)",
+        "oscuro": "rgb(23, 35, 45)"
+      }
+    },
+    {
+      "name": "tema_acceso-escritorio-claro_distinto_de_acceso-escritorio-oscuro",
+      "ok": true,
+      "payload": {
+        "claro": "rgb(255, 255, 255)",
+        "oscuro": "rgb(23, 35, 45)"
+      }
+    },
+    {
+      "name": "destino_app_responde",
+      "ok": true,
+      "payload": {
+        "status": 200
+      }
+    },
+    {
+      "name": "destino_app_es_la_app_movil",
+      "ok": true,
+      "payload": {
+        "trozo": "<!doctype html> <html lang=\"es-CO\"> <head> <meta charset=\"UTF-8\" /> <!-- viewport-fit=cover: habilita env(safe-area-inset-*) para el notch del iPhone "
+      }
+    },
+    {
+      "name": "cero_ventanillas_nativas",
+      "ok": true,
+      "payload": {
+        "vistas": []
+      }
+    },
+    {
+      "name": "cero_errores_de_pagina",
+      "ok": true,
+      "payload": {
+        "errores": []
+      }
+    },
+    {
+      "name": "cero_peticiones_rotas",
+      "ok": true,
+      "payload": {
+        "fallas": []
+      }
+    },
+    {
+      "name": "cero_errores_de_consola",
+      "ok": true,
+      "payload": {
+        "errores": []
+      }
+    }
+  ],
+  "build_id": "5IPZ7QZH2NbmEAVtEtjg0",
+  "frontend_served_by": "next start (produccion)",
+  "tablero_sin_banda": {
+    "url": "/dashboard",
+    "banda": true,
+    "nodos_titulo": 1,
+    "enlaces_a_la_app": 0,
+    "modulos_pintados": true,
+    "tiles": 6,
+    "acciones": true
+  },
+  "destino_app": {
+    "status": 200,
+    "bytes": 1310,
+    "title": "APEXOS Web Móvil"
+  },
+  "runtime": {
+    "page_errors": [],
+    "console_errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "http_failures": [
+      {
+        "status": 404,
+        "url": "http://127.0.0.1:3347/favicon.ico"
+      }
+    ],
+    "canceled_requests": 0,
+    "canceled_sample": [],
+    "console_resource_messages": 1,
+    "exempt_http_failures": [
+      "/favicon.ico"
+    ],
+    "native_dialogs": [],
+    "clipboard_permission_granted": true
+  },
+  "como_reproducir": "npm --workspace apps/web run build && npm run certify:app-install:local",
+  "git_head": "b802a251b633b29eb6cc843f7822b47a81de8392",
+  "verdict": {
+    "passed": 121,
+    "failed": 5,
+    "total": 126
+  },
+  "finished_at": "2026-11-25T19:41:45.874Z",
+  "status": "failed",
+  "error": {
+    "message": "5 comprobaciones fallidas",
+    "checks": [
+      {
+        "name": "acceso-movil-claro::el_acceso_pinta_su_formulario",
+        "ok": true,
+        "payload": {
+          "correo": true,
+          "clave": true
+        }
+      },
+      {
+        "name": "acceso-movil-claro::la_banda_vive_sin_sesion",
+        "ok": true,
+        "payload": {
+          "token": false
+        }
+      },
+      {
+        "name": "acceso-movil-claro::banda_visible",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-claro::la_banda_cabe_en_la_columna",
+        "ok": true,
+        "payload": {
+          "ancho_boton": 308,
+          "ancho_banda": 342,
+          "desborde": 0
+        }
+      },
+      {
+        "name": "acceso-movil-claro::la_banda_fuera_del_formulario",
+        "ok": false,
+        "payload": {
+          "dentro": true,
+          "despues": true
+        }
+      },
+      {
+        "name": "acceso-movil-claro::el_boton_no_es_de_envio",
+        "ok": true,
+        "payload": {
+          "type": "button"
+        }
+      },
+      {
+        "name": "acceso-movil-claro::los_campos_nacen_vacios",
+        "ok": true,
+        "payload": {
+          "email": true
+        }
+      },
+      {
+        "name": "acceso-movil-claro::el_acceso_responde_a_un_clic_real",
+        "ok": true,
+        "payload": {
+          "hidratado": true,
+          "ms": 611
+        }
+      },
+      {
+        "name": "acceso-movil-claro::guia_cerrada_antes_del_clic",
+        "ok": true,
+        "payload": {
+          "tituloPresente": false
+        }
+      },
+      {
+        "name": "acceso-movil-claro::boton_abre_la_guia",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-claro::guia_abre",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-claro::el_clic_no_intentara_entrar",
+        "ok": true,
+        "payload": {
+          "url": "/login",
+          "token": false,
+          "envios": 0
+        }
+      },
+      {
+        "name": "acceso-movil-claro::dialogo_pintado_en_pantalla",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-claro::paso_Abre el enlace en ",
+        "ok": true,
+        "payload": {
+          "paso": "Abre el enlace en Chrome"
+        }
+      },
+      {
+        "name": "acceso-movil-claro::paso_Toca los tres punt",
+        "ok": true,
+        "payload": {
+          "paso": "Toca los tres puntos"
+        }
+      },
+      {
+        "name": "acceso-movil-claro::paso_Elige «Instalar ap",
+        "ok": true,
+        "payload": {
+          "paso": "Elige «Instalar app»"
+        }
+      },
+      {
+        "name": "acceso-movil-claro::paso_Confirma y crea el",
+        "ok": true,
+        "payload": {
+          "paso": "Confirma y crea el acceso directo"
+        }
+      },
+      {
+        "name": "acceso-movil-claro::guia_nombra_los_tres_puntos",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-claro::guia_nombra_el_acceso_directo",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-claro::sin_aviso_de_escritorio",
+        "ok": true,
+        "payload": {
+          "aviso": false
+        }
+      },
+      {
+        "name": "acceso-movil-claro::enlace_exacto_a_la_app",
+        "ok": true,
+        "payload": {
+          "href": "https://appapexos-production.up.railway.app/"
+        }
+      },
+      {
+        "name": "acceso-movil-claro::enlace_abre_pestananueva",
+        "ok": true,
+        "payload": {
+          "target": "_blank"
+        }
+      },
+      {
+        "name": "acceso-movil-claro::enlace_sin_exponer_la_ventana",
+        "ok": true,
+        "payload": {
+          "rel": "noopener noreferrer"
+        }
+      },
+      {
+        "name": "acceso-movil-claro::sin_boton_de_copiado",
+        "ok": true,
+        "payload": "en el celular la accion es abrir, no copiar"
+      },
+      {
+        "name": "acceso-movil-claro::dice_como_entrar_despues_de_instalar",
+        "ok": true,
+        "payload": {
+          "trozo": " en tu pantalla de inicio, como cualquier aplicación.\n\n¿Ya la instalaste? Ábrela desde su icono y entra con el mismo correo y la misma contraseña.\n\nAbrir la app"
+        }
+      },
+      {
+        "name": "acceso-movil-claro::el_acceso_sigue_detras_de_la_guia",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-claro::escape_cierra_la_guia",
+        "ok": true,
+        "payload": {
+          "sigueAbierta": false
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::el_acceso_pinta_su_formulario",
+        "ok": true,
+        "payload": {
+          "correo": true,
+          "clave": true
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::la_banda_vive_sin_sesion",
+        "ok": true,
+        "payload": {
+          "token": false
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::banda_visible",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-oscuro::la_banda_cabe_en_la_columna",
+        "ok": true,
+        "payload": {
+          "ancho_boton": 308,
+          "ancho_banda": 342,
+          "desborde": 0
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::la_banda_fuera_del_formulario",
+        "ok": false,
+        "payload": {
+          "dentro": true,
+          "despues": true
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::el_boton_no_es_de_envio",
+        "ok": true,
+        "payload": {
+          "type": "button"
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::los_campos_nacen_vacios",
+        "ok": true,
+        "payload": {
+          "email": true
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::el_acceso_responde_a_un_clic_real",
+        "ok": true,
+        "payload": {
+          "hidratado": true,
+          "ms": 538
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::guia_cerrada_antes_del_clic",
+        "ok": true,
+        "payload": {
+          "tituloPresente": false
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::boton_abre_la_guia",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-oscuro::guia_abre",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-oscuro::el_clic_no_intentara_entrar",
+        "ok": true,
+        "payload": {
+          "url": "/login",
+          "token": false,
+          "envios": 0
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::dialogo_pintado_en_pantalla",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-oscuro::paso_Abre el enlace en ",
+        "ok": true,
+        "payload": {
+          "paso": "Abre el enlace en Chrome"
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::paso_Toca los tres punt",
+        "ok": true,
+        "payload": {
+          "paso": "Toca los tres puntos"
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::paso_Elige «Instalar ap",
+        "ok": true,
+        "payload": {
+          "paso": "Elige «Instalar app»"
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::paso_Confirma y crea el",
+        "ok": true,
+        "payload": {
+          "paso": "Confirma y crea el acceso directo"
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::guia_nombra_los_tres_puntos",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-oscuro::guia_nombra_el_acceso_directo",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-oscuro::sin_aviso_de_escritorio",
+        "ok": true,
+        "payload": {
+          "aviso": false
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::enlace_exacto_a_la_app",
+        "ok": true,
+        "payload": {
+          "href": "https://appapexos-production.up.railway.app/"
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::enlace_abre_pestananueva",
+        "ok": true,
+        "payload": {
+          "target": "_blank"
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::enlace_sin_exponer_la_ventana",
+        "ok": true,
+        "payload": {
+          "rel": "noopener noreferrer"
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::sin_boton_de_copiado",
+        "ok": true,
+        "payload": "en el celular la accion es abrir, no copiar"
+      },
+      {
+        "name": "acceso-movil-oscuro::dice_como_entrar_despues_de_instalar",
+        "ok": true,
+        "payload": {
+          "trozo": " en tu pantalla de inicio, como cualquier aplicación.\n\n¿Ya la instalaste? Ábrela desde su icono y entra con el mismo correo y la misma contraseña.\n\nAbrir la app"
+        }
+      },
+      {
+        "name": "acceso-movil-oscuro::el_acceso_sigue_detras_de_la_guia",
+        "ok": true
+      },
+      {
+        "name": "acceso-movil-oscuro::escape_cierra_la_guia",
+        "ok": true,
+        "payload": {
+          "sigueAbierta": false
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::el_acceso_pinta_su_formulario",
+        "ok": true,
+        "payload": {
+          "correo": true,
+          "clave": true
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::la_banda_vive_sin_sesion",
+        "ok": true,
+        "payload": {
+          "token": false
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::banda_visible",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::la_banda_cabe_en_la_columna",
+        "ok": true,
+        "payload": {
+          "ancho_boton": 294,
+          "ancho_banda": 328,
+          "desborde": 0
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::la_banda_fuera_del_formulario",
+        "ok": false,
+        "payload": {
+          "dentro": true,
+          "despues": true
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::el_boton_no_es_de_envio",
+        "ok": true,
+        "payload": {
+          "type": "button"
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::los_campos_nacen_vacios",
+        "ok": true,
+        "payload": {
+          "email": true
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::el_acceso_responde_a_un_clic_real",
+        "ok": true,
+        "payload": {
+          "hidratado": true,
+          "ms": 521
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::guia_cerrada_antes_del_clic",
+        "ok": true,
+        "payload": {
+          "tituloPresente": false
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::boton_abre_la_guia",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::guia_abre",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::el_clic_no_intentara_entrar",
+        "ok": true,
+        "payload": {
+          "url": "/login",
+          "token": false,
+          "envios": 0
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::dialogo_pintado_en_pantalla",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::paso_Abre el enlace en ",
+        "ok": true,
+        "payload": {
+          "paso": "Abre el enlace en Chrome"
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::paso_Toca los tres punt",
+        "ok": true,
+        "payload": {
+          "paso": "Toca los tres puntos"
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::paso_Elige «Instalar ap",
+        "ok": true,
+        "payload": {
+          "paso": "Elige «Instalar app»"
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::paso_Confirma y crea el",
+        "ok": true,
+        "payload": {
+          "paso": "Confirma y crea el acceso directo"
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::guia_nombra_los_tres_puntos",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::guia_nombra_el_acceso_directo",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::aviso_de_exclusividad",
+        "ok": true,
+        "payload": {
+          "trozo": "Instala APEXOS en tu celular\n\nSe instala desde Chrome y queda con su propio icono.\n\nLa app es exclusiva para celulares. Si la abres desde el computador, APEXOS "
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::cero_enlaces_a_la_app_en_el_documento",
+        "ok": true,
+        "payload": {
+          "encontrados": 0
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::boton_de_copiado_presente",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::enlace_escrito_para_copiarlo_a_mano",
+        "ok": true,
+        "payload": "si el portapapeles esta bloqueado el usuario necesita ver el enlace"
+      },
+      {
+        "name": "acceso-escritorio-claro::el_aviso_es_contenido_no_un_alerta",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::el_enlace_es_un_parrafo_seleccionable",
+        "ok": true,
+        "payload": {
+          "encontrados": 1,
+          "ancho": 471
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::copiar_pulsado",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::el_copiado_reporta_sin_mentir",
+        "ok": true,
+        "payload": {
+          "feedback": "Tu navegador no permitió copiar. El enlace está escrito abajo: selecciónalo y cópialo.",
+          "permiso": true
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::el_copiado_no_abre_ventanilla",
+        "ok": true,
+        "payload": {
+          "nuevas": []
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::el_dialogo_sigue_vivo_despues_del_copiado",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::portapapeles_grabador_armado",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::copia_exactamente_la_url_de_la_app",
+        "ok": true,
+        "payload": {
+          "grabado": [
+            "https://appapexos-production.up.railway.app"
+          ]
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::avisa_exito_cuando_el_navegador_acepta",
+        "ok": true,
+        "payload": {
+          "feedback": "Enlace copiado. Ya puedes enviarlo a tu celular."
+        }
+      },
+      {
+        "name": "acceso-escritorio-claro::el_acceso_sigue_detras_de_la_guia",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-claro::escape_cierra_la_guia",
+        "ok": true,
+        "payload": {
+          "sigueAbierta": false
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::el_acceso_pinta_su_formulario",
+        "ok": true,
+        "payload": {
+          "correo": true,
+          "clave": true
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::la_banda_vive_sin_sesion",
+        "ok": true,
+        "payload": {
+          "token": false
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::banda_visible",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-oscuro::la_banda_cabe_en_la_columna",
+        "ok": true,
+        "payload": {
+          "ancho_boton": 294,
+          "ancho_banda": 328,
+          "desborde": 0
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::la_banda_fuera_del_formulario",
+        "ok": false,
+        "payload": {
+          "dentro": true,
+          "despues": true
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::el_boton_no_es_de_envio",
+        "ok": true,
+        "payload": {
+          "type": "button"
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::los_campos_nacen_vacios",
+        "ok": true,
+        "payload": {
+          "email": true
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::el_acceso_responde_a_un_clic_real",
+        "ok": true,
+        "payload": {
+          "hidratado": true,
+          "ms": 315
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::guia_cerrada_antes_del_clic",
+        "ok": true,
+        "payload": {
+          "tituloPresente": false
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::boton_abre_la_guia",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-oscuro::guia_abre",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-oscuro::el_clic_no_intentara_entrar",
+        "ok": true,
+        "payload": {
+          "url": "/login",
+          "token": false,
+          "envios": 0
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::dialogo_pintado_en_pantalla",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-oscuro::paso_Abre el enlace en ",
+        "ok": true,
+        "payload": {
+          "paso": "Abre el enlace en Chrome"
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::paso_Toca los tres punt",
+        "ok": true,
+        "payload": {
+          "paso": "Toca los tres puntos"
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::paso_Elige «Instalar ap",
+        "ok": true,
+        "payload": {
+          "paso": "Elige «Instalar app»"
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::paso_Confirma y crea el",
+        "ok": true,
+        "payload": {
+          "paso": "Confirma y crea el acceso directo"
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::guia_nombra_los_tres_puntos",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-oscuro::guia_nombra_el_acceso_directo",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-oscuro::aviso_de_exclusividad",
+        "ok": true,
+        "payload": {
+          "trozo": "Instala APEXOS en tu celular\n\nSe instala desde Chrome y queda con su propio icono.\n\nLa app es exclusiva para celulares. Si la abres desde el computador, APEXOS "
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::cero_enlaces_a_la_app_en_el_documento",
+        "ok": true,
+        "payload": {
+          "encontrados": 0
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::boton_de_copiado_presente",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-oscuro::enlace_escrito_para_copiarlo_a_mano",
+        "ok": true,
+        "payload": "si el portapapeles esta bloqueado el usuario necesita ver el enlace"
+      },
+      {
+        "name": "acceso-escritorio-oscuro::el_aviso_es_contenido_no_un_alerta",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-oscuro::el_enlace_es_un_parrafo_seleccionable",
+        "ok": true,
+        "payload": {
+          "encontrados": 1,
+          "ancho": 471
+        }
+      },
+      {
+        "name": "acceso-escritorio-oscuro::el_acceso_sigue_detras_de_la_guia",
+        "ok": true
+      },
+      {
+        "name": "acceso-escritorio-oscuro::escape_cierra_la_guia",
+        "ok": true,
+        "payload": {
+          "sigueAbierta": false
+        }
+      },
+      {
+        "name": "tablero_renderiza_sus_modulos",
+        "ok": true
+      },
+      {
+        "name": "el_tablero_no_ofrece_la_banda",
+        "ok": false,
+        "payload": {
+          "banda": true,
+          "nodos": 1
+        }
+      },
+      {
+        "name": "el_tablero_no_enlaza_a_la_app",
+        "ok": true,
+        "payload": {
+          "enlaces": 0
+        }
+      },
+      {
+        "name": "tema_acceso-movil-claro_distinto_de_acceso-movil-oscuro",
+        "ok": true,
+        "payload": {
+          "claro": "rgb(255, 255, 255)",
+          "oscuro": "rgb(23, 35, 45)"
+        }
+      },
+      {
+        "name": "tema_acceso-escritorio-claro_distinto_de_acceso-escritorio-oscuro",
+        "ok": true,
+        "payload": {
+          "claro": "rgb(255, 255, 255)",
+          "oscuro": "rgb(23, 35, 45)"
+        }
+      },
+      {
+        "name": "destino_app_responde",
+        "ok": true,
+        "payload": {
+          "status": 200
+        }
+      },
+      {
+        "name": "destino_app_es_la_app_movil",
+        "ok": true,
+        "payload": {
+          "trozo": "<!doctype html> <html lang=\"es-CO\"> <head> <meta charset=\"UTF-8\" /> <!-- viewport-fit=cover: habilita env(safe-area-inset-*) para el notch del iPhone "
+        }
+      },
+      {
+        "name": "cero_ventanillas_nativas",
+        "ok": true,
+        "payload": {
+          "vistas": []
+        }
+      },
+      {
+        "name": "cero_errores_de_pagina",
+        "ok": true,
+        "payload": {
+          "errores": []
+        }
+      },
+      {
+        "name": "cero_peticiones_rotas",
+        "ok": true,
+        "payload": {
+          "fallas": []
+        }
+      },
+      {
+        "name": "cero_errores_de_consola",
+        "ok": true,
+        "payload": {
+          "errores": []
+        }
+      }
+    ]
+  }
+}

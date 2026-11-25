@@ -1,6 +1,5 @@
 "use client";
 
-import { AppInstallBand } from "@/components/lobby/AppInstallBand";
 import { Avatar } from "@/components/ui/avatar";
 import { loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { LOBBY_BANNER } from "@/lib/lobbyAssets";
@@ -75,8 +74,6 @@ export default function DashboardPage() {
         </Link>; })}</div>
       </section>
     </> : <section className="rounded-card border border-dashed border-line bg-surface p-8 text-center"><Grid2X2 className="mx-auto text-content-subtle" size={30} /><h2 className="mt-3 text-lg font-semibold text-content-strong">No tienes módulos habilitados</h2><p className="mx-auto mt-1 max-w-md text-sm text-content-muted">Solicita al administrador de tu empresa que active los módulos y permisos necesarios para tu operación.</p></section>}
-
-    <AppInstallBand />
   </div>;
 }
 

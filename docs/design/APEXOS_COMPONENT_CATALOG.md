@@ -73,7 +73,7 @@ Se copia el patrón, no el código completo:
 | Formulario de creación | `apps/web/app/dashboard/inventario/productos/nuevo/page.tsx`; `apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx` | `FormGrid`, `FormSection`, validación y botones |
 | Espacio de trabajo operativo | `apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx` | Navegación interna, filtros y estados |
 | Detalle dentro del listado | `apps/web/app/dashboard/comercio/clientes/page.tsx` | Abrir por el dato, un solo botón de regreso |
-| Diálogo que bifurca por dispositivo | `apps/web/components/lobby/AppInstallBand.tsx` | `ModalFrame` con `footer` distinto en celular y en computador, enlace externo con `target="_blank"` y `rel="noopener noreferrer"`, aviso condicional como contenido (`role="note"`) y no como alerta, y copy tomado siempre de una librería (`lib/mobileAppInstall.ts`) |
+| Diálogo que bifurca por dispositivo | `apps/web/components/system/AppInstallBand.tsx` | Banda apilada (`flex-col`, sin breakpoints de ventana) en la columna fija del acceso `apps/web/app/login/page.tsx`, despues del `</form>` y con `type="button"` para no enviar las credenciales; `ModalFrame` con `footer` distinto en celular y en computador, enlace externo con `target="_blank"` y `rel="noopener noreferrer"`, aviso condicional como contenido (`role="note"`) y no como alerta, y copy tomado siempre de una librería (`lib/mobileAppInstall.ts`) |
 
 Si la pantalla de referencia no cubre el caso, se elige la más cercana y se documenta la diferencia. No se usa una pantalla con tablas crudas como referencia.
 

@@ -7,6 +7,7 @@ import { touchSession } from "@/lib/sessionSecurity";
 import { dashboardLandingPath, isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from "@/lib/accessProfile";
 import { getSupabaseConfigStatus, supabaseAuth, supabaseFetch } from "@/lib/supabaseClient";
 import { ThemeToggle } from "@/components/system/ThemeToggle";
+import { AppInstallBand } from "@/components/system/AppInstallBand";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -253,9 +254,10 @@ export default function LoginPage() {
         </div>
 
         <div className="apex-login-panel flex min-h-screen items-center bg-[#263347] px-6 py-10 sm:px-12 lg:px-14 xl:px-20">
+          <div className="apex-login-panel-stack mx-auto w-full max-w-md">
           <form
           aria-describedby={error ? "login-error" : undefined}
-          className="mx-auto w-full max-w-md"
+          className="w-full"
           method="post"
           onSubmit={submit}
         >
@@ -330,6 +332,10 @@ export default function LoginPage() {
           </p>
           </div>
         </form>
+        <div className="apex-login-app-install mt-8">
+          <AppInstallBand />
+        </div>
+          </div>
         </div>
       </section>
     </main>

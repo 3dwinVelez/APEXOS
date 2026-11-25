@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.102.0",
+      "version": "2.103.0",
       "updated_at": "2026-11-25",
-      "sha256": "56d3e68d803370ee23fc194584471e3cea66a98114f725fba50782547c56a5a2",
+      "sha256": "d510da82239b93dcf68cf20ff0a4fde25b2a4931ad7a893b8e5ba27fb894e46c",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -206,9 +206,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.47.0",
-      "updated_at": "2026-11-24",
-      "sha256": "466ff8e5d918dff5471c856d1f543b1fff0f90bc4422adc2980b4899c27cc538",
+      "version": "2.48.0",
+      "updated_at": "2026-11-25",
+      "sha256": "e46924500cb07ad6346e086552679fd42da04f98bfd4b5688b589c369851fa9f",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -339,9 +339,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.123.0",
+      "version": "2.124.0",
       "updated_at": "2026-11-25",
-      "sha256": "0cac99c3188cf6ecd0863f016b4bfbf4b88fdc1e19228b75e3a0bbfa676e18aa",
+      "sha256": "50cde66d84ce3261988de18e139cd7b994fdf71f68a0ba87f96f7412c5cc6b4f",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -491,9 +491,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.68.0",
+      "version": "2.69.0",
       "updated_at": "2026-11-25",
-      "sha256": "c0b830eb06591ad06052aef2c1b19fc14c92d80bc18131fe3b896edb124c6865",
+      "sha256": "c4da8b73d6198148d15285b46cb4ac2999856c3a851ecbc9f7b9baefa6604122",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -584,8 +584,8 @@
     {
       "name": "Catálogo de componentes UI",
       "path": "docs/design/APEXOS_COMPONENT_CATALOG.md",
-      "updated_at": "2026-11-24",
-      "sha256": "d63ee4f0047cc202e52057eb6ad0037462d5f9683daa778b0dd085c5d2492c63"
+      "updated_at": "2026-11-25",
+      "sha256": "94e4a21e80b404b389c9cc3d80410061e7883dca495abcc1eed086611f116f68"
     },
     {
       "name": "Aislamiento multi-tenant",
