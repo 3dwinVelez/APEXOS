@@ -1,0 +1,109 @@
+{
+  "instrumento": "contabilidad post-push del porton desarrollo -> develop de la banda mudada al acceso",
+  "fecha_local": "2026-11-25T15:17:16-05:00",
+  "fecha_utc": "2026-11-25T20:17:16Z",
+  "change_id": "banda-acceso-develop-20261125",
+  "autorizacion": "El dueno del proyecto (Edwin), 2026-11-25: «procede con la correcion de develop para esta intervencion y garantiza que quede correctamente implementada sin tocar otros cambios». Ampara este transporte puntual y el despliegue en QA que lo sigue. No ampara main, force push, reescritura de historia compartida, migraciones remotas, infraestructura ni borrado de ramas.",
+  "referencias": {
+    "origin_develop_antes": "95bf7d5d05537e42860309104c3b5c3ae6b8ed9a",
+    "origin_develop_despues": "a2191e0dc714038946592105d4b8ad8f4fcd6ce0",
+    "commit_funcional_certificado": "c3668323fed3f0c345e34327dafe51c58268416f",
+    "origin_desarrollo_al_empujar": "4b55a373",
+    "antepasado_comun": "8208d9417ba6e1aff03bb5529bd5ec6aac074a0b",
+    "origin_main": "e3c2ad17 (intacto: esta intervencion no promociona a main)"
+  },
+  "orden_real_de_la_publicacion": {
+    "paso_1_compuerta_alcance": "node <validador canonico de desarrollo> docs/qa/manifests/banda-acceso-develop-20261125-scope.json HEAD origin/develop, ejecutado desde el worktree del candidato pero con el script de desarrollo, porque origin/develop conserva el validador viejo de 113 lineas (a98fc805) y el canon son 222 (7d0b5dfa). Salida literal: ALCANCE DE PROMOCION VALIDO: banda-acceso-develop-20261125 (18 rutas, transporte puntual: cada blob verificado contra origin/desarrollo, origen verificado contra origin/desarrollo)",
+    "paso_2_compuerta_preqa": "node scripts/validate-preqa-promotion-evidence.js docs/qa/manifests/banda-acceso-develop-20261125-preqa.json. Salida literal: AUTORIZACION PRE-QA VALIDA: banda-acceso-develop-20261125",
+    "paso_3_guard_gobierno": "APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP node scripts/git-governance-guard.js promote desarrollo-to-develop, con git status --porcelain vacio. Exit 0 sin mensaje (el comando imprime solo cuando bloquea). Control de contraste: corrido SIN la bandera respondio GOBIERNO GIT BLOQUEADO: Promocion desarrollo-to-develop requiere APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP. El candado tiene dientes medidos en la misma corrida.",
+    "paso_4_dry_run": "git push --dry-run origin HEAD:develop -> «   95bf7d5d..a2191e0d  HEAD -> develop», sin signo + o forced update, o sea avance rapido real contra la base que declara el manifiesto.",
+    "paso_5_push": "git push origin HEAD:develop -> «   95bf7d5d..a2191e0d  HEAD -> develop». Aqui, y solo aqui, la palabra publicado tiene soporte.",
+    "declaracion_de_error": "Entre el paso 4 y el paso 5 se le dijo al dueno que las compuertas habian pasado (cierto) en un mensaje que se pudo leer como publicacion hecha (no lo estaba). Se corrige en la misma respuesta y queda escrito: el dry-run no empuja nada. Regla versionada en apexos-git-guardian 2.43.0."
+  },
+  "diff_neto_publicado": {
+    "lineas_de_git_diff_name_status": 17,
+    "rutas_que_cuenta_el_candado": 18,
+    "por_que_difieren": "git diff --name-status imprime el rename en una sola linea (R094 apps/web/components/lobby/AppInstallBand.tsx -> apps/web/components/system/AppInstallBand.tsx) y el validador lo normaliza en dos entradas, D de la ruta vieja y A de la nueva. Los dos numeros son correctos y se escriben los dos para que nadie lea el inventario como desfasado.",
+    "detalle": [
+      "M apps/web/app/dashboard/page.tsx",
+      "M apps/web/app/login/page.tsx",
+      "R094 apps/web/components/lobby/AppInstallBand.tsx -> apps/web/components/system/AppInstallBand.tsx (cuenta como D + A)",
+      "M apps/web/test/mobile-app-install.test.mjs",
+      "M docs/briefs/2026-11-24-boton-app-movil-lobby.md",
+      "M docs/project/app-movil.md",
+      "A docs/qa/evidence/app-install-acceso-20261125-mutaciones/certification.json",
+      "A docs/qa/evidence/app-install-acceso-20261125/certification.json",
+      "A docs/qa/evidence/banda-acceso-develop-20261125/control-de-mutacion-instrumento.json",
+      "A docs/qa/evidence/banda-acceso-develop-20261125/invariantes-replay.json",
+      "A docs/qa/evidence/banda-acceso-develop-20261125/paridad-rutas-llevadas.txt",
+      "A docs/qa/evidence/banda-acceso-develop-20261125/porton-develop.json",
+      "A docs/qa/evidence/banda-acceso-develop-20261125/spec-invariantes.json",
+      "A docs/qa/evidence/banda-acceso-develop-20261125/suites-candidato.json",
+      "A docs/qa/manifests/banda-acceso-develop-20261125-preqa.json",
+      "A docs/qa/manifests/banda-acceso-develop-20261125-scope.json",
+      "M scripts/certifications/mobile-app-install-browser-local.js"
+    ]
+  },
+  "paridad_re_medida_despues_del_empuje": {
+    "metodo": "git rev-parse origin/develop:<ruta> contra git rev-parse origin/desarrollo:<ruta>, ruta por ruta, sobre las puntas ya publicadas",
+    "carry": [
+      "apps/web/app/login/page.tsx dff7d279 IGUAL",
+      "apps/web/app/dashboard/page.tsx a8bbdb0e IGUAL",
+      "apps/web/components/system/AppInstallBand.tsx 9b87741a IGUAL",
+      "apps/web/test/mobile-app-install.test.mjs 047518f1 IGUAL",
+      "scripts/certifications/mobile-app-install-browser-local.js 1d0e479d IGUAL",
+      "docs/project/app-movil.md 9dc2fce9 IGUAL",
+      "docs/briefs/2026-11-24-boton-app-movil-lobby.md c6532a7b IGUAL",
+      "docs/qa/evidence/app-install-acceso-20261125/certification.json 9f65bff5 IGUAL",
+      "docs/qa/evidence/app-install-acceso-20261125-mutaciones/certification.json 727456be IGUAL"
+    ],
+    "carry_ok": "9/9",
+    "blobs_distintos": 0,
+    "waivers_declarados": 0,
+    "delete_verificado": "apps/web/components/lobby/AppInstallBand.tsx esta AUSENTE en origin/develop y tambien AUSENTE en origin/desarrollo: la ruta retirada no revivio en ninguna de las dos ramas"
+  },
+  "invariantes_del_replay_sobre_el_arbol_publicado": {
+    "comando": "node scripts/certifications/promotion-migration-check.js --spec docs/qa/evidence/banda-acceso-develop-20261125/spec-invariantes.json --against commit --ref origin/develop --output docs/qa/evidence/banda-acceso-develop-20261125/invariantes-post-push.json",
+    "salida_literal": "INVARIANTES DE REPLAY VALIDAS: 10/10 en docs/qa/evidence/banda-acceso-develop-20261125/invariantes-post-push.json",
+    "que_cambia_frente_a_la_corrida_previa": "antes se midio contra el indice del worktree del candidato; aqui se mide contra el commit ya publicado en origin/develop. Es la misma promesa probada en el arbol que otros van a construir.",
+    "evidencia": "invariantes-post-push.json"
+  },
+  "suites_sobre_el_arbol_publicado": {
+    "arbol": "worktree del candidato en a2191e0d, que es exactamente el arbol de origin/develop, con git status --porcelain vacio y sin node_modules",
+    "comando": "node --experimental-strip-types --no-warnings --test apps/web/test/<las nueve suites que leen fuente de /login o /dashboard>",
+    "resultado": "81/81, 0 fallos, 877 ms",
+    "desglose": "mobile-app-install 13, login-error-contrast 2, login-phase-zero-ux 17, hr-marking-only-access 6, technical-alert-silence 12, lobby-greeting 2, module-portfolio 6, operational-home-redesign 15, phase-two-intelligent-experience 8",
+    "nota_de_cuenta": "En la planilla de tareas se anoto «13 contrato + 68 regresión». La cuenta medida es 81 sobre nueve suites, de las cuales 13 son el contrato del boton. Se corrige la cifra en el cierre, no la corrida.",
+    "control_de_la_pata_acceso": "el contrato 13/13 afirma en el arbol publicado que /login monta la banda una vez y fuera del formulario y que /dashboard tiene cero menciones"
+  },
+  "sonda_de_campo_en_qa": {
+    "ambiente": "https://apexos-web-qa-production.up.railway.app (web de QA, rama develop segun la documentacion del flujo de ramas)",
+    "metodo": "sonda de solo lectura: dos GET al HTML servido y una interaccion en navegador real contra la pantalla publica de acceso. No se envio el formulario, no se cree ni toco ninguna cuenta, no se escribio nada en ningun ambiente.",
+    "login_html": "200, 19.968 bytes. La banda esta dentro del panel de acceso: la seccion aria-labelledby=\"app-install-title\" aparece en el offset 12.065, despues del </form> del offset 11.991, y el contenedor es apex-login-panel-stack mx-auto w-full max-w-md.",
+    "senal_de_que_es_el_artefacto_corregido": "las clases que solo existen en la version nueva: el section sale con «rounded-card border border-line bg-surface p-4» y SIN sm:p-5; el boton sale con w-full y SIN shrink-0 sm:w-auto. La frase «Descarga nuestra app» no sirve como senal porque ya vivia en la montura vieja del tablero, ahora en otra ruta.",
+    "dashboard_html": "200, 10.228 bytes sin la frase de la banda. Se declara el limite: sin sesion el tablero no es prueba de nada, la ausencia real la jura el contrato 13/13 sobre el codigo y la corrida local con control positivo de render.",
+    "hidratacion_comprobada": "el interruptor de tema paso el class del <html> de vacio a dark, o sea el JavaScript del cliente si esta enganchado en el artefacto desplegado",
+    "guia_abre_en_campo": "al tocar «Descarga nuestra app» se monto el overlay .apex-backdrop-enter con su section role=\"dialog\": titulo «Instala APEXOS en tu celular», cuatro pasos (Abre el enlace en Chrome / Toca los tres puntos / Elige «Instalar app» / Confirma y crea el acceso directo), nota «La app es exclusiva para celulares...» y los botones Cerrar y Copiar enlace. En escritorio la rama correcta es Copiar enlace, no Abrir la app: es lo diseñado.",
+    "falso_rojo_declarado": "las dos primeras sondas reportaron «la guia no abre» porque buscaban la etiqueta <dialog> y ModalFrame monta un div de fondo con role=\"dialog\", no el elemento nativo. El rojo era del selector de la sonda, no del producto, y se desmintio con la captura antes de afirmar nada. Regla versionada en apexos-qa 2.125.0.",
+    "captura": "evidencia local del navegador en %TEMP%/qa-banda-acceso-guia.png (no entra al repositorio: es sonda de campo, no artefacto de la certificacion de 126 controles)"
+  },
+  "lo_que_no_es_esta_sonda": {
+    "no_es_la_certificacion_de_126_controles": "la corrida de 126/126 se midio sobre el build de produccion local (next start, BUILD_ID R-dJE_2uSjVBDXuUGfcyo, git_head b802a251) con cinco escenarios, nueve capturas y su control de mutacion 121/126. Contra el ambiente desplegado queda pendiente correr el instrumento completo, que exige una variante con destino remoto: es tarea con dueno, no una pata de este porton.",
+    "no_confirma_desde_que_rama_construyo_railway": "el marcado servido es blob-identico en develop (a2191e0d) y en desarrollo (4b55a373), asi que la sonda prueba que el artefacto de QA trae la correccion, pero no prueba cual de las dos ramas disparo el build. Confirmarlo en la consola de Railway es pendiente con dueno."
+  },
+  "rutas_que_NO_subieron": {
+    "package.json": "develop le faltan 25 lineas de otros frentes y apps/control-tower no existe alla; traer el blob de desarrollo reinstalaria scripts que apuntan a archivos que no estan en la rama.",
+    "agents/registry.json y el canon (.qoder/skills/**, agents/**/SKILL.md)": "divergen por reglas de otros frentes; forzar el blob de desarrollo dejaria versiones declaradas sobre SKILL.md que no viajan y agents:check rojo en el destino.",
+    "agents/CHANGELOG.md": "develop conserva una linea propia del porton de la foto; el blob de desarrollo la borraria.",
+    "docs/design/APEXOS_COMPONENT_CATALOG.md": "no existe en origin/develop; subirlo crea una pagina de catalogo que esa rama nunca tuvo.",
+    "apps/web/lib/mobileAppInstall.ts": "no cambio en esta correccion (blob 83d7bd96 identico en las dos ramas), no entra en el inventario.",
+    "docs/qa/evidence/app-install-acceso-20261125/*.png": "las nueve capturas se conservan en el arbol de origen; no viajaron para no inflar el disco del destino (plan de choque de disco, 2026-11-18).",
+    "apps/control-tower/**": "por regla de repositorio no promociona."
+  },
+  "topes_declarados": [
+    "No se corrio next build ni la suite web completa (907 pruebas) dentro del worktree del candidato: no tiene node_modules y la regla de este puesto es no copiarlos ni enlazarlos. La equivalencia se probo por blob de las rutas que pintan la pantalla.",
+    "El DESPUES formal contra el ambiente desplegado (instrumento completo con destino remoto) sigue pendiente y con dueno declarado; lo que versiona esta contabilidad es la senal de campo, no la certificacion de 126 controles en QA.",
+    "No se borro la rama auxiliar codex/qa-boton-app-movil-develop-20261125 ni su worktree: hace falta orden expresa del dueno."
+  ],
+  "veredicto": "Publicado en origin/develop como avance rapido 95bf7d5d..a2191e0d con las tres compuertas verdes y el guard con control de contraste. Paridad re-medida sobre las puntas publicadas: 9/9 carry, 0 blobs distintos, 0 waivers, la ruta retirada ausente en las dos ramas. Invariantes del replay 10/10 contra el commit publicado, suites del arbol publicado 81/81. Sonda de campo en QA: la banda vive en el acceso, montada despues del formulario, con la guia abierta y sus cuatro pasos en el artefacto desplegado. main intacto."
+}
