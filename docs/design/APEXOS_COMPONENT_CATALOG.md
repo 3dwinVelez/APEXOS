@@ -1,6 +1,6 @@
 # Catálogo de componentes y homologación UI — APEXOS
 
-Versión: 1.1 — 2026-11-06
+Versión: 1.2 — 2026-11-24
 
 Índice normativo para construir pantallas en `apps/web`. No reemplaza los estándares; los ordena para que una pantalla nueva no invente un patrón distinto.
 
@@ -73,6 +73,7 @@ Se copia el patrón, no el código completo:
 | Formulario de creación | `apps/web/app/dashboard/inventario/productos/nuevo/page.tsx`; `apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx` | `FormGrid`, `FormSection`, validación y botones |
 | Espacio de trabajo operativo | `apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx` | Navegación interna, filtros y estados |
 | Detalle dentro del listado | `apps/web/app/dashboard/comercio/clientes/page.tsx` | Abrir por el dato, un solo botón de regreso |
+| Diálogo que bifurca por dispositivo | `apps/web/components/lobby/AppInstallBand.tsx` | `ModalFrame` con `footer` distinto en celular y en computador, enlace externo con `target="_blank"` y `rel="noopener noreferrer"`, aviso condicional como contenido (`role="note"`) y no como alerta, y copy tomado siempre de una librería (`lib/mobileAppInstall.ts`) |
 
 Si la pantalla de referencia no cubre el caso, se elige la más cercana y se documenta la diferencia. No se usa una pantalla con tablas crudas como referencia.
 

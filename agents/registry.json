@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.99.1",
+      "version": "2.100.0",
       "updated_at": "2026-11-24",
-      "sha256": "5ed06c1c0c1eec47734efe623eb0e62170d856ce7719192ea4ef142d8f45dfc2",
+      "sha256": "6518d360ca37c8952caa47c150774e5676adcc43d1f4382dd45eb7c22af2e22b",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -206,9 +206,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.46.0",
+      "version": "2.47.0",
       "updated_at": "2026-11-24",
-      "sha256": "63eee45738269e3203383d54a1033243fe1c06ceba71f897cb6e24e3cd0baaf2",
+      "sha256": "466ff8e5d918dff5471c856d1f543b1fff0f90bc4422adc2980b4899c27cc538",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -339,9 +339,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.121.0",
+      "version": "2.122.0",
       "updated_at": "2026-11-24",
-      "sha256": "841a1a3ed97bd8e2da68db19d3e218fa01847bc01ca6c4c321232d376bab3f55",
+      "sha256": "ffb4f6864f751212e852e125c59cdd1dbd2133a2476d92a1a05400632dd9e6f6",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -584,8 +584,8 @@
     {
       "name": "Catálogo de componentes UI",
       "path": "docs/design/APEXOS_COMPONENT_CATALOG.md",
-      "updated_at": "2026-11-12",
-      "sha256": "92d0ab41e265079527f1a93a2c2106a68dd6aad38f13f4008c8f5fdc6846fe66"
+      "updated_at": "2026-11-24",
+      "sha256": "d63ee4f0047cc202e52057eb6ad0037462d5f9683daa778b0dd085c5d2492c63"
     },
     {
       "name": "Aislamiento multi-tenant",
