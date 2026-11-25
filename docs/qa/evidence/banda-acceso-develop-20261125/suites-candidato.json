@@ -1,0 +1,35 @@
+{
+  "instrumento": "suites funcionales corrida dentro del worktree del candidato (origin/develop + el replay de la correccion)",
+  "fecha_local": "2026-11-25T17:20:00-05:00",
+  "fecha_utc": "2026-11-25T22:20:00Z",
+  "arbol": "C:/Users/mq1/Documents/Proyectos/apexos-cand-boton-app-develop-20261125 | rama codex/qa-boton-app-movil-develop-20261125 | HEAD del candidato c3668323 | sin node_modules (regla de este puesto: no copiarlos ni enlazarlos, ver memoria del worktree que borro apps/)",
+  "comando": "node --experimental-strip-types --no-warnings --test apps/web/test/<las nueve suites>",
+  "por_que_nueve": "La correccion toca dos pantallas, asi que corren todas las suites que leen fuente de alguna de ellas, no solo la del boton. Las nueve leen apps/web/app/login/page.tsx o apps/web/app/dashboard/page.tsx con fs y regex: mobile-app-install, hr-marking-only-access, login-error-contrast, login-phase-zero-ux, technical-alert-silence (acceso) y lobby-greeting, module-portfolio, operational-home-redesign, phase-two-intelligent-experience (tablero).",
+  "candidato": {
+    "total": 81,
+    "pasan": 81,
+    "fallan": 0,
+    "duracion_ms": 4059,
+    "desglose_por_suite": {
+      "mobile-app-install": "13/13 (contrato re-anclado: el acceso monta la banda una vez y fuera del formulario, el tablero tiene cero menciones, la banda se apila)",
+      "login-error-contrast": "2/2",
+      "login-phase-zero-ux": "17/17",
+      "hr-marking-only-access": "6/6",
+      "technical-alert-silence": "12/12",
+      "lobby-greeting": "2/2",
+      "module-portfolio": "6/6",
+      "operational-home-redesign": "15/15",
+      "phase-two-intelligent-experience": "8/8"
+    }
+  },
+  "origen": {
+    "arbol": "C:/Users/mq1/Documents/Proyectos/APEXOS | desarrollo c9725008",
+    "total": 84,
+    "pasan": 84,
+    "fallan": 0,
+    "nota": "El candidato marca 81 y el origen 84: la diferencia son tres pruebas de otros frentes que viven en suites mas nuevas en desarrollo y todavia no viajaron a develop. Ningun caso se perdi6 por esta correccion: las 13 del boton y las 68 restantes estan en las dos cuentas."
+  },
+  "suite_web_completa": "no corre en el candidato (pide dependencias). En el arbol de origen esta medida desde apps/web: 907 pruebas, 902 pasan, 5 fallan, y los cinco rojos son preexistentes de otros frentes (accounting-pyg-interactive, transport-master-access, transport-vehicle-master-catalogs, command-palette-module-functions, hr-offline-marking). Ninguno lee login, dashboard, la banda, el contrato ni el certificado.",
+  "trampa_de_invocacion_declarada": "La suite web hay que correrla desde apps/web: ibc-nomina-ui.test.mjs y public-service-requests-security.test.mjs resuelven sus fuentes con process.cwd() y, desde el raiz del repo, suman cuatro rojos falsos (911/907 en lugar de 907/902). El baseline se declara con el directorio.",
+  "certificacion_de_navegador": "126/126 corrida en el arbol de origen sobre el artefacto de produccion servido por next start (BUILD_ID R-dJE_2uSjVBDXuUGfcyo, git_head b802a251), con control de mutacion 121/126 en build aparte. Cubre el candidato por paridad de blob de las nueve rutas llevadas, incluida la prueba y el instrumento."
+}

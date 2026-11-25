@@ -1,0 +1,183 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "banda-acceso-develop-20261125",
+  "creado": "2026-11-25T17:30:00-05:00",
+  "autorizado": "dueno del proyecto (Edwin), 2026-11-25: «procede con la correcion de develop para esta intervencion y garantiza que quede correctamente implementada sin tocar otros cambios». La orden ampara exclusivamente las 18 rutas de este inventario y el despliegue en QA que le sigue. No autoriza main, force push, rebase de ramas permanentes, migraciones remotas, infraestructura, cambios en Railway/Supabase ni borrado de ramas.",
+  "target_branch": "develop",
+  "source_branch": "desarrollo",
+  "promotion_branch": "codex/qa-boton-app-movil-develop-20261125",
+  "transport": "replay_puntual",
+  "base_commits": {
+    "main": "e3c2ad17",
+    "develop": "95bf7d5d05537e42860309104c3b5c3ae6b8ed9a",
+    "desarrollo": "c97250089f272b43d36028af47ca456232ae56e9"
+  },
+  "base_commit": "95bf7d5d05537e42860309104c3b5c3ae6b8ed9a",
+  "target_head": "95bf7d5d05537e42860309104c3b5c3ae6b8ed9a",
+  "certified_commit": "c97250089f272b43d36028af47ca456232ae56e9",
+  "replay_baseline": "8208d9417ba6e1aff03bb5529bd5ec6aac074a0b",
+  "antepasado_comun": "8208d9417ba6e1aff03bb5529bd5ec6aac074a0b",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "c97250089f272b43d36028af47ca456232ae56e9",
+    "commits_de_origen": [
+      "c9725008 (la banda se muda del tablero al inicio de sesion: montura, git mv a components/system, contrato 13/13, certificado 126/126, control de mutacion 121/126, documento, catalogo, brief y canon)"
+    ],
+    "nota": "El candidato no es un merge de ramas: se arma sobre origin/develop (95bf7d5d, la punta que dejo el porton anterior) y recibe `git checkout origin/desarrollo -- <las nueve rutas>` mas `git rm` de la ruta que deja de existir. Las ocho rutas contables nacen aqui (seis de evidencia y los dos manifiestos) y se espejan byte a byte en desarrollo antes de correr el gate, para que el porton verifique cada blob contra la punta viva de origin/desarrollo sin declarar ningun waiver."
+  },
+  "naturaleza": "Porton de correccion puntual: sube a develop el cambio de montura del boton «Descarga nuestra app», que pasa del tablero a la pantalla de acceso (debajo del formulario, fuera de el), con su prueba de contrato re-anclada, su instrumento re-anclado, el documento funcional y la evidencia de la corrida en navegador. Nueve rutas llevadas byte a byte desde origin/desarrollo, una eliminacion (apps/web/components/lobby/AppInstallBand.tsx, que el porton anterior subio y hoy vive en components/system/) y ocho rutas contables nacidas en este porton. Ninguna ruta de esquema, ninguna migracion, nada bajo apps/api, nada de copys ni de deteccion de dispositivo.",
+  "change_intent": {
+    "modules": [
+      "app-movil",
+      "acceso",
+      "lobby",
+      "certificaciones-qa",
+      "documentacion-qa"
+    ],
+    "summary": "Que la oferta de instalar la app la vea quien aun no tiene sesion: el dueno corrigio «va en el inicio de sesion, no cuando se inicia sesion». Inventario exacto: 18 rutas. Bajo apps/web solo el montaje del acceso, el retiro del tablero, la banda en su carpeta nueva y su prueba de contrato; bajo scripts/ solo el instrumento re-anclado; el resto es documentacion, evidencia y los dos manifiestos de este porton. Cero rutas bajo apps/api, packages/ o infra/, cero migraciones, cero cambios en el copy de la guia ni en la URL."
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/login/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/page.tsx" },
+    { "status": "D", "file": "apps/web/components/lobby/AppInstallBand.tsx" },
+    { "status": "A", "file": "apps/web/components/system/AppInstallBand.tsx" },
+    { "status": "M", "file": "apps/web/test/mobile-app-install.test.mjs" },
+    { "status": "M", "file": "scripts/certifications/mobile-app-install-browser-local.js" },
+    { "status": "M", "file": "docs/project/app-movil.md" },
+    { "status": "M", "file": "docs/briefs/2026-11-24-boton-app-movil-lobby.md" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-acceso-20261125/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-acceso-20261125-mutaciones/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/banda-acceso-develop-20261125/porton-develop.json" },
+    { "status": "A", "file": "docs/qa/evidence/banda-acceso-develop-20261125/suites-candidato.json" },
+    { "status": "A", "file": "docs/qa/evidence/banda-acceso-develop-20261125/paridad-rutas-llevadas.txt" },
+    { "status": "A", "file": "docs/qa/evidence/banda-acceso-develop-20261125/spec-invariantes.json" },
+    { "status": "A", "file": "docs/qa/evidence/banda-acceso-develop-20261125/invariantes-replay.json" },
+    { "status": "A", "file": "docs/qa/evidence/banda-acceso-develop-20261125/control-de-mutacion-instrumento.json" },
+    { "status": "A", "file": "docs/qa/manifests/banda-acceso-develop-20261125-scope.json" },
+    { "status": "A", "file": "docs/qa/manifests/banda-acceso-develop-20261125-preqa.json" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/login/page.tsx",
+    "apps/web/app/dashboard/page.tsx",
+    "apps/web/components/lobby/AppInstallBand.tsx",
+    "apps/web/components/system/AppInstallBand.tsx",
+    "apps/web/test/mobile-app-install.test.mjs",
+    "scripts/certifications/mobile-app-install-browser-local.js",
+    "docs/project/app-movil.md",
+    "docs/briefs/2026-11-24-boton-app-movil-lobby.md",
+    "docs/qa/evidence/app-install-acceso-20261125/certification.json",
+    "docs/qa/evidence/app-install-acceso-20261125-mutaciones/certification.json",
+    "docs/qa/evidence/banda-acceso-develop-20261125/porton-develop.json",
+    "docs/qa/evidence/banda-acceso-develop-20261125/suites-candidato.json",
+    "docs/qa/evidence/banda-acceso-develop-20261125/paridad-rutas-llevadas.txt",
+    "docs/qa/evidence/banda-acceso-develop-20261125/spec-invariantes.json",
+    "docs/qa/evidence/banda-acceso-develop-20261125/invariantes-replay.json",
+    "docs/qa/evidence/banda-acceso-develop-20261125/control-de-mutacion-instrumento.json",
+    "docs/qa/manifests/banda-acceso-develop-20261125-scope.json",
+    "docs/qa/manifests/banda-acceso-develop-20261125-preqa.json"
+  ],
+  "allowed_deletions": [
+    "apps/web/components/lobby/AppInstallBand.tsx"
+  ],
+  "origin_waivers": [],
+  "certified_functional_paths": [
+    "apps/web/app/login/page.tsx",
+    "apps/web/app/dashboard/page.tsx",
+    "apps/web/components/system/AppInstallBand.tsx",
+    "apps/web/test/mobile-app-install.test.mjs",
+    "scripts/certifications/mobile-app-install-browser-local.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "El acceso del arbol de destino monta la banda una sola vez y fuera del formulario",
+      "status": "passed",
+      "evidence": [
+        "../evidence/banda-acceso-develop-20261125/suites-candidato.json",
+        "../evidence/app-install-acceso-20261125/certification.json",
+        "../evidence/banda-acceso-develop-20261125/invariantes-replay.json"
+      ],
+      "notes": "Prueba de contrato 13/13 corrida DENTRO del worktree del candidato sobre el arbol ya con la banda en el acceso, y certificacion en navegador real 126/126 sobre el artefacto de produccion del arbol de origen (BUILD_ID R-dJE_2uSjVBDXuUGfcyo): banda visible sin sesion (tiene_token false), boton type=button y fuera del <form> medido con closest(\"form\"), cero peticiones a /auth/(login|token) al pulsarlo, y la banda dentro de la columna sin desbordar (308 px en movil, 294 px en escritorio)."
+    },
+    {
+      "name": "El tablero del destino deja de ofrecer la descarga y conserva sus modulos",
+      "status": "passed",
+      "evidence": [
+        "../evidence/app-install-acceso-20261125/certification.json",
+        "../evidence/banda-acceso-develop-20261125/suites-candidato.json"
+      ],
+      "notes": "El arnes abre el tablero con sesion y seis modulos habilitados y jura primero que renderiza (los seis tiles y sus enlaces) para despues afirmar la ausencia: 0 nodos con id app-install-title y 0 enlaces a la app. En el candidato, las suites del tablero (lobby-greeting 2/2, module-portfolio 6/6, operational-home-redesign 15/15, phase-two-intelligent-experience 8/8) corren sobre el arbol ya sin la banda: el hero sigue sin botones y el portafolio del tenant no cambia."
+    },
+    {
+      "name": "El replay no revierte trabajo ajeno de develop",
+      "status": "passed",
+      "evidence": [
+        "../evidence/banda-acceso-develop-20261125/paridad-rutas-llevadas.txt",
+        "../evidence/banda-acceso-develop-20261125/porton-develop.json",
+        "../evidence/banda-acceso-develop-20261125/invariantes-replay.json"
+      ],
+      "notes": "Medido de dos maneras. Blob de origin/develop contra blob de origin/desarrollo~1: seis de las siete rutas preexistentes son identicas (login 89415725, dashboard f663329f, la banda vieja 6a80868f, prueba ab47ae84, certificado 5d67189f, documento 13591ffb), o sea develop no tiene ni una linea propia en ellas. La unica distinta es el brief (e6e5e754 vs 8849d60e) y esta explicado por la ruta: +56 -1, y la linea que se va es la casilla de promocion de este mismo frente. Cuatro rutas quedan FUERA del inventario precisamente porque develop si tiene contenido propio o ajeno: package.json, docs/design/APEXOS_COMPONENT_CATALOG.md (no existe en develop), agents/registry.json y agents/CHANGELOG.md. Invariantes del replay: 10/10 con el control de mutacion del instrumento en verde (3 derivas rojas)."
+    },
+    {
+      "name": "Nada de datos, RBAC o aislamiento de tenant viaja en este porton",
+      "status": "passed",
+      "evidence": [
+        "../evidence/banda-acceso-develop-20261125/porton-develop.json",
+        "../evidence/banda-acceso-develop-20261125/spec-invariantes.json"
+      ],
+      "notes": "Cero rutas bajo apps/api, cero bajo packages/ o infra/, cero migraciones. La unica eliminacion declarada es un componente de interfaz. La banda no consulta datos ni depende de active_modules: se ve igual con el tablero vacio, y por eso corre la prueba de contrato y las suites de portafolio sin tocar permisos."
+    },
+    {
+      "name": "El acceso y las primitivas que consume son el mismo codigo medido en navegador",
+      "status": "passed",
+      "evidence": [
+        "../evidence/banda-acceso-develop-20261125/paridad-rutas-llevadas.txt",
+        "../evidence/banda-acceso-develop-20261125/invariantes-replay.json"
+      ],
+      "notes": "apps/web/components/ui/button.tsx y apps/web/components/ui/ModalFrame.tsx estan blob-identicos entre origin/desarrollo y origin/develop, y apps/web/lib/mobileAppInstall.ts no viaja porque tampoco cambio (83d7bd96 en las dos ramas): el copy, la URL quemada y la deteccion de dispositivo que se certificaron son los que van a servir. Las nueve rutas que producen y miden la pantalla viajan identicas, incluida la prueba y el instrumento."
+    }
+  ],
+  "compuertas_exigidas": [
+    "node --experimental-strip-types --no-warnings --test apps/web/test/mobile-app-install.test.mjs dentro del worktree del candidato: 13/13",
+    "node --experimental-strip-types --no-warnings --test sobre las nueve suites que leen login/page.tsx o dashboard/page.tsx dentro del candidato: 81/81",
+    "node scripts/certifications/promotion-migration-check.js --spec docs/qa/evidence/banda-acceso-develop-20261125/spec-invariantes.json --against index --output .../invariantes-replay.json: 10/10, y su --selftest: 3 derivas medidas",
+    "npm run qa:promotion:scope -- docs/qa/manifests/banda-acceso-develop-20261125-scope.json <punta-candidato> origin/develop, con el instrumento canonico de desarrollo (blob 7d0b5dfa, 222 lineas) porque origin/develop conserva el validador viejo de 113 lineas (a98fc805)",
+    "npm run qa:preqa:evidence -- docs/qa/manifests/banda-acceso-develop-20261125-preqa.json",
+    "node scripts/git-governance-guard.js promote desarrollo-to-develop con APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP, desde el worktree limpio del candidato",
+    "Despues del despliegue: el certificado en navegador contra el acceso desplegado en QA desde develop, versionado en la contabilidad post-push"
+  ],
+  "deriva_declarada": [
+    "El alias npm `certify:app-install:local` no viaja porque package.json queda fuera del inventario: en develop el instrumento se invoca con `node scripts/certifications/mobile-app-install-browser-local.js`.",
+    "El canon del equipo no viaja en este porton: origin/develop tiene el equipo atrasado contra origin/desarrollo en cinco agentes y una linea de linaje propio. Forzar los blobs dejaria al registry mintiendo contra los SKILL.md que no suben y pondria rojo agents:check en el candidato. La alineacion del canon es una intervencion aparte, con su propio manifiesto.",
+    "docs/design/APEXOS_COMPONENT_CATALOG.md tampoco viaja: la pagina no existe en develop, y crearla aqui seria arrastrar lineas de otros frentes.",
+    "Las nueve capturas PNG de la certificacion quedan en desarrollo: suben los dos JSON con los numeros medidos (126/126 y el control 121/126). Decision del plan de choque de disco (2026-11-18), no olvido.",
+    "El sha de cuarenta caracteres que se empuja a develop, la salida verbatim de los dos validadores y el DESPUES en el navegador desplegado se consignan en la contabilidad post-push: describen una punta que no existe dentro del commit que la describe.",
+    "apps/control-tower/** no promociona por regla de repositorio y no esta en el inventario.",
+    "El ambiente de la app enlazada queda como pendiente del dueno: la instancia publicada se autodeclara environment QA. No se creo ni se modifico ninguna variable en Railway."
+  ],
+  "verificado_local": {
+    "fecha_hora_local": "2026-11-25T17:30:00-05:00",
+    "rama_trabajo": "desarrollo",
+    "puntas": {
+      "origin/main": "e3c2ad17",
+      "origin/develop": "95bf7d5d05537e42860309104c3b5c3ae6b8ed9a",
+      "origin/desarrollo": "c97250089f272b43d36028af47ca456232ae56e9"
+    },
+    "rutas_inventario": 18,
+    "rutas_producto_en_el_diff": 5,
+    "suites": "contrato 13/13 y las nueve suites del acceso y del tablero 81/81 dentro del candidato; certificacion 126/126 y suite web 907/902 en el arbol de origen",
+    "paridad_blob_candidato": "9/9 rutas llevadas identicas a origin/desarrollo, 0 distintas, 0 waivers declarados",
+    "invariantes_de_replay": "10/10 (9 carry + 1 delete), 0 edit por hunks, con el control de mutacion del instrumento en verde"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-25T17:30:00-05:00",
+    "authorization_flags": {
+      "direct_push_to_develop": true,
+      "auxiliary_branch_promotion": true,
+      "allowed_deletion": true
+    },
+    "nota": "Las banderas cubren exclusivamente las 18 rutas de este inventario, incluida la eliminacion de apps/web/components/lobby/AppInstallBand.tsx, y autorizan el despliegue en QA para medir el DESPUES. No autorizan main, force push, rebase de ramas permanentes, migraciones remotas, infraestructura, cambios en Railway/Supabase ni borrado de ramas."
+  }
+}

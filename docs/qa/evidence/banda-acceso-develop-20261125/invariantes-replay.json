@@ -1,0 +1,95 @@
+{
+  "instrumento": "promotion-migration-check",
+  "ejecutado_en": "2026-11-25T20:06:27.744Z",
+  "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-boton-app-develop-20261125",
+  "spec": "docs/qa/evidence/banda-acceso-develop-20261125/spec-invariantes.json",
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "contra": "indice del arbol candidato",
+  "label": "invariantes del replay",
+  "passed": true,
+  "total": 10,
+  "rotos": 0,
+  "results": [
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/login/page.tsx",
+      "esperado": "dff7d279b6e0a05346796bf479ae69eb01e38f5a",
+      "actual": "dff7d279b6e0a05346796bf479ae69eb01e38f5a",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/page.tsx",
+      "esperado": "a8bbdb0e279ee56b9fc161e51fbe83f30203f1d3",
+      "actual": "a8bbdb0e279ee56b9fc161e51fbe83f30203f1d3",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/components/system/AppInstallBand.tsx",
+      "esperado": "9b87741a639ef1a1352440d1248e9465790c54b8",
+      "actual": "9b87741a639ef1a1352440d1248e9465790c54b8",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/mobile-app-install.test.mjs",
+      "esperado": "047518f1ef8c4e21559337e2df592bbdb7c67aff",
+      "actual": "047518f1ef8c4e21559337e2df592bbdb7c67aff",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/mobile-app-install-browser-local.js",
+      "esperado": "1d0e479dab09240d540352bf04e1e3b7f1122eb2",
+      "actual": "1d0e479dab09240d540352bf04e1e3b7f1122eb2",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/project/app-movil.md",
+      "esperado": "9dc2fce99cb7f69c3232c3a221873afcbd07a520",
+      "actual": "9dc2fce99cb7f69c3232c3a221873afcbd07a520",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/briefs/2026-11-24-boton-app-movil-lobby.md",
+      "esperado": "c6532a7bc128790136008a653871483f8b4f93f6",
+      "actual": "c6532a7bc128790136008a653871483f8b4f93f6",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-acceso-20261125/certification.json",
+      "esperado": "9f65bff5978e23d8a7c3a6dc869a85f418d36246",
+      "actual": "9f65bff5978e23d8a7c3a6dc869a85f418d36246",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-acceso-20261125-mutaciones/certification.json",
+      "esperado": "727456be653897fae39400567d19609ad893395a",
+      "actual": "727456be653897fae39400567d19609ad893395a",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "delete",
+      "file": "apps/web/components/lobby/AppInstallBand.tsx",
+      "esperado": null,
+      "actual": null,
+      "ok": true,
+      "detalle": "ausente en lo que se publica"
+    }
+  ]
+}

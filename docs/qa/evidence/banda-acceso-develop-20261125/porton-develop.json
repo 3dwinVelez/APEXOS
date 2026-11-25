@@ -1,0 +1,89 @@
+{
+  "instrumento": "porton de promocion desarrollo -> develop (la banda de la app mudada al inicio de sesion)",
+  "fecha_local": "2026-11-25T17:25:00-05:00",
+  "fecha_utc": "2026-11-25T22:25:00Z",
+  "autorizacion": "El dueno del proyecto (Edwin), 2026-11-25: «procede con la correccion de develop para esta intervencion y garantiza que quede correctamente implementada sin tocar otros cambios». La orden es puntual: la correccion de montura de este frente, no la rama completa. No cubre main, force push, rebase de ramas permanentes, migraciones remotas, infraestructura, cambios en Railway/Supabase ni borrado de ramas.",
+  "change_id": "banda-acceso-develop-20261125",
+  "candidate_ref": "codex/qa-boton-app-movil-develop-20261125",
+  "target_head": "95bf7d5d05537e42860309104c3b5c3ae6b8ed9a",
+  "source_head": "c97250089f272b43d36028af47ca456232ae56e9",
+  "commit_funcional_certificado": "c97250089f272b43d36028af47ca456232ae56e9",
+  "antepasado_comun": "8208d9417ba6e1aff03bb5529bd5ec6aac074a0b",
+  "commits_de_origen": [
+    "c9725008 (montura en el acceso, retiro del tablero, git mv a components/system, contrato 13/13, certificado 126/126, control de mutacion 121/126, documento, catalogo, brief y canon)"
+  ],
+  "transporte": {
+    "modo": "replay_puntual",
+    "por_que_no_merge": "origin/develop esta 140 commits adelante en lo suyo y origin/desarrollo 62 en lo propio, con antepasado comun 8208d941. Un merge de ramas barreria cientos de rutas de otros frentes (entre ellas cd3a88e5 de aislamiento de tenant en horarios, que no esta en desarrollo) hacia develop o las arrancaria de desarrollo; el candado de origen, que exige que cada blob del diff sea el blob de origin/desarrollo, no lo permitiria sin waivers. No se declaran waivers.",
+    "como_se_armo": "se reutilizo el worktree auxiliar del porton anterior, limpio y en la punta exacta de origin/develop (95bf7d5d), sin copiar ni enlazar node_modules (regla 40). `git checkout origin/desarrollo -- <las nueve rutas>` y `git rm apps/web/components/lobby/AppInstallBand.tsx`. Ningun hunk se escribio a mano.",
+    "invariantes": "10/10 validadas con scripts/certifications/promotion-migration-check.js (blob 309ddade, identico en las dos ramas) contra el arbol del candidato, y el control de mutacion del propio instrumento en verde con 3 derivas que quedan rojas."
+  },
+  "medicion_previa_al_replay": {
+    "regla": "un replay por archivo solo es honesto si el destino no tiene lineas propias en esa ruta. Se mide de dos maneras: blob de origin/develop contra blob de origin/desarrollo~1 (la punta antes de mi correccion), y numstat del antepasado comun a la punta del destino.",
+    "resultado": "seis de las siete rutas preexistentes tienen blob identico entre origin/develop y origin/desarrollo~1: login/page.tsx (89415725), dashboard/page.tsx (f663329f), components/lobby/AppInstallBand.tsx (6a80868f), la prueba (ab47ae84), el certificado (5d67189f) y docs/project/app-movil.md (13591ffb). Llevar el blob nuevo no borra trabajo ajeno.",
+    "unica_excepcion": "docs/briefs/2026-11-24-boton-app-movil-lobby.md (e6e5e754 en develop contra 8849d60e en desarrollo~1): develop conserva la version que subio el porton anterior y le falta la contabilidad que escribi despues del empuje. Medido el diff por la ruta: +56 -1. La unica linea que se va es la casilla «Promocion desarrollo -> develop: requiere manifiesto...», que es de este frente y ya esta cumplida. Cero lineas de otros frentes en riesgo.",
+    "primitivas": "apps/web/components/ui/button.tsx y apps/web/components/ui/ModalFrame.tsx siguen blob-identicos entre origin/desarrollo y origin/develop: el boton y el dialogo que se certificaron en navegador son los mismos que va a servir el destino.",
+    "importaciones": "git grep sobre origin/develop por AppInstallBand y mobileAppInstall: despues del replay no queda ninguna referencia viva fuera del inventario. Las menciones restantes son los cuatro archivos de contabilidad del porton anterior, que son registro historico y no codigo."
+  },
+  "rutas_que_NO_suben_y_por_que": {
+    "apps/web/lib/mobileAppInstall.ts": "no viaja porque no cambio: la libreria de copys y deteccion esta blob-identica (83d7bd96) en las dos ramas desde el porton anterior. La correccion es de montura, no de copy.",
+    "package.json": "sigue sin viajar por la misma razon del porton anterior: origin/desarrollo tiene 164 lineas y origin/develop 139; a develop le faltan lineas de otros frentes y apps/control-tower no existe alli. Traer el blob reinstalaria scripts que apuntan a archivos que no estan en la rama. El alias `certify:app-install:local` no viaja: en develop el instrumento se invoca con `node scripts/certifications/mobile-app-install-browser-local.js`, que es exactamente lo que el alias ejecuta.",
+    "docs/design/APEXOS_COMPONENT_CATALOG.md": "el archivo no existe en origin/develop. La correccion toca una fila del catalogo (la ruta del componente), y subir el blob de desarrollo crearia en develop una pagina de 129 lineas que esa rama nunca tuvo: fuera del alcance. Queda como deriva declarada, igual que en el porton anterior.",
+    "agents/registry.json y agents/*/SKILL.md y .qoder/skills/*/SKILL.md": "el canon no viaja en este porton. origin/develop tiene el equipo atrasado contra origin/desarrollo (apexos-frontend sin la regla 62, apexos-qa sin las 133/134/135, apexos-brief sin 114/115/116, equipo-apexos sin 78/79/80, apexos-git-guardian sin 57/58) y ademas una linea de linaje propio. Forzar el registry dejaria al archivo declarando sha256 de SKILL.md que no suben: `npm run agents:check` se pondria rojo en el candidato. El canon viaja entero o no viaja, y eso es intervencion aparte.",
+    "agents/CHANGELOG.md": "desarrollo vs develop conserva lineas propias del porton de la foto y le faltan secciones de otros frentes. No se arrastra.",
+    "apps/control-tower/**": "por regla de repositorio no promociona y no esta en el inventario.",
+    "docs/qa/evidence/app-install-acceso-20261125/*.png": "las nueve capturas quedan en el arbol de origen. Suben los dos JSON con los 126/126 y el control 121/126; el instrumento regenera las imagenes donde se corre. Es decision tomada por el plan de choque de disco (2026-11-18), no un olvido."
+  },
+  "prueba_de_contrato_en_el_destino": {
+    "comando": "node --experimental-strip-types --no-warnings --test apps/web/test/mobile-app-install.test.mjs",
+    "arbol": "worktree del candidato, sin node_modules: la suite lee fuente con node:test puro",
+    "resultado": "13/13",
+    "evidencia": "suites-candidato.json"
+  },
+  "regresion_en_el_destino": {
+    "comando": "node --experimental-strip-types --no-warnings --test sobre las nueve suites que leen login/page.tsx o dashboard/page.tsx",
+    "resultado": "81/81",
+    "que_protege": "el acceso (contraste de errores, fase cero de UX, marcacion solo-lectura, silencio de ventanillas tecnicas) y el tablero heredado (lobby V4 sin botones en el hero, portafolio de modulos del tenant, experiencia de dos fases). Las nueve existian en develop antes de este porton y corren contra el arbol ya con la banda en el acceso y fuera del tablero.",
+    "evidencia": "suites-candidato.json"
+  },
+  "certificacion_de_navegador": {
+    "medida_en": "origin/desarrollo c9725008, artefacto de produccion servido por next start (BUILD_ID R-dJE_2uSjVBDXuUGfcyo, git_head b802a251)",
+    "resultado": "126/126, cero rojos, cuatro escenarios (movil claro, movil oscuro, escritorio claro, escritorio oscuro), nueve capturas, destino externo sondeado vivo 200 con titulo «APEXOS Web Movil»",
+    "que_jura": "banda visible sin sesion (tiene_token false), boton type=button y fuera del <form> medido con closest, cero peticiones a /auth/(login|token) al pulsarlo, banda dentro de la columna sin desborde horizontal (308 px en movil, 294 px en escritorio), tema claro y oscuro distintos, y el tablero con seis modulos servidos sin banda ni enlaces a la app.",
+    "por_que_cubre_el_candidato": "las nueve rutas que producen la pantalla y la miden viajan blob-identicas (paridad-rutas-llevadas.txt), incluidas la prueba de contrato y el instrumento, y las dos primitivas (ui/button.tsx, ui/ModalFrame.tsx) son las mismas en las dos ramas. El worktree del candidato no tiene node_modules y no se le creo uno (plan de disco), asi que la pata que falta es la corrida contra el ambiente desplegado: eso es precisamente el DESPUES de este porton.",
+    "despues_pendiente": "correr el mismo instrumento contra el acceso desplegado en QA desde develop y versionarlo en la contabilidad post-push."
+  },
+  "limites_declarados": [
+    "No se corrio `next build` ni `next start` dentro del worktree del candidato: no hay node_modules y la regla de este puesto es no copiarlos ni enlazarlos. La equivalencia se probo por blob ruta por ruta, no por narracion.",
+    "No se corrio la suite web completa (907 pruebas) en el candidato: exige dependencias. En el arbol de origen esta medida, 902 pasan con cinco rojos preexistentes de otros frentes.",
+    "El DESPUES en el navegador desplegado no puede viajar dentro de este commit: describe una punta que todavia no existe.",
+    "No se toca main, no se despliega, no se cambia ninguna variable en Railway."
+  ],
+  "rutas_inventario": 18,
+  "rutas_llevadas_de_desarrollo": 9,
+  "rutas_nacidas_en_el_porton": [
+    "docs/qa/evidence/banda-acceso-develop-20261125/porton-develop.json",
+    "docs/qa/evidence/banda-acceso-develop-20261125/suites-candidato.json",
+    "docs/qa/evidence/banda-acceso-develop-20261125/paridad-rutas-llevadas.txt",
+    "docs/qa/evidence/banda-acceso-develop-20261125/spec-invariantes.json",
+    "docs/qa/evidence/banda-acceso-develop-20261125/invariantes-replay.json",
+    "docs/qa/evidence/banda-acceso-develop-20261125/control-de-mutacion-instrumento.json",
+    "docs/qa/manifests/banda-acceso-develop-20261125-scope.json",
+    "docs/qa/manifests/banda-acceso-develop-20261125-preqa.json"
+  ],
+  "paridad_por_blob": {
+    "metodo": "blob del indice del candidato contra blob en origin/desarrollo, ruta por ruta",
+    "rutas_comparadas": 9,
+    "blobs_distintos": 0,
+    "waivers_declarados": 0,
+    "evidencia": "paridad-rutas-llevadas.txt"
+  },
+  "gates_previos_del_origen": {
+    "contrato": "13/13",
+    "certificacion_navegador": "126/126",
+    "control_de_mutacion_del_producto": "121/126 con los cinco rojos esperados (el tablero ofrece la banda y la banda vive dentro del formulario)",
+    "suite_web": "907 pruebas, 902 pasan, 5 fallan (preexistentes de otros frentes)",
+    "agents_sync_check_preflight_coverage": "11 agentes y 11 documentos, preflight OK_CON_ADVERTENCIAS, coverage OK, test:agents 46/46",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit: exito 0"
+  }
+}
