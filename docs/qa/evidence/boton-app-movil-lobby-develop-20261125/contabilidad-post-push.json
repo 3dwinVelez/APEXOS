@@ -1,0 +1,91 @@
+{
+  "tipo": "contabilidad_post_push",
+  "change_id": "boton-app-movil-lobby-develop-20261125",
+  "fecha": "2026-11-25T14:20:00-05:00",
+  "instruccion_del_dueno": "porfavor extiende solo el cambio del boton hacia develop",
+  "lo_que_subio": {
+    "rutas": 26,
+    "detalle": "18 rutas de la aplicacion (el boton, la miniguia, el instrumento de navegador, la prueba de contrato, el brief, la nota del producto y los 11 archivos de evidencia del 2026-11-24) + 8 rutas del porton (dos manifiestos y seis archivos de evidencia).",
+    "cero_borrados": true,
+    "paquete": "1 M + 25 A"
+  },
+  "refs_publicados": {
+    "origen": {
+      "rama": "desarrollo",
+      "punta_antes": "2e5fff3f12ee1bf123332afcc80f8ec96d6f5be3",
+      "punta_despues": "9e9052ea3451025b2fafafd2260d4989054fea86",
+      "push": "fast-forward 2e5fff3f..9e9052ea (solo las 8 rutas del porton)"
+    },
+    "destino": {
+      "rama": "develop",
+      "punta_antes": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+      "punta_despues": "95bf7d5d05537e42860309104c3b5c3ae6b8ed9a",
+      "commits_que_suben": [
+        "b28fabf010ffae36fc87ac332fd58be5e3f72e82 (aplicacion, 18 rutas)",
+        "95bf7d5d05537e42860309104c3b5c3ae6b8ed9a (porton, 8 rutas)"
+      ],
+      "transporte": "replay_puntual: 0 waived, 138 commits propios de develop intactos, ningun retroceso de archivo",
+      "dry_run_previo": "c0fbb4b9..95bf7d5d  95bf7d5d -> develop (sin signo +, o sea fast-forward real y no forzado)"
+    },
+    "rama_auxiliar": "codex/qa-boton-app-movil-develop-20261125 (vive solo en el worktree local; no se empujo al remoto y espera orden expresa de borrado junto con C:/Users/mq1/Documents/Proyectos/apexos-cand-boton-app-develop-20261125)"
+  },
+  "paridad_post_push": {
+    "rutas_publicadas": 26,
+    "blobs_distintos_vs_origin_desarrollo": 0,
+    "metodo": "para cada ruta del diff c0fbb4b9..origin/develop se comparo el blob contra origin/desarrollo con git rev-parse --verify <ref>:<ruta>",
+    "ancestria": "c0fbb4b9 es ancestro de 95bf7d5d (fast-forward) y 2e5fff3f es ancestro de origin/desarrollo; merge-base(origin/develop, 2e5fff3f) = 8208d941, que es el replay_baseline declarado"
+  },
+  "compuertas_verbatim": {
+    "alcance": {
+      "instrumento": "node scripts/validate-promotion-scope.js docs/qa/manifests/boton-app-movil-lobby-develop-20261125-scope.json 95bf7d5d origin/develop",
+      "corrido_en": "arbol de desarrollo (punta local 9e9052ea)",
+      "salida": "ALCANCE DE PROMOCION VALIDO: boton-app-movil-lobby-develop-20261125 (26 rutas, transporte puntual: cada blob verificado contra origin/desarrollo, origen verificado contra origin/desarrollo)",
+      "exit_code": 0
+    },
+    "pre_qa": {
+      "instrumento": "node scripts/validate-preqa-promotion-evidence.js docs/qa/manifests/boton-app-movil-lobby-develop-20261125-preqa.json",
+      "corrido_en": "arbol del candidato (95bf7d5d, limpio) y despues en el arbol de desarrollo",
+      "salida": "AUTORIZACION PRE-QA VALIDA: boton-app-movil-lobby-develop-20261125",
+      "exit_code": 0,
+      "identidad_del_instrumento": "el blob de scripts/validate-preqa-promotion-evidence.js es fde6dae3 en origin/develop y en origin/desarrollo: la misma pieza, medida en los dos arboles"
+    },
+    "guard_gobernanza": {
+      "instrumento": "APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP node scripts/git-governance-guard.js promote desarrollo-to-develop",
+      "corrido_en": "arbol del candidato, worktree limpio (git status --porcelain = 0 lineas)",
+      "salida": "(sin texto) y exit code 0: el guard solo habla cuando bloquea",
+      "exit_code": 0,
+      "identidad_del_instrumento": "scripts/git-governance-guard.js = 21aae5c1 en las dos ramas"
+    }
+  },
+  "rojo_del_instrumento_de_alcance": {
+    "que_paso": "la primera corrida del porton de alcance se hizo dentro del worktree del candidato y salio roja con: ALCANCE DE PROMOCION INVALIDO: ni el candidato ni el destino contienen el commit funcional certificado",
+    "causa_medida": "el arbol de origin/develop (c0fbb4b9) trae una version vieja de scripts/validate-promotion-scope.js: 113 lineas y blob a98fc805, anterior por completo al bloque ORIGIN_BASELINE / REPLAY_TRANSPORT. La version canonica en desarrollo tiene 222 lineas y blob 7d0b5dfa, y es la que sabe leer transport: replay_puntual. El manifiesto declaraba el transporte desde el principio; lo que no existia era el lector.",
+    "como_se_resolvio": "se volvio a correr la MISMA compuerta con el instrumento del arbol donde nacio y se certifico el cambio (desarrollo), apuntando al candidato por sha (95bf7d5d) y al destino origin/develop. Salida verde arriba, literal. No se edito el manifiesto, no se le quito el campo transport y no se cambio una sola ruta del candidato para complacer el instrumento.",
+    "lo_que_esta_prohibido_aqui": "un rojo del porton nunca se arregla aflojando el candado ni cambiando el contenido del candidato; primero se verifica con que version del instrumento se midio. Un verde obtenido con un instrumento mas viejo que el canon tampoco certifica.",
+    "regla_versionada": "apexos-qa 2.123.0 (regla 134) y apexos-git-guardian 2.42.0 (regla 58)"
+  },
+  "despues_despliegue_qa": {
+    "ambiente": "https://apexos-web-qa-production.up.railway.app (web de QA, se despliega desde develop)",
+    "sonda": "lectura de solo obtencion del arbol servido, sin escribir nada",
+    "hallazgo": "el HTML de /dashboard referencia 14 chunks y el chunk /_next/static/chunks/2i5x12au5xr0p.js trae literalmente 'Descarga nuestra app' (1), 'Crear acceso directo' (1) y 'appapexos-production.up.railway.app' (1). El porton de la raiz / no lo trae: la banda vive dentro del tablero, como esta disenado.",
+    "que_cubre": "prueba que el binario desplegado en QA ya contiene la pantalla; no reemplaza la corrida del instrumento de navegador contra QA.",
+    "pendiente": "la corrida de los 111 controles de mobile-app-install-browser-local contra el lobby de QA desplegado (claro/oscuro, movil/escritorio y el caso sin modulos) sigue siendo la pata formal del DESPUES y se versiona cuando se ejecute."
+  },
+  "derivas_que_quedan": [
+    "package.json: la linea certify:app-install:local sigue sin viajar a develop (164 lineas en desarrollo contra 139 en develop, con tres lineas ajenas de otra sesion en el medio). El instrumento se puede correr por node directo; el alias queda pendiente de la proxima promocion que lleve el paquete de scripts completo.",
+    "docs/design/APEXOS_COMPONENT_CATALOG.md: no existe en develop, por eso no subio. Se alinea con el canon cuando se integre el catalogo, no en este porton.",
+    "El canon de agentes (agents/registry.json, agents/CHANGELOG.md y los SKILL.md de cinco agentes) esta mas nuevo en desarrollo que en develop: el guardian 2.39.0/2.41.0 fechado el 2026-11-25, el qa sin las reglas 131/132/133 y el frontend sin la 61. Alinear el canon de develop es una intervencion aparte y no se mete en un porton de producto.",
+    "apps/control-tower/** no promociona por regla de repositorio: es herramienta de puesto de trabajo que reposa en desarrollo.",
+    "main no se toco. La orden fue expresa: por el momento no se toca produccion."
+  ],
+  "errores_declarados": [
+    "Corri la primera compuerta de alcance en el arbol del destino y presente ese rojo como si fuera el veredicto del candidato; al medir los dos blobs del validador resulto ser el instrumento viejo de develop. Quaed escrito arriba con la causa y la salida verde real.",
+    "Dos intentos previos de contar las pruebas TAP salieron nulos (primero por CRLF, despues por una expresion \\d que el shell redujo a d). Se volvio a correr la suite completa con [0-9]+ y la correccion queda dentro de suites-candidato.json, no en silencio.",
+    "La sonda de chunks de QA usa una lista de frases unida por OR en la primera pasada; la confirmacion literal por frase esta en la segunda pasada y es la que se cita aqui."
+  ],
+  "topes_declarados": [
+    "En el worktree del candidato no se instalo node_modules (regla de disco y regla 40 del guardian), asi que no hay next build ni next start del candidato: la equivalencia funcional se probo por blob de las cinco rutas que producen la pantalla y de las dos primitivas que consumen.",
+    "No se corro la suite web completa (905 pruebas) en el candidato; si corro la prueba de contrato del boton (11/11) y las cuatro suites del lobby que ya vivian en develop (35/35) dentro de ese arbol.",
+    "El DESPUES formal de navegador contra QA sigue pendiente (ver despues_despliegue_qa.pendiente)."
+  ]
+}

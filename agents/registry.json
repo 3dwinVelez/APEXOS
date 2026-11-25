@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-24",
+  "generated_at": "2026-11-25",
   "canonical_root": ".qoder/skills",
   "mirror_root": "agents",
   "semver_policy": {
@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.101.0",
-      "updated_at": "2026-11-24",
-      "sha256": "37634c40817b43ccad6de528bfee775442a7d6f4be980371457bef0d18425c91",
+      "version": "2.102.0",
+      "updated_at": "2026-11-25",
+      "sha256": "56d3e68d803370ee23fc194584471e3cea66a98114f725fba50782547c56a5a2",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -260,9 +260,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.41.0",
-      "updated_at": "2026-11-24",
-      "sha256": "b4d5d00a0faa075af833e0f2fde5167ffb22ddc3a2c99c96c1f0e127f2e28aa9",
+      "version": "2.42.0",
+      "updated_at": "2026-11-25",
+      "sha256": "b62229db5b1010942f3c84c903499138f5cbf2f5bc41d9d9c9948f7badfc8ed3",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -339,9 +339,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.122.0",
-      "updated_at": "2026-11-24",
-      "sha256": "ffb4f6864f751212e852e125c59cdd1dbd2133a2476d92a1a05400632dd9e6f6",
+      "version": "2.123.0",
+      "updated_at": "2026-11-25",
+      "sha256": "0cac99c3188cf6ecd0863f016b4bfbf4b88fdc1e19228b75e3a0bbfa676e18aa",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -491,9 +491,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.67.1",
-      "updated_at": "2026-11-24",
-      "sha256": "948f92388d323a4fb93a2f3880271f36010643c5b8c93c31e98c1a224e7d54e2",
+      "version": "2.68.0",
+      "updated_at": "2026-11-25",
+      "sha256": "c0b830eb06591ad06052aef2c1b19fc14c92d80bc18131fe3b896edb124c6865",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [

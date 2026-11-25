@@ -97,7 +97,7 @@ Verificable: en móvil la guía muestra los pasos y el enlace a la app; en escri
 ## 10. Autorizaciones requeridas
 
 - [x] Trabajar en `desarrollo` y empujar a `origin/desarrollo` (autorización permanente acotada de AGENTS.md).
-- [ ] Promoción `desarrollo -> develop`: requiere manifiesto de alcance y `npm run qa:preqa:evidence`. El dueño ya dijo que el destino es `develop`, pero la compuerta se corre aparte y con evidencia.
+- [x] Promoción `desarrollo -> develop`: autorizada por el dueño el 2026-11-25 («extiende solo el cambio del boton hacia develop»), corrida con manifiesto de alcance v2 y `npm run qa:preqa:evidence` en verde. Cerrada en `95bf7d5d`; ver sección 13. El botón viaja solo: `main` no se tocó.
 - [ ] Ninguna autorización para `main`, Railway, Supabase ni despliegues.
 
 ## 11. Documentación, agentes y publicación (obligatoria)
@@ -129,3 +129,21 @@ Verificable: en móvil la guía muestra los pasos y el enlace a la app; en escri
   1. Decidir si el botón debe apuntar a una instancia de la app que lea datos de producción —la enlazada hoy se autodeclara `environment: QA`— (dueño + `apexos-backend`). Es una variable de build o el valor quemado, no un cambio de lógica.
   2. Promoción `desarrollo -> develop` con manifiesto de alcance v2 y `npm run qa:preqa:evidence` (`apexos-git-guardian` + `apexos-qa` + dueño).
   3. Repetir la guía en el navegador desplegado de QA una vez exista ese despliegue (dueño).
+
+## 13. Promoción a `develop` cerrada (2026-11-25)
+
+- **Orden del dueño**: «porfavor extiende solo el cambio del boton hacia develop» (2026-11-25). Solo el botón y su guía; `main` queda intacto.
+- **Transporte**: `replay_puntual`, no merge. Medido antes de decidir: `origin/develop` tenía **138** commits propios y un merge barrería más de **1.000** rutas ajenas. El candidato se armó sobre `c0fbb4b9` en el worktree `apexos-cand-boton-app-develop-20261125` (rama auxiliar `codex/qa-boton-app-movil-develop-20261125`).
+- **Inventario**: **26** rutas exactas (**1 M** + **25 A**), **0** borrados, **0** excepciones de origen. El manifiesto es `docs/qa/manifests/boton-app-movil-lobby-develop-20261125-scope.json` y su gemelo pre-QA `...-preqa.json`.
+- **Compuertas, las tres verdes**: `ALCANCE DE PROMOCION VALIDO: boton-app-movil-lobby-develop-20261125 (26 rutas, transporte puntual: cada blob verificado contra origin/desarrollo)`; `AUTORIZACION PRE-QA VALIDA: boton-app-movil-lobby-develop-20261125`; `git-governance-guard.js promote desarrollo-to-develop` callado con código de salida **0** sobre un worktree limpio.
+- **Un rojo que era del instrumento, no del candidato**: la primera corrida del portón de alcance se hizo dentro del árbol del candidato y salió «ni el candidato ni el destino contienen el commit funcional certificado». Causa medida: `develop` trae un `validate-promotion-scope.js` de **113** líneas (blob `a98fc805`) que aún no sabe leer `transport: replay_puntual`; la versión canónica de `desarrollo` tiene **222** líneas (blob `7d0b5dfa`). Se re-corró la misma compuerta con el instrumento de la rama donde nació el cambio, apuntando al candidato por sha. No se aflojó el candado ni se tocó una ruta del candidato para complacerlo. Los otros dos instrumentos sí son idénticos en las dos ramas (`fde6dae3` y `21aae5c1`).
+- **Medido dentro del árbol del destino**: prueba de contrato del botón **11/11** y las cuatro suites del lobby que ya vivían en `develop` **35/35**, 0 fallos. Los invariantes del replay con el instrumento del repo: **18/18** carry, 0 edit por hunks, y su control de mutación verde con **3** derivas que ponen rojo.
+- **Publicación**: fast-forward `c0fbb4b9..95bf7d5d` en `origin/develop`, verificado con `--dry-run` antes (sin signo `+`, o sea no forzado). Dos commits: `b28fabf0` (aplicación, 18 rutas) y `95bf7d5d` (portón, 8 rutas). En `desarrollo` quedó `9e9052ea` con las mismas 8 rutas espejadas, porque el candado compara cada blob contra `origin/desarrollo` vivo.
+- **Paridad después del empuje**: **26** rutas publicadas, **0** blobs distintos entre `origin/develop` y `origin/desarrollo`.
+- **Señal de despliegue en QA**: el lobby servido en `apexos-web-qa-production` ya trae el botón —el chunk `2i5x12au5xr0p.js` del `/dashboard` contiene literalmente «Descarga nuestra app», «Crear acceso directo» y `appapexos-production.up.railway.app`—; en la raíz `/` no aparece, que es lo diseñado. Esto prueba el artefacto, no reemplaza la corrida de los 111 controles contra QA.
+- **Qué no subió, medido**: `package.json` (164 líneas en `desarrollo` contra 139 en `develop`, con tres líneas ajenas en el medio) —el instrumento se corre por `node` directo y el alias queda pendiente—; `docs/design/APEXOS_COMPONENT_CATALOG.md` (no existe en `develop`); el canon de agentes completo (cinco agentes más nuevos en `desarrollo`); `apps/control-tower/**` (no promociona por regla de repositorio). Todo declarado como deriva en el manifiesto, no callado.
+- **Pendientes con dueño**:
+  1. Correr el instrumento de navegador (111 controles) contra el lobby de QA ya desplegado y versionar el DESPUÉS (`apexos-qa`).
+  2. Alinear el canon de agentes de `develop` con `desarrollo` en una intervención aparte (`equipo-apexos` + `apexos-git-guardian`).
+  3. Decidir si el enlace debe apuntar a una instancia de la app que lea producción (dueño + `apexos-backend`).
+  4. Orden expresa para borrar la rama auxiliar `codex/qa-boton-app-movil-develop-20261125` y su worktree (`apexos-git-guardian`).
