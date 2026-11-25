@@ -18,7 +18,8 @@
     "paso_3_guard_gobierno": "APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP node scripts/git-governance-guard.js promote desarrollo-to-develop, con git status --porcelain vacio. Exit 0 sin mensaje (el comando imprime solo cuando bloquea). Control de contraste: corrido SIN la bandera respondio GOBIERNO GIT BLOQUEADO: Promocion desarrollo-to-develop requiere APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP. El candado tiene dientes medidos en la misma corrida.",
     "paso_4_dry_run": "git push --dry-run origin HEAD:develop -> «   95bf7d5d..a2191e0d  HEAD -> develop», sin signo + o forced update, o sea avance rapido real contra la base que declara el manifiesto.",
     "paso_5_push": "git push origin HEAD:develop -> «   95bf7d5d..a2191e0d  HEAD -> develop». Aqui, y solo aqui, la palabra publicado tiene soporte.",
-    "declaracion_de_error": "Entre el paso 4 y el paso 5 se le dijo al dueno que las compuertas habian pasado (cierto) en un mensaje que se pudo leer como publicacion hecha (no lo estaba). Se corrige en la misma respuesta y queda escrito: el dry-run no empuja nada. Regla versionada en apexos-git-guardian 2.43.0."
+    "declaracion_de_error": "Entre el paso 4 y el paso 5 se le dijo al dueno que las compuertas habian pasado (cierto) en un mensaje que se pudo leer como publicacion hecha (no lo estaba). Se corrige en la misma respuesta y queda escrito: el dry-run no empuja nada. Regla versionada en apexos-git-guardian 2.43.0.",
+    "segundo_error_declarado": "Cerrada la publicacion, esta contabilidad se anuncio como commit ya hecho cuando todavia solo estaba escrito el archivo del mensaje: el commit 24468e21 nacio despues de ese mensaje y el error se consigno aqui en lugar de arreglarse en silencio. Es la misma familia que la regla 59: redactar el cierre por delante de la operacion que describe."
   },
   "diff_neto_publicado": {
     "lineas_de_git_diff_name_status": 17,
