@@ -7,6 +7,7 @@ const { punchPhotoItems, punchMonitorMetadata } = require("./punchEvidence");
 const { findUserForEmployee } = require("./employeeUserLink");
 const prisma = require("../../core/prisma");
 const banks = require("./banks").bankService(prisma);
+const { buildDaviviendaPayrollFile } = require("./davivienda-file");
 const { Prisma } = require("@prisma/client");
 const { randomUUID } = require("crypto");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
@@ -7170,6 +7171,47 @@ async function listPayrollDocuments(tenantId, query = {}) {
     LIMIT ${Math.min(Number(query.limit || 200), 500)}
   `;
     return rows.map((row) => ({ ...row, lines: payrollReceiptLines(row.lines) }));
+  });
+}
+
+const BANK_FILE_EXCLUDED_STATUSES = ["anulado", "anulada", "cancelado", "cancelada", "cancelled", "canceled", "void", "voided"];
+
+async function buildPayrollBankFile(tenantId, query = {}) {
+  const periodKey = String(query.period_key || "").trim();
+  if (!periodKey) throw validationError("period_key es obligatorio.", 400, "PERIODO_NOMINA_REQUERIDO");
+  const todayBogota = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
+  const applicationDate = String(query.application_date || todayBogota).slice(0, 10);
+  const config = await getPayrollConfig(tenantId);
+  const rows = await prisma.runWithTenant(tenantId, () => prisma.$queryRaw`
+    SELECT d.employee_id, d.net, e.metadata AS employee_metadata
+    FROM th_nomina_documentos d
+    LEFT JOIN "Employee" e ON e.id = d.employee_id AND e.tenant_id = d.tenant_id
+    WHERE d.tenant_id = ${tenantId}
+      AND d.period_key = ${periodKey}
+      AND d.net > 0
+      AND lower(COALESCE(d.status, '')) <> ALL(${BANK_FILE_EXCLUDED_STATUSES}::text[])
+    ORDER BY d.employee_id
+  `);
+  if (!rows.length) throw validationError("No hay nomina liquidada con valor a pagar para ese periodo.", 422, "PLANO_SIN_PAGOS");
+  const missing = [];
+  const mapped = [];
+  for (const row of rows) {
+    const meta = row.employee_metadata || {};
+    const label = `${meta.name || "Empleado " + row.employee_id} (${meta.document || "sin documento"})`;
+    if (!meta.bank_account_code || !meta.bank_code) { missing.push(label); continue; }
+    mapped.push({ label, document: meta.document, documentType: meta.document_type, accountNumber: meta.bank_account_code, accountType: meta.bank_account_type === "corriente" ? "CC" : "CA", bankCode: meta.bank_code, amount: Number(row.net) });
+  }
+  if (missing.length) {
+    const error = validationError(`Empleados sin banco o cuenta bancaria registrada: ${missing.join("; ")}.`, 422, "PLANO_EMPLEADOS_SIN_CUENTA");
+    error.details = missing;
+    throw error;
+  }
+  const bank = config.bank_file || {};
+  return buildDaviviendaPayrollFile({
+    company: { nit: bank.company_nit, dv: bank.company_dv, debitAccount: bank.debit_account, debitAccountType: bank.debit_account_type },
+    applicationDate,
+    periodKey,
+    rows: mapped
   });
 }
 

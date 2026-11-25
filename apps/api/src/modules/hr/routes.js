@@ -240,6 +240,15 @@ async function hrRoutes(fastify) {
   fastify.get("/hr/payroll/liquidations", { preHandler: requirePermission("payroll", "read") }, (request) => service.listPayrollDocuments(request.user?.tenant_id, request.query));
   fastify.post("/hr/payroll/liquidations", { schema: schemas.payrollLiquidationSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.runPayrollLiquidation(request.user?.tenant_id, request.body || {}, request.user));
   fastify.delete("/hr/payroll/liquidations", { schema: schemas.payrollLiquidationDeleteSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.deletePayrollLiquidation(request.user?.tenant_id, request.body || {}));
+  const sendDaviviendaFile = async (request, reply) => {
+    const file = await service.buildPayrollBankFile(request.user?.tenant_id, request.query || {});
+    return reply
+      .header("Content-Type", "text/plain; charset=us-ascii")
+      .header("Content-Disposition", `attachment; filename="${file.fileName}"`)
+      .send(file.content);
+  };
+  fastify.get("/hr/payroll/liquidations/bank-file/davivienda", { preHandler: requirePermission("payroll", "read") }, sendDaviviendaFile);
+  fastify.get("/talento-humano/nomina/liquidaciones/plano-davivienda", { preHandler: requirePermission("payroll", "read") }, sendDaviviendaFile);
   fastify.get("/hr/payroll/liquidations/:id/pdf", { preHandler: requirePermission("payroll", "read") }, sendPayrollPdf);
   fastify.get("/hr/payroll/adjustments", { preHandler: requirePermission("payroll", "read") }, (request) => service.listPayrollAdjustments(request.user?.tenant_id, request.query));
   fastify.post("/hr/payroll/adjustments", { schema: schemas.payrollAdjustmentSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.createPayrollAdjustment(request.user?.tenant_id, request.body || {}, request.user));

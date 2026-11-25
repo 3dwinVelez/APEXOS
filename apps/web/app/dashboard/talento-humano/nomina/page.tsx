@@ -180,6 +180,7 @@ export default function PayrollLiquidationPage() {
   const [selectedDocument, setSelectedDocument] = useState<PayrollDocument | null>(null);
   const [receiptDocument, setReceiptDocument] = useState<PayrollDocument | null>(null);
   const [message, setMessage] = useState("");
+  const [bankFileDate, setBankFileDate] = useState(() => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date()));
   const [payrollFeedback, setPayrollFeedback] = useState<{ periodKey: string; status: "pending" | "success" | "error" | "warning"; title: string; detail: string } | null>(null);
   const payrollFeedbackRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -640,6 +641,36 @@ export default function PayrollLiquidationPage() {
     URL.revokeObjectURL(url);
   }
 
+  async function downloadDaviviendaFile() {
+    setBusy(true);
+    setMessage("Generando plano Davivienda...");
+    try {
+      const token = localStorage.getItem("token") || "";
+      const query = new URLSearchParams({ period_key: currentPeriodKey, application_date: bankFileDate });
+      const response = await fetch(`${API_BASE_URL}/api/v1/talento-humano/nomina/liquidaciones/plano-davivienda?${query.toString()}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { message?: string; error?: string } | null;
+        throw new Error(body?.message || body?.error || "No se pudo generar el plano Davivienda");
+      }
+      const disposition = response.headers.get("Content-Disposition") || "";
+      const fileName = /filename="?([^";]+)"?/i.exec(disposition)?.[1] || `DAVIVIENDA_NOMINA_${bankFileDate.replace(/-/g, "")}.txt`;
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      setMessage(`Plano Davivienda generado: ${fileName}.`);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "No se pudo generar el plano Davivienda");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function downloadAllPdfs() {
     const rowsToDownload = visibleRows.filter((row) => row.id);
     if (!rowsToDownload.length) {
@@ -915,7 +946,11 @@ export default function PayrollLiquidationPage() {
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-sm text-neutral-500">{visibleRows.length} de {rows.length} registros con horas</span>
             {!preview.length && visibleRows.some((row) => row.id) ? (
+              <>
               <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-50" disabled={busy} onClick={() => void downloadAllPdfs()} type="button"><Download size={15} /> Descargar PDFs</button>
+              <label className="inline-flex items-center gap-2 text-sm">Fecha de aplicación<input aria-label="Fecha de aplicación del plano" type="date" className="h-9 rounded-md border border-line px-2" value={bankFileDate} onChange={(event) => setBankFileDate(event.target.value)} /></label>
+              <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-50" disabled={busy || !bankFileDate} onClick={() => void downloadDaviviendaFile()} type="button"><Download size={15} /> Plano Davivienda</button>
+              </>
             ) : null}
           </div>
         </div>

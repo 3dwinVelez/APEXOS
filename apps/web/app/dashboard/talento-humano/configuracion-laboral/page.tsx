@@ -135,6 +135,9 @@ export default function LaborConfigurationPage() {
   const [saving, setSaving] = useState(false);
   const [transportAllowancePayment, setTransportAllowancePayment] = useState("ambas");
   const [savingTransportPayment, setSavingTransportPayment] = useState(false);
+  const [bankFile, setBankFile] = useState({ company_nit: "", company_dv: "", debit_account: "", debit_account_type: "corriente" });
+  const [savingBankFile, setSavingBankFile] = useState(false);
+  const [bankFileMessage, setBankFileMessage] = useState("");
   const [parameterModal, setParameterModal] = useState<null | { mode: "create" | "edit"; row?: LaborParameter }>(null);
   const [deductionModal, setDeductionModal] = useState<null | { mode: "create" | "edit"; row?: LaborDeduction }>(null);
   const [conceptModal, setConceptModal] = useState<null | { mode: "create" | "edit"; row?: SurchargeConcept }>(null);
@@ -152,9 +155,10 @@ export default function LaborConfigurationPage() {
       const [data, accountRows, payrollConfig] = await Promise.all([
         api<{ parameters: LaborParameter[]; deductions?: LaborDeduction[]; concepts: SurchargeConcept[]; payroll_concepts?: PayrollConcept[]; calendars?: CalendarDay[] }>(`/api/v1/talento-humano/configuracion-laboral?all=1&country=${country}`, { cache: "no-store" }),
         api<Account[]>("/api/v1/accounting/accounts?active=true&limit=1000", { cache: "no-store" }).catch(() => []),
-        api<{ parameters?: { transport_allowance_payment?: string } }>("/api/v1/talento-humano/configuracion-laboral/nomina", { cache: "no-store" }).catch(() => null)
+        api<{ parameters?: { transport_allowance_payment?: string }; bank_file?: Partial<typeof bankFile> }>("/api/v1/talento-humano/configuracion-laboral/nomina", { cache: "no-store" }).catch(() => null)
       ]);
       setTransportAllowancePayment(payrollConfig?.parameters?.transport_allowance_payment === "ultima" ? "ultima" : "ambas");
+      if (payrollConfig?.bank_file) setBankFile((current) => ({ ...current, ...payrollConfig.bank_file }));
       setParameters(Array.isArray(data.parameters) ? data.parameters : []);
       setDeductions(Array.isArray(data.deductions) ? data.deductions : []);
       setConcepts(Array.isArray(data.concepts) ? data.concepts : []);
@@ -172,6 +176,19 @@ export default function LaborConfigurationPage() {
   const activeNightEnd = useMemo(() => parameters.find((row) => row.active && row.code === "JORNADA_NOCTURNA_FIN"), [parameters]);
   const activeDailyExtra = useMemo(() => parameters.find((row) => row.active && row.code === "MAX_HE_DIARIO"), [parameters]);
   const activeWeeklyExtra = useMemo(() => parameters.find((row) => row.active && row.code === "MAX_HE_SEMANAL"), [parameters]);
+
+  async function saveBankFileConfig() {
+    setSavingBankFile(true);
+    setBankFileMessage("");
+    try {
+      await api("/api/v1/talento-humano/configuracion-laboral/nomina", { method: "PUT", body: JSON.stringify({ bank_file: bankFile }) });
+      setBankFileMessage("Configuración guardada.");
+    } catch {
+      setBankFileMessage("No se pudo guardar la configuración del archivo plano.");
+    } finally {
+      setSavingBankFile(false);
+    }
+  }
 
   async function saveTransportAllowancePayment(mode: string) {
     const previous = transportAllowancePayment;
@@ -392,6 +409,25 @@ export default function LaborConfigurationPage() {
                   <option value="ultima">Solo última quincena</option>
                 </select>
               </label>
+            </div>
+            <div className="mb-4 rounded-md border border-line bg-paper p-3">
+              <p className="text-sm font-semibold">Archivo plano Davivienda</p>
+              <p className="mt-1 text-xs text-neutral-500">Datos de la empresa y cuenta de la que se debita el pago masivo de nómina.</p>
+              <div className="mt-2 grid gap-3 sm:grid-cols-4">
+                <label className="block text-sm">NIT empresa (sin DV)<input aria-label="NIT empresa" inputMode="numeric" maxLength={15} className="mt-1 h-10 w-full rounded-md border border-line px-3" value={bankFile.company_nit} onChange={(event) => setBankFile((current) => ({ ...current, company_nit: event.target.value.replace(/D/g, "") }))} /></label>
+                <label className="block text-sm">DV<input aria-label="DV empresa" inputMode="numeric" maxLength={1} className="mt-1 h-10 w-full rounded-md border border-line px-3" value={bankFile.company_dv} onChange={(event) => setBankFile((current) => ({ ...current, company_dv: event.target.value.replace(/D/g, "") }))} /></label>
+                <label className="block text-sm">Cuenta débito<input aria-label="Cuenta débito" inputMode="numeric" maxLength={16} className="mt-1 h-10 w-full rounded-md border border-line px-3" value={bankFile.debit_account} onChange={(event) => setBankFile((current) => ({ ...current, debit_account: event.target.value.replace(/D/g, "") }))} /></label>
+                <label className="block text-sm">Tipo de cuenta
+                  <select className="mt-1 h-10 w-full rounded-md border border-line px-3" value={bankFile.debit_account_type} onChange={(event) => setBankFile((current) => ({ ...current, debit_account_type: event.target.value }))}>
+                    <option value="corriente">Corriente</option>
+                    <option value="ahorros">Ahorros</option>
+                  </select>
+                </label>
+              </div>
+              <div className="mt-3 flex items-center gap-3">
+                <button type="button" disabled={savingBankFile} className="h-10 rounded-md bg-ink px-4 text-sm font-semibold text-white disabled:opacity-60" onClick={() => void saveBankFileConfig()}>Guardar archivo plano</button>
+                {bankFileMessage ? <span className="text-xs text-neutral-600">{bankFileMessage}</span> : null}
+              </div>
             </div>
             <DataTable rows={parameters} kind="parameter" onEdit={(row) => openParameter(row as LaborParameter)} />
           </TabPanel>
