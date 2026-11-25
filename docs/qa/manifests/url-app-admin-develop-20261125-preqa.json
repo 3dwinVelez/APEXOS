@@ -1,0 +1,102 @@
+{
+  "change_id": "url-app-administrable-develop-20261125",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "promotion_branch": "codex/qa-url-app-admin-develop-20261125",
+  "commit": "40418d50",
+  "target_head": "3aaeeb32e9dc2ad519c401fcd2f487872ffa362e",
+  "origen_certificado": "d667276f2f95a0abe27abd5d37cd883e35f2ad02",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/url-app-administrable-20261125/local-certification.json",
+        "../evidence/url-app-admin-develop-20261125/suites-candidato.json",
+        "../evidence/url-app-admin-develop-20261125/porton-develop.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/url-app-administrable-20261125/local-certification.json",
+        "../evidence/url-app-admin-develop-20261125/paridad-rutas-llevadas.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/url-app-admin-develop-20261125/paridad-rutas-llevadas.txt",
+        "../evidence/url-app-admin-develop-20261125/suites-candidato.json",
+        "../evidence/url-app-admin-develop-20261125/spec-invariantes.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/url-app-admin-develop-20261125/suites-candidato.json",
+        "../evidence/url-app-administrable-20261125/local-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/url-app-admin-develop-20261125/suites-candidato.json",
+        "../evidence/url-app-admin-develop-20261125/invariantes-replay.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/mobile-app-url-admin-local.js",
+    "evidence": [
+      "../evidence/url-app-administrable-20261125/local-certification.json",
+      "../evidence/url-app-admin-develop-20261125/porton-develop.json"
+    ],
+    "controls": 28,
+    "passed": 28,
+    "failed": 0,
+    "arbol": "medida en origin/desarrollo d667276f sobre el artefacto de produccion servido por next start (build_id 7RPf_TbXOdwbM2VMO_Wna, head c682bdf4) contra una base efimera local que se crea y se tira: doce etapas -esquema 3, base de servicio 2, arranque 1, siembra 2, lectura publica 1, rbac 4, validacion 1, guardado 4, preparacion de navegador 3, acceso 4, administracion 1, control de mutacion 2-. La ventana de Administracion se abrio con sesion real y se miraron las tres capturas, no solo se archivarían.",
+    "escenarios": ["lectura-publica-sin-sesion", "matriz-rbac-401-401-403-200", "guardado-desde-administracion", "acceso-que-muestra-el-guardado", "respaldo-con-fila-torcida", "ventana-admin-antes-y-despues"],
+    "capturas": 3,
+    "destino_externo": "no se consulta un destino externo: este frente administra LA URL, no la app",
+    "controles_de_mutacion": "2/2 vistos en rojo: romper el normalizador del servicio deja roja la validacion, y dejar la pantalla sin pintar el autor deja roja la pata de navegador. El blob restaurado quedo verificado (9f29a3792873). El instrumento ya habia dado un rojo propio (25/26) que resulto ser del arnes y no del producto: leia el autor en el parrafo hermano y el autor vive en el mismo parrafo; al arreglar la lectura aparecio el defecto real que ese rojo tapaba (la pantalla no pintaba updated_by).",
+    "despues_pendiente": "la corrida del instrumento contra el acceso y la ventana de Administracion desplegados en QA desde develop es la pata que falta; hasta ahora corre contra un artefacto local, y se versiona en la contabilidad post-push."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/url-app-admin-develop-20261125/invariantes-replay.json",
+      "../evidence/url-app-admin-develop-20261125/control-de-mutacion-instrumento.json",
+      "../evidence/url-app-admin-develop-20261125/paridad-rutas-llevadas.txt",
+      "../evidence/url-app-admin-develop-20261125/merge-hunks.json",
+      "../evidence/url-app-admin-develop-20261125/suites-candidato.json"
+    ],
+    "basis": "La regresion del replay se mide por invariantes y no por narrativa: 11/11 rutas carry byte a byte contra origin/desarrollo, con el control de mutacion del propio instrumento en verde (3 derivas que quedan rojas). Las tres rutas que no caben en carry llevan hunks medidos por merge-hunks.js: +14 en schema, +7 en rbac y +95/-2 en la pantalla de Administracion, identicos linea a linea al parche con el que se certifico en desarrollo, y con los controles de linea ajena en verde (polling_minutes de develop sigue, los modelos Apex*/apex-control/Marcaciones siguen ausentes). Sobre el arbol del candidato corren el contrato del API (11/11) y el contrato web (19/19), y prisma validate dice verde. El instrumento promocional existe en develop con el mismo blob (309ddade) que en desarrollo, asi que la corrida no depende de una version que solo tiene la rama de origen."
+  },
+  "validation_summary": {
+    "certified_application_commit": "40418d50",
+    "baseline_preserved": "3aaeeb32e9dc2ad519c401fcd2f487872ffa362e",
+    "certificacion_local": "28/28 en doce etapas, control de mutacion 2/2",
+    "contrato_api_en_el_candidato": "11/11",
+    "contrato_web_en_el_candidato": "19/19",
+    "invariantes_replay": "11/11 carry, 0 edit por hunks, 3 waivers nominales",
+    "lineas_anadidas_por_hunks": 116,
+    "suite_web_completa_no_ejecutada_en_el_candidato": "apps/web/test/*.test.mjs y la certificacion en navegador piden node_modules y un build; el worktree no tiene uno y no se creo, para no repetir la caida del 2026-11-20 (git worktree remove vaciando 1173 archivos a traves de un enlace). La equivalencia se probo por contenido: once rutas byte a byte y tres con el parche exacto. Se declara el limite aqui en lugar de presentar la corrida como hecha.",
+    "evidence_policy": "La evidencia viaja versionada en docs/qa/evidence/url-app-admin-develop-20261125 y el JSON de docs/qa/evidence/url-app-administrable-20261125; las tres capturas PNG quedan en el arbol de origen por el plan de choque de disco (2026-11-18)."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-25T17:00:00-05:00",
+    "instruction": "si procede con el despliegue solo en develop porque primero es alinear develop, para este caso el cambio que estamos realizando solo debe ser en desarrollo y develop para corroborar sus funciones realiza solo estas instrucciones con mi autorizacion aun no tocaremos el ambiente de produccion",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "direct_push_to_develop": true
+    },
+    "authorization_basis": "La orden del 2026-11-25 ampara el despliegue de ESTE frente hacia develop y el trabajo necesario para corroborar sus funciones en QA. «aun no tocaremos el ambiente de produccion» cierra main y su base. No otorga force push, reescritura de historia compartida, infraestructura, cambios en Railway/Supabase ni borrado de ramas. La aplicacion de la migracion 20261125183000 en la base de QA es paso siguiente, se anuncia antes de ejecutarla y no se hace contra Produccion."
+  }
+}
