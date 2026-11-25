@@ -1,6 +1,7 @@
 const tenancy = require("../../middleware/tenancy");
 const { requirePermission, requireAdminCapability, requireAnyAdminCapability } = require("../../middleware/rbac");
 const service = require("./service");
+const platformConfig = require("./platform-config-service");
 
 async function adminRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
@@ -89,6 +90,17 @@ async function adminRoutes(fastify) {
   fastify.delete("/admin/users/:id/documents/:documentId", {
     preHandler: requireAdminCapability("users", "delete_physical_records")
   }, async (request) => service.removeUserDocument(request.user?.tenant_id, request.params.id, request.params.documentId, request.user?.id));
+
+  // Enlace de la app movil que ofrece el acceso. Es de plataforma (no de empresa) y solo hay dos
+  // claves en la tabla hoy; el valor se escribe auditoriado y se lee con el ambiente declarado por
+  // el servidor, para que quien administra sepa en que ambiente esta tocando.
+  fastify.get("/admin/platform/mobile-app", {
+    preHandler: requireAdminCapability("platform_settings", "read")
+  }, async () => platformConfig.getMobileAppConfig());
+
+  fastify.put("/admin/platform/mobile-app", {
+    preHandler: requireAdminCapability("platform_settings", "edit")
+  }, async (request) => platformConfig.saveMobileAppConfig(request.user?.tenant_id, request.user, request.body || {}));
 }
 
 module.exports = adminRoutes;

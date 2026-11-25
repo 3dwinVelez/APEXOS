@@ -4,6 +4,7 @@ import { TransportAdminCatalog, type TransportAdminCatalogKey } from "@/componen
 import { Button } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api, fallbackAdminPermissionCatalog } from "@/lib/api";
+import { MOBILE_APP_ADMIN_ENDPOINT, MOBILE_APP_ADMIN_LABELS, MOBILE_APP_FALLBACK_URL, type MobileAppAdminConfig } from "@/lib/mobileAppInstall";
 import { loadModuleAccess } from "@/lib/moduleAccess";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { MODULES } from "@/lib/modules";
@@ -158,7 +159,7 @@ type ConfigItem = {
   title: string;
   description: string;
   status: "configurado" | "pendiente" | "activo" | "restringido";
-  modal: "roles" | "users" | "masters" | "logs" | "info" | "sedes";
+  modal: "roles" | "users" | "masters" | "logs" | "info" | "sedes" | "app-movil";
   href?: string;
 };
 type ConfigCategory = {
@@ -656,6 +657,7 @@ const categories: ConfigCategory[] = [
     icon: Database,
     items: [
       { key: "preferencias", title: "Preferencias generales", description: "Idioma, moneda, zona horaria y comportamiento base.", status: "pendiente", modal: "info" },
+      { key: "app-movil", title: MOBILE_APP_ADMIN_LABELS.itemTitle, description: MOBILE_APP_ADMIN_LABELS.itemDescription, status: "activo", modal: "app-movil" },
       { key: "apariencia", title: "Apariencia", description: "Parametros visuales futuros del tenant.", status: "pendiente", modal: "info" },
       { key: "logs", title: "Logs tecnicos", description: "Errores de API, backend y frontend con trazabilidad de soporte.", status: "activo", modal: "logs" },
       { key: "mantenimiento", title: "Mantenimiento", description: "Acciones avanzadas protegidas por permisos.", status: "restringido", modal: "info" }
@@ -900,7 +902,10 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 export default function AdministracionPage() {
   const initializedRole = useRef(false);
   const toastTimer = useRef<number | null>(null);
-  const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "logs" | "info" | "sedes" | null>(null);
+  const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "logs" | "info" | "sedes" | "app-movil" | null>(null);
+  const [mobileAppConfig, setMobileAppConfig] = useState<MobileAppAdminConfig | null>(null);
+  const [mobileAppDraft, setMobileAppDraft] = useState(MOBILE_APP_FALLBACK_URL);
+  const [mobileAppSaving, setMobileAppSaving] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<ConfigItem | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -1162,7 +1167,41 @@ export default function AdministracionPage() {
       resetSedeDraft();
       void loadSedeMasterRows();
     }
+    if (item.key === "app-movil") void loadMobileAppConfig();
     setActiveModal(item.modal);
+  }
+
+  // El enlace de la app es de plataforma y vale para el ambiente que responde: la pantalla lee el
+  // valor guardado y muestra el ambiente que devolvio la API, porque ese dato no puede salir del
+  // navegador (si saliera del navegador, alguien podria creerse en Produccion estando en QA).
+  async function loadMobileAppConfig() {
+    try {
+      const config = await api<MobileAppAdminConfig>(MOBILE_APP_ADMIN_ENDPOINT, { cache: "no-store" });
+      setMobileAppConfig(config);
+      setMobileAppDraft(config.url || MOBILE_APP_FALLBACK_URL);
+    } catch (error) {
+      confirmCatalogAction("No se pudo leer el enlace de la app", error instanceof Error ? error.message : "La plataforma no respondió.", "error");
+    }
+  }
+
+  async function saveMobileAppLink(nextUrl: string) {
+    const candidate = String(nextUrl || "").trim().replace(/\/+$/, "");
+    if (!candidate.toLowerCase().startsWith("https://") || candidate.length < "https://".length + 4) {
+      confirmCatalogAction("Dirección incompleta", MOBILE_APP_ADMIN_LABELS.invalid, "warning");
+      return;
+    }
+    setMobileAppSaving(true);
+    try {
+      await api(MOBILE_APP_ADMIN_ENDPOINT, { method: "PUT", body: JSON.stringify({ url: candidate }) });
+      const config = await api<MobileAppAdminConfig>(MOBILE_APP_ADMIN_ENDPOINT, { cache: "no-store" });
+      setMobileAppConfig(config);
+      setMobileAppDraft(config.url || candidate);
+      confirmCatalogAction("Enlace actualizado", `${MOBILE_APP_ADMIN_LABELS.saved} Ahora es ${config.url || candidate}.`);
+    } catch (error) {
+      confirmCatalogAction("No se pudo guardar el enlace", error instanceof Error ? error.message : "La plataforma respondió un error.", "error");
+    } finally {
+      setMobileAppSaving(false);
+    }
   }
 
   function selectRole(role: Role) {
@@ -2867,6 +2906,60 @@ export default function AdministracionPage() {
       {activeModal === "logs" ? (
         <ModalFrame title="Logs tecnicos de plataforma" onClose={() => setActiveModal(null)} maxWidth="md:max-w-6xl">
           {renderPlatformLogs()}
+        </ModalFrame>
+      ) : null}
+
+      {activeModal === "app-movil" ? (
+        <ModalFrame onClose={() => setActiveModal(null)} title={MOBILE_APP_ADMIN_LABELS.modalTitle} maxWidth="md:max-w-xl">
+          <div className="space-y-4">
+            <p className="text-sm text-neutral-600">{MOBILE_APP_ADMIN_LABELS.intro}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-md border border-line p-3">
+                <p className="text-xs uppercase tracking-wide text-neutral-500">{MOBILE_APP_ADMIN_LABELS.environment}</p>
+                <p className="mt-1 text-sm font-semibold">{mobileAppConfig?.environment || "-"}</p>
+              </div>
+              <div className="rounded-md border border-line p-3">
+                <p className="text-xs uppercase tracking-wide text-neutral-500">{MOBILE_APP_ADMIN_LABELS.updated}</p>
+                <p className="mt-1 text-sm font-semibold">
+                  {mobileAppConfig?.updated_at ? new Date(mobileAppConfig.updated_at).toLocaleString() : MOBILE_APP_ADMIN_LABELS.never}
+                </p>
+                {/* La API ya trae el correo de quien escribio (updated_by): si la pantalla no lo pinta, el
+                    administrador ve QUE se movio el enlace y CUANDO, pero no a quien llamar. */}
+                <p className="mt-1 text-xs text-neutral-500">
+                  {`${MOBILE_APP_ADMIN_LABELS.updatedBy}: ${mobileAppConfig?.updated_by || MOBILE_APP_ADMIN_LABELS.never}`}
+                </p>
+                <p className="mt-1 text-xs text-neutral-500">
+                  {mobileAppConfig?.source === "base" ? MOBILE_APP_ADMIN_LABELS.currentSourceBase : MOBILE_APP_ADMIN_LABELS.currentSourceFallback}
+                </p>
+              </div>
+            </div>
+            <label className="block">
+              <span className="text-sm font-semibold">{MOBILE_APP_ADMIN_LABELS.field}</span>
+              <input
+                autoCapitalize="none"
+                autoCorrect="off"
+                className="mt-1 w-full rounded-md border border-line bg-surface px-3 py-2 font-mono text-sm"
+                onChange={(event) => setMobileAppDraft(event.target.value)}
+                placeholder="https://app.midominio.co"
+                spellCheck={false}
+                type="url"
+                value={mobileAppDraft}
+              />
+            </label>
+            <p className="rounded-md bg-paper p-3 text-xs text-neutral-600">{MOBILE_APP_ADMIN_LABELS.scopeNotice}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button disabled={mobileAppSaving} onClick={() => void saveMobileAppLink(mobileAppDraft)} type="button">
+                <Save size={16} />
+                {mobileAppSaving ? MOBILE_APP_ADMIN_LABELS.saving : MOBILE_APP_ADMIN_LABELS.save}
+              </Button>
+              {mobileAppDraft.trim().replace(/\/+$/, "") !== MOBILE_APP_FALLBACK_URL ? (
+                <Button disabled={mobileAppSaving} onClick={() => void saveMobileAppLink(MOBILE_APP_FALLBACK_URL)} type="button" variant="secondary">
+                  <RotateCcw size={16} />
+                  {MOBILE_APP_ADMIN_LABELS.restore}
+                </Button>
+              ) : null}
+            </div>
+          </div>
         </ModalFrame>
       ) : null}
 

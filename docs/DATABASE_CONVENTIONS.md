@@ -49,6 +49,7 @@ Regla: el código nuevo sigue las reglas de este documento. La deuda histórica 
   - `@@index([tenant_id])` o índice compuesto que empiece por `tenant_id`.
   - Únicos de negocio: `@@unique([tenant_id, <campo>])`, no `@unique` global.
 - Catálogos globales: solo si son de plataforma (`modules`, `plans`); el resto es por tenant.
+- Configuración de plataforma (clave/valor, no por tenant): existe `platform_settings` (`key` único, `value Json`, `updated_by`) para lo que debe responderse **antes** de saber la empresa —hoy, el enlace de la app móvil que muestra el acceso. Es la excepción documentada a «toda tabla nueva lleva `tenant_id`» y solo se acepta así: el valor pertenece al despliegue (cada ambiente tiene su base, por eso no se propaga), el modelo **no** entra en `src/core/tenantModels.js`, la escritura la fija únicamente un superadministrador (`APEX_ADMIN` / `role_type: superadmin`) y la fila de `AuditLog` lleva el tenant de quien administró para que el cambio sea atribuible. No es un almacén genérico de preferencias: la allowlist de claves vive en `apps/api/src/modules/admin/platform-config-service.js` y cada clave nueva requiere contrato de lectura pública y de escritura administrada.
 - RLS: se mantiene donde ya existe (`docs/DATABASE_SECURITY.md`); no se agrega ni se desactiva sin auditoría de seguridad.
 
 ## 5. Tipos y dinero

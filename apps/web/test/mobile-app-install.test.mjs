@@ -22,7 +22,12 @@ import test from "node:test";
 import {
   APP_INSTALL_LABELS,
   INSTALL_STEPS,
+  MOBILE_APP_ADMIN_ENDPOINT,
+  MOBILE_APP_ADMIN_LABELS,
   MOBILE_APP_FALLBACK_URL,
+  MOBILE_APP_FETCH_TIMEOUT_MS,
+  MOBILE_APP_PUBLIC_ENDPOINT,
+  fetchConfiguredMobileAppUrl,
   handheldSignal,
   isHandheldDevice,
   mobileAppUrl
@@ -34,6 +39,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8").replace(/\
 const lobby = read("app/dashboard/page.tsx");
 const acceso = read("app/login/page.tsx");
 const band = read("components/system/AppInstallBand.tsx");
+const admin = read("app/dashboard/administracion/page.tsx");
 
 const UAS = {
   android: { userAgent: "Mozilla/5.0 (Linux; Android 14; SM-A155G Build/UP1A.231005.007) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.6668.100 Mobile Safari/537.36", maxTouchPoints: 5, platform: "Linux armv8l" },
@@ -51,6 +57,7 @@ test("la URL de la app es https, sin barra final y cae al destino conocido si la
   assert.equal(mobileAppUrl("http://app.example.co"), MOBILE_APP_FALLBACK_URL, "un http en la configuracion no puede convertirse en el enlace del acceso");
   assert.equal(mobileAppUrl("no-es-una-url"), MOBILE_APP_FALLBACK_URL);
   assert.equal(mobileAppUrl(""), MOBILE_APP_FALLBACK_URL, "variable declarada vacia es variable sin configurar");
+  assert.equal(mobileAppUrl("http://localhost:3005"), "http://localhost:3005", "el http solo se admite en el propio puesto: es la misma regla que aplica el API al guardar");
 });
 
 test("la deteccion distingue celular, iPad y computador, y un portatil tactil sigue siendo computador", () => {
@@ -97,8 +104,8 @@ test("la guia ensena Chrome, los tres puntos, Instalar app y el acceso directo",
 test("el boton del lobby se llama como el dueno lo pidio y la prosa visible conserva sus tildes", () => {
   assert.equal(APP_INSTALL_LABELS.bandAction, "Descarga nuestra app");
   assert.match(APP_INSTALL_LABELS.desktopNotice, /exclusiva para celulares/, "el aviso de escritorio nombra la restriccion real del servicio");
-  const todo = JSON.stringify([APP_INSTALL_LABELS, INSTALL_STEPS]).toLowerCase();
-  for (const sinTilde of ["configuracion", "contrasena", "instalacion", "enviate", "copialo", "numero", "telefono"]) {
+  const todo = JSON.stringify([APP_INSTALL_LABELS, MOBILE_APP_ADMIN_LABELS, INSTALL_STEPS]).toLowerCase();
+  for (const sinTilde of ["configuracion", "contrasena", "instalacion", "enviate", "copialo", "numero", "telefono", "direccion", "movil", "quien", "ultima"]) {
     assert.equal(todo.includes(sinTilde), false, `la cadena visible perdio su tilde: ${sinTilde}`);
   }
 });
@@ -174,4 +181,90 @@ test("el tablero conserva el contrato heredado y el acceso conserva su formulari
   // Contraste: si el acceso se reescribiera entero, el corte `</form>` del montaje no significaria nada.
   assert.match(acceso, /onSubmit=\{submit\}/);
   assert.match(acceso, /Entrar de forma segura/);
+});
+
+test("el enlace administrado se lee sin sesion, se escribe por administracion y se agota rapido", () => {
+  assert.equal(MOBILE_APP_PUBLIC_ENDPOINT, "/api/v1/public/platform/mobile-app", "el acceso es previo a la sesion: la lectura no puede vivir detras del authenticate");
+  assert.equal(MOBILE_APP_ADMIN_ENDPOINT, "/api/v1/admin/platform/mobile-app", "la escritura y la lectura con ambiente van por el area de administracion");
+  assert.ok(!MOBILE_APP_PUBLIC_ENDPOINT.includes("/admin/"), "el endpoint publico no puede apuntar al de escritura");
+  assert.ok(MOBILE_APP_FETCH_TIMEOUT_MS <= 2000, `la lectura admite ${MOBILE_APP_FETCH_TIMEOUT_MS} ms: el acceso no puede esperar a la API para pintar su boton`);
+});
+
+test("el valor administrado manda y cualquier respuesta torcida cae al respaldo del ambiente", async () => {
+  const previo = process.env.NEXT_PUBLIC_MOBILE_APP_URL;
+  process.env.NEXT_PUBLIC_MOBILE_APP_URL = "https://respaldo.test";
+  try {
+    const fetcher = ({ body, ok = true }) => async (input, init) => {
+      assert.equal(input, MOBILE_APP_PUBLIC_ENDPOINT, "el acceso pregunta por el endpoint publico, no por el de administracion");
+      assert.ok(init?.signal instanceof AbortSignal, "la lectura tiene senal de cancelacion: sin ella un viaje lento congela el acceso");
+      assert.equal(init?.cache, "no-store", "el enlace se administra por ambiente: una respuesta cacheada mostraria el destino de otro ambiente");
+      return { ok, status: ok ? 200 : 500, json: async () => body };
+    };
+    assert.equal(await fetchConfiguredMobileAppUrl(fetcher({ body: { url: "https://app.example.co/" } })), "https://app.example.co", "el valor guardado es el destino del boton");
+    assert.notEqual(await fetchConfiguredMobileAppUrl(fetcher({ body: { url: "https://ganador.test" } })), "https://respaldo.test", "contraste: si el respaldo ganara siempre, administrar no cambiaria nada");
+    assert.equal(await fetchConfiguredMobileAppUrl(fetcher({ body: { url: "http://inseguro.test" } })), "https://respaldo.test", "un http administrado no puede reemplazar el respaldo");
+    assert.equal(await fetchConfiguredMobileAppUrl(fetcher({ body: {} })), "https://respaldo.test", "respuesta sin URL no deja el boton sin destino");
+    assert.equal(await fetchConfiguredMobileAppUrl(fetcher({ body: { url: "https://x.test" }, ok: false })), "https://respaldo.test", "un 500 de la plataforma pinta el acceso con el respaldo");
+    assert.equal(await fetchConfiguredMobileAppUrl(undefined), "https://respaldo.test", "sin fetch no hay lectura: sigue habiendo boton");
+  } finally {
+    if (previo === undefined) delete process.env.NEXT_PUBLIC_MOBILE_APP_URL;
+    else process.env.NEXT_PUBLIC_MOBILE_APP_URL = previo;
+  }
+});
+
+test("una lectura lenta o que revienta no deja el acceso colgado", async () => {
+  const previo = process.env.NEXT_PUBLIC_MOBILE_APP_URL;
+  process.env.NEXT_PUBLIC_MOBILE_APP_URL = "https://respaldo.test";
+  try {
+    const inicio = Date.now();
+    const colgando = await fetchConfiguredMobileAppUrl((_input, init) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(new Error("cancelado por el acceso")));
+    }));
+    const espera = Date.now() - inicio;
+    assert.equal(colgando, "https://respaldo.test", "la promesa que no resuelve se cancela y el boton usa el respaldo");
+    assert.ok(espera >= MOBILE_APP_FETCH_TIMEOUT_MS - 100, `se corto a los ${espera} ms: el presupuesto de ${MOBILE_APP_FETCH_TIMEOUT_MS} ms no se cumple`);
+    assert.ok(espera < MOBILE_APP_FETCH_TIMEOUT_MS + 2000, `se corto a los ${espera} ms: el acceso se quedo esperando mas de lo declarado`);
+    assert.equal(await fetchConfiguredMobileAppUrl(async () => { throw new Error("red caída"); }), "https://respaldo.test", "una red que tira también cae al respaldo");
+  } finally {
+    if (previo === undefined) delete process.env.NEXT_PUBLIC_MOBILE_APP_URL;
+    else process.env.NEXT_PUBLIC_MOBILE_APP_URL = previo;
+  }
+});
+
+test("la banda arranca con el respaldo y toma el enlace administrado cuando responde la plataforma", () => {
+  assert.match(band, /fetchConfiguredMobileAppUrl/, "la banda pregunta a la plataforma: quemar el destino es lo que se esta corrigiendo");
+  assert.match(band, /useState\(\(\) => mobileAppUrl\(\)\)/, "el boton nace con el respaldo del ambiente: nunca se pinta sin destino mientras llega la lectura");
+  assert.match(band, /if \(alive\) setUrl\(configured\)/, "la respuesta puede llegar despues del desmonte: sin el guard, React avisa y el estado se escribe fuera de la pantalla");
+  assert.match(band, /url=\{url\}/, "la guia recibe el valor leido, no lo recalcula por su cuenta");
+  assert.doesNotMatch(band, /NEXT_PUBLIC_MOBILE_APP_URL/, "la variable no se lee en el componente: vive en mobileAppUrl()");
+  assert.doesNotMatch(band, /MOBILE_APP_ADMIN_ENDPOINT/, "el acceso no puede llamar al endpoint de administracion: no hay sesion todavia");
+});
+
+test("el administrador de configuracion monta el apartado del enlace y escribe por el endpoint de administracion", () => {
+  assert.match(admin, /import \{[^}]*MOBILE_APP_ADMIN_ENDPOINT[^}]*\} from "@\/lib\/mobileAppInstall";/, "la pantalla importa el contrato de la libreria, no reescribe la ruta");
+  assert.match(admin, /key: "app-movil"[^\n]*modal: "app-movil"/, "el apartado vive dentro del catalogo de configuracion de APEXOS, no en una pantalla nueva");
+  assert.match(admin, /if \(item\.key === "app-movil"\) void loadMobileAppConfig\(\);/, "abrir el apartado lee el valor del servidor");
+  assert.match(admin, /method: "PUT", body: JSON\.stringify\(\{ url: candidate \}\)/, "guardar escribe el enlace completo, no un trozo");
+  assert.doesNotMatch(admin, /MOBILE_APP_PUBLIC_ENDPOINT/, "el administrador no lee por el endpoint publico: necesita el ambiente y la trazabilidad");
+  assert.match(admin, /mobileAppConfig\?\.environment/, "el ambiente lo declara el servidor: el navegador no puede inferirlo");
+  assert.match(admin, /MOBILE_APP_ADMIN_LABELS\.scopeNotice/, "el alcance por ambiente se lee antes de guardar");
+});
+
+test("la ventana del enlace no escribe su destino, no usa ventanillas nativas y deja ver el ambiente", () => {
+  const desde = admin.indexOf('{activeModal === "app-movil"');
+  const hasta = admin.indexOf('{activeModal === "users"');
+  assert.ok(desde > 0 && hasta > desde, "contraste: el corte de la ventana del enlace se tomo, no se midio aire");
+  const ventana = admin.slice(desde, hasta);
+  assert.match(ventana, /<ModalFrame\b/, "el dialogo flota por portal como las demas ventanas del panel");
+  assert.match(ventana, /type="url"/, "el campo valida formato de direccion antes de enviar");
+  assert.match(ventana, /value=\{mobileAppDraft\}/);
+  assert.match(ventana, /onChange=\{\(event\) => setMobileAppDraft\(event\.target\.value\)\}/, "lo escrito en pantalla es lo que se guarda: sin el control el usuario edita a ciegas");
+  assert.match(ventana, /saveMobileAppLink\(MOBILE_APP_FALLBACK_URL\)/, "restaurar escribe el respaldo en la plataforma, no borra la fila a escondidas");
+  assert.match(ventana, /mobileAppConfig\?\.updated_at/, "la ventana dice cuando se movio el enlace");
+  assert.match(ventana, /MOBILE_APP_ADMIN_LABELS\.updatedBy/, "la ventana tiene que decir QUIEN lo movio: un cambio sin autor no es trazable");
+  assert.match(ventana, /mobileAppConfig\?\.updated_by \|\| MOBILE_APP_ADMIN_LABELS\.never/, "contraste: sin cambios todavia se dice en voz alta, no se deja el campo en blanco");
+  assert.match(ventana, /mobileAppConfig\?\.source === "base"/, "la ventana distingue el valor administrado del destino quemado");
+  assert.doesNotMatch(ventana, /appapexos/, "el respaldo no se escribe en la pantalla: vive en la libreria");
+  assert.doesNotMatch(ventana, /(?:\bwindow\.|\bglobalThis\.)(?:alert|confirm|prompt)\s*\(/, "el resultado del guardado se anuncia en el aviso de catalogo");
+  assert.doesNotMatch(ventana, /localStorage/, "el enlace no se guarda en el navegador: se guarda en la plataforma");
 });
