@@ -1,0 +1,32 @@
+{
+  "change_id": "hr-davivienda-bank-file-preqa-20261125",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "9a172149",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["local-certification.json"] },
+    "error": { "status": "passed", "evidence": ["local-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-certification.json"] },
+    "regression": { "status": "passed", "evidence": ["local-certification.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["local-certification.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-davivienda-bank-file-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-davivienda-bank-file-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "edwar.lopez@hogarymoda.com.co (solicitante)",
+    "approved_at": "2026-11-25T00:00:00-05:00",
+    "authorization_text": "lista ya esta certificado promueve a qa"
+  }
+}

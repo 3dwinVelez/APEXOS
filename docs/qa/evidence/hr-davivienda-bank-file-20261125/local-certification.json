@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "environment": "LOCAL",
+  "commit": "9a172149163e6b854fc52c62bfc0df6ee6b77c74",
+  "started_at": "2026-11-25T21:01:38.736Z",
+  "checks": [
+    "422 lists employee without bank account and 422 when company NIT is missing",
+    "payroll config persists bank_file and RBAC denies unauthorized readers",
+    "file has 170-char records, CRLF, header total/count, exclusions, CE->02, corriente->CC, bank padding",
+    "tenant isolation: another tenant sees only its own rows and own company config"
+  ],
+  "finished_at": "2026-11-25T21:01:50.678Z"
+}
