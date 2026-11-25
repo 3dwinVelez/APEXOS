@@ -88,9 +88,20 @@
     "falso_rojo_declarado": "las dos primeras sondas reportaron «la guia no abre» porque buscaban la etiqueta <dialog> y ModalFrame monta un div de fondo con role=\"dialog\", no el elemento nativo. El rojo era del selector de la sonda, no del producto, y se desmintio con la captura antes de afirmar nada. Regla versionada en apexos-qa 2.125.0.",
     "captura": "evidencia local del navegador en %TEMP%/qa-banda-acceso-guia.png (no entra al repositorio: es sonda de campo, no artefacto de la certificacion de 126 controles)"
   },
+  "despliegue_confirmado_en_railway": {
+    "metodo": "consulta de solo lectura con el CLI de Railway (`railway deployment list --json`), con una copia del directorio de configuracion en %TEMP% para no enlazar nada dentro del repositorio",
+    "proyecto": "APEXOS QA (33726923-021d-47a7-a263-b8b287f164f1)",
+    "servicio": "apexos-web-qa (125116d7-0720-412d-9180-2205169c628f)",
+    "despliegue_activo": "10231cb6-11e6-4be7-9353-55fdc94833bf, estado SUCCESS, creado 2026-11-25T20:11:53.411Z",
+    "commit_servido": "a2191e0dc714038946592105d4b8ad8f4fcd6ce0",
+    "rama_que_construyo": "develop",
+    "imagen": "sha256:447c40e5572365c15ee6abccedc4f42181846587e318d07df4b10cc9a61c5be2",
+    "razon": "deploy (disparo automatico del empuje, no build manual)",
+    "que_cierra": "el artefacto que la sonda de campo midio es exactamente la punta que este porton publico: el commit servido es el candidato empujado, en la rama que declara el manifiesto. El pendiente de confirmar la rama del build queda cerrado en el mismo turno."
+  },
   "lo_que_no_es_esta_sonda": {
     "no_es_la_certificacion_de_126_controles": "la corrida de 126/126 se midio sobre el build de produccion local (next start, BUILD_ID R-dJE_2uSjVBDXuUGfcyo, git_head b802a251) con cinco escenarios, nueve capturas y su control de mutacion 121/126. Contra el ambiente desplegado queda pendiente correr el instrumento completo, que exige una variante con destino remoto: es tarea con dueno, no una pata de este porton.",
-    "no_confirma_desde_que_rama_construyo_railway": "el marcado servido es blob-identico en develop (a2191e0d) y en desarrollo (4b55a373), asi que la sonda prueba que el artefacto de QA trae la correccion, pero no prueba cual de las dos ramas disparo el build. Confirmarlo en la consola de Railway es pendiente con dueno."
+    "si_confirma_desde_que_rama_construyo_railway": "confirmado por el CLI en la misma intervencion: el despliegue activo de `apexos-web-qa` corre `a2191e0d` de la rama `develop`, o sea el commit de este porton y no una punta de `desarrollo`."
   },
   "rutas_que_NO_subieron": {
     "package.json": "develop le faltan 25 lineas de otros frentes y apps/control-tower no existe alla; traer el blob de desarrollo reinstalaria scripts que apuntan a archivos que no estan en la rama.",
@@ -106,5 +117,17 @@
     "El DESPUES formal contra el ambiente desplegado (instrumento completo con destino remoto) sigue pendiente y con dueno declarado; lo que versiona esta contabilidad es la senal de campo, no la certificacion de 126 controles en QA.",
     "No se borro la rama auxiliar codex/qa-boton-app-movil-develop-20261125 ni su worktree: hace falta orden expresa del dueno."
   ],
-  "veredicto": "Publicado en origin/develop como avance rapido 95bf7d5d..a2191e0d con las tres compuertas verdes y el guard con control de contraste. Paridad re-medida sobre las puntas publicadas: 9/9 carry, 0 blobs distintos, 0 waivers, la ruta retirada ausente en las dos ramas. Invariantes del replay 10/10 contra el commit publicado, suites del arbol publicado 81/81. Sonda de campo en QA: la banda vive en el acceso, montada despues del formulario, con la guia abierta y sus cuatro pasos en el artefacto desplegado. main intacto."
+  "veredicto": "Publicado en origin/develop como avance rapido 95bf7d5d..a2191e0d con las tres compuertas verdes y el guard con control de contraste. Paridad re-medida sobre las puntas publicadas: 9/9 carry, 0 blobs distintos, 0 waivers, la ruta retirada ausente en las dos ramas. Invariantes del replay 10/10 contra el commit publicado, suites del arbol publicado 81/81. Sonda de campo en QA: la banda vive en el acceso, montada despues del formulario, con la guia abierta y sus cuatro pasos en el artefacto desplegado. main intacto. Confirmando con el CLI de Railway, el despliegue activo de la web de QA corre develop en el commit a2191e0d, es decir el candidato de este porton: codigo publicado y ambiente sirviéndolo quedan medidos por separado, cada uno con su instrumento.",
+  "enmienda_de_cierre": {
+    "motivo": "La misma intervencion cerro un pendiente que se habia listado como ajeno: confirmar desde que rama construye el servicio de web de QA. Era construible con el CLI en solo lectura y no requeria suscripcion, credencial nueva ni touching del ambiente.",
+    "hallazgo": "El despliegue activo 10231cb6-11e6-4be7-9353-55fdc94833bf de apexos-web-qa esta en SUCCESS, con meta.branch = develop y meta.commitHash = a2191e0dc714038946592105d4b8ad8f4fcd6ce0, o sea el commit que este porton publico. La sonda de campo deja de ser indicio: mide el artefacto certificado.",
+    "rutas_tocadas_por_la_enmienda": [
+      "docs/qa/evidence/banda-acceso-develop-20261125/contabilidad-post-push.json",
+      "docs/briefs/2026-11-24-boton-app-movil-lobby.md (seccion 15: el bloque 'Que no es esta senal' y la lista de pendientes)",
+      "docs/project/app-movil.md (pendiente final reescrito: la rama del build queda confirmada)",
+      "agents/CHANGELOG.md (pendiente (2) retirado de la lista y anotado como cerrado; el registro de la enmienda)",
+      "agents/registry.json y los SKILL.md espejados (bumps de registro 2.125.1 / 2.104.2 / 2.43.1 / 2.70.1)"
+    ],
+    "regla_que_lo_explica": "Antes de pasar algo a la lista de pendientes con dueno, se verifica si existe un instrumento de lectura que lo resuelva desde este puesto. Un pendiente que se puede cerrar con una consulta no es un pendiente: es trabajo no hecho."
+  }
 }
