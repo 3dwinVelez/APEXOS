@@ -679,6 +679,7 @@ async function savePayrollConfig(tenantId, input) {
       concepts: Array.isArray(input?.concepts) ? input.concepts : current.concepts
     });
     await prisma.tenant.update({ where: { id: tenantId }, data: { config: { ...config, payroll: next } } });
+    await invalidateTenantCache(tenantId);
     return next;
   });
 }
@@ -8935,6 +8936,7 @@ module.exports = {
   previewPayrollLiquidation,
   runPayrollLiquidation,
   deletePayrollLiquidation,
+  buildPayrollBankFile,
   payrollConceptReport,
   benefitBalanceReport,
   payrollAuxiliaryReport,
