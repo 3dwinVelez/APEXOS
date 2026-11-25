@@ -1,0 +1,224 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "url-app-administrable-develop-20261125",
+  "creado": "2026-11-25T17:25:00-05:00",
+  "autorizado": "dueno del proyecto (Edwin), 2026-11-25: «si procede con el despliegue solo en develop porque primero es alinear develop, para este caso el cambio que estamos realizando solo debe ser en desarrollo y develop para corroborar sus funciones realiza solo estas instrucciones con mi autorizacion aun no tocaremos el ambiente de produccion». La orden ampara exclusivamente las 26 rutas de este inventario y el despliegue en QA que le sigue. No autoriza main, force push, rebase de ramas permanentes, infraestructura, cambios en Railway/Supabase ni borrado de ramas.",
+  "target_branch": "develop",
+  "source_branch": "desarrollo",
+  "promotion_branch": "codex/qa-url-app-admin-develop-20261125",
+  "transport": "replay_puntual_con_hunks_fusionados",
+  "por_que_no_replay_puntual_liso": "El transporte `replay_puntual` exige que cada ruta del diff sea, blob por blob, la de origin/desarrollo, y no admite excepciones. Tres rutas no pueden cumplirlo: develop tiene lineas de OTROS frentes en schema.prisma (los modelos Apex* de 2a186a63 y el renombre polling_minutes), en middleware/rbac.js (la fila \"apex-control\") y en la pantalla de Administracion (la fila Marcaciones de 9c27c8c9). Llevar el blob de desarrollo habria promovido esos frentes a develop sin su propio porton, que es exactamente lo que la regla de alcance prohibe. Aqui suben MIS hunks sobre el arbol de develop, medidos uno a uno, y las tres rutas se declaran con origin_waivers nominales. El resto viaja byte a byte.",
+  "base_commits": {
+    "main": "e3c2ad171946621c4e167404ef5c56c466f43e4f",
+    "develop": "3aaeeb32e9dc2ad519c401fcd2f487872ffa362e",
+    "desarrollo": "d667276f2f95a0abe27abd5d37cd883e35f2ad02"
+  },
+  "base_commit": "3aaeeb32e9dc2ad519c401fcd2f487872ffa362e",
+  "target_head": "3aaeeb32e9dc2ad519c401fcd2f487872ffa362e",
+  "certified_commit": "d667276f2f95a0abe27abd5d37cd883e35f2ad02",
+  "antepasado_comun": "8208d9417ba6e1aff03bb5529bd5ec6aac074a0b",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "d667276f2f95a0abe27abd5d37cd883e35f2ad02",
+    "commits_de_origen": [
+      "d667276f feat(admin): el enlace de la app movil se administra por ambiente desde Administracion APEX (35 rutas, certificacion 28/28, contrato API 11/11, contrato web 19/19)"
+    ],
+    "nota": "El candidato no es un merge de ramas: nace sobre origin/develop (3aaeeb32, la punta viva al momento de empacar, movida por el merge ajeno de la PR #115) y recibe `git checkout origin/desarrollo -- <once rutas>` mas tres hunks aplicados con `git apply -3` sobre el archivo de develop. El commit 40418d50 anade la evidencia de los veintiocho controles; el commit de manifiestos anade los dos JSON de este porton; el ultimo commit es un merge `-s ours` contra origin/desarrollo que REGISTRA EL LINAJE de d667276f sin traer el resto de desarrollo: su arbol no cambia ninguna ruta, y por eso la ascendencia no puede ser la prueba del porton. La prueba del porton es el blob."
+  },
+  "naturaleza": "Porton de despliegue funcional: sube a develop el enlace de la app movil administrable por ambiente (tabla platform_settings, lectura publica sin sesion, escritura solo administrador de plataforma, editor dentro de Administracion APEX) para que el boton del acceso y el apartado de administracion puedan corroborarse en QA. Ningun cambio de copys, de deteccion de dispositivo, de modulos ni de otras pantallas.",
+  "change_intent": {
+    "modules": [
+      "admin",
+      "platform-settings",
+      "auth-login-band",
+      "administracion-screen",
+      "certificaciones-qa",
+      "documentacion-qa"
+    ],
+    "summary": "Inventario exacto: 26 rutas. Once viajan byte a byte desde origin/desarrollo; tres (schema, rbac, pantalla de Administracion) viajan como hunks propios con waiver nominal de origen; nueve son evidencia versionada del porton y dos son los manifiestos. Bajo apps/api: la tabla nueva, el servicio, dos rutas de API y el contrato. Bajo apps/web: el lector del valor, la banda y el editor. Cero rutas bajo packages/, infra/ o apps/control-tower/, cero borrados."
+  },
+  "expected_changes": [
+    { "status": "A", "file": "apps/api/prisma/migrations/20261125183000_platform_settings/migration.sql" },
+    { "status": "M", "file": "apps/api/prisma/schema.prisma" },
+    { "status": "M", "file": "apps/api/src/middleware/rbac.js" },
+    { "status": "A", "file": "apps/api/src/modules/admin/platform-config-service.js" },
+    { "status": "M", "file": "apps/api/src/modules/admin/public-routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/admin/routes.js" },
+    { "status": "A", "file": "apps/api/test/admin-platform-mobile-app-url.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/administracion/page.tsx" },
+    { "status": "M", "file": "apps/web/components/system/AppInstallBand.tsx" },
+    { "status": "M", "file": "apps/web/lib/mobileAppInstall.ts" },
+    { "status": "M", "file": "apps/web/test/mobile-app-install.test.mjs" },
+    { "status": "A", "file": "docs/briefs/2026-11-25-url-app-administrable.md" },
+    { "status": "M", "file": "docs/project/app-movil.md" },
+    { "status": "A", "file": "docs/qa/evidence/url-app-administrable-20261125/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/url-app-admin-develop-20261125/control-de-mutacion-instrumento.json" },
+    { "status": "A", "file": "docs/qa/evidence/url-app-admin-develop-20261125/invariantes-replay.json" },
+    { "status": "A", "file": "docs/qa/evidence/url-app-admin-develop-20261125/merge-hunks.js" },
+    { "status": "A", "file": "docs/qa/evidence/url-app-admin-develop-20261125/merge-hunks.json" },
+    { "status": "A", "file": "docs/qa/evidence/url-app-admin-develop-20261125/paridad-rutas-llevadas.txt" },
+    { "status": "A", "file": "docs/qa/evidence/url-app-admin-develop-20261125/porton-develop.json" },
+    { "status": "A", "file": "docs/qa/evidence/url-app-admin-develop-20261125/spec-invariantes.json" },
+    { "status": "A", "file": "docs/qa/evidence/url-app-admin-develop-20261125/suites-candidato.js" },
+    { "status": "A", "file": "docs/qa/evidence/url-app-admin-develop-20261125/suites-candidato.json" },
+    { "status": "A", "file": "scripts/certifications/mobile-app-url-admin-local.js" },
+    { "status": "A", "file": "docs/qa/manifests/url-app-admin-develop-20261125-scope.json" },
+    { "status": "A", "file": "docs/qa/manifests/url-app-admin-develop-20261125-preqa.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/prisma/migrations/20261125183000_platform_settings/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/admin/platform-config-service.js",
+    "apps/api/src/modules/admin/public-routes.js",
+    "apps/api/src/modules/admin/routes.js",
+    "apps/api/test/admin-platform-mobile-app-url.test.js",
+    "apps/web/app/dashboard/administracion/page.tsx",
+    "apps/web/components/system/AppInstallBand.tsx",
+    "apps/web/lib/mobileAppInstall.ts",
+    "apps/web/test/mobile-app-install.test.mjs",
+    "docs/briefs/2026-11-25-url-app-administrable.md",
+    "docs/project/app-movil.md",
+    "docs/qa/evidence/url-app-administrable-20261125/local-certification.json",
+    "docs/qa/evidence/url-app-admin-develop-20261125/control-de-mutacion-instrumento.json",
+    "docs/qa/evidence/url-app-admin-develop-20261125/invariantes-replay.json",
+    "docs/qa/evidence/url-app-admin-develop-20261125/merge-hunks.js",
+    "docs/qa/evidence/url-app-admin-develop-20261125/merge-hunks.json",
+    "docs/qa/evidence/url-app-admin-develop-20261125/paridad-rutas-llevadas.txt",
+    "docs/qa/evidence/url-app-admin-develop-20261125/porton-develop.json",
+    "docs/qa/evidence/url-app-admin-develop-20261125/spec-invariantes.json",
+    "docs/qa/evidence/url-app-admin-develop-20261125/suites-candidato.js",
+    "docs/qa/evidence/url-app-admin-develop-20261125/suites-candidato.json",
+    "scripts/certifications/mobile-app-url-admin-local.js",
+    "docs/qa/manifests/url-app-admin-develop-20261125-scope.json",
+    "docs/qa/manifests/url-app-admin-develop-20261125-preqa.json"
+  ],
+  "allowed_deletions": [],
+  "origin_waivers": [
+    {
+      "file": "apps/api/prisma/schema.prisma",
+      "reason": "El blob de desarrollo no se puede llevar: develop no tiene los modelos ApexComponent, ApexHealthSample y ApexEvent ni el renombre polling_seconds con @map(polling_minutes), que son del frente apex-control (commit 2a186a63) y AGENTS.md deja la torre en desarrollo hasta que el dueno autorice su otra mitad del dato. El blob de develop (2bec5e79) no aparece en ningun commit de origin/desarrollo, asi que es divergencia real y no develop atrasado. Lo que sube es UN hunk de 14 lineas: el modelo PlatformSetting con su @@map, medido identico al parche de origen en merge-hunks.json, con los demas modelos Apex* de develop intactos y los tres ausentes que no son de este frente.",
+      "approval": "Edwin (dueno de APEXOS), orden del 2026-11-25: «procede con el despliegue solo en develop ... sin tocar otros cambios», leida como inventario exacto y cero contenido de otros frentes."
+    },
+    {
+      "file": "apps/api/src/middleware/rbac.js",
+      "reason": "Misma razon, mismo frente: a develop le falta la fila \"apex-control\": [\"M-31\", ...] que anadio 2a186a63 y su blob tampoco existe en la historia de desarrollo. Sube UN hunk de 7 lineas (la capacidad platform_settings en ADMIN_CAPABILITY_RULES) y la matriz del resto queda como estaba en develop.",
+      "approval": "Edwin (dueno de APEXOS), orden del 2026-11-25 de desplegar este cambio y solo este en develop."
+    },
+    {
+      "file": "apps/web/app/dashboard/administracion/page.tsx",
+      "reason": "Develop no tiene la fila { key: \"marcaciones\", title: \"Marcaciones\" } del grupo Sistema, anadida en desarrollo por 9c27c8c9 (Mejora panel de administracion y ficha de usuarios), y su blob 6e16fa1c no aparece en la historia de desarrollo. Llevar el blob habria metido ese trabajo en QA desde un porton de enlace de app. Suben MIS hunks (+95/-2, las dos lineas quitadas son el union del tipo `modal` de este frente), medidos identicos al parche de origen, con la fila ajena ni agregada ni borrada.",
+      "approval": "Edwin (dueno de APEXOS), orden del 2026-11-25 de desplegar este cambio y solo este en develop."
+    }
+  ],
+  "certified_functional_paths": [
+    "apps/api/src/modules/admin/platform-config-service.js",
+    "apps/api/src/modules/admin/routes.js",
+    "apps/api/src/modules/admin/public-routes.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/prisma/migrations/20261125183000_platform_settings/migration.sql",
+    "apps/web/lib/mobileAppInstall.ts",
+    "apps/web/components/system/AppInstallBand.tsx",
+    "apps/web/app/dashboard/administracion/page.tsx"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "La lectura publica del enlace funciona sin sesion y no arrastra el authenticate ni el tenant",
+      "status": "passed",
+      "evidence": [
+        "../evidence/url-app-administrable-20261125/local-certification.json",
+        "../evidence/url-app-admin-develop-20261125/suites-candidato.json"
+      ],
+      "notes": "El contrato del API (11/11) jura que la ruta vive en el registro `admin-public` que no hereda authenticate ni aislamiento, y la certificacion de 28 controles la abrio sin token y leyedo un https. En el candidato la ruta viaja blob-identica (88301faf) y las suites corren sobre ese arbol: 11/11 y 19/19."
+    },
+    {
+      "name": "Escribir el enlace sigue siendo solo del administrador de plataforma",
+      "status": "passed",
+      "evidence": [
+        "../evidence/url-app-administrable-20261125/local-certification.json",
+        "../evidence/url-app-admin-develop-20261125/merge-hunks.json",
+        "../evidence/url-app-admin-develop-20261125/suites-candidato.json"
+      ],
+      "notes": "La matriz 401 sin sesion, 401 con sesion rota, 403 con rol sin capacidad y 200 con APEX_ADMIN esta certificada (28/28) y el contrato la reproduce en el candidato. La capacidad nueva es un hunk de 7 lineas en ADMIN_CAPABILITY_RULES; el resto de la matriz de develop queda byte a byte como estaba, medido en merge-hunks.json."
+    },
+    {
+      "name": "El acceso nunca queda sin destino: si la lectura falla sigue el enlace quemado",
+      "status": "passed",
+      "evidence": [
+        "../evidence/url-app-administrable-20261125/local-certification.json",
+        "../evidence/url-app-admin-develop-20261125/paridad-rutas-llevadas.txt"
+      ],
+      "notes": "La pata de respaldo esta certificada torciendo la fila y viendo que el acceso sigue ofreciendo el destino por defecto, y el contrato web (19/19 en el candidato) exige que la banda pida el valor configurado CON respaldo. mobileAppInstall.ts y AppInstallBand.tsx viajan byte a byte."
+    },
+    {
+      "name": "El replay no revierte trabajo ajeno de develop",
+      "status": "passed",
+      "evidence": [
+        "../evidence/url-app-admin-develop-20261125/merge-hunks.json",
+        "../evidence/url-app-admin-develop-20261125/porton-develop.json",
+        "../evidence/url-app-admin-develop-20261125/invariantes-replay.json",
+        "../evidence/url-app-admin-develop-20261125/control-de-mutacion-instrumento.json"
+      ],
+      "notes": "Medido de tres maneras. Invariantes: 11/11 rutas carry byte a byte contra origin/desarrollo, con el control de mutacion del propio instrumento en verde (3 derivas rojas). Hunks: las tres rutas con waiver suman exactamente las lineas de mi parche (+14, +7, +95/-2) y las lineas ajenas controladas siguen vivas (polling_minutes de develop) o siguen ausentes (modelos Apex*, la fila apex-control, la fila Marcaciones). Retrato: porton-develop.json dice, ruta por ruta, si develop estaba atras o divergia y de que commit viene la diferencia. Unica salvedad honesta: public-routes.js lleva el blob de desarrollo y con el repone device_id, una linea de 62338e7b cuyo commit YA es ancestro de develop; es reparar un atraso del propio frente, no meter trabajo nuevo."
+    },
+    {
+      "name": "Nada de dato operativo de cliente ni de aislamiento de tenant viaja en este porton",
+      "status": "passed",
+      "evidence": [
+        "../evidence/url-app-administrable-20261125/local-certification.json",
+        "../evidence/url-app-admin-develop-20261125/spec-invariantes.json"
+      ],
+      "notes": "La unica tabla nueva es platform_settings, configuracion tecnica de plataforma con clave unica y allowlist en el servicio (hoy solo mobile_app.url): no lleva filas de cliente y la lectura publica no devuelve nada mas que la URL. Cero borrados en el inventario, cero rutas bajo packages/, infra/ o apps/control-tower/, y la certificacion corre contra una base efimera que se crea y se tira."
+    }
+  ],
+  "compuertas_exigidas": [
+    "node --test apps/api/test/admin-platform-mobile-app-url.test.js dentro del worktree del candidato: 11/11",
+    "node --experimental-strip-types --no-warnings --test apps/web/test/mobile-app-install.test.mjs dentro del candidato: 19/19",
+    "prisma validate sobre apps/api/prisma/schema.prisma del candidato: verde",
+    "node scripts/certifications/promotion-migration-check.js --spec docs/qa/evidence/url-app-admin-develop-20261125/spec-invariantes.json --against index --output .../invariantes-replay.json: 11/11, y su --selftest: 3 derivas medidas",
+    "node docs/qa/evidence/url-app-admin-develop-20261125/merge-hunks.js dentro del candidato: hunks identicos y cero linea ajena perdida",
+    "npm run qa:promotion:scope -- docs/qa/manifests/url-app-admin-develop-20261125-scope.json <punta-candidato> origin/develop, con el instrumento canonico de desarrollo (blob 7d0b5dfa, 222 lineas) porque origin/develop conserva el validador viejo de 113 lineas (a98fc805)",
+    "npm run qa:preqa:evidence -- docs/qa/manifests/url-app-admin-develop-20261125-preqa.json",
+    "node scripts/git-governance-guard.js promote desarrollo-to-develop con APEXOS_PROMOTION_AUTH, desde el worktree limpio del candidato",
+    "git push --dry-run origin <punta-candidato>:refs/heads/develop antes de empujar, y la linea sin '+' confirma avance rapido"
+  ],
+  "deriva_declarada": [
+    "La certificacion en navegador (28/28) NO se re-corrio dentro del candidato: el worktree no tiene node_modules y no se creo uno, para no repetir la caida del 2026-11-20 con git worktree remove borrando a traves de un enlace. La equivalencia se probo por contenido: las nueve rutas que producen y miden la pantalla viajan byte a byte, y las tres fusionadas llevan exactamente el parche con el que se certifico (merge-hunks.json). La corrida contra el ambiente desplegado es la pata que falta y se versiona despues del push.",
+    "La migracion 20261125183000_platform_settings viaja como archivo; NO se aplica a ninguna base remota dentro de este manifiesto. Sin la tabla, el API responde 503 nombrando la migracion y el acceso cae al enlace quemado: la pantalla no se rompe. Su aplicacion en QA se anuncia aparte.",
+    "El canon del equipo (agents/registry.json, agents/CHANGELOG.md y los doce SKILL.md) no viaja: origin/develop tiene el equipo atrasado y forzar los blobs dejaria el registry mintiendo contra los SKILL.md que no suben. La alineacion del canon sigue pendiente expreso del turno anterior.",
+    "docs/DATABASE_CONVENTIONS.md tampoco viaja: la pagina no existe en develop, y crearla aqui escribiria en la rama las convenciones de otros frentes que nunca pasaron su porton.",
+    "package.json no viaja: trae cambios de otros frentes. En develop el instrumento se invoca con `node scripts/certifications/mobile-app-url-admin-local.js --web`, sin alias.",
+    "Las tres capturas PNG de la certificacion quedan en desarrollo: sube el JSON con los 28 controles medidos. Decision del plan de choque de disco (2026-11-18), no olvido.",
+    "El ultimo commit es un merge `-s ours` contra origin/desarrollo: registra el linaje del commit certificado sin traer el resto del contenido, asi que la ascendencia deja de ser prueba y el porton se sostiene en el blob. Los 65 commits demas de desarrollo que no son de este frente siguen sin subir a develop, medido por arbol (el diff neto es este inventario).",
+    "El sha de cuarenta caracteres de la punta empujada y la salida verbatim de los validadores se consignan en la contabilidad posterior al push: describen una punta que no existe dentro del commit que la describe."
+  ],
+  "verificado_local": {
+    "fecha_hora_local": "2026-11-25T17:25:00-05:00",
+    "rama_trabajo": "codex/qa-url-app-admin-develop-20261125",
+    "puntas": {
+      "origin/main": "e3c2ad17",
+      "origin/develop": "3aaeeb32",
+      "origin/desarrollo": "d667276f"
+    },
+    "divergencia": "git rev-list --left-right --count origin/desarrollo...origin/develop = 68 / 149. La punta de develop se movio durante esta intervencion (merge ajeno de la PR #115) y el candidato se midio contra ella, no contra la punta que se conocia al abrir el turno.",
+    "rutas_inventario": 26,
+    "rutas_producto_en_el_diff": 14,
+    "paridad_blob_candidato": "11/11 rutas carry identicas a origin/desarrollo (invariantes-replay.json), 3 con waiver nominal, 0 borrados",
+    "suites": "contrato del API 11/11 y contrato web 19/19 corridos DENTRO del arbol del candidato; prisma validate verde",
+    "invariantes_de_replay": "11/11 carry, 0 edit por hunks en el instrumento, con el control de mutacion en verde (3 derivas)",
+    "certificacion_de_origen": "28/28 en doce etapas, build_id 7RPf_TbXOdwbM2VMO_Wna, head c682bdf4, control de mutacion 2/2"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-25T17:00:00-05:00",
+    "authorization_flags": {
+      "direct_push_to_develop": true,
+      "auxiliary_branch_promotion": true,
+      "allowed_deletion": false
+    },
+    "nota": "Las banderas cubren exclusivamente las 26 rutas de este inventario. «aun no tocaremos el ambiente de produccion» se lee como prohibicion expresa de main: este manifiesto no autoriza develop -> main, force push, migraciones en Produccion, infraestructura ni cambios en Railway/Supabase."
+  }
+}

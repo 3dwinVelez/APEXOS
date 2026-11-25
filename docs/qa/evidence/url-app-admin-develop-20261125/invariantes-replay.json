@@ -1,0 +1,103 @@
+{
+  "instrumento": "promotion-migration-check",
+  "ejecutado_en": "2026-11-25T22:20:54.539Z",
+  "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-url-app-develop-20261125",
+  "spec": "docs/qa/evidence/url-app-admin-develop-20261125/spec-invariantes.json",
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "contra": "indice del arbol candidato",
+  "label": "invariantes del replay",
+  "passed": true,
+  "total": 11,
+  "rotos": 0,
+  "results": [
+    {
+      "tipo": "carry",
+      "file": "apps/api/prisma/migrations/20261125183000_platform_settings/migration.sql",
+      "esperado": "120b0baa4395c6ab656d613bd9c49369a2222d82",
+      "actual": "120b0baa4395c6ab656d613bd9c49369a2222d82",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/admin/platform-config-service.js",
+      "esperado": "48ac73ed86adcb0b8079165a9f8e48d0ecfed452",
+      "actual": "48ac73ed86adcb0b8079165a9f8e48d0ecfed452",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/admin/routes.js",
+      "esperado": "cc385079ad03732d060c751b519b980424fcf5f1",
+      "actual": "cc385079ad03732d060c751b519b980424fcf5f1",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/admin/public-routes.js",
+      "esperado": "88301fafaff14191bb7284638f0a95206c985713",
+      "actual": "88301fafaff14191bb7284638f0a95206c985713",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/admin-platform-mobile-app-url.test.js",
+      "esperado": "c766defc07eb60bc85103e430b3ddde966f93e37",
+      "actual": "c766defc07eb60bc85103e430b3ddde966f93e37",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/mobileAppInstall.ts",
+      "esperado": "b95eb59b07090abcde8426b3982e127cf53c0edb",
+      "actual": "b95eb59b07090abcde8426b3982e127cf53c0edb",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/components/system/AppInstallBand.tsx",
+      "esperado": "b3c824ef41562c28f77106eab2f6e76c073c5030",
+      "actual": "b3c824ef41562c28f77106eab2f6e76c073c5030",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/mobile-app-install.test.mjs",
+      "esperado": "2d7807b74878822c0e5c098eb7db7e7a14df7f9a",
+      "actual": "2d7807b74878822c0e5c098eb7db7e7a14df7f9a",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/mobile-app-url-admin-local.js",
+      "esperado": "ce62331bfcfed2188cc0f2e3322319f986bf84a7",
+      "actual": "ce62331bfcfed2188cc0f2e3322319f986bf84a7",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/project/app-movil.md",
+      "esperado": "086e26610d5e9876f42bc1b89e835da98b1bc9bc",
+      "actual": "086e26610d5e9876f42bc1b89e835da98b1bc9bc",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/briefs/2026-11-25-url-app-administrable.md",
+      "esperado": "87ada8b551c558a49abedbe9aba0ce0680b8bb58",
+      "actual": "87ada8b551c558a49abedbe9aba0ce0680b8bb58",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    }
+  ]
+}
