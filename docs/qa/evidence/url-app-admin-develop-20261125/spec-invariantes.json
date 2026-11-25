@@ -1,0 +1,54 @@
+{
+  "origen": "origin/desarrollo d667276f (el enlace de la app movil administrado por ambiente)",
+  "origin_ref": "origin/desarrollo",
+  "base_ref": "origin/develop",
+  "carry": [
+    {
+      "file": "apps/api/prisma/migrations/20261125183000_platform_settings/migration.sql",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/src/modules/admin/platform-config-service.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/src/modules/admin/public-routes.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/test/admin-platform-mobile-app-url.test.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/lib/mobileAppInstall.ts",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/components/system/AppInstallBand.tsx",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/test/mobile-app-install.test.mjs",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "scripts/certifications/mobile-app-url-admin-local.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/project/app-movil.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/briefs/2026-11-25-url-app-administrable.md",
+      "from_ref": "origin/desarrollo"
+    }
+  ],
+  "delete": [],
+  "edit": [],
+  "nota": "Once rutas viajan byte a byte desde origin/desarrollo d667276f. Cero eliminaciones y cero edit por hunks en el instrumento: las tres rutas que no son blob de origen (apps/api/prisma/schema.prisma, apps/api/src/middleware/rbac.js, apps/web/app/dashboard/administracion/page.tsx) no caben en carry ni en edit porque suman lineas, y se miden aparte en merge-hunks.json. develop tiene en esas tres rutas contenido de otros frentes (los modelos Apex* del frente apex-control y la fila Marcaciones del panel) que quedan intactos: llevar el blob completo de desarrollo los habria promovido sin su propio porton."
+}

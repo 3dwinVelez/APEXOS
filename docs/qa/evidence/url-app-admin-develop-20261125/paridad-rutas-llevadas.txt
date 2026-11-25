@@ -1,0 +1,23 @@
+REPLAY PUNTUAL - paridad blob por ruta (candidato contra origin/desarrollo d667276f)
+candidato: rama codex/qa-url-app-admin-develop-20261125 sobre origin/develop 3aaeeb32
+
+RUTA                                                           CREAD/DESARROLLO ORIGEN    PARIDAD
+apps/api/prisma/migrations/20261125183000_platform_settings/migration.sql 120b0baa  120b0baa  IDENTICA
+apps/api/prisma/schema.prisma                                  6d173d81  a34ea70f  WAIVER (hunk fusionado)
+apps/api/src/middleware/rbac.js                                c3cc5238  89840094  WAIVER (hunk fusionado)
+apps/api/src/modules/admin/platform-config-service.js          48ac73ed  48ac73ed  IDENTICA
+apps/api/src/modules/admin/public-routes.js                    88301faf  88301faf  IDENTICA
+apps/api/src/modules/admin/routes.js                           cc385079  cc385079  IDENTICA
+apps/api/test/admin-platform-mobile-app-url.test.js            c766defc  c766defc  IDENTICA
+apps/web/app/dashboard/administracion/page.tsx                 6ee0e856  2061599e  WAIVER (hunk fusionado)
+apps/web/components/system/AppInstallBand.tsx                  b3c824ef  b3c824ef  IDENTICA
+apps/web/lib/mobileAppInstall.ts                               b95eb59b  b95eb59b  IDENTICA
+apps/web/test/mobile-app-install.test.mjs                      2d7807b7  2d7807b7  IDENTICA
+docs/briefs/2026-11-25-url-app-administrable.md                87ada8b5  87ada8b5  IDENTICA
+docs/project/app-movil.md                                      086e2661  086e2661  IDENTICA
+scripts/certifications/mobile-app-url-admin-local.js           ce62331b  ce62331b  IDENTICA
+
+total rutas en el diff neto: 14
+identicas a origin/desarrollo: 11
+con waiver de origen (hunks): 3
+borrados: 0

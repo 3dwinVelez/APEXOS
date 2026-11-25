@@ -54,11 +54,28 @@ Todo el texto vive en `apps/web/lib/mobileAppInstall.ts` (`APP_INSTALL_LABELS` e
 
 El ancho de pantalla no sirve porque una ventana de escritorio angosta fingiria celular, y `pointer: coarse` tampoco porque algunos portatiles con pantalla tactil lo reportan.
 
-## Direccion de la app y variables
+## Direccion de la app: se administra por ambiente
 
-`mobileAppUrl()` devuelve el valor de `NEXT_PUBLIC_MOBILE_APP_URL` cuando existe y es una URL `https` valida; si no, usa la quemada `https://appapexos-production.up.railway.app`.
+El enlace que ofrece el boton **ya no esta quemado en el artefacto**. Cada despliegue guarda el suyo en la tabla `platform_settings` (clave `mobile_app.url`) y lo sirve antes del login:
 
-No hace falta configurar ninguna variable en Railway para que el boton funcione. La variable existe por si la direccion cambia de ambiente: se define en el build del portal y queda quemada en el artefacto, igual que el resto de URLs publicas del frontend.
+- **Lectura publica**: `GET /api/v1/public/platform/mobile-app`. No necesita sesion -el acceso es previo-, responde solo `{ url }`, lleva `cache-control: no-store` y esta limitada a 60 peticiones por minuto. Se cachea 20 segundos en el proceso del API para que abrir el acceso no pague un viaje a la base cada vez.
+- **Escritura administrada**: `GET` y `PUT /api/v1/admin/platform/mobile-app` dentro de **Administracion APEX - Configurar - Sistema - App movil**. Detras de `authenticate` y de la capacidad `platform_settings` (leer: `configuracion` con access/view/configure/administer; escribir: configure/administer).
+- **Quien puede cambiarlo**: la escritura la bloquea `requirePlatformAdmin`: solo `APEX_ADMIN` o un rol con `role_type: superadmin`. Un administrador de empresa ve el valor pero no puede moverlo, porque el enlace es publico y se le muestra a **todas** las empresas del ambiente; el rol grueso (`admin_empresa`, `admin:write`) no alcanza.
+- **Que se valida**: `https` con dominio completo, sin usuario/clave, sin `#`, menos de 300 caracteres y sin barra final. Cada rechazo devuelve un nombre propio (`URL_APP_MOVIL_NO_HTTPS`, `URL_APP_MOVIL_CON_CREDENCIALES`, etc.) para que la pantalla lo pueda decir sin traducir un 400. La pantalla es mas dura que el API: ella solo deja escribir `https`. El API admite ademas `http` en `localhost`, `127.0.0.1` o `[::1]` para que un puesto de trabajo pueda enlazar su propia app durante una certificacion -ese valor no se puede tipear desde Administracion, y por eso no puede colarse en un ambiente real por accidente.
+- **Quien lo cambio**: la columna `updated_by` guarda el **correo**, no el id. El token no viaja con el correo (las claims son `id`, `tenant_id`, `role`), asi que el servicio lee la cuenta al guardar; si no puede leerla, degrada al id: se pierde la autoria visible pero no el guardado. Cada cambio escribe ademas su `AuditLog` con el valor anterior y el nuevo.
+- **Respaldo**: si la base no tiene fila, tiene un valor torcido o no responde, el acceso ofrece el destino quemado `https://appapexos-production.up.railway.app`. El boton nunca se queda sin destino, y un `http` administrado no reemplaza el respaldo.
+- **Si la lectura falla**: la ventana avisa "No se pudo leer el enlace de la app" y deja el campo vacio; no pinta un destino a medias ni deja guardar sobre un valor que no se alcanzo a ver.
+- **Boton «Restaurar»**: escribe el destino quemado y la respuesta se marca `restaurada: true`, para que quede dicho en voz alta que se volvio al valor por defecto.
+
+Para el dueno, la consecuencia practica es la que pidio el 2026-11-25: **guardar en un ambiente no cambia el otro**. La ventana muestra el ambiente que respondio (`produccion`, `qa`, `pruebas` o `local`), declarado por el servidor y no por el navegador, y lo mismo repite en el aviso de alcance: para mover el enlace de Produccion hay que entrar a Produccion.
+
+`NEXT_PUBLIC_MOBILE_APP_URL` sigue existiendo como respaldo por build (sirve cuando la API no contesta y en pruebas locales), pero dejo de ser la duena del destino: el valor administrado manda.
+
+## Respaldo por build: `mobileAppUrl()` y su variable
+
+`mobileAppUrl()` devuelve el valor de `NEXT_PUBLIC_MOBILE_APP_URL` cuando existe y es una URL `https` valida; si no, usa la quemada `https://appapexos-production.up.railway.app`. Es el **piso**, no la dueña del destino: el valor administrado en la base lo reemplaza cuando llega la lectura (ver seccion anterior).
+
+No hace falta configurar ninguna variable en Railway para que el boton funcione. La variable sirve para dos casos concretos: probar el portal en un puesto local y sostener el acceso si la API no contesta. Como se define en el build, queda quemada en el artefacto; cambiarla exige reconstruir, y por eso el enlace que ve el usuario se administra en la base y no ahi.
 
 ## Lo que esta certificado y con que instrumento
 
@@ -66,6 +83,10 @@ No hace falta configurar ninguna variable en Railway para que el boton funcione.
 |---|---|
 | `apps/web/test/mobile-app-install.test.mjs` | contrato de la libreria y de las dos pantallas: clasificacion de dispositivos con agentes reales, copy sin deformar, un solo montaje en el acceso y despues del `</form>`, **cero** montajes en el tablero, layout apilado sin breakpoints de ventana, enlace con `rel` seguro, ausencia de enlace en escritorio |
 | `npm run certify:app-install:local` | navegador real con el artefacto de produccion: banda visible **sin sesion** en el acceso, boton que no envia el formulario, guia abierta por el boton, cuatro pasos, enlace exacto en celular, aviso y copiado en computador, tema claro y oscuro, el tablero con modulos servidos **sin banda ni enlace** a la app, y que el destino de la URL responde y es la app movil |
+| `apps/api/test/admin-platform-mobile-app-url.test.js` | contrato del servicio y de las dos rutas: la lectura publica no hereda el `authenticate` ni el tenant, la escritura exige capacidad y superadminico, los cinco rechazos con nombre propio, la autoria que sale del correo de la cuenta aunque el token no lo traiga, y el respaldo cuando el valor guardado no sirve |
+| `node scripts/certifications/mobile-app-url-admin-local.js --web` | veintiocho chequeos sobre una base efimera local con el artefacto de produccion servido: la migracion aplicada dos veces con el mismo DDL, la matriz 401/401/403/200, el guardado que se ve en el acceso sin esperar el TTL de la cache, el respaldo cuando la fila se tuerce, y la ventana de Administracion con sesion real mostrando el ambiente que respondio, el autor con su correo y el aviso de alcance. Deja tres capturas al lado del JSON |
+
+La evidencia del enlace administrable queda en `docs/qa/evidence/url-app-administrable-20261125/` (`local-certification.json` con `build_id` y `head` anclados, `ventana-admin-antes.png`, `ventana-admin-despues.png`, `acceso-celular-enlace-administrado.png`). El instrumento **no** tiene alias en `package.json` todavia: se invoca con la linea de arriba, porque ese archivo trae cambios de otros frentes sin commitear y este corte no los mezcla.
 
 La evidencia de la montura actual queda en `docs/qa/evidence/app-install-acceso-20261125/`. La corrida anterior, con la banda dentro del tablero, queda en `docs/qa/evidence/app-install-lobby-20261124/` como registro de lo que se retiro.
 
@@ -73,5 +94,6 @@ El copiado se mide por las dos vias: con el portapapeles del navegador (en un en
 
 ## Pendientes que dependen del dueno
 
-- La instancia enlazada hoy (`appapexos-production`) esta declarada con `environment: QA` en su propia configuracion. Antes de promocionar, conviene decidir si el boton debe apuntar a una instancia que lea datos de produccion; si se decide cambiarla, es una variable de build, no un cambio de codigo.
-- La promocion `desarrollo -> develop` requiere su manifiesto de alcance y `npm run qa:preqa:evidence`. Produccion (`main`) no se toca en esta intervencion.
+- La instancia enlazada hoy (`appapexos-production`) esta declarada con `environment: QA` en su propia configuracion. Desde este corte la pregunta dejo de ser de codigo o de build: es una decision de valor por ambiente que se toma escribiendo en Administracion APEX del ambiente que corresponde. Falta aplicar la migracion `20261125183000_platform_settings` en QA y en Produccion (nube, autorizacion expresa del dueno); sin esa tabla el acceso responde el respaldo quemado y la ventana de administracion avisa que la configuracion no esta instalada (503 con el nombre de la migracion), no se hace el despistado.
+- La promocion `desarrollo -> develop` de este frente ya esta hecha: `origin/develop` corre `a2191e0d` con la banda en el acceso, publicada con su manifiesto de alcance (`docs/qa/manifests/banda-acceso-develop-20261125-scope.json`) y su pre-QA (`docs/qa/manifests/banda-acceso-develop-20261125-preqa.json`). Produccion (`main`, en `e3c2ad17`) no tiene la banda y no se toca en esta intervencion.
+- Una sonda de solo lectura del `/login` desplegado en QA confirma la montura corregida por las clases que solo existen en ella (`p-4` sin `sm:p-5`, boton `w-full` sin `sm:w-auto`) y por la guia abierta con sus cuatro pasos. El mismo turno confirmo, consultando el despliegue activo, que el servicio de web de QA construye la rama `develop` y sirve exactamente el commit publicado (`a2191e0d`). Queda pendiente, con dueno: la corrida formal del instrumento de navegador contra el ambiente (`apexos-qa`), que hasta ahora solo corre contra un artefacto local.

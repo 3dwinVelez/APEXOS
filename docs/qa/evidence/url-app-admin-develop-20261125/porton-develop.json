@@ -1,0 +1,36 @@
+{
+  "cambio": "url-app-administrable-develop-20261125",
+  "para_que_sirve": "Retrato del destino ANTES de tocarlo. El porton de alcance exige que cada ruta del candidato sea el blob de origin/desarrollo; esta tabla dice donde eso era posible y donde no, y de quien es la linea que impide llevar el blob. Sin este retrato, un replay por archivo se parece a un porton verde y en realidad revierte trabajo ajeno.",
+  "puntas": {
+    "origin_desarrollo": "d667276f",
+    "origin_develop": "3aaeeb32",
+    "origin_main": "e3c2ad17",
+    "antepasado_comun_desarrollo_develop": "8208d941",
+    "commits_solos_en_desarrollo": 68,
+    "commits_solos_en_develop": 149,
+    "la_banda_del_acceso_a2191e0d_es_ancestro_de_develop": true
+  },
+  "medicion": "git rev-list --left-right --count origin/desarrollo...origin/develop = 68 / 149. La punta de develop se movio durante esta intervencion (merge de la PR #115, frente ajeno de HR), asi que el candidato se midio contra 3aaeeb32 vivo y no contra la punta que se conocia al abrir el turno.",
+  "rutas": [
+    { "file": "apps/api/prisma/migrations/20261125183000_platform_settings/migration.sql", "develop": "ausente", "mi_padre_c682bdf4": "ausente", "clasificacion": "nueva", "transporte": "blob de desarrollo" },
+    { "file": "apps/api/prisma/schema.prisma", "develop": "2bec5e79", "mi_padre_c682bdf4": "afb584f6", "clasificacion": "choque", "transporte": "hunk propio (+14), blob no viaja", "linea_ajena_que_lo_impide": "model ApexComponent / ApexHealthSample / ApexEvent y el renombre polling_seconds@map(polling_minutes), anadidos por 2a186a63 feat(apex-control): torre externa multientorno y nervios F0. AGENTS.md dice que la torre reposa en desarrollo y su otra mitad del dato sube solo cuando el dueno lo autorice: llevar el blob de desarrollo habria promovido apex-control a develop sin porton propio.", "medido": "el blob de develop (2bec5e79) no existe en ningun commit de origin/desarrollo: divergencia real, no develop atrasado" },
+    { "file": "apps/api/src/middleware/rbac.js", "develop": "f4a17855", "mi_padre_c682bdf4": "e2de816b", "clasificacion": "choque", "transporte": "hunk propio (+7), blob no viaja", "linea_ajena_que_lo_impide": "la fila \"apex-control\": [\"M-31\", ...] del mismo commit 2a186a63. El blob de develop tampoco aparece en la historia de desarrollo.", "medido": "divergencia real" },
+    { "file": "apps/api/src/modules/admin/platform-config-service.js", "develop": "ausente", "mi_padre_c682bdf4": "ausente", "clasificacion": "nueva", "transporte": "blob de desarrollo" },
+    { "file": "apps/api/src/modules/admin/public-routes.js", "develop": "10a90d67", "mi_padre_c682bdf4": "038fcfed", "clasificacion": "choque", "transporte": "blob de desarrollo", "linea_ajena_que_lo_impide": "ninguna, y hay que decirlo: la diferencia es que develop esta ATRAS sobre linaje propio. El blob 10a90d67 es el que desarrollo tuvo en 4776b8fd, y lo que le falta (device_id, agregado por 62338e7b feat(telemetria)) corresponde a un commit que SI es ancestro de origin/develop. Llevar el blob de desarrollo repone esa linea en vez de borrar trabajo ajeno.", "medido": "git merge-base --is-ancestor 62338e7b origin/develop = true" },
+    { "file": "apps/api/src/modules/admin/routes.js", "develop": "d64be598", "mi_padre_c682bdf4": "d64be598", "clasificacion": "identica a mi padre", "transporte": "blob de desarrollo" },
+    { "file": "apps/api/test/admin-platform-mobile-app-url.test.js", "develop": "ausente", "mi_padre_c682bdf4": "ausente", "clasificacion": "nueva", "transporte": "blob de desarrollo" },
+    { "file": "apps/web/app/dashboard/administracion/page.tsx", "develop": "6e16fa1c", "mi_padre_c682bdf4": "66046124", "clasificacion": "choque", "transporte": "hunk propio (+95/-2), blob no viaja", "linea_ajena_que_lo_impide": "la fila { key: \"marcaciones\", title: \"Marcaciones\" } del grupo Sistema, anadida por 9c27c8c9 Mejora panel de administracion y ficha de usuarios. El blob de develop no aparece en la historia de desarrollo: es contenido propio de la rama y no se puede borrar desde este porton.", "medido": "divergencia real" },
+    { "file": "apps/web/components/system/AppInstallBand.tsx", "develop": "9b87741a", "mi_padre_c682bdf4": "9b87741a", "clasificacion": "identica a mi padre", "transporte": "blob de desarrollo" },
+    { "file": "apps/web/lib/mobileAppInstall.ts", "develop": "83d7bd96", "mi_padre_c682bdf4": "83d7bd96", "clasificacion": "identica a mi padre", "transporte": "blob de desarrollo" },
+    { "file": "apps/web/test/mobile-app-install.test.mjs", "develop": "047518f1", "mi_padre_c682bdf4": "047518f1", "clasificacion": "identica a mi padre", "transporte": "blob de desarrollo" },
+    { "file": "docs/briefs/2026-11-25-url-app-administrable.md", "develop": "ausente", "mi_padre_c682bdf4": "ausente", "clasificacion": "nueva", "transporte": "blob de desarrollo" },
+    { "file": "docs/project/app-movil.md", "develop": "9dc2fce9", "mi_padre_c682bdf4": "438c33c2", "clasificacion": "choque", "transporte": "blob de desarrollo", "linea_ajena_que_lo_impide": "ninguna: el blob de develop (9dc2fce9) es el que desarrollo tuvo en c9725008, o sea develop esta atras sobre el mismo frente. git log entre c9725008 y d667276f muestra que este documento solo lo tocaron 24468e21, c682bdf4 y d667276f, los tres de este frente.", "medido": "develop atrasado, no divergente" },
+    { "file": "scripts/certifications/mobile-app-url-admin-local.js", "develop": "ausente", "mi_padre_c682bdf4": "ausente", "clasificacion": "nueva", "transporte": "blob de desarrollo" }
+  ],
+  "rutas_que_no_viajan": [
+    { "file": "docs/DATABASE_CONVENTIONS.md", "motivo": "la pagina no existe en origin/develop. El commit de este frente le anadio una seccion, pero crear el archivo aqui escribiria en develop las convenciones de otros frentes que nunca pasaron su porton. Queda declarado en deriva_declarada, igual que el catalogo de componentes del porton anterior." },
+    { "file": "agents/registry.json y agents/CHANGELOG.md y los doce SKILL.md del canon", "motivo": "la alineacion del canon en develop es pendiente expreso del turno anterior y el dueno ordeno no abrir otros temas. Forzar los blobs dejaria el registry mintiendo contra los SKILL.md que no suben." },
+    { "file": "package.json", "motivo": "trae cambios de otros frentes sin commitear en desarrollo; el instrumento se invoca con la linea completa." }
+  ],
+  "veredicto": "Catorce rutas: once viajan byte a byte con origin/desarrollo y tres viajan como hunks propios con waiver de origen nominal. Ninguna linea de otros frentes entra ni sale de develop."
+}

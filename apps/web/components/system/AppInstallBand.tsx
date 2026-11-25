@@ -2,12 +2,23 @@
 
 import { buttonClasses } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { APP_INSTALL_LABELS, INSTALL_STEPS, handheldSignal, isHandheldDevice, mobileAppUrl } from "@/lib/mobileAppInstall";
+import { APP_INSTALL_LABELS, INSTALL_STEPS, fetchConfiguredMobileAppUrl, handheldSignal, isHandheldDevice, mobileAppUrl } from "@/lib/mobileAppInstall";
 import { Copy, Info, Smartphone } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function AppInstallBand() {
   const [guideOpen, setGuideOpen] = useState(false);
+  const [url, setUrl] = useState(() => mobileAppUrl());
+
+  useEffect(() => {
+    let alive = true;
+    void fetchConfiguredMobileAppUrl().then((configured) => {
+      if (alive) setUrl(configured);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <section aria-labelledby="app-install-title" className="rounded-card border border-line bg-surface p-4">
@@ -25,15 +36,14 @@ export function AppInstallBand() {
           {APP_INSTALL_LABELS.bandAction}
         </button>
       </div>
-      {guideOpen ? <AppInstallGuide onClose={() => setGuideOpen(false)} /> : null}
+      {guideOpen ? <AppInstallGuide onClose={() => setGuideOpen(false)} url={url} /> : null}
     </section>
   );
 }
 
-function AppInstallGuide({ onClose }: { onClose: () => void }) {
+function AppInstallGuide({ onClose, url }: { onClose: () => void; url: string }) {
   const [handheld] = useState(() => isHandheldDevice(handheldSignal()));
   const [feedback, setFeedback] = useState("");
-  const url = mobileAppUrl();
 
   async function copyLink() {
     try {

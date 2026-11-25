@@ -1,0 +1,101 @@
+{
+  "cambio": "url-app-administrable-develop-20261125",
+  "ejecutado_en": "2026-11-25T22:21:57.463Z",
+  "rama_destino": "origin/develop 3aaeeb32",
+  "criterio": "Tres rutas no pueden llevar el blob de desarrollo: develop tiene lineas de otros frentes (modelos Apex* del frente apex-control, polling_minutes, la fila Marcaciones del panel) y llevar el blob completo los habria promovido sin su propio porton. Aqui se mide que lo que sube son MIS hunks y que ninguna linea ajena se pierde.",
+  "rutas": [
+    {
+      "file": "apps/api/prisma/schema.prisma",
+      "mi_patch": {
+        "anadidas": 14,
+        "quitadas": 0
+      },
+      "candidato_vs_develop": {
+        "anadidas": 14,
+        "quitadas": 0
+      },
+      "anadidas_identicas": true,
+      "quitadas_identicas": true
+    },
+    {
+      "file": "apps/api/src/middleware/rbac.js",
+      "mi_patch": {
+        "anadidas": 7,
+        "quitadas": 0
+      },
+      "candidato_vs_develop": {
+        "anadidas": 7,
+        "quitadas": 0
+      },
+      "anadidas_identicas": true,
+      "quitadas_identicas": true
+    },
+    {
+      "file": "apps/web/app/dashboard/administracion/page.tsx",
+      "mi_patch": {
+        "anadidas": 95,
+        "quitadas": 2
+      },
+      "candidato_vs_develop": {
+        "anadidas": 95,
+        "quitadas": 2
+      },
+      "anadidas_identicas": true,
+      "quitadas_identicas": true
+    }
+  ],
+  "conservacion_de_lineas_ajenas": [
+    {
+      "file": "apps/api/prisma/schema.prisma",
+      "controles": [
+        {
+          "token": "model ApexComponent",
+          "esperado": "ausente",
+          "apariciones": 0,
+          "ok": true
+        },
+        {
+          "token": "model ApexHealthSample",
+          "esperado": "ausente",
+          "apariciones": 0,
+          "ok": true
+        },
+        {
+          "token": "model ApexEvent",
+          "esperado": "ausente",
+          "apariciones": 0,
+          "ok": true
+        },
+        {
+          "token": "polling_minutes  Int      @default(15)",
+          "esperado": "presente",
+          "apariciones": 1,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "file": "apps/api/src/middleware/rbac.js",
+      "controles": [
+        {
+          "token": "\"apex-control\"",
+          "esperado": "ausente",
+          "apariciones": 0,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "file": "apps/web/app/dashboard/administracion/page.tsx",
+      "controles": [
+        {
+          "token": "title: \"Marcaciones\"",
+          "esperado": "ausente",
+          "apariciones": 0,
+          "ok": true
+        }
+      ]
+    }
+  ],
+  "veredicto": "LOS HUNKS SON LOS MIOSES, NI UNA LINEA MAS, Y CERO LINEA AJENA PERDIDA"
+}

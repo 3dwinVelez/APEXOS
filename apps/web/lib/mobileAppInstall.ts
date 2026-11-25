@@ -6,17 +6,74 @@ export const MOBILE_APP_FALLBACK_URL = "https://appapexos-production.up.railway.
 
 export type DeviceSignal = { userAgent: string; maxTouchPoints: number; platform: string };
 
-// El respaldo esta quemado a proposito: la app es un unico servicio, asi que QA y Produccion
-// apuntan al mismo destino y ninguna variable de ambiente es prerrequisito del boton.
-export function mobileAppUrl(env: string | undefined = process.env.NEXT_PUBLIC_MOBILE_APP_URL): string {
-  const candidate = String(env || MOBILE_APP_FALLBACK_URL).trim().replace(/\/+$/, "");
+// El respaldo esta quemado a proposito: si la lectura publica falla, tarda o devuelve un valor
+// torcido, el acceso sigue ofreciendo el destino conocido en vez de un boton roto.
+// El unico http admitido es localhost: coincide con la regla del API (plataforma-config-service) para
+// que lo que un administrador puede guardar sea exactamente lo que el acceso puede usar.
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+export function normalizeMobileAppUrl(candidate: unknown, fallback: string = MOBILE_APP_FALLBACK_URL): string {
+  const value = String(candidate ?? "").trim().replace(/\/+$/, "");
   try {
-    const parsed = new URL(candidate);
-    if (parsed.protocol === "https:" && parsed.hostname) return candidate;
+    const parsed = new URL(value);
+    const loopback = LOOPBACK_HOSTS.has(parsed.hostname);
+    if (parsed.hostname && (parsed.protocol === "https:" || (parsed.protocol === "http:" && loopback))) return value;
   } catch {
     // Configuracion torcida: mejor el destino conocido que un enlace vacio en el lobby.
   }
-  return MOBILE_APP_FALLBACK_URL;
+  const safeFallback = String(fallback || "").trim().replace(/\/+$/, "");
+  return safeFallback || MOBILE_APP_FALLBACK_URL;
+}
+
+export function mobileAppUrl(env: string | undefined = process.env.NEXT_PUBLIC_MOBILE_APP_URL): string {
+  return normalizeMobileAppUrl(env || MOBILE_APP_FALLBACK_URL);
+}
+
+// El enlace se administra por ambiente desde Administracion APEX (platform_settings). La lectura es
+// publica porque el acceso es previo a la sesion, y el valor viaja por el proxy del portal, que ya
+// decide a que API pertenece cada host.
+export const MOBILE_APP_PUBLIC_ENDPOINT = "/api/v1/public/platform/mobile-app";
+export const MOBILE_APP_ADMIN_ENDPOINT = "/api/v1/admin/platform/mobile-app";
+export const MOBILE_APP_FETCH_TIMEOUT_MS = 1500;
+
+export type MobileAppAdminConfig = {
+  url: string;
+  source?: string;
+  environment?: string;
+  fallback_url?: string;
+  updated_at?: string | null;
+  updated_by?: string | null;
+};
+
+type FetchLike = (input: string, init?: Record<string, unknown>) => Promise<{
+  ok: boolean;
+  status: number;
+  json: () => Promise<unknown>;
+}>;
+
+// Se agota en 1,5 s: la pantalla de acceso no puede quedarse esperando a la API para pintar su boton.
+export async function fetchConfiguredMobileAppUrl(
+  fetcher: FetchLike | undefined = typeof fetch === "function" ? fetch.bind(globalThis) : undefined
+): Promise<string> {
+  const local = mobileAppUrl();
+  if (typeof fetcher !== "function") return local;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), MOBILE_APP_FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetcher(MOBILE_APP_PUBLIC_ENDPOINT, {
+      method: "GET",
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+      cache: "no-store"
+    });
+    if (!response?.ok) return local;
+    const body = (await response.json()) as { url?: unknown } | null;
+    return normalizeMobileAppUrl(body?.url, local);
+  } catch {
+    return local;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // Un portatil con pantalla tactil no es un celular: el discriminador es el agente del navegador,
@@ -48,6 +105,28 @@ export const APP_INSTALL_LABELS = {
   copied: "Enlace copiado. Ya puedes enviarlo a tu celular.",
   copyBlocked: "Tu navegador no permitió copiar. El enlace está escrito abajo: selecciónalo y cópialo.",
   installedHint: "¿Ya la instalaste? Ábrela desde su icono y entra con el mismo correo y la misma contraseña."
+} as const;
+
+// Copy del apartado de Administración. Vive aqui, y no en la pantalla, por la misma razon que el
+// copy del acceso: la prueba de contrato y la certificacion de navegador exigen estas cadenas.
+export const MOBILE_APP_ADMIN_LABELS = {
+  itemTitle: "App móvil (enlace del acceso)",
+  itemDescription: "Cambia la dirección a la que envía el botón de instalación en este ambiente.",
+  modalTitle: "Enlace de la app móvil",
+  intro: "Es la dirección que abre la guía «Descarga nuestra app» en la pantalla de acceso. Se guarda en este ambiente, no en la empresa.",
+  environment: "Ambiente que respondió",
+  field: "Dirección de la app",
+  currentSourceBase: "administrado en este ambiente",
+  currentSourceFallback: "destino por defecto, aún no se ha administrado",
+  updated: "Último cambio",
+  updatedBy: "Quién lo cambió",
+  never: "sin cambios todavía",
+  scopeNotice: "Guardar aquí no cambia otros ambientes. Para mover el enlace de Producción hay que entrar a Producción.",
+  save: "Guardar enlace",
+  saving: "Guardando...",
+  saved: "El enlace quedó guardado en este ambiente.",
+  restore: "Volver al destino por defecto",
+  invalid: "Escribe la dirección completa y que empiece por https://"
 } as const;
 
 export const INSTALL_STEPS = [
