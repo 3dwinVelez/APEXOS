@@ -1,0 +1,82 @@
+{
+  "origen": "origin/desarrollo del boton (2e5fff3f)",
+  "origin_ref": "origin/desarrollo",
+  "base_ref": "origin/develop",
+  "carry": [
+    {
+      "file": "apps/web/app/dashboard/page.tsx",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/components/lobby/AppInstallBand.tsx",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/lib/mobileAppInstall.ts",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/test/mobile-app-install.test.mjs",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/briefs/2026-11-24-boton-app-movil-lobby.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/project/app-movil.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-lobby-20261124/certification.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-guia.png",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-lobby.png",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-guia.png",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-lobby.png",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-guia.png",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-lobby.png",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-guia.png",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-lobby.png",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-guia.png",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-lobby.png",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "scripts/certifications/mobile-app-install-browser-local.js",
+      "from_ref": "origin/desarrollo"
+    }
+  ],
+  "delete": [],
+  "edit": [],
+  "nota": "Las dieciocho rutas viajan byte a byte desde origin/desarrollo. No hay edit por hunks: la unica ruta preexistente (apps/web/app/dashboard/page.tsx) se lleva como blob completo y develop no tiene lineas propias en ella, medido en porton-develop.json."
+}

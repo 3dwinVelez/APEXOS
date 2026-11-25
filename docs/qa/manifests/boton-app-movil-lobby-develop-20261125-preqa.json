@@ -1,0 +1,101 @@
+{
+  "change_id": "boton-app-movil-lobby-develop-20261125",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "promotion_branch": "codex/qa-boton-app-movil-develop-20261125",
+  "commit": "b28fabf010ffae36fc87ac332fd58be5e3f72e82",
+  "target_head": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+  "origen_certificado": "2e5fff3f12ee1bf123332afcc80f8ec96d6f5be3",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/app-install-lobby-20261124/certification.json",
+        "../evidence/boton-app-movil-lobby-develop-20261125/suites-candidato.json",
+        "../evidence/boton-app-movil-lobby-develop-20261125/porton-develop.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/app-install-lobby-20261124/certification.json",
+        "../evidence/boton-app-movil-lobby-develop-20261125/paridad-rutas-llevadas.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-app-movil-lobby-develop-20261125/paridad-rutas-llevadas.txt",
+        "../evidence/boton-app-movil-lobby-develop-20261125/suites-candidato.json",
+        "../evidence/boton-app-movil-lobby-develop-20261125/spec-invariantes.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-app-movil-lobby-develop-20261125/suites-candidato.json",
+        "../evidence/app-install-lobby-20261124/certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-app-movil-lobby-develop-20261125/suites-candidato.json",
+        "../evidence/boton-app-movil-lobby-develop-20261125/invariantes-replay.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/mobile-app-install-browser-local.js",
+    "evidence": [
+      "../evidence/app-install-lobby-20261124/certification.json",
+      "../evidence/boton-app-movil-lobby-develop-20261125/porton-develop.json"
+    ],
+    "controls": 111,
+    "passed": 111,
+    "failed": 0,
+    "arbol": "medida en origin/desarrollo 2e5fff3f sobre el artefacto de produccion servido por next start (BUILD_ID KVLBjDje71LMIGoeczYpz, git_head aa428b8a); en el worktree del candidato no hay node_modules y no se creo uno, asi que la equivalencia se probo por blob: las cinco rutas que producen la pantalla y las dos primitivas que consume (ui/button.tsx, ui/ModalFrame.tsx) estan identicas en las dos ramas",
+    "escenarios": ["movil-claro", "movil-oscuro", "escritorio-claro", "escritorio-oscuro", "movil-sin-modulos"],
+    "capturas": 10,
+    "destino_externo": "200 con titulo «APEXOS Web Movil»",
+    "controles_de_mutacion": "forzar el enlace en el pie del escritorio encendio 9 chequeos; colgar la banda dentro de la rama de modulos dejo la corrida en 85/109 con 24 rojos. El instrumento tiene dientes medidos.",
+    "despues_pendiente": "la corrida del mismo instrumento contra el lobby desplegado en QA desde develop es la pata que falta y se versiona en la contabilidad post-push"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/boton-app-movil-lobby-develop-20261125/invariantes-replay.json",
+      "../evidence/boton-app-movil-lobby-develop-20261125/control-de-mutacion-instrumento.json",
+      "../evidence/boton-app-movil-lobby-develop-20261125/paridad-rutas-llevadas.txt",
+      "../evidence/boton-app-movil-lobby-develop-20261125/suites-candidato.json"
+    ],
+    "basis": "La regresion del replay se mide por invariantes y no por narrativa: 18/18 rutas carry byte a byte contra origin/desarrollo, 0 delete, 0 edit por hunks, con el control de mutacion del propio instrumento en verde (3 derivas que quedan rojas). Sobre el arbol del candidato corren la prueba de contrato del boton (11/11) y las cuatro suites que ya vivian en develop (operational-home-redesign, lobby-greeting, module-portfolio, technical-alert-silence: 35/35), es decir, el lobby heredado y el silencio de fallos tecnicos se revisten en el destino y no solo en el origen."
+  },
+  "validation_summary": {
+    "certified_application_commit": "b28fabf010ffae36fc87ac332fd58be5e3f72e82",
+    "baseline_preserved": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+    "certificacion_local": "111/111",
+    "contrato_en_el_candidato": "11/11",
+    "suites_del_lobby_en_el_candidato": "35/35",
+    "invariantes_replay": "18/18 carry, 0 blobs distintos, 0 waivers",
+    "lineas_anadidas_en_el_hunkeo": 0,
+    "suite_web_no_ejecutada_en_el_candidato": "node --test apps/web/test/*.test.mjs pide dependencias y el worktree no tiene node_modules; en el arbol de origen esta medida 905/900 con cinco rojos preexistentes de otros frentes. Se declara el limite en porton-develop.json en lugar de presentar la corrida como hecha.",
+    "evidence_policy": "La evidencia viaja versionada en docs/qa/evidence/boton-app-movil-lobby-develop-20261125 y docs/qa/evidence/app-install-lobby-20261124; los logs locales (next-start.log) los excluye .gitignore y no entran al repositorio."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-25T13:53:00-05:00",
+    "instruction": "porfavor extiende solo el cambio del boton hacia develop",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "direct_push_to_develop": true
+    },
+    "authorization_basis": "La orden del 2026-11-25 es puntual: el boton y su guia hacia develop, y con ello el despliegue en QA para medir el DESPUES. No otorga main, force push, reescritura de historia compartida, migraciones remotas, cambios en Railway/Supabase, infraestructura ni borrado de ramas ajenas al frente."
+  }
+}

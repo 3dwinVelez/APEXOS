@@ -1,0 +1,182 @@
+{
+  "instrumento": "suites corridas dentro del arbol del candidato (origin/develop + las 18 rutas del boton)",
+  "rama_candidato": "codex/qa-boton-app-movil-develop-20261125",
+  "punta_candidato": "b28fabf010ffae36fc87ac332fd58be5e3f72e82",
+  "base_destino": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+  "arbol": "sin node_modules: las suites son de lectura de fuente con node:test puro, no requieren dependencias",
+  "node_version": "v22.23.1",
+  "plataforma": "win32",
+  "salidas": [
+    {
+      "grupo": "contrato del boton",
+      "comando": "node --experimental-strip-types --no-warnings --test apps/web/test/mobile-app-install.test.mjs",
+      "archivos": 1,
+      "inicio_utc": "2026-11-25T18:53:20.173Z",
+      "fin_utc": "2026-11-25T18:53:20.556Z",
+      "pruebas": 11,
+      "pasan": 11,
+      "fallan": 0,
+      "canceledos": 0,
+      "omitidos": 0,
+      "codigo_salida": 0
+    },
+    {
+      "grupo": "lobby y silencio tecnico del arbol de destino",
+      "comando": "node --experimental-strip-types --no-warnings --test apps/web/test/operational-home-redesign.test.mjs apps/web/test/lobby-greeting.test.mjs apps/web/test/module-portfolio.test.mjs apps/web/test/technical-alert-silence.test.mjs",
+      "archivos": 4,
+      "inicio_utc": "2026-11-25T18:53:20.557Z",
+      "fin_utc": "2026-11-25T18:53:21.286Z",
+      "pruebas": 35,
+      "pasan": 35,
+      "fallan": 0,
+      "canceledos": 0,
+      "omitidos": 0,
+      "codigo_salida": 0
+    }
+  ],
+  "paridad_rutas_llevadas": {
+    "total": 18,
+    "distintos": 0,
+    "detalle": [
+      {
+        "ruta": "apps/web/app/dashboard/page.tsx",
+        "estado": "M",
+        "blob_candidato": "f663329f86356b3797c95d3a7a5b07ab41fc5e22",
+        "blob_origin_desarrollo": "f663329f86356b3797c95d3a7a5b07ab41fc5e22",
+        "identico": true
+      },
+      {
+        "ruta": "apps/web/components/lobby/AppInstallBand.tsx",
+        "estado": "A",
+        "blob_candidato": "6a80868f06c309771cdbf4fc4b6b528990b1964b",
+        "blob_origin_desarrollo": "6a80868f06c309771cdbf4fc4b6b528990b1964b",
+        "identico": true
+      },
+      {
+        "ruta": "apps/web/lib/mobileAppInstall.ts",
+        "estado": "A",
+        "blob_candidato": "83d7bd96b1b5774a12f410336aa076fa6b4e1fa3",
+        "blob_origin_desarrollo": "83d7bd96b1b5774a12f410336aa076fa6b4e1fa3",
+        "identico": true
+      },
+      {
+        "ruta": "apps/web/test/mobile-app-install.test.mjs",
+        "estado": "A",
+        "blob_candidato": "ab47ae84e8c231ebe771e387d9e97961e59a9b87",
+        "blob_origin_desarrollo": "ab47ae84e8c231ebe771e387d9e97961e59a9b87",
+        "identico": true
+      },
+      {
+        "ruta": "docs/briefs/2026-11-24-boton-app-movil-lobby.md",
+        "estado": "A",
+        "blob_candidato": "e6e5e75412fcf4351bf6210013f4ce8f212d009c",
+        "blob_origin_desarrollo": "e6e5e75412fcf4351bf6210013f4ce8f212d009c",
+        "identico": true
+      },
+      {
+        "ruta": "docs/project/app-movil.md",
+        "estado": "A",
+        "blob_candidato": "13591ffb0af8c7830ecec62244d87ab929f2e10d",
+        "blob_origin_desarrollo": "13591ffb0af8c7830ecec62244d87ab929f2e10d",
+        "identico": true
+      },
+      {
+        "ruta": "docs/qa/evidence/app-install-lobby-20261124/certification.json",
+        "estado": "A",
+        "blob_candidato": "d3dc872bf1e5d235cc67c857a2f5348910784c53",
+        "blob_origin_desarrollo": "d3dc872bf1e5d235cc67c857a2f5348910784c53",
+        "identico": true
+      },
+      {
+        "ruta": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-guia.png",
+        "estado": "A",
+        "blob_candidato": "44ec8f7a2234784e250586710249836853e6b3ce",
+        "blob_origin_desarrollo": "44ec8f7a2234784e250586710249836853e6b3ce",
+        "identico": true
+      },
+      {
+        "ruta": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-lobby.png",
+        "estado": "A",
+        "blob_candidato": "f367c0e7ea32fa57929cb532d82b42472a1b39b4",
+        "blob_origin_desarrollo": "f367c0e7ea32fa57929cb532d82b42472a1b39b4",
+        "identico": true
+      },
+      {
+        "ruta": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-guia.png",
+        "estado": "A",
+        "blob_candidato": "f69e340a071f4570c420595bfb3228d91de33187",
+        "blob_origin_desarrollo": "f69e340a071f4570c420595bfb3228d91de33187",
+        "identico": true
+      },
+      {
+        "ruta": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-lobby.png",
+        "estado": "A",
+        "blob_candidato": "b9c8e1e55fdaab112d3a7634b1959af7d5e477c5",
+        "blob_origin_desarrollo": "b9c8e1e55fdaab112d3a7634b1959af7d5e477c5",
+        "identico": true
+      },
+      {
+        "ruta": "docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-guia.png",
+        "estado": "A",
+        "blob_candidato": "d056c4a898cc0924451c1406aee5f6b90711333c",
+        "blob_origin_desarrollo": "d056c4a898cc0924451c1406aee5f6b90711333c",
+        "identico": true
+      },
+      {
+        "ruta": "docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-lobby.png",
+        "estado": "A",
+        "blob_candidato": "0d845ae8c4ec557b98d7aa341ed071ddf1ffb76d",
+        "blob_origin_desarrollo": "0d845ae8c4ec557b98d7aa341ed071ddf1ffb76d",
+        "identico": true
+      },
+      {
+        "ruta": "docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-guia.png",
+        "estado": "A",
+        "blob_candidato": "3b387f752639cf88d2da719e871fd7baf02adc94",
+        "blob_origin_desarrollo": "3b387f752639cf88d2da719e871fd7baf02adc94",
+        "identico": true
+      },
+      {
+        "ruta": "docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-lobby.png",
+        "estado": "A",
+        "blob_candidato": "f2316dac964a55ea42efca8c540b89248f7a2b79",
+        "blob_origin_desarrollo": "f2316dac964a55ea42efca8c540b89248f7a2b79",
+        "identico": true
+      },
+      {
+        "ruta": "docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-guia.png",
+        "estado": "A",
+        "blob_candidato": "4127e0965441152b552317dd1c75e343912579cd",
+        "blob_origin_desarrollo": "4127e0965441152b552317dd1c75e343912579cd",
+        "identico": true
+      },
+      {
+        "ruta": "docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-lobby.png",
+        "estado": "A",
+        "blob_candidato": "6b3324c8d816b7381646f9fca76391dae5a7abe9",
+        "blob_origin_desarrollo": "6b3324c8d816b7381646f9fca76391dae5a7abe9",
+        "identico": true
+      },
+      {
+        "ruta": "scripts/certifications/mobile-app-install-browser-local.js",
+        "estado": "A",
+        "blob_candidato": "5d67189f01b7358d12d8aa556914c7f8982b3c91",
+        "blob_origin_desarrollo": "5d67189f01b7358d12d8aa556914c7f8982b3c91",
+        "identico": true
+      }
+    ]
+  },
+  "primitivas_consumidas": [
+    {
+      "ruta": "apps/web/components/ui/button.tsx",
+      "identico_con_origin_desarrollo": true,
+      "blob": "97bddb491212e4c6b1fe7c5827157e84e4b5e0a7"
+    },
+    {
+      "ruta": "apps/web/components/ui/ModalFrame.tsx",
+      "identico_con_origin_desarrollo": true,
+      "blob": "d5be51b51739e28a345d101bf2e2a776f19157fd"
+    }
+  ],
+  "lectura_de_los_contadores": "Los contadores salen del resumen TAP de node:test (lineas `# tests`, `# pass`, `# fail`). Dos intentos previos los devolvieron vacios: el primero por el CRLF de la consola de Windows y el segundo porque el patron llego sin la barra del digito. Se normalizo el CR, se escribio el patron sin escapes y la corrida se repito completa; ninguna cifra se reutilizo del intento anterior."
+}
