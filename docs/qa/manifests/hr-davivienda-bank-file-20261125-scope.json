@@ -1,0 +1,53 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-davivienda-bank-file-20261125",
+  "target_branch": "develop",
+  "source_branch": "desarrollo",
+  "base_commits": { "develop": "a2191e0dc714038946592105d4b8ad8f4fcd6ce0" },
+  "certified_commit": "3175886df9048584591a10d9a40a553d878ea11f",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commits": ["778e1c98", "9a172149", "09cad584"],
+    "replay_sobre": "origin/develop a2191e0dc714038946592105d4b8ad8f4fcd6ce0",
+    "metodo": "cherry-pick -x de tres commits puntuales sobre la punta actual de develop; sin conflictos, develop conserva todo su codigo en service.js, routes.js y empleados/page.tsx"
+  },
+  "change_intent": {
+    "summary": "Plano Davivienda de Pagos Masivos para el pago de nomina quincenal: servicio buildPayrollBankFile, rutas GET de descarga, tipo de cuenta del empleado y configuracion bank_file de la empresa. Incluye la correccion de exportacion del servicio y la invalidacion de cache al guardar la configuracion de nomina, hallados en la certificacion local. Sin migraciones.",
+    "modules": ["talento-humano", "nomina", "qa-evidencia"]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/banks.js",
+    "apps/api/src/modules/hr/davivienda-file.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-davivienda-bank-file.test.js",
+    "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/test/hr-davivienda-bank-file-ui.test.mjs",
+    "scripts/certifications/hr-davivienda-bank-file-local.js",
+    "docs/qa/manifests/hr-davivienda-bank-file-20261125-scope.json",
+    "docs/qa/evidence/hr-davivienda-bank-file-20261125/"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/banks.js" },
+    { "status": "A", "file": "apps/api/src/modules/hr/davivienda-file.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/test/hr-davivienda-bank-file.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx" },
+    { "status": "A", "file": "apps/web/test/hr-davivienda-bank-file-ui.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/hr-davivienda-bank-file-20261125/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-davivienda-bank-file-20261125/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/manifests/hr-davivienda-bank-file-20261125-scope.json" },
+    { "status": "A", "file": "scripts/certifications/hr-davivienda-bank-file-local.js" }
+  ],
+  "protected_capabilities": [
+    { "name": "RBAC: el plano exige permiso payroll/read", "status": "passed", "evidence": ["../evidence/hr-davivienda-bank-file-20261125/local-certification.json"] },
+    { "name": "Aislamiento de tenant en plano y configuracion bank_file", "status": "passed", "evidence": ["../evidence/hr-davivienda-bank-file-20261125/local-certification.json"] },
+    { "name": "Exclusion de nomina anulada y neto cero, registros de 170 caracteres con CRLF", "status": "passed", "evidence": ["../evidence/hr-davivienda-bank-file-20261125/local-certification.json"] }
+  ]
+}
