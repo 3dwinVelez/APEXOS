@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "environment": "LOCAL",
+  "started_at": "2026-11-25T21:16:49.423Z",
+  "checks": [
+    "preview links three complete days without stored workdays and has no payroll/workday writes",
+    "period boundaries, incomplete day, RBAC and tenant isolation are enforced",
+    "browser payroll trial displays linked days and hours in the requested fortnight",
+    "definitive liquidation persists the same hours and repeated trial remains unchanged",
+    "stale processed rows are replaced in calculation without modifying the stored cache",
+    "approved day correction replaces the raw day without duplicate pay"
+  ],
+  "finished_at": "2026-11-25T21:17:53.325Z"
+}

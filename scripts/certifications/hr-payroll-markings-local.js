@@ -62,6 +62,21 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
       await page.waitForFunction(()=>document.body.innerText.includes('Vista de prueba sin guardar'));
       const cells=await page.evaluate(()=>[...document.querySelectorAll('tr')].find(row=>row.innerText.includes('QA Edwar own'))?.innerText);assert.ok(cells,cells);assert.match(cells,/\b3\b/);assert.match(cells,/\b24\b/);
       await page.screenshot({path:path.join(folder,'payroll-linked-trial.png'),fullPage:true});
+      assert.ok(await page.$('nav[aria-label="Etapas de nómina"]'));
+      assert.match(await page.$eval('#payroll-documents tfoot',el=>el.innerText), /24:00/);
+      const search=await page.$('input[aria-label="Buscar documentos por empleado"]');
+      await search.type('NO-SUCH-EMPLOYEE');await page.waitForFunction(()=>document.querySelector('#payroll-documents tbody').children.length===0);
+      assert.match(await page.$eval('#payroll-documents tfoot',el=>el.innerText), /Total \(0\)/);
+      await search.click();await page.keyboard.down('Control');await page.keyboard.press('KeyA');await page.keyboard.up('Control');await page.keyboard.press('Backspace');
+      await page.waitForFunction(()=>document.querySelector('#payroll-documents tbody').children.length===1);
+      await page.click('#payroll-documents button[aria-pressed]');await page.waitForFunction(()=>document.querySelector('#payroll-documents tbody').children.length===0);
+      await page.click('#payroll-documents button[aria-pressed]');await page.waitForFunction(()=>document.querySelector('#payroll-documents tbody').children.length===1);
+      await page.evaluate(()=>[...document.querySelectorAll('#payroll-documents button')].find(b=>b.textContent.trim()==='Ver').click());
+      await page.waitForSelector('[role="dialog"]');await page.click('button[aria-label="Cerrar detalle del comprobante"]');
+      await page.setViewport({width:390,height:844});await page.screenshot({path:path.join(folder,'payroll-redesign-mobile.png'),fullPage:true});
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Mobile page must not overflow horizontally');
+      await page.setViewport({width:1500,height:1100});await page.screenshot({path:path.join(folder,'payroll-redesign-desktop.png'),fullPage:true});
+      console.log('PASS redesigned summary, filtered totals, alert toggle, concept dialog, desktop and mobile');
       const route='/talento-humano/nomina/liquidaciones';
       async function clickRun(){await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(node=>node.textContent.trim()==='Liquidar nomina'&&!node.disabled));await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Liquidar nomina').click());}
       await db.$executeRaw`INSERT INTO th_nomina_cierres_periodo (tenant_id,period_key,period_type,date_start,date_end,status) VALUES (${own.tenant.id},${input.period_key},'quincena','2026-11-01','2026-11-15','cerrado')`;
