@@ -1,0 +1,49 @@
+{
+  "sonda": "navegador contra el acceso y la administracion desplegados en QA",
+  "instrumento": "corrida manual con el navegador del puesto (browser-use) sobre https://apexos-web-qa-production.up.railway.app",
+  "ejecutado_en": "2026-11-25T17:40:34-05:00",
+  "binario": {
+    "api_qa_health_commit": "2943da63f623",
+    "punta_promocionada_develop": "2943da63f623f4c86834ffa6355957f1e75e4190",
+    "modulos": 19
+  },
+  "cuenta": "qa.plat.web.202611252238@apexos.invalid (rol APEX_ADMIN del tenant NYVORA, sembrada por mobile-app-url-admin-qa.js --seed-only y retirada por --retire)",
+  "observaciones": [
+    {
+      "nombre": "el acceso sin sesion ofrece la banda",
+      "medida": "region 'APEXOS Web Móvil' presente en /login con el boton 'Descarga nuestra app' de type=button y closest('form') nulo (414 px de ancho)",
+      "resultado": "cierto"
+    },
+    {
+      "nombre": "la ventana de administracion dice en que ambiente estas",
+      "medida": "tarjeta 'App móvil (enlace del acceso)' leida del DOM: 'AMBIENTE QUE RESPONDIÓ: qa', 'administrado en este ambiente' y el aviso 'Guardar aquí no cambia otros ambientes. Para mover el enlace de Producción hay que entrar a Producción.'",
+      "resultado": "cierto",
+      "nota": "el 'qa' lo declara el servidor desplegado por si solo (TARGET_ENV del servicio), no lo fuerza el arnés como en la corrida local"
+    },
+    {
+      "nombre": "guardar desde la pantalla llega al acceso",
+      "medida": "tras escribir https://apexos-web-qa-production.up.railway.app y pulsar 'Guardar enlace': la lectura publica GET /api/v1/public/platform/mobile-app devuelve esa url, y la guia del acceso -abierta en la misma ventana- muestra ese destino y el boton 'Copiar enlace' copia exactamente esa cadena (portapapeles interceptado: 'https://apexos-web-qa-production.up.railway.app', con el aviso 'Enlace copiado. Ya puedes enviarlo a tu celular.')",
+      "resultado": "cierto",
+      "detalle_guia": "en escritorio la guia muestra el aviso de exclusividad movil y sus cuatro pasos, sin enlace directo: es el contrato ya certificado por prueba de contrato"
+    },
+    {
+      "nombre": "la autoria se ve con correo, no con numero",
+      "medida": "'Quién lo cambió: qa.plat.web.202611252238@apexos.invalid' con fecha '25/11/2026, 5:39:33 p.m.' tras el guardado, y '5:40:34 p.m.' tras el retiro al defecto",
+      "resultado": "cierto"
+    },
+    {
+      "nombre": "volver al destino por defecto funciona y desaparece cuando ya estas en el defecto",
+      "medida": "el boton 'Volver al destino por defecto' aparece solo cuando el campo distinto del quemado; tras pulsarlo el campo vuelve a https://appapexos-production.up.railway.app y el boton deja de existir",
+      "resultado": "cierto"
+    },
+    {
+      "nombre": "cero escrituras no autorizadas en el ambiente",
+      "medida": "un administrador de empresa (rol 'Administrador de empresa' del mismo tenant) intenta escribir por API: 403 PLATAFORMA_SOLO_SUPERADMIN y el conteo de filas no cambia; sin sesion, GET y PUT responden 401",
+      "resultado": "cierto",
+      "fuente": "docs/qa/evidence/url-app-admin-develop-20261125/qa-remoto.json"
+    }
+  ],
+  "veredicto": "EN QA LA PANTALLA ADMINISTRA EL ENLACE DE ESE AMBIENTE Y EL ACCESO LO REFLEJA, SIN TOCAR PRODUCCION",
+  "repetible": "la parte repetible de esta pata es el instrumento versionado scripts/certifications/mobile-app-url-admin-qa.js (17 controles de API). Las lecturas de DOM de este archivo son una corrida manual: se describe como se midio cada valor para que otra persona pueda repetirla, pero no hay un arnés de navegador contra el ambiente versionado en este corte.",
+  "limitacion_declarada": "no se midieron en esta corrida las ventanas nativas (alert/confirm/prompt) ni el tema claro/oscuro contra el ambiente desplegado: esas patas quedaron certificadas en local."
+}

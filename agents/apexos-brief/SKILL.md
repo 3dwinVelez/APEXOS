@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.104.3
+version: 2.104.4
 updated_at: 2026-11-25
 contract: 2
 ---
