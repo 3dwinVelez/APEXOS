@@ -1,0 +1,22 @@
+OK   M apps/web/app/dashboard/page.tsx blob=f663329f8635 igual_en_origin_desarrollo=true
+OK   A apps/web/components/lobby/AppInstallBand.tsx blob=6a80868f06c3 igual_en_origin_desarrollo=true
+OK   A apps/web/lib/mobileAppInstall.ts blob=83d7bd96b1b5 igual_en_origin_desarrollo=true
+OK   A apps/web/test/mobile-app-install.test.mjs blob=ab47ae84e8c2 igual_en_origin_desarrollo=true
+OK   A docs/briefs/2026-11-24-boton-app-movil-lobby.md blob=e6e5e75412fc igual_en_origin_desarrollo=true
+OK   A docs/project/app-movil.md blob=13591ffb0af8 igual_en_origin_desarrollo=true
+OK   A docs/qa/evidence/app-install-lobby-20261124/certification.json blob=d3dc872bf1e5 igual_en_origin_desarrollo=true
+OK   A docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-guia.png blob=44ec8f7a2234 igual_en_origin_desarrollo=true
+OK   A docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-lobby.png blob=f367c0e7ea32 igual_en_origin_desarrollo=true
+OK   A docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-guia.png blob=f69e340a071f igual_en_origin_desarrollo=true
+OK   A docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-lobby.png blob=b9c8e1e55fda igual_en_origin_desarrollo=true
+OK   A docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-guia.png blob=d056c4a898cc igual_en_origin_desarrollo=true
+OK   A docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-lobby.png blob=0d845ae8c4ec igual_en_origin_desarrollo=true
+OK   A docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-guia.png blob=3b387f752639 igual_en_origin_desarrollo=true
+OK   A docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-lobby.png blob=f2316dac964a igual_en_origin_desarrollo=true
+OK   A docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-guia.png blob=4127e0965441 igual_en_origin_desarrollo=true
+OK   A docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-lobby.png blob=6b3324c8d816 igual_en_origin_desarrollo=true
+OK   A scripts/certifications/mobile-app-install-browser-local.js blob=5d67189f01b7 igual_en_origin_desarrollo=true
+
+rutas=18 blobs_distintos=0
+DIST primitiva apps/web/components/ui/button.tsx blob=97bddb491212 identica_en_ambas_ramas=undefined
+DIST primitiva apps/web/components/ui/ModalFrame.tsx blob=d5be51b51739 identica_en_ambas_ramas=undefined

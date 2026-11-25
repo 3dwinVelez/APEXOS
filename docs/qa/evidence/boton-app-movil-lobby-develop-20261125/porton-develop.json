@@ -1,0 +1,87 @@
+{
+  "instrumento": "porton de promocion desarrollo -> develop (boton de la app movil en el lobby)",
+  "fecha_local": "2026-11-25T13:53:00-05:00",
+  "fecha_utc": "2026-11-25T18:53:00Z",
+  "autorizacion": "El dueno del proyecto (Edwin), 2026-11-25: «porfavor extiende solo el cambio del boton hacia develop». La orden es puntual: el boton y su guia, no la rama completa. No cubre main, force push, rebase de ramas permanentes, migraciones remotas, infraestructura ni borrado de ramas.",
+  "candidate_ref": "codex/qa-boton-app-movil-develop-20261125",
+  "target_head": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+  "source_head": "2e5fff3f12ee1bf123332afcc80f8ec96d6f5be3",
+  "commit_funcional_certificado": "5e39dd5225e6d302a24ed5c0672305f20276ea79",
+  "antepasado_comun": "8208d9417ba6e1aff03bb5529bd5ec6aac074a0b",
+  "commits_de_origen": [
+    "5e39dd52 (libreria, banda, montaje de tres lineas, prueba de contrato, certificado, documento funcional, catalogo y canon)",
+    "9da95f1b (linea del brief que consigna el commit emitido)",
+    "2e5fff3f (regla 114 del agente del brief: la contabilidad de una publicacion es intervencion nueva)"
+  ],
+  "transporte": {
+    "modo": "replay_puntual",
+    "por_que_no_merge": "origin/develop esta 138 commits adelante en lo suyo y origen/desarrollo 59 en lo propio, con antepasado comun 8208d941. Un merge de ramas barreria 1.000+ rutas de otros frentes hacia develop, y el candado de origen (cada blob contra origin/desarrollo) no lo permitiria sin waivers.",
+    "como_se_armo": "worktree nuevo sobre origin/develop, sin copiar ni enlazar node_modules (regla 40), y `git checkout origin/desarrollo -- <las 18 rutas>`; los hunks no se escribieron a mano: el unico archivo preexistente se llevo como blob completo.",
+    "invariantes": "18/18 carry validadas con scripts/certifications/promotion-migration-check.js contra el arbol del candidato, con el control de mutacion del propio instrumento en verde (3 derivas que deben quedar rojas)"
+  },
+  "medicion_previa_al_replay": {
+    "regla": "un replay por archivo solo es honesto si el destino no tiene lineas propias en esa ruta; se mide contra el antepasado comun 8208d941 y contra la punta de develop",
+    "apps/web/app/dashboard/page.tsx": "desarrollo vs develop = +0 -3: las tres lineas son exactamente el import de la banda, la linea en blanco y el montaje. develop no tiene ninguna linea propia.",
+    "apps/web/components/ui/button.tsx": "blob identico entre origin/desarrollo y origin/develop: la primitiva que pinta el boton es la misma que se certifico",
+    "apps/web/components/ui/ModalFrame.tsx": "blob identico entre origin/desarrollo y origin/develop: el dialogo de la guia es el mismo codigo medido en navegador",
+    "apps/web/app/dashboard/page.tsx_en_base_comun": "el archivo ya existia en 8208d941 con el mismo contenido que en develop, salvo mis tres lineas",
+    "conclusion": "el replay del producto no revierte trabajo ajeno"
+  },
+  "rutas_que_NO_suben_y_por_que": {
+    "package.json": "origin/desarrollo tiene 164 lineas y origin/develop 139: a develop le faltan 25 lineas de otros frentes (agents:sync/check/preflight/coverage, test:agents, control:start, certify:control-tower:*, certify:apex-control:local, mail:login, mail:ingest, test:mailbox, certify:comercio:*, qa:promotion:gates, qa:promotion:migration) y `apps/control-tower` no existe en develop. Traer el blob de desarrollo reinstalaria scripts que apuntan a archivos que no estan en la rama: importaria trabajo ajeno y romperia el destino. El alias `certify:app-install:local` no viaja; el instrumento se invoca con `node scripts/certifications/mobile-app-install-browser-local.js`, que es exactamente lo que el alias ejecuta.",
+    "docs/design/APEXOS_COMPONENT_CATALOG.md": "el archivo no existe en origin/develop (128 lineas en origin/desarrollo). Subirlo seria crear en develop una pagina de catalogo que esa rama nunca tuvo: fuera del alcance del boton.",
+    "agents/registry.json": "divergen cinco agentes: apexos-brief 2.101.0 vs 2.98.0, apexos-frontend 2.47.0 vs 2.46.0, apexos-git-guardian 2.41.0 vs 2.39.0 (la linea de develop lleva updated_at 2026-11-25), apexos-qa 2.122.0 vs 2.119.0, equipo-apexos 2.67.1 vs 2.66.0. Forzar el blob de desarrollo dejaria al registry declarando versiones de agentes cuyos SKILL.md no viajan: `npm run agents:check` se pondria rojo en el candidato por sha256 distinto. El canon viaja entero o no viaja, y aqui no puede viajar entero sin traer reglas de otros frentes.",
+    "agents/CHANGELOG.md": "desarrollo vs develop = +1 -42: develop conserva una linea propia (la baliza de promociones pendientes que escribio el porton de la foto) y le faltan 42 lineas. El blob de desarrollo borraría esa linea ajena.",
+    ".qoder/skills/** y agents/apexos-*/SKILL.md": "a develop le faltan las reglas 131, 132 y 133 de apexos-qa y las 56/57 de guardian; son de otros frentes o del porton de main. No se arrastran.",
+    "apps/control-tower/**": "por regla de repositorio no promociona y ademas no esta en el inventario."
+  },
+  "prueba_de_contrato_en_el_destino": {
+    "comando": "node --experimental-strip-types --no-warnings --test apps/web/test/mobile-app-install.test.mjs",
+    "arbol": "worktree del candidato, sin node_modules: la suite lee fuente con node:test puro",
+    "resultado": "11/11",
+    "evidencia": "suites-candidato.json"
+  },
+  "regresion_en_el_destino": {
+    "comando": "node --experimental-strip-types --no-warnings --test apps/web/test/operational-home-redesign.test.mjs apps/web/test/lobby-greeting.test.mjs apps/web/test/module-portfolio.test.mjs apps/web/test/technical-alert-silence.test.mjs",
+    "resultado": "35/35",
+    "que_protege": "el lobby V4 (hero sin botones, banda fuera del condicional de modulos), el portafolio de modulos del tenant y el silencio de fallos tecnicos (cero window.alert/confirm/prompt). Las cuatro suites existian en develop antes de este porton y corren contra el arbol ya con la banda montada.",
+    "evidencia": "suites-candidato.json"
+  },
+  "certificacion_de_navegador": {
+    "medida_en": "origin/desarrollo 2e5fff3f, artefacto de produccion servido por next start (BUILD_ID KVLBjDje71LMIGoeczYpz, git_head aa428b8a)",
+    "resultado": "111/111, cero rojos, cinco escenarios (movil claro, movil oscuro, escritorio claro, escritorio oscuro, movil sin modulos), diez capturas y destino externo sondeado vivo 200 con titulo «APEXOS Web Movil»",
+    "por_que_cubre_el_candidato": "las cinco rutas que producen la pantalla (libreria, banda, montaje, prueba y certificado) son blob-identicas a las que se certificaron, y las dos primitivas que la banda consume (ui/button.tsx y ui/ModalFrame.tsx) estan blob-identicas entre las dos ramas. El arbol del candidato no tiene node_modules y no se le creo uno para no inflar el disco (plan de choque de disco, 2026-11-18): la pata que falta es la corrida contra el ambiente desplegado, que es precisamente el DESPUES de este porton.",
+    "despues_pendiente": "correr el certificado contra el lobby desplegado en QA desde develop, con la misma rutina de cinco escenarios, y versionarlo en la contabilidad post-push."
+  },
+  "limites_declarados": [
+    "No se corrio `next build` ni `next start` dentro del worktree del candidato: no hay node_modules y la regla de este puesto es no copiarlos ni enlazarlos. La equivalencia se probo por blob de las rutas que pintan la pantalla, no por narracion.",
+    "No se corrio la suite web completa (905 pruebas) en el candidato: exige dependencias. En el arbol de origen ya esta medida: 905/900 con cinco rojos preexistentes de otros frentes, ninguno de los cuales lee las rutas tocadas.",
+    "El DESPUES en navegador desplegado no puede viajar dentro de este commit porque describe una punta que todavia no existe."
+  ],
+  "rutas_inventario": 26,
+  "rutas_llevadas_de_desarrollo": 18,
+  "rutas_nacidas_en_el_porton": [
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/porton-develop.json",
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/suites-candidato.json",
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/paridad-rutas-llevadas.txt",
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/spec-invariantes.json",
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/invariantes-replay.json",
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/control-de-mutacion-instrumento.json",
+    "docs/qa/manifests/boton-app-movil-lobby-develop-20261125-scope.json",
+    "docs/qa/manifests/boton-app-movil-lobby-develop-20261125-preqa.json"
+  ],
+  "paridad_por_blob": {
+    "metodo": "git rev-parse HEAD:<ruta> del candidato contra git rev-parse origin/desarrollo:<ruta>, ruta por ruta",
+    "rutas_comparadas": 18,
+    "blobs_distintos": 0,
+    "waivers_declarados": 0,
+    "evidencia": "paridad-rutas-llevadas.txt"
+  },
+  "gates_previos_del_origen": {
+    "contrato": "11/11",
+    "certificacion_navegador": "111/111",
+    "suite_web": "905 pruebas, 900 pasan, 5 fallan (preexistentes de otros frentes)",
+    "agents_sync_check_preflight_coverage": "11 agentes y 11 documentos, preflight OK_CON_ADVERTENCIAS, coverage OK, test:agents 46/46",
+    "lint_typecheck": "0 errores de lint (24 avisos, linea base) y typecheck limpio"
+  }
+}

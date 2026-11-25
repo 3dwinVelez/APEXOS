@@ -1,0 +1,194 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "boton-app-movil-lobby-develop-20261125",
+  "creado": "2026-11-25T13:53:00-05:00",
+  "autorizado": "dueno del proyecto (Edwin), 2026-11-25: «porfavor extiende solo el cambio del boton hacia develop». La orden autoriza este porton puntual desarrollo -> develop y el despliegue en QA que le sigue. No autoriza main, force push, rebase de ramas permanentes, migraciones remotas, infraestructura, cambios en Railway/Supabase ni borrado de ramas.",
+  "target_branch": "develop",
+  "source_branch": "desarrollo",
+  "promotion_branch": "codex/qa-boton-app-movil-develop-20261125",
+  "transport": "replay_puntual",
+  "base_commits": {
+    "main": "e3c2ad17",
+    "develop": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+    "desarrollo": "2e5fff3f12ee1bf123332afcc80f8ec96d6f5be3"
+  },
+  "base_commit": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+  "target_head": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+  "certified_commit": "2e5fff3f12ee1bf123332afcc80f8ec96d6f5be3",
+  "replay_baseline": "8208d9417ba6e1aff03bb5529bd5ec6aac074a0b",
+  "antepasado_comun": "8208d9417ba6e1aff03bb5529bd5ec6aac074a0b",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "2e5fff3f12ee1bf123332afcc80f8ec96d6f5be3",
+    "commits_de_origen": [
+      "5e39dd52 (libreria, banda, montaje de tres lineas, prueba de contrato, certificado en navegador, documento funcional y canon)",
+      "9da95f1b (linea del brief que consigna el commit emitido)",
+      "2e5fff3f (regla 114 del agente del brief)"
+    ],
+    "nota": "El candidato no es un merge de ramas: se arma sobre origin/develop y recibe `git checkout origin/desarrollo -- <ruta>` de las dieciocho rutas del boton. Las ocho rutas contables nacen aqui (seis de evidencia y los dos manifiestos) y se espejan en desarrollo antes de correr el gate, para que el porton verifique cada blob contra la punta viva de origin/desarrollo sin declarar ningun waiver."
+  },
+  "naturaleza": "Porton funcional puntual: sube a develop el boton «Descarga nuestra app» del lobby con su miniguia de instalacion bifurcada por aparato (celular: los cuatro pasos y el enlace a la app; computador: el aviso de exclusividad y copiar enlace, nunca la accion primaria de abrir la app), mas su prueba de contrato, su certificado en navegador, el documento funcional, el brief y la evidencia versionada. Dieciocho rutas llevadas byte a byte desde origin/desarrollo y ocho nacidas en este porton. Ninguna ruta de esquema, ninguna migracion, nada bajo apps/api.",
+  "change_intent": {
+    "modules": [
+      "lobby",
+      "app-movil",
+      "certificaciones-qa",
+      "documentacion-qa"
+    ],
+    "summary": "Que un usuario del portal encuentre la app movil desde el lobby y sepa instalarla, y que quien esta en computador no caiga en un enlace muerto. Inventario exacto: 26 rutas. Bajo apps/web solo la libreria de copys y deteccion, la banda con su dialogo, la prueba de contrato y el montaje de tres lineas en el lobby; bajo scripts/ solo el instrumento del certificado; el resto es documentacion, evidencia y los dos manifiestos de este porton. Cero rutas bajo apps/api, packages/ o infra/, cero migraciones."
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/page.tsx" },
+    { "status": "A", "file": "apps/web/components/lobby/AppInstallBand.tsx" },
+    { "status": "A", "file": "apps/web/lib/mobileAppInstall.ts" },
+    { "status": "A", "file": "apps/web/test/mobile-app-install.test.mjs" },
+    { "status": "A", "file": "scripts/certifications/mobile-app-install-browser-local.js" },
+    { "status": "A", "file": "docs/briefs/2026-11-24-boton-app-movil-lobby.md" },
+    { "status": "A", "file": "docs/project/app-movil.md" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-lobby-20261124/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-guia.png" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-lobby.png" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-guia.png" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-lobby.png" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-guia.png" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-lobby.png" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-guia.png" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-lobby.png" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-guia.png" },
+    { "status": "A", "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-lobby.png" },
+    { "status": "A", "file": "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/porton-develop.json" },
+    { "status": "A", "file": "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/suites-candidato.json" },
+    { "status": "A", "file": "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/paridad-rutas-llevadas.txt" },
+    { "status": "A", "file": "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/spec-invariantes.json" },
+    { "status": "A", "file": "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/invariantes-replay.json" },
+    { "status": "A", "file": "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/control-de-mutacion-instrumento.json" },
+    { "status": "A", "file": "docs/qa/manifests/boton-app-movil-lobby-develop-20261125-scope.json" },
+    { "status": "A", "file": "docs/qa/manifests/boton-app-movil-lobby-develop-20261125-preqa.json" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/page.tsx",
+    "apps/web/components/lobby/AppInstallBand.tsx",
+    "apps/web/lib/mobileAppInstall.ts",
+    "apps/web/test/mobile-app-install.test.mjs",
+    "scripts/certifications/mobile-app-install-browser-local.js",
+    "docs/briefs/2026-11-24-boton-app-movil-lobby.md",
+    "docs/project/app-movil.md",
+    "docs/qa/evidence/app-install-lobby-20261124/certification.json",
+    "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-guia.png",
+    "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-lobby.png",
+    "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-guia.png",
+    "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-lobby.png",
+    "docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-guia.png",
+    "docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-lobby.png",
+    "docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-guia.png",
+    "docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-lobby.png",
+    "docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-guia.png",
+    "docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-lobby.png",
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/porton-develop.json",
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/suites-candidato.json",
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/paridad-rutas-llevadas.txt",
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/spec-invariantes.json",
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/invariantes-replay.json",
+    "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/control-de-mutacion-instrumento.json",
+    "docs/qa/manifests/boton-app-movil-lobby-develop-20261125-scope.json",
+    "docs/qa/manifests/boton-app-movil-lobby-develop-20261125-preqa.json"
+  ],
+  "allowed_deletions": [],
+  "origin_waivers": [],
+  "certified_functional_paths": [
+    "apps/web/app/dashboard/page.tsx",
+    "apps/web/components/lobby/AppInstallBand.tsx",
+    "apps/web/lib/mobileAppInstall.ts",
+    "apps/web/test/mobile-app-install.test.mjs",
+    "scripts/certifications/mobile-app-install-browser-local.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "El lobby del arbol de destino monta la banda y la guia bifurca segun el aparato",
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-app-movil-lobby-develop-20261125/suites-candidato.json",
+        "../evidence/app-install-lobby-20261124/certification.json",
+        "../evidence/boton-app-movil-lobby-develop-20261125/invariantes-replay.json"
+      ],
+      "notes": "Prueba de contrato 11/11 corrida DENTRO del worktree del candidato sobre el arbol ya con la banda, y certificacion en navegador real 111/111 sobre el artefacto de produccion del arbol de origen (BUILD_ID KVLBjDje71LMIGoeczYpz): en movil los cuatro pasos nombran Chrome, los tres puntos, Instalar app y Crear acceso directo con enlace https en pestana nueva; en escritorio el aviso de exclusividad y el copiado del enlace, con cero enlaces a la app en el documento y la banda visible aunque el tenant no tenga modulos."
+    },
+    {
+      "name": "Las primitivas que consume la banda son las mismas que se certificaron",
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-app-movil-lobby-develop-20261125/paridad-rutas-llevadas.txt",
+        "../evidence/boton-app-movil-lobby-develop-20261125/porton-develop.json"
+      ],
+      "notes": "apps/web/components/ui/button.tsx y apps/web/components/ui/ModalFrame.tsx estan blob-identicos entre origin/desarrollo y origin/develop: el boton y el dialogo se pintan con el mismo codigo medido en navegador, no con un primo parecido. Las cinco rutas que producen la pantalla tambien viajan blob-identicas (18 de 18, 0 distintas)."
+    },
+    {
+      "name": "El replay no revierte trabajo ajeno de develop",
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-app-movil-lobby-develop-20261125/porton-develop.json",
+        "../evidence/boton-app-movil-lobby-develop-20261125/invariantes-replay.json"
+      ],
+      "notes": "Medido contra el antepasado comun 8208d941 y contra la punta: develop no tiene linea propia en apps/web/app/dashboard/page.tsx (desarrollo vs develop = +0 -3, exactamente el import, la linea en blanco y el montaje). Cuatro rutas compartidas quedan FUERA del inventario precisamente porque develop si tiene contenido propio o ajeno: package.json (a develop le faltan 25 lineas de otros frentes y apps/control-tower no existe alli), docs/design/APEXOS_COMPONENT_CATALOG.md (no existe en develop), agents/registry.json (cinco agentes divergen, forzarlo pondria rojo agents:check en el candidato) y agents/CHANGELOG.md (develop conserva una linea propia). Invariantes del replay: 18/18 carry con el control de mutacion del instrumento en verde (3 derivas rojas)."
+    },
+    {
+      "name": "El lobby heredado y el silencio de fallos tecnicos siguen intactos en el destino",
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-app-movil-lobby-develop-20261125/suites-candidato.json"
+      ],
+      "notes": "Las cuatro suites que ya vivian en develop (operational-home-redesign, lobby-greeting, module-portfolio, technical-alert-silence) corren 35/35 sobre el arbol del candidato con la banda montada: el hero sigue sin botones, el portafolio de modulos del tenant no cambia y el flujo del copiado no abre ninguna ventanilla nativa."
+    },
+    {
+      "name": "Nada de datos, RBAC o aislamiento de tenant viaja en este porton",
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-app-movil-lobby-develop-20261125/porton-develop.json",
+        "../evidence/boton-app-movil-lobby-develop-20261125/spec-invariantes.json"
+      ],
+      "notes": "Cero rutas bajo apps/api, cero bajo packages/ o infra/, cero migraciones de esquema (el spec de invariantes no declara ningun delete y el inventario no contiene ninguna ruta de datos). La banda no consulta datos ni depende de active_modules: se ve igual con el lobby vacio, y por eso corre la prueba de contrato y la suite de portafolio sin tocar permisos."
+    }
+  ],
+  "compuertas_exigidas": [
+    "node --experimental-strip-types --no-warnings --test apps/web/test/mobile-app-install.test.mjs dentro del worktree del candidato: 11/11",
+    "node --experimental-strip-types --no-warnings --test apps/web/test/operational-home-redesign.test.mjs apps/web/test/lobby-greeting.test.mjs apps/web/test/module-portfolio.test.mjs apps/web/test/technical-alert-silence.test.mjs dentro del candidato: 35/35",
+    "node scripts/certifications/promotion-migration-check.js --spec docs/qa/evidence/boton-app-movil-lobby-develop-20261125/spec-invariantes.json --against commit --ref HEAD --output .../invariantes-replay.json: 18/18, y su --selftest: 3 derivas medidas",
+    "npm run qa:promotion:scope -- docs/qa/manifests/boton-app-movil-lobby-develop-20261125-scope.json <punta-candidato> origin/develop",
+    "npm run qa:preqa:evidence -- docs/qa/manifests/boton-app-movil-lobby-develop-20261125-preqa.json",
+    "node scripts/git-governance-guard.js promote desarrollo-to-develop con APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP, desde el worktree limpio del candidato",
+    "Despues del despliegue: el certificado en navegador contra el ambiente QA servido desde develop, versionado en la contabilidad post-push"
+  ],
+  "deriva_declarada": [
+    "El alias npm `certify:app-install:local` no viaja porque package.json queda fuera del inventario: en develop el instrumento se invoca con `node scripts/certifications/mobile-app-install-browser-local.js`, que es exactamente lo que ejecuta el alias en origen.",
+    "El canon del equipo no viaja en este porton. origin/develop tiene el equipo atrasado contra origin/desarrollo en cinco agentes (apexos-qa 2.119.0, apexos-brief 2.98.0, apexos-frontend 2.46.0, equipo-apexos 2.66.0 y apexos-git-guardian 2.39.0 con fecha 2026-11-25, una linea de linaje propio). Forzar los blobs dejaria el registry mintiendo contra los SKILL.md que no suben y pondria rojo agents:check en el candidato. La alineacion del canon es una intervencion aparte, con su propio manifiesto y sus propios duenios.",
+    "docs/design/APEXOS_COMPONENT_CATALOG.md tampoco viaja: la pagina no existe en develop, y crearla aqui seria arrastrar 128 lineas de otros frentes.",
+    "El sha de cuarenta caracteres que se empuja a develop, la salida verbatim de los dos validadores y el DESPUES en el navegador desplegado se consignan en la contabilidad post-push: describen una punta que no existe dentro del commit que la describe.",
+    "apps/control-tower/** no promociona por regla de repositorio y no esta en el inventario.",
+    "El ambiente de la app enlazada queda como pendiente del dueno: la instancia publicada se autodeclara environment QA. No se creo ni se modifico ninguna variable en Railway."
+  ],
+  "verificado_local": {
+    "fecha_hora_local": "2026-11-25T13:53:00-05:00",
+    "rama_trabajo": "desarrollo",
+    "puntas": {
+      "origin/main": "e3c2ad17",
+      "origin/develop": "c0fbb4b9c50c177baa694ef9a081c19263047f5f",
+      "origin/desarrollo": "2e5fff3f12ee1bf123332afcc80f8ec96d6f5be3"
+    },
+    "rutas_inventario": 26,
+    "rutas_producto_en_el_diff": 5,
+    "suites": "contrato 11/11 y lobby 35/35 dentro del candidato; certificacion 111/111 en el arbol de origen, con paridad blob de las rutas que pintan la pantalla y de las dos primitivas",
+    "paridad_blob_candidato": "18/18 rutas llevadas identicas a origin/desarrollo, 0 distintas, 0 waivers declarados",
+    "invariantes_de_replay": "18/18 carry, 0 delete, 0 edit por hunks, con el control de mutacion del instrumento en verde"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-25T13:53:00-05:00",
+    "authorization_flags": {
+      "direct_push_to_develop": true,
+      "auxiliary_branch_promotion": true
+    },
+    "nota": "Las banderas cubren exclusivamente las 26 rutas de este inventario y autoriza el despliegue en QA para la corrida DESPUES. No autorizan main, force push, rebase de ramas permanentes, migraciones remotas, infraestructura, cambios en Railway/Supabase ni borrado de ramas."
+  }
+}

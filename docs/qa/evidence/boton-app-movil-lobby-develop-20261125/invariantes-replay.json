@@ -1,0 +1,159 @@
+{
+  "instrumento": "promotion-migration-check",
+  "ejecutado_en": "2026-11-25T18:54:11.981Z",
+  "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\apexos-cand-boton-app-develop-20261125",
+  "spec": "docs/qa/evidence/boton-app-movil-lobby-develop-20261125/spec-invariantes.json",
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "contra": "commit HEAD",
+  "label": "invariantes del replay",
+  "passed": true,
+  "total": 18,
+  "rotos": 0,
+  "results": [
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/page.tsx",
+      "esperado": "f663329f86356b3797c95d3a7a5b07ab41fc5e22",
+      "actual": "f663329f86356b3797c95d3a7a5b07ab41fc5e22",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/components/lobby/AppInstallBand.tsx",
+      "esperado": "6a80868f06c309771cdbf4fc4b6b528990b1964b",
+      "actual": "6a80868f06c309771cdbf4fc4b6b528990b1964b",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/mobileAppInstall.ts",
+      "esperado": "83d7bd96b1b5774a12f410336aa076fa6b4e1fa3",
+      "actual": "83d7bd96b1b5774a12f410336aa076fa6b4e1fa3",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/mobile-app-install.test.mjs",
+      "esperado": "ab47ae84e8c231ebe771e387d9e97961e59a9b87",
+      "actual": "ab47ae84e8c231ebe771e387d9e97961e59a9b87",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/briefs/2026-11-24-boton-app-movil-lobby.md",
+      "esperado": "e6e5e75412fcf4351bf6210013f4ce8f212d009c",
+      "actual": "e6e5e75412fcf4351bf6210013f4ce8f212d009c",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/project/app-movil.md",
+      "esperado": "13591ffb0af8c7830ecec62244d87ab929f2e10d",
+      "actual": "13591ffb0af8c7830ecec62244d87ab929f2e10d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-lobby-20261124/certification.json",
+      "esperado": "d3dc872bf1e5d235cc67c857a2f5348910784c53",
+      "actual": "d3dc872bf1e5d235cc67c857a2f5348910784c53",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-guia.png",
+      "esperado": "44ec8f7a2234784e250586710249836853e6b3ce",
+      "actual": "44ec8f7a2234784e250586710249836853e6b3ce",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-claro-lobby.png",
+      "esperado": "f367c0e7ea32fa57929cb532d82b42472a1b39b4",
+      "actual": "f367c0e7ea32fa57929cb532d82b42472a1b39b4",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-guia.png",
+      "esperado": "f69e340a071f4570c420595bfb3228d91de33187",
+      "actual": "f69e340a071f4570c420595bfb3228d91de33187",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-escritorio-oscuro-lobby.png",
+      "esperado": "b9c8e1e55fdaab112d3a7634b1959af7d5e477c5",
+      "actual": "b9c8e1e55fdaab112d3a7634b1959af7d5e477c5",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-guia.png",
+      "esperado": "d056c4a898cc0924451c1406aee5f6b90711333c",
+      "actual": "d056c4a898cc0924451c1406aee5f6b90711333c",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-claro-lobby.png",
+      "esperado": "0d845ae8c4ec557b98d7aa341ed071ddf1ffb76d",
+      "actual": "0d845ae8c4ec557b98d7aa341ed071ddf1ffb76d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-guia.png",
+      "esperado": "3b387f752639cf88d2da719e871fd7baf02adc94",
+      "actual": "3b387f752639cf88d2da719e871fd7baf02adc94",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-oscuro-lobby.png",
+      "esperado": "f2316dac964a55ea42efca8c540b89248f7a2b79",
+      "actual": "f2316dac964a55ea42efca8c540b89248f7a2b79",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-guia.png",
+      "esperado": "4127e0965441152b552317dd1c75e343912579cd",
+      "actual": "4127e0965441152b552317dd1c75e343912579cd",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-lobby-20261124/web-movil-sin-modulos-lobby.png",
+      "esperado": "6b3324c8d816b7381646f9fca76391dae5a7abe9",
+      "actual": "6b3324c8d816b7381646f9fca76391dae5a7abe9",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/mobile-app-install-browser-local.js",
+      "esperado": "5d67189f01b7358d12d8aa556914c7f8982b3c91",
+      "actual": "5d67189f01b7358d12d8aa556914c7f8982b3c91",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    }
+  ]
+}
