@@ -55,7 +55,7 @@ const hasRouteKind = docker(['exec', container, 'psql', '-U', 'apex', '-d', data
 if (!hasRouteKind) apply(fs.readFileSync(path.join(root, 'apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql')));
 // The historical local snapshot used TEXT, while the versioned authorization
 // migration creates UUID. Match that contract only in the disposable fixture.
-const sessionIdType = ['hr-hide-web-marking-local.js', 'hr-time-report-local.js', 'hr-schedule-employee-source-local.js'].includes(certificate)
+const sessionIdType = ['hr-payroll-markings-local.js', 'hr-hide-web-marking-local.js', 'hr-time-report-local.js', 'hr-schedule-employee-source-local.js'].includes(certificate)
   ? docker(['exec', container, 'psql', '-U', 'apex', '-d', database, '-Atc', "SELECT data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='AuthorizationSession' AND column_name='id'"]).toString().trim()
   : null;
 if (sessionIdType === 'text') apply('ALTER TABLE "AuthorizationSession" ALTER COLUMN "id" TYPE uuid USING "id"::uuid;');

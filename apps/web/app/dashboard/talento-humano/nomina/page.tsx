@@ -2,10 +2,12 @@
 
 import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Calculator, Download, FileText, Play, Plus, RotateCcw, Trash2, Upload, X } from "lucide-react";
+import { AlertTriangle, Check, Search, Calculator, Download, FileText, Play, Plus, RotateCcw, Trash2, Upload, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { payrollPeriodError } from "@/lib/payroll-period";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
+import styles from "./payroll.module.css";
+import { payrollDisplayRows, payrollDisplayTotals, payrollHours } from "@/lib/payrollDisplay";
 
 type Employee = { id: number; code: string; name?: string; display_name?: string; full_name?: string; metadata?: { name?: string } };
 type PayrollLine = { code: string; name: string; quantity: number; rate: number; amount: number; source: string };
@@ -195,7 +197,15 @@ export default function PayrollLiquidationPage() {
   const currentPeriodKey = useMemo(() => periodKey(periodType, startDate, endDate), [periodType, startDate, endDate]);
   const periodRangeError = useMemo(() => payrollPeriodError(periodType, startDate, endDate), [periodType, startDate, endDate]);
   const rows = preview.length ? preview : documents;
-  const visibleRows = useMemo(() => rows.filter(hasWorkedTime), [rows]);
+  const [documentSearch, setDocumentSearch] = useState("");
+  const [alertsOnly, setAlertsOnly] = useState(false);
+  const payableRows = useMemo(() => payrollDisplayRows(rows), [rows]);
+  const visibleRows = useMemo(() => payableRows.filter((row) => {
+    const query = documentSearch.trim().toLocaleLowerCase("es");
+    return (!alertsOnly || Number(row.net) < 0) && (!query || `${employeeName(row)} ${employeeDocument(row)}`.toLocaleLowerCase("es").includes(query));
+  }), [payableRows, documentSearch, alertsOnly]);
+  const totals = useMemo(() => payrollDisplayTotals(payableRows), [payableRows]);
+  const filteredTotals = useMemo(() => payrollDisplayTotals(visibleRows), [visibleRows]);
   const externalPreview = useMemo(() => {
     const documentsSet = new Set<string>();
     const concepts = new Map<string, number>();
@@ -707,138 +717,48 @@ export default function PayrollLiquidationPage() {
     && (!isSegmentedNovelty || adjustment.recognized_value !== "");
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-apex">Talento Humano - Nomina</p>
-          <h1 className="text-3xl font-semibold">Liquidacion de nomina</h1>
-          <p className="mt-1 text-sm text-neutral-600">Prueba conceptos, genera documentos por empleado y descarga comprobantes PDF.</p>
-        </div>
-      </header>
-
-      {message ? <p className="rounded-md border border-line bg-white p-3 text-sm text-neutral-700">{message}</p> : null}
-
-      {periodReady ? (
-      <section className="rounded-md border border-line bg-white p-2">
-        <div className="grid gap-2 md:grid-cols-2" role="tablist" aria-label="Tipo de liquidacion de nomina">
+    <div className={styles.workspace}>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div><p className="mb-1 text-sm text-neutral-500">Talento humano / Nómina</p><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Liquidación de nómina</h1><span className="rounded-full bg-apex/10 px-3 py-1 text-xs font-semibold text-apex">{!periodReady ? "Por consultar" : periodIsClosed ? "Periodo cerrado" : "Periodo abierto"}</span></div><p className="mt-2 text-sm text-neutral-500">{periodType === "mes" ? "Nómina mensual" : "Nómina quincenal"} · {startDate} – {endDate}</p></div>
+            <section className={styles.modes}>
+        <div className="grid gap-2 grid-cols-2" role="tablist" aria-label="Tipo de liquidacion de nomina">
           <button
             aria-selected={payrollMode === "marcaciones"}
-            className={`flex min-h-16 items-center gap-3 rounded-md border px-4 py-3 text-left text-sm transition ${payrollMode === "marcaciones" ? "border-apex bg-apex/5 text-apex" : "border-line bg-white text-neutral-700 hover:bg-paper"}`}
+            className={`flex min-h-10 items-center gap-3 rounded-md border px-4 py-2 text-left text-sm transition ${payrollMode === "marcaciones" ? "border-apex bg-apex/5 text-apex" : "border-line bg-white text-neutral-700 hover:bg-paper"}`}
             onClick={() => setPayrollMode("marcaciones")}
             role="tab"
             type="button"
           >
             <Play size={18} />
             <span>
-              <span className="block font-semibold">Liquidacion con marcaciones</span>
-              <span className="block text-xs text-neutral-500">Validar, probar, liquidar, ajustar y cerrar el periodo.</span>
+              <span className="block font-semibold">Con marcaciones</span>
+              <span className="hidden">Validar, probar, liquidar, ajustar y cerrar el periodo.</span>
             </span>
           </button>
           <button
             aria-selected={payrollMode === "archivo_plano"}
-            className={`flex min-h-16 items-center gap-3 rounded-md border px-4 py-3 text-left text-sm transition ${payrollMode === "archivo_plano" ? "border-apex bg-apex/5 text-apex" : "border-line bg-white text-neutral-700 hover:bg-paper"}`}
+            className={`flex min-h-10 items-center gap-3 rounded-md border px-4 py-2 text-left text-sm transition ${payrollMode === "archivo_plano" ? "border-apex bg-apex/5 text-apex" : "border-line bg-white text-neutral-700 hover:bg-paper"}`}
             onClick={() => setPayrollMode("archivo_plano")}
             role="tab"
             type="button"
           >
             <Upload size={18} />
             <span>
-              <span className="block font-semibold">Archivo plano</span>
-              <span className="block text-xs text-neutral-500">Descargar plantilla e importar jornadas externas por Excel.</span>
+              <span className="block font-semibold">Archivo plano (Excel)</span>
+              <span className="hidden">Descargar plantilla e importar jornadas externas por Excel.</span>
             </span>
           </button>
         </div>
       </section>
-      ) : null}
 
-      <section className="rounded-md border border-line bg-white p-4">
-        <div className="mb-4">
-          <h2 className="text-base font-semibold">Consultar liquidacion</h2>
-          <p className="mt-1 text-sm text-neutral-500">Busca periodos liquidados por ano, mes, tipo o empleado antes de abrir el detalle.</p>
-        </div>
-        <div className="mb-4 rounded-md border border-line">
-          <div className="border-b border-line p-3">
-            <p className="text-sm font-semibold">Periodos liquidados</p>
-            <p className="text-xs text-neutral-500">Buscar periodos liquidados</p>
-            <p className="text-xs text-neutral-500">{filteredLiquidatedPeriods.length} de {liquidatedPeriods.length} periodo(s) encontrados</p>
-          </div>
-          <div className="grid gap-3 p-3 md:grid-cols-5">
-            <label className="text-sm">Ano
-              <input className="mt-1 h-10 w-full rounded-md border border-line px-3" inputMode="numeric" maxLength={4} value={periodFilters.year} onChange={(event) => setPeriodFilters((current) => ({ ...current, year: event.target.value }))} placeholder="2026" />
-            </label>
-            <label className="text-sm">Mes
-              <select className="mt-1 h-10 w-full rounded-md border border-line bg-white px-3" value={periodFilters.month} onChange={(event) => setPeriodFilters((current) => ({ ...current, month: event.target.value }))}>
-                <option value="">Todos</option>
-                <option value="01">Enero</option>
-                <option value="02">Febrero</option>
-                <option value="03">Marzo</option>
-                <option value="04">Abril</option>
-                <option value="05">Mayo</option>
-                <option value="06">Junio</option>
-                <option value="07">Julio</option>
-                <option value="08">Agosto</option>
-                <option value="09">Septiembre</option>
-                <option value="10">Octubre</option>
-                <option value="11">Noviembre</option>
-                <option value="12">Diciembre</option>
-              </select>
-            </label>
-            <label className="text-sm">Tipo
-              <select className="mt-1 h-10 w-full rounded-md border border-line bg-white px-3" value={periodFilters.period_type} onChange={(event) => setPeriodFilters((current) => ({ ...current, period_type: event.target.value }))}>
-                <option value="">Todos</option>
-                <option value="quincena">Quincena</option>
-                <option value="mes">Mes</option>
-              </select>
-            </label>
-            <label className="text-sm md:col-span-2">Empleado
-              <input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={periodFilters.employee} onChange={(event) => setPeriodFilters((current) => ({ ...current, employee: event.target.value }))} placeholder="Cedula, codigo o nombre" />
-            </label>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-sm">
-              <thead className="bg-paper text-left text-xs uppercase text-neutral-500">
-                <tr>
-                  <th className="px-3 py-3">Tipo</th>
-                  <th className="px-3 py-3">Fecha inicio</th>
-                  <th className="px-3 py-3">Fecha fin</th>
-                  <th className="px-3 py-3">Periodo</th>
-                  <th className="px-3 py-3 text-right">Documentos</th>
-                  <th className="px-3 py-3 text-right">Devengado</th>
-                  <th className="px-3 py-3 text-right">Deducciones</th>
-                  <th className="px-3 py-3 text-right">Neto</th>
-                  <th className="px-3 py-3 text-right">Accion</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLiquidatedPeriods.map((period) => (
-                  <tr className={`border-t border-line ${period.period_key === currentPeriodKey && periodReady ? "bg-apex/5" : ""}`} key={period.period_key}>
-                    <td className="px-3 py-3 capitalize">{period.period_type}</td>
-                    <td className="px-3 py-3">{period.date_start}</td>
-                    <td className="px-3 py-3">{period.date_end}</td>
-                    <td className="px-3 py-3 font-mono text-xs">{period.period_key}</td>
-                    <td className="px-3 py-3 text-right">{period.documents}</td>
-                    <td className="px-3 py-3 text-right">{money(period.gross)}</td>
-                    <td className="px-3 py-3 text-right">{money(period.deductions)}</td>
-                    <td className="px-3 py-3 text-right font-semibold">{money(period.net)}</td>
-                    <td className="px-3 py-3 text-right">
-                      <button className="inline-flex h-9 items-center justify-center rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => selectLiquidatedPeriod(period.period_key)} type="button">Ver detalle</button>
-                    </td>
-                  </tr>
-                ))}
-                {!filteredLiquidatedPeriods.length ? (
-                  <tr>
-                    <td className="px-3 py-6 text-center text-neutral-500" colSpan={9}>{liquidatedPeriods.length ? "No hay periodos con esos filtros." : "Liquida un periodo para que aparezca aqui."}</td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div className="mb-3">
-          <p className="text-sm font-semibold">Consulta manual por fechas</p>
-          <p className="text-xs text-neutral-500">Usa esta opcion si quieres consultar un rango especifico o preparar una nueva liquidacion.</p>
-        </div>
-        <div className="grid gap-3 md:grid-cols-5">
+      </header>
+      <nav aria-label="Etapas de nómina" className={styles.steps}>
+        {[{ label: "Periodo", done: periodReady, href: "#payroll-period" }, { label: "Liquidación de prueba", done: preview.length > 0, href: "#payroll-period" }, { label: "Ajustes", done: adjustments.length > 0, href: "#payroll-adjustments" }, { label: "Liquidar", done: hasPayrollDocuments, href: "#payroll-documents" }, { label: "Cierre y aportes", done: periodIsClosed, href: "#payroll-closure" }].map((step, index) => <a key={step.label} href={periodReady && payrollMode === "marcaciones" ? step.href : "#payroll-period"} className={step.done ? styles.stepDone : ""}><span>{step.done ? <Check size={14} /> : index + 1}</span>{step.label}</a>)}
+      </nav>
+      {message ? <p role="status" className="rounded-lg border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-950">{message}</p> : null}
+      <section id="payroll-period" aria-label="Consultar liquidacion" className={`${styles.card} p-5`}>
+
+        <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
           <label className="text-sm">Tipo periodo
             <select className="mt-1 h-10 w-full rounded-md border border-line px-3" value={periodType} onChange={(event) => { setPeriodType(event.target.value); setPeriodReady(false); }}>
               <option value="quincena">Quincena</option>
@@ -851,7 +771,7 @@ export default function PayrollLiquidationPage() {
           <label className="text-sm">Fecha fin
             <input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={endDate} onChange={(event) => { setEndDate(event.target.value); setPeriodReady(false); }} />
           </label>
-          <div className="text-sm">
+          <div className="hidden">
             Periodo
             <p className="mt-1 flex h-10 items-center rounded-md border border-line bg-paper px-3 font-mono text-xs">{currentPeriodKey}</p>
           </div>
@@ -862,9 +782,9 @@ export default function PayrollLiquidationPage() {
         {periodRangeError ? <p className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{periodRangeError}</p> : null}
         {!periodReady ? <p className="mt-4 rounded-md border border-line bg-paper p-3 text-sm text-neutral-600">Elige un periodo y consulta para ver documentos, conceptos, ajustes o cargar archivo plano.</p> : null}
         {periodReady && payrollMode === "marcaciones" ? (
-        <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr_1fr]">
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
-            <p className="text-xs font-semibold uppercase text-emerald-700">Proceso principal</p>
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-3 border-t border-line pt-4">
+          <div className="min-w-0 flex-1">
+
             <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="font-semibold text-neutral-900">Liquidar nomina {periodType === "mes" ? "mensual" : "quincenal"}</p>
@@ -887,7 +807,7 @@ export default function PayrollLiquidationPage() {
               </div>
             ) : null}
           </div>
-          <div className="rounded-md border border-line p-3">
+          <div className="rounded-md bg-paper px-3 py-2">
             <p className="text-sm font-semibold">Estado del periodo</p>
             <p className="mt-1 text-sm text-neutral-600">{hasPayrollDocuments ? `${documents.length} documento(s) de nomina guardados.` : "Todavia no hay documentos guardados para este periodo."}</p>
             {canDeletePayroll ? (
@@ -902,49 +822,20 @@ export default function PayrollLiquidationPage() {
         </div>
         ) : null}
       </section>
-
-      {periodReady && payrollMode === "marcaciones" ? (
-      <>
-      <section className="rounded-md border border-line bg-white p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold">Cierre integral del periodo</h2>
-            <p className="text-sm text-neutral-500">Ejecuta en cadena validacion, nomina, aportes sociales y bloqueo del periodo.</p>
-          </div>
-          <span className={`rounded-md px-2 py-1 text-xs font-semibold ${currentClosure?.status === "cerrado" ? "bg-emerald-50 text-emerald-700" : currentClosure?.status === "reabierto" ? "bg-amber-50 text-amber-700" : "bg-paper text-neutral-600"}`}>{currentClosure?.status || "sin cierre"}</span>
+      {periodReady && payrollMode === "marcaciones" ? <>
+        <div className={styles.metrics} aria-label="Resumen de nómina">
+          <KpiValue label="Empleados con horas" value={`${payableRows.filter(hasWorkedTime).length} de ${rows.length}`} />
+          <KpiValue label="Devengado" value={money(totals.gross)} /><KpiValue label="Deducciones" value={money(totals.deductions)} /><KpiValue label="Neto a pagar" value={money(totals.net)} />
+          <div className={`${styles.card} ${styles.warning}`}><p className="text-xs">Por revisar</p><p className="mt-1 text-2xl font-semibold">{totals.negativeCount} <span className="text-sm font-normal">con neto negativo</span></p></div>
         </div>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <KpiValue label="Nomina neta" value={money(currentClosure?.total_payroll_net || 0)} />
-          <KpiValue label="Aportes" value={money(currentClosure?.total_social_contributions || 0)} />
-          <KpiValue label="Documentos" value={String(currentClosure?.payroll_documents || documents.length || 0)} />
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-60" disabled={busy || !canClosePeriod} onClick={() => closePeriod(false)} type="button"><Play size={16} /> Cerrar periodo</button>
-          {showClosureSecondaryActions ? (
-            <details>
-              <summary className="inline-flex h-10 cursor-pointer items-center rounded-md border border-line px-3 text-sm font-medium">Mas acciones</summary>
-              <div className="mt-2 flex flex-wrap gap-2 rounded-md border border-line bg-white p-2 shadow-sm">
-                <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-60" disabled={busy} onClick={validateClosure} type="button"><FileText size={16} /> Validar cierre</button>
-                {hasPayrollDocuments ? (
-                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-60" disabled={busy} onClick={() => closePeriod(true)} type="button"><RotateCcw size={16} /> Recalcular cierre</button>
-                ) : null}
-                {periodIsClosed ? (
-                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-amber-200 px-3 text-sm text-amber-700 disabled:opacity-60" disabled={busy} onClick={reopenPeriod} type="button">Reabrir periodo</button>
-                ) : null}
-              </div>
-            </details>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="rounded-md border border-line bg-white">
+      <section id="payroll-documents" className={styles.card}>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
           <div>
-            <h2 className="text-base font-semibold">Documentos por empleado</h2>
+            <h2 className="flex flex-wrap items-center gap-2 text-base font-semibold">Documentos por empleado <span className={`rounded px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${preview.length ? "bg-amber-100 text-amber-900" : "bg-emerald-50 text-emerald-800"}`}>{preview.length ? "Borrador" : "Guardados"}</span></h2>
             <p className="text-sm text-neutral-500">{preview.length ? "Vista de prueba sin guardar" : "Liquidaciones guardadas del periodo"}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm text-neutral-500">{visibleRows.length} de {rows.length} registros con horas</span>
+            <span className="text-sm text-neutral-500">{visibleRows.length} de {payableRows.length} documentos</span>
             {!preview.length && visibleRows.some((row) => row.id) ? (
               <>
               <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-50" disabled={busy} onClick={() => void downloadAllPdfs()} type="button"><Download size={15} /> Descargar PDFs</button>
@@ -954,32 +845,38 @@ export default function PayrollLiquidationPage() {
             ) : null}
           </div>
         </div>
+        <div className="flex flex-wrap items-center justify-end gap-2 border-b border-line px-5 py-3">
+          <label className="flex min-w-0 flex-1 items-center gap-2 sm:max-w-xs"><Search size={16} className="shrink-0 text-neutral-400" /><input aria-label="Buscar documentos por empleado" className="h-10 min-w-0 w-full rounded-md border border-line px-3 text-sm" placeholder="Buscar por nombre o cédula" value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} /></label>
+          <button type="button" aria-pressed={alertsOnly} className={`h-10 rounded-md border px-3 text-sm ${alertsOnly ? "border-amber-300 bg-amber-50 text-amber-900" : "border-line"}`} onClick={() => setAlertsOnly((value) => !value)}>Solo con alertas</button>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[960px] text-sm">
             <thead><tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500"><th className="px-3 py-2">Empleado</th><th className="px-3 py-2">Dias</th><th className="px-3 py-2">Ordinarias</th><th className="px-3 py-2">Extras/recargos</th><th className="px-3 py-2">Devengado</th><th className="px-3 py-2">Deducciones</th><th className="px-3 py-2">Neto</th><th className="px-3 py-2 text-right">Acciones</th></tr></thead>
             <tbody>{visibleRows.map((row) => (
-              <tr className="border-b border-line/70" key={`${row.employee_id}-${row.period_key}`}>
-                <td className="px-3 py-2 font-medium">{employeeName(row)}<p className="text-xs font-normal text-neutral-500">{row.employee_code || row.employee_id}</p></td>
+              <tr className={`border-b border-line/70 ${Number(row.net) < 0 ? "bg-rose-50/60" : ""}`} key={`${row.employee_id}-${row.period_key}`}>
+                <td className="px-3 py-2 font-medium">{employeeName(row)}<p className="text-xs font-normal text-neutral-500">{employeeDocument(row)}{!hasWorkedTime(row) ? <span className="text-rose-700"> · Sin horas en el periodo</span> : null}</p></td>
                 <td className="px-3 py-2">{String(row.days_worked ?? row.source_summary?.days_worked ?? 0)}</td>
-                <td className="px-3 py-2">{String(row.ordinary_hours ?? row.source_summary?.ordinary_hours ?? 0)}</td>
-                <td className="px-3 py-2">{row.overtime_hrs ?? 0}</td>
+                <td className="px-3 py-2">{payrollHours(row.ordinary_hours ?? row.source_summary?.ordinary_hours)}</td>
+                <td className="px-3 py-2">{payrollHours(row.overtime_hrs)}</td>
                 <td className="px-3 py-2">{money(row.gross)}</td>
                 <td className="px-3 py-2">{money(row.deductions)}</td>
-                <td className="px-3 py-2 font-semibold">{money(row.net)}</td>
+                <td className={`px-3 py-2 font-semibold ${Number(row.net) < 0 ? "text-rose-700" : ""}`}>{Number(row.net) < 0 ? <AlertTriangle aria-label="Neto negativo" size={14} className="mr-1 inline" /> : null}{money(row.net)}</td>
                 <td className="px-3 py-2 text-right">
                   <button className="mr-2 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm" onClick={() => setReceiptDocument(row)} type="button"><FileText size={15} /> Ver</button>
                   <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-50" disabled={!row.id} onClick={() => void downloadPdf(row)} type="button"><Download size={15} /> PDF</button>
                 </td>
               </tr>
             ))}</tbody>
+            <tfoot><tr className="border-t border-line bg-paper font-semibold"><td className="px-3 py-3">Total ({visibleRows.length})</td><td className="px-3 py-3">{filteredTotals.days}</td><td className="px-3 py-3">{payrollHours(filteredTotals.ordinaryHours)}</td><td className="px-3 py-3">{payrollHours(filteredTotals.overtimeHours)}</td><td className="px-3 py-3">{money(filteredTotals.gross)}</td><td className="px-3 py-3">{money(filteredTotals.deductions)}</td><td className="px-3 py-3">{money(filteredTotals.net)}</td><td /></tr></tfoot>
           </table>
-          {!visibleRows.length ? <p className="p-4 text-sm text-neutral-500">No hay empleados con dias u horas cargadas para este periodo.</p> : null}
+          {!visibleRows.length ? <p className="p-4 text-sm text-neutral-500">No hay documentos que coincidan con los filtros.</p> : null}
         </div>
       </section>
 
-      <section>
-        <div className="rounded-md border border-line bg-white p-4">
-          <h2 className="text-base font-semibold">Ajustes manuales, licencias y vacaciones</h2>
+        <div className={styles.lowerGrid}>
+      <section id="payroll-adjustments" className={styles.card}>
+        <div className="p-5">
+          <h2 className="text-base font-semibold">Ajustes, licencias y vacaciones</h2><p className="mt-1 text-sm text-neutral-500">Se aplican al volver a generar o recalcular la liquidación.</p>
           <div className="mt-3 grid gap-3">
             <label className="text-sm">Empleado
               <select data-testid="ibc-adjustment-employee" className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.employee_id} onChange={(event) => setAdjustment((current) => ({ ...current, employee_id: event.target.value }))}>
@@ -1086,10 +983,211 @@ export default function PayrollLiquidationPage() {
             <button data-testid="ibc-add-adjustment" className="inline-flex h-10 w-fit items-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={busy || !canCreateAdjustment} onClick={createAdjustment} type="button"><Plus size={16} /> Agregar ajuste</button>
           </div>
         </div>
+      <section className="rounded-md border border-line bg-white">
+        <div className="border-b border-line p-4">
+          <h2 className="text-base font-semibold">Ajustes activos del periodo</h2>
+          {periodIsClosed ? <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">El periodo esta cerrado. Para anular ajustes de {currentPeriodKey}, primero usa Reabrir periodo.</p> : null}
+          {adjustmentError ? <p className="mt-2 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{adjustmentError}</p> : null}
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px] text-sm">
+            <thead><tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500"><th className="px-3 py-2">Empleado</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2">Concepto</th><th className="px-3 py-2">Fecha</th><th className="px-3 py-2">Descripcion</th><th className="px-3 py-2">Minutos</th><th className="px-3 py-2">Valor</th><th className="px-3 py-2 text-right">Acciones</th></tr></thead>
+            <tbody>{adjustments.map((row) => (
+              <tr className="border-b border-line/70" key={row.id}><td className="px-3 py-2">{employeeName(row)}</td><td className="px-3 py-2">{row.adjustment_type}</td><td className="px-3 py-2 font-medium">{row.concept_code}</td><td className="px-3 py-2">{row.metadata?.work_date || "--"}</td><td className="px-3 py-2">{row.description}</td><td className="px-3 py-2">{row.minutes}</td><td className="px-3 py-2">{money(row.amount)}</td><td className="px-3 py-2 text-right"><button className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm text-rose-700 disabled:cursor-not-allowed disabled:opacity-50" disabled={busy || periodIsClosed} onClick={() => deleteAdjustment(row.id)} title={periodIsClosed ? "Reabre el periodo antes de anular ajustes" : "Anular ajuste"} type="button"><Trash2 size={15} /> Anular</button></td></tr>
+            ))}</tbody>
+          </table>
+          {!adjustments.length ? <p className="p-4 text-sm text-neutral-500">No hay ajustes activos para este periodo.</p> : null}
+        </div>
       </section>
-      </>
-      ) : null}
+      </section>
+          <div className="min-w-0 space-y-5">
+      <section id="payroll-closure" className={`${styles.card} p-5`}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold">Cierre del periodo</h2>
+            <p className="text-sm text-neutral-500">Ejecuta en cadena validacion, nomina, aportes sociales y bloqueo del periodo.</p>
+          </div>
+          <span className={`rounded-md px-2 py-1 text-xs font-semibold ${currentClosure?.status === "cerrado" ? "bg-emerald-50 text-emerald-700" : currentClosure?.status === "reabierto" ? "bg-amber-50 text-amber-700" : "bg-paper text-neutral-600"}`}>{currentClosure?.status || "sin cierre"}</span>
+        </div>
+        <ul className="mt-4 space-y-2 text-sm text-neutral-600">
+          <li>{preview.length ? "✓ Liquidación de prueba generada" : "○ Liquidación de prueba pendiente"}</li>
+          <li className={totals.negativeCount ? "text-amber-800" : "text-emerald-700"}>{totals.negativeCount ? `${totals.negativeCount} empleado(s) con neto negativo por revisar` : "Sin netos negativos"}</li>
+          <li>{hasPayrollDocuments ? "✓ Nómina liquidada y guardada" : "○ Nómina pendiente de guardar"}</li>
+        </ul>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <KpiValue label="Nomina neta" value={money(currentClosure?.total_payroll_net || 0)} />
+          <KpiValue label="Aportes" value={money(currentClosure?.total_social_contributions || 0)} />
+          <KpiValue label="Documentos" value={String(currentClosure?.payroll_documents || documents.length || 0)} />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-60" disabled={busy || !canClosePeriod} onClick={() => closePeriod(false)} type="button"><Play size={16} /> Cerrar periodo</button>
+          {showClosureSecondaryActions ? (
+            <details>
+              <summary className="inline-flex h-10 cursor-pointer items-center rounded-md border border-line px-3 text-sm font-medium">Mas acciones</summary>
+              <div className="mt-2 flex flex-wrap gap-2 rounded-md border border-line bg-white p-2 shadow-sm">
+                <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-60" disabled={busy} onClick={validateClosure} type="button"><FileText size={16} /> Validar cierre</button>
+                {hasPayrollDocuments ? (
+                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-60" disabled={busy} onClick={() => closePeriod(true)} type="button"><RotateCcw size={16} /> Recalcular cierre</button>
+                ) : null}
+                {periodIsClosed ? (
+                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-amber-200 px-3 text-sm text-amber-700 disabled:opacity-60" disabled={busy} onClick={reopenPeriod} type="button">Reabrir periodo</button>
+                ) : null}
+              </div>
+            </details>
+          ) : null}
+        </div>
+      </section>
 
+            <section id="payroll-history" aria-label="Historial de periodos" className={styles.card}>
+        <div className="rounded-md">
+          <div className="border-b border-line p-3">
+            <p className="text-sm font-semibold">Periodos liquidados</p>
+            <p className="text-xs text-neutral-500">Buscar periodos liquidados</p>
+            <p className="text-xs text-neutral-500">{filteredLiquidatedPeriods.length} de {liquidatedPeriods.length} periodo(s) encontrados</p>
+          </div>
+          <div className="grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3">
+            <label className="text-sm">Ano
+              <input className="mt-1 h-10 w-full rounded-md border border-line px-3" inputMode="numeric" maxLength={4} value={periodFilters.year} onChange={(event) => setPeriodFilters((current) => ({ ...current, year: event.target.value }))} placeholder="2026" />
+            </label>
+            <label className="text-sm">Mes
+              <select className="mt-1 h-10 w-full rounded-md border border-line bg-white px-3" value={periodFilters.month} onChange={(event) => setPeriodFilters((current) => ({ ...current, month: event.target.value }))}>
+                <option value="">Todos</option>
+                <option value="01">Enero</option>
+                <option value="02">Febrero</option>
+                <option value="03">Marzo</option>
+                <option value="04">Abril</option>
+                <option value="05">Mayo</option>
+                <option value="06">Junio</option>
+                <option value="07">Julio</option>
+                <option value="08">Agosto</option>
+                <option value="09">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+            </label>
+            <label className="text-sm">Tipo
+              <select className="mt-1 h-10 w-full rounded-md border border-line bg-white px-3" value={periodFilters.period_type} onChange={(event) => setPeriodFilters((current) => ({ ...current, period_type: event.target.value }))}>
+                <option value="">Todos</option>
+                <option value="quincena">Quincena</option>
+                <option value="mes">Mes</option>
+              </select>
+            </label>
+            <label className="text-sm md:col-span-2">Empleado
+              <input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={periodFilters.employee} onChange={(event) => setPeriodFilters((current) => ({ ...current, employee: event.target.value }))} placeholder="Cedula, codigo o nombre" />
+            </label>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[550px] text-sm">
+              <thead className="bg-paper text-left text-xs uppercase text-neutral-500">
+                <tr>
+                  <th className="px-3 py-3">Tipo</th>
+                  <th className="px-3 py-3">Fecha inicio</th>
+                  <th className="px-3 py-3">Fecha fin</th>
+                  <th className="px-3 py-3 text-right">Documentos</th>
+                  <th className="px-3 py-3 text-right">Neto</th>
+                  <th className="px-3 py-3 text-right">Accion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLiquidatedPeriods.map((period) => (
+                  <tr className={`border-t border-line ${period.period_key === currentPeriodKey && periodReady ? "bg-apex/5" : ""}`} key={period.period_key}>
+                    <td className="px-3 py-3 capitalize">{period.period_type}</td>
+                    <td className="px-3 py-3">{period.date_start}</td>
+                    <td className="px-3 py-3">{period.date_end}</td>
+                    <td className="px-3 py-3 text-right">{period.documents}</td>
+                    <td className="px-3 py-3 text-right font-semibold">{money(period.net)}</td>
+                    <td className="px-3 py-3 text-right">
+                      <button className="inline-flex h-9 items-center justify-center rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => selectLiquidatedPeriod(period.period_key)} type="button">Ver detalle</button>
+                    </td>
+                  </tr>
+                ))}
+                {!filteredLiquidatedPeriods.length ? (
+                  <tr>
+                    <td className="px-3 py-6 text-center text-neutral-500" colSpan={6}>{liquidatedPeriods.length ? "No hay periodos con esos filtros." : "Liquida un periodo para que aparezca aqui."}</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </div>
+            </section>
+          </div>
+        </div>
+      </> : <section className={styles.card} aria-label="Historial de periodos">
+        <div className="rounded-md">
+          <div className="border-b border-line p-3">
+            <p className="text-sm font-semibold">Periodos liquidados</p>
+            <p className="text-xs text-neutral-500">Buscar periodos liquidados</p>
+            <p className="text-xs text-neutral-500">{filteredLiquidatedPeriods.length} de {liquidatedPeriods.length} periodo(s) encontrados</p>
+          </div>
+          <div className="grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3">
+            <label className="text-sm">Ano
+              <input className="mt-1 h-10 w-full rounded-md border border-line px-3" inputMode="numeric" maxLength={4} value={periodFilters.year} onChange={(event) => setPeriodFilters((current) => ({ ...current, year: event.target.value }))} placeholder="2026" />
+            </label>
+            <label className="text-sm">Mes
+              <select className="mt-1 h-10 w-full rounded-md border border-line bg-white px-3" value={periodFilters.month} onChange={(event) => setPeriodFilters((current) => ({ ...current, month: event.target.value }))}>
+                <option value="">Todos</option>
+                <option value="01">Enero</option>
+                <option value="02">Febrero</option>
+                <option value="03">Marzo</option>
+                <option value="04">Abril</option>
+                <option value="05">Mayo</option>
+                <option value="06">Junio</option>
+                <option value="07">Julio</option>
+                <option value="08">Agosto</option>
+                <option value="09">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+            </label>
+            <label className="text-sm">Tipo
+              <select className="mt-1 h-10 w-full rounded-md border border-line bg-white px-3" value={periodFilters.period_type} onChange={(event) => setPeriodFilters((current) => ({ ...current, period_type: event.target.value }))}>
+                <option value="">Todos</option>
+                <option value="quincena">Quincena</option>
+                <option value="mes">Mes</option>
+              </select>
+            </label>
+            <label className="text-sm md:col-span-2">Empleado
+              <input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={periodFilters.employee} onChange={(event) => setPeriodFilters((current) => ({ ...current, employee: event.target.value }))} placeholder="Cedula, codigo o nombre" />
+            </label>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[550px] text-sm">
+              <thead className="bg-paper text-left text-xs uppercase text-neutral-500">
+                <tr>
+                  <th className="px-3 py-3">Tipo</th>
+                  <th className="px-3 py-3">Fecha inicio</th>
+                  <th className="px-3 py-3">Fecha fin</th>
+                  <th className="px-3 py-3 text-right">Documentos</th>
+                  <th className="px-3 py-3 text-right">Neto</th>
+                  <th className="px-3 py-3 text-right">Accion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLiquidatedPeriods.map((period) => (
+                  <tr className={`border-t border-line ${period.period_key === currentPeriodKey && periodReady ? "bg-apex/5" : ""}`} key={period.period_key}>
+                    <td className="px-3 py-3 capitalize">{period.period_type}</td>
+                    <td className="px-3 py-3">{period.date_start}</td>
+                    <td className="px-3 py-3">{period.date_end}</td>
+                    <td className="px-3 py-3 text-right">{period.documents}</td>
+                    <td className="px-3 py-3 text-right font-semibold">{money(period.net)}</td>
+                    <td className="px-3 py-3 text-right">
+                      <button className="inline-flex h-9 items-center justify-center rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => selectLiquidatedPeriod(period.period_key)} type="button">Ver detalle</button>
+                    </td>
+                  </tr>
+                ))}
+                {!filteredLiquidatedPeriods.length ? (
+                  <tr>
+                    <td className="px-3 py-6 text-center text-neutral-500" colSpan={6}>{liquidatedPeriods.length ? "No hay periodos con esos filtros." : "Liquida un periodo para que aparezca aqui."}</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>}
       {receiptDocument && typeof document !== "undefined" ? createPortal((
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="receipt-dialog-title">
           <div className="max-h-[90dvh] w-full max-w-4xl overflow-hidden rounded-md bg-white shadow-xl">
@@ -1152,7 +1250,7 @@ export default function PayrollLiquidationPage() {
               Conceptos: {Array.from(externalPreview.concepts.entries()).map(([code, count]) => `${code} (${count})`).join(", ") || "--"}
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-sm">
+              <table className="w-full min-w-[550px] text-sm">
                 <thead><tr className="border-y border-line bg-paper text-left text-xs uppercase text-neutral-500"><th className="px-3 py-2">Documento</th><th className="px-3 py-2">Concepto</th><th className="px-3 py-2">Inicio</th><th className="px-3 py-2">Fin</th><th className="px-3 py-2">Fecha trabajo</th><th className="px-3 py-2">Dias</th><th className="px-3 py-2">Horas</th><th className="px-3 py-2">Minutos</th><th className="px-3 py-2">Valor</th></tr></thead>
                 <tbody>{externalRows.slice(0, 8).map((row, index) => (
                   <tr className="border-b border-line/70" key={`${row.document || row.employee_code || "row"}-${index}`}>
@@ -1195,33 +1293,16 @@ export default function PayrollLiquidationPage() {
       </section>
       ) : null}
 
-      {periodReady && payrollMode === "marcaciones" ? (
-      <section className="rounded-md border border-line bg-white">
-        <div className="border-b border-line p-4">
-          <h2 className="text-base font-semibold">Ajustes activos del periodo</h2>
-          {periodIsClosed ? <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">El periodo esta cerrado. Para anular ajustes de {currentPeriodKey}, primero usa Reabrir periodo.</p> : null}
-          {adjustmentError ? <p className="mt-2 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{adjustmentError}</p> : null}
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[860px] text-sm">
-            <thead><tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500"><th className="px-3 py-2">Empleado</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2">Concepto</th><th className="px-3 py-2">Fecha</th><th className="px-3 py-2">Descripcion</th><th className="px-3 py-2">Minutos</th><th className="px-3 py-2">Valor</th><th className="px-3 py-2 text-right">Acciones</th></tr></thead>
-            <tbody>{adjustments.map((row) => (
-              <tr className="border-b border-line/70" key={row.id}><td className="px-3 py-2">{employeeName(row)}</td><td className="px-3 py-2">{row.adjustment_type}</td><td className="px-3 py-2 font-medium">{row.concept_code}</td><td className="px-3 py-2">{row.metadata?.work_date || "--"}</td><td className="px-3 py-2">{row.description}</td><td className="px-3 py-2">{row.minutes}</td><td className="px-3 py-2">{money(row.amount)}</td><td className="px-3 py-2 text-right"><button className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm text-rose-700 disabled:cursor-not-allowed disabled:opacity-50" disabled={busy || periodIsClosed} onClick={() => deleteAdjustment(row.id)} title={periodIsClosed ? "Reabre el periodo antes de anular ajustes" : "Anular ajuste"} type="button"><Trash2 size={15} /> Anular</button></td></tr>
-            ))}</tbody>
-          </table>
-          {!adjustments.length ? <p className="p-4 text-sm text-neutral-500">No hay ajustes activos para este periodo.</p> : null}
-        </div>
-      </section>
-      ) : null}
+
     </div>
   );
 }
 
 function KpiValue({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-line bg-paper p-3">
-      <p className="text-xs uppercase text-neutral-500">{label}</p>
-      <p className="mt-1 font-semibold">{value}</p>
+    <div className={`${styles.card} p-4`}>
+      <p className="text-xs text-neutral-500">{label}</p>
+      <p className="mt-1 text-2xl font-semibold tracking-tight">{value}</p>
     </div>
   );
 }
