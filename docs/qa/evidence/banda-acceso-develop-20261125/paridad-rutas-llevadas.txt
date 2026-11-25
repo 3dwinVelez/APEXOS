@@ -1,0 +1,85 @@
+PARIDAD DE RUTAS LLEVADAS - porton banda-acceso-develop-20261125
+candidato: c3668323fed3f0c345e34327dafe51c58268416f (aplicacion) + evidencia del porton sin commitear aun
+origen:    c97250089f272b43d36028af47ca456232ae56e9 (origin/desarrollo)
+destino:   95bf7d5d05537e42860309104c3b5c3ae6b8ed9a (origin/develop)
+metodo: blob del indice del candidato vs blob en origin/desarrollo, ruta por ruta (git rev-parse :ruta / git rev-parse origin/desarrollo:ruta)
+
+IGUAL    apps/web/app/login/page.tsx
+   blob candidato=dff7d279b6e0a05346796bf479ae69eb01e38f5a
+   blob origen   =dff7d279b6e0a05346796bf479ae69eb01e38f5a
+   blob en base comun 8208d941 = 8941572559299d3fe7f6190b91e4b279141823c9
+   develop propio desde la base comun (numstat): (sin cambios de develop desde la base comun)
+
+IGUAL    apps/web/app/dashboard/page.tsx
+   blob candidato=a8bbdb0e279ee56b9fc161e51fbe83f30203f1d3
+   blob origen   =a8bbdb0e279ee56b9fc161e51fbe83f30203f1d3
+   blob en base comun 8208d941 = a8bbdb0e279ee56b9fc161e51fbe83f30203f1d3
+   develop propio desde la base comun (numstat): 3	0	apps/web/app/dashboard/page.tsx
+
+IGUAL    apps/web/components/system/AppInstallBand.tsx
+   blob candidato=9b87741a639ef1a1352440d1248e9465790c54b8
+   blob origen   =9b87741a639ef1a1352440d1248e9465790c54b8
+   blob en base comun 8208d941 = AUSENTE-en-base
+   develop propio desde la base comun (numstat): (sin cambios de develop desde la base comun)
+
+IGUAL    apps/web/test/mobile-app-install.test.mjs
+   blob candidato=047518f1ef8c4e21559337e2df592bbdb7c67aff
+   blob origen   =047518f1ef8c4e21559337e2df592bbdb7c67aff
+   blob en base comun 8208d941 = AUSENTE-en-base
+   develop propio desde la base comun (numstat): 157	0	apps/web/test/mobile-app-install.test.mjs
+
+IGUAL    scripts/certifications/mobile-app-install-browser-local.js
+   blob candidato=1d0e479dab09240d540352bf04e1e3b7f1122eb2
+   blob origen   =1d0e479dab09240d540352bf04e1e3b7f1122eb2
+   blob en base comun 8208d941 = AUSENTE-en-base
+   develop propio desde la base comun (numstat): 518	0	scripts/certifications/mobile-app-install-browser-local.js
+
+IGUAL    docs/project/app-movil.md
+   blob candidato=9dc2fce99cb7f69c3232c3a221873afcbd07a520
+   blob origen   =9dc2fce99cb7f69c3232c3a221873afcbd07a520
+   blob en base comun 8208d941 = AUSENTE-en-base
+   develop propio desde la base comun (numstat): 73	0	docs/project/app-movil.md
+
+IGUAL    docs/briefs/2026-11-24-boton-app-movil-lobby.md
+   blob candidato=c6532a7bc128790136008a653871483f8b4f93f6
+   blob origen   =c6532a7bc128790136008a653871483f8b4f93f6
+   blob en base comun 8208d941 = AUSENTE-en-base
+   develop propio desde la base comun (numstat): 131	0	docs/briefs/2026-11-24-boton-app-movil-lobby.md
+
+IGUAL    docs/qa/evidence/app-install-acceso-20261125/certification.json
+   blob candidato=9f65bff5978e23d8a7c3a6dc869a85f418d36246
+   blob origen   =9f65bff5978e23d8a7c3a6dc869a85f418d36246
+   blob en base comun 8208d941 = AUSENTE-en-base
+   develop propio desde la base comun (numstat): (sin cambios de develop desde la base comun)
+
+IGUAL    docs/qa/evidence/app-install-acceso-20261125-mutaciones/certification.json
+   blob candidato=727456be653897fae39400567d19609ad893395a
+   blob origen   =727456be653897fae39400567d19609ad893395a
+   blob en base comun 8208d941 = AUSENTE-en-base
+   develop propio desde la base comun (numstat): (sin cambios de develop desde la base comun)
+
+DELETE  apps/web/components/lobby/AppInstallBand.tsx
+   blob en el indice del candidato = AUSENTE (borrado correcto)
+   blob en origin/desarrollo       = AUSENTE
+   blob en origin/develop          = 6a80868f06c309771cdbf4fc4b6b528990b1964b
+
+rutas comparadas: 9 carry + 1 delete | blobs distintos: 0 | waivers de origen declarados: 0
+
+LECTURA DE LOS NUMSTATS DE ARRIBA
+Los anadidos que develop tiene desde 8208d941 en dashboard (+3), prueba (+157), certificado (+518), documento (+73) y brief (+131) no son trabajo ajeno: son exactamente lo que subio el porton anterior (b28fabf0 y 95bf7d5d, ambos ya en origin/develop). El control que decide si el replay revierte algo es otro: el blob que develop tiene HOY contra el blob que origin/desarrollo tenia ANTES de la correccion (c9725008~1 = b802a251). Iguales significa que la ruta no tiene ni una linea propia en develop y que llevar el blob nuevo no borra trabajo de nadie.
+
+ruta | blob origin/develop | blob origin/desarrollo~1 | veredicto
+apps/web/app/login/page.tsx | 89415725 | 89415725 | IGUAL
+apps/web/app/dashboard/page.tsx | f663329f | f663329f | IGUAL
+apps/web/components/lobby/AppInstallBand.tsx | 6a80868f | 6a80868f | IGUAL
+apps/web/test/mobile-app-install.test.mjs | ab47ae84 | ab47ae84 | IGUAL
+scripts/certifications/mobile-app-install-browser-local.js | 5d67189f | 5d67189f | IGUAL
+docs/project/app-movil.md | 13591ffb | 13591ffb | IGUAL
+docs/briefs/2026-11-24-boton-app-movil-lobby.md | e6e5e754 | 8849d60e | DISTINTO
+
+comparaciones: 7 | blobs que difieran (trabajo ajeno en riesgo): 1
+
+
+UNICA RUTA DISTINTA: el brief
+El brief de develop (e6e5e754) es la version que subio el porton anterior; le falta la contabilidad que en desarrollo escribi despues del empuje (b802a251). Medido el diff origin/develop -> origin/desarrollo por la ruta: 56	1	docs/briefs/2026-11-24-boton-app-movil-lobby.md (anadidos, quitados, ruta). La unica linea que se va (-1) es propia de este frente y dice literal: "- [ ] Promocion desarrollo -> develop: requiere manifiesto de alcance y npm run qa:preqa:evidence...", la casilla que el porton anterior ya convirtio en cumplida. 
+No hay ninguna linea de otro frente en riesgo: los anadidos son la seccion 14 (la correccion de montura) y la contabilidad del porton anterior, y el inventario del manifiesto declara la ruta como M.

@@ -1,0 +1,21 @@
+{
+  "origen": "origin/desarrollo c9725008 (la banda mudada al inicio de sesion)",
+  "origin_ref": "origin/desarrollo",
+  "base_ref": "origin/develop",
+  "carry": [
+    { "file": "apps/web/app/login/page.tsx", "from_ref": "origin/desarrollo" },
+    { "file": "apps/web/app/dashboard/page.tsx", "from_ref": "origin/desarrollo" },
+    { "file": "apps/web/components/system/AppInstallBand.tsx", "from_ref": "origin/desarrollo" },
+    { "file": "apps/web/test/mobile-app-install.test.mjs", "from_ref": "origin/desarrollo" },
+    { "file": "scripts/certifications/mobile-app-install-browser-local.js", "from_ref": "origin/desarrollo" },
+    { "file": "docs/project/app-movil.md", "from_ref": "origin/desarrollo" },
+    { "file": "docs/briefs/2026-11-24-boton-app-movil-lobby.md", "from_ref": "origin/desarrollo" },
+    { "file": "docs/qa/evidence/app-install-acceso-20261125/certification.json", "from_ref": "origin/desarrollo" },
+    { "file": "docs/qa/evidence/app-install-acceso-20261125-mutaciones/certification.json", "from_ref": "origin/desarrollo" }
+  ],
+  "delete": [
+    "apps/web/components/lobby/AppInstallBand.tsx"
+  ],
+  "edit": [],
+  "nota": "Las nueve rutas viajan byte a byte desde origin/desarrollo c9725008 y la unica eliminacion es el archivo que el porton anterior subio a apps/web/components/lobby/: la banda nace ahora en apps/web/components/system/. Ningun codigo de develop la importa despues del replay: el git grep sobre origin/develop la encuentra en dashboard, prueba, certificado y documento (todos en este inventario) y en los cuatro archivos de contabilidad del porton anterior, que son registro de lo que se montaba entonces y quedan intactos. No hay edit por hunks: las cuatro rutas preexistentes se llevan como blob completo y develop no tiene lineas propias en ninguna de ellas, medido contra el antepasado comun 8208d941 en porton-develop.json. Las nueve capturas PNG de la certificacion quedan en el arbol de origen: suben los dos JSON con los numeros medidos y el instrumento regenera las imagenes donde se corre."
+}

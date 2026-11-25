@@ -1,0 +1,101 @@
+{
+  "change_id": "banda-acceso-develop-20261125",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "promotion_branch": "codex/qa-boton-app-movil-develop-20261125",
+  "commit": "c3668323fed3f0c345e34327dafe51c58268416f",
+  "target_head": "95bf7d5d05537e42860309104c3b5c3ae6b8ed9a",
+  "origen_certificado": "c97250089f272b43d36028af47ca456232ae56e9",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/app-install-acceso-20261125/certification.json",
+        "../evidence/banda-acceso-develop-20261125/suites-candidato.json",
+        "../evidence/banda-acceso-develop-20261125/porton-develop.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/app-install-acceso-20261125/certification.json",
+        "../evidence/banda-acceso-develop-20261125/paridad-rutas-llevadas.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/banda-acceso-develop-20261125/paridad-rutas-llevadas.txt",
+        "../evidence/banda-acceso-develop-20261125/suites-candidato.json",
+        "../evidence/banda-acceso-develop-20261125/spec-invariantes.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/banda-acceso-develop-20261125/suites-candidato.json",
+        "../evidence/app-install-acceso-20261125/certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/banda-acceso-develop-20261125/suites-candidato.json",
+        "../evidence/banda-acceso-develop-20261125/invariantes-replay.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/mobile-app-install-browser-local.js",
+    "evidence": [
+      "../evidence/app-install-acceso-20261125/certification.json",
+      "../evidence/banda-acceso-develop-20261125/porton-develop.json"
+    ],
+    "controls": 126,
+    "passed": 126,
+    "failed": 0,
+    "arbol": "medida en origin/desarrollo c9725008 sobre el artefacto de produccion servido por next start (BUILD_ID R-dJE_2uSjVBDXuUGfcyo, git_head b802a251); en el worktree del candidato no hay node_modules y no se creo uno, asi que la equivalencia se probo por blob: las nueve rutas que producen y miden la pantalla viajan identicas y las dos primitivas que la banda consume (ui/button.tsx, ui/ModalFrame.tsx) estan iguales en las dos ramas",
+    "escenarios": ["acceso-movil-claro", "acceso-movil-oscuro", "acceso-escritorio-claro", "acceso-escritorio-oscuro", "tablero-con-sesion"],
+    "capturas": 9,
+    "destino_externo": "200 con titulo «APEXOS Web Movil»",
+    "controles_de_mutacion": "re-montar la banda en el tablero encendio el_tablero_no_ofrece_la_banda y dejarla dentro del <form> encendio la_banda_fuera_del_formulario en los cuatro escenarios: 121/126 con los cinco rojos esperados, en build aparte (BUILD_ID 5IPZ7QZH2NbmEAVtEtjg0). El instrumento tiene dientes medidos, y la primera corrida (96/122) demostro que tambien puede fallar por el propio arnes: la ruta es estatica y la puerta de hidratacion (449-582 ms) es un clic real con estado observable.",
+    "despues_pendiente": "la corrida del mismo instrumento contra el acceso desplegado en QA desde develop es la pata que falta y se versiona en la contabilidad post-push"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/banda-acceso-develop-20261125/invariantes-replay.json",
+      "../evidence/banda-acceso-develop-20261125/control-de-mutacion-instrumento.json",
+      "../evidence/banda-acceso-develop-20261125/paridad-rutas-llevadas.txt",
+      "../evidence/banda-acceso-develop-20261125/suites-candidato.json"
+    ],
+    "basis": "La regresion del replay se mide por invariantes y no por narrativa: 10/10 (nueve rutas carry byte a byte contra origin/desarrollo y una delete declarada en allowed_deletions), 0 edit por hunks, con el control de mutacion del propio instrumento en verde (3 derivas que quedan rojas). Sobre el arbol del candidato corren la prueba de contrato del boton (13/13) y las ocho suites restantes que leen la pantalla de acceso o el tablero (81/81 en total): login-error-contrast 2, login-phase-zero-ux 17, hr-marking-only-access 6, technical-alert-silence 12, lobby-greeting 2, module-portfolio 6, operational-home-redesign 15, phase-two-intelligent-experience 8. El retiro del tablero se reviste en el destino, no solo en el origen."
+  },
+  "validation_summary": {
+    "certified_application_commit": "c3668323fed3f0c345e34327dafe51c58268416f",
+    "baseline_preserved": "95bf7d5d05537e42860309104c3b5c3ae6b8ed9a",
+    "certificacion_local": "126/126",
+    "contrato_en_el_candidato": "13/13",
+    "suites_del_acceso_y_del_tablero_en_el_candidato": "81/81",
+    "invariantes_replay": "10/10 carry+delete, 0 blobs distintos, 0 waivers",
+    "lineas_anadidas_en_el_hunkeo": 0,
+    "suite_web_no_ejecutada_en_el_candidato": "node --test apps/web/test/*.test.mjs pide dependencias y el worktree no tiene node_modules; en el arbol de origen esta medida 907/902 con cinco rojos preexistentes de otros frentes, corrida desde apps/web (dos archivos resuelven fuente con process.cwd()). Se declara el limite en porton-develop.json en lugar de presentar la corrida como hecha.",
+    "evidence_policy": "La evidencia viaja versionada en docs/qa/evidence/banda-acceso-develop-20261125 y los dos JSON de docs/qa/evidence/app-install-acceso-20261125*; las nueve capturas PNG y los logs locales (next-start.log) quedan en el arbol de origen: unos por el plan de choque de disco, otros porque los excluye .gitignore."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-25T17:30:00-05:00",
+    "instruction": "procede con la correcion de develop para esta intervencion y garantiza que quede correctamente implementada sin tocar otros cambios",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "direct_push_to_develop": true
+    },
+    "authorization_basis": "La orden del 2026-11-25 es puntual: la correccion de montura de este frente hacia develop, y con ello el despliegue en QA para medir el DESPUES. «sin tocar otros cambios» se entiende y se cumple como inventario exacto de 18 rutas: package.json, el canon de agentes y el catalogo de componentes quedan fuera. No otorga main, force push, reescritura de historia compartida, migraciones remotas, cambios en Railway/Supabase, infraestructura ni borrado de ramas."
+  }
+}
