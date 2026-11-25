@@ -1,6 +1,10 @@
-// Contrato del boton «Descarga nuestra app» del lobby y su mini-guia de instalacion.
+// Contrato del boton «Descarga nuestra app» del inicio de sesion y su mini-guia de instalacion.
 //
-// Existe por tres defectos que este corte tiene que impedir, no describir:
+// Existe por cuatro defectos que este corte tiene que impedir, no describir:
+//  0. El 2026-11-25 el dueno corrigio la montura: la oferta de la app va en la pantalla con la que
+//     un usuario de celular ya se cruza (el acceso), no dentro del tablero, adonde hay que tener
+//     sesion y empresa para llegar. El arnes por eso mide dos cosas: que el acceso la monte UNA vez
+//     fuera del formulario y que el tablero NO la monte.
 //  1. Mandar a un usuario de computador a la app es mandarlo a un boton que no puede pulsar: el
 //     servicio de la app (repo aparte `AppApexos`) ya responde «es exclusivo para celulares» y no
 //     permite instalar. La guia tiene que decirlo ANTES del viaje, no despues.
@@ -25,10 +29,11 @@ import {
 } from "../lib/mobileAppInstall.ts";
 
 const root = path.resolve(import.meta.dirname, "..");
-// Los fuentes del dashboard son CRLF: un regex multilinea sin normalizar sale verde sobre aire.
+// Los fuentes del dashboard y del acceso son CRLF: un regex multilinea sin normalizar sale verde sobre aire.
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8").replace(/\r\n/g, "\n");
-const page = read("app/dashboard/page.tsx");
-const band = read("components/lobby/AppInstallBand.tsx");
+const lobby = read("app/dashboard/page.tsx");
+const acceso = read("app/login/page.tsx");
+const band = read("components/system/AppInstallBand.tsx");
 
 const UAS = {
   android: { userAgent: "Mozilla/5.0 (Linux; Android 14; SM-A155G Build/UP1A.231005.007) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.6668.100 Mobile Safari/537.36", maxTouchPoints: 5, platform: "Linux armv8l" },
@@ -43,7 +48,7 @@ test("la URL de la app es https, sin barra final y cae al destino conocido si la
   assert.equal(mobileAppUrl(undefined), MOBILE_APP_FALLBACK_URL);
   assert.match(MOBILE_APP_FALLBACK_URL, /^https:\/\/appapexos-production\.up\.railway\.app$/, "el destino quemado es el servicio de la app: si cambia, se cambia aqui y en docs/project/app-movil.md");
   assert.equal(mobileAppUrl("https://app.example.co/"), "https://app.example.co", "la barra final rompe el enlace al concatenar rutas");
-  assert.equal(mobileAppUrl("http://app.example.co"), MOBILE_APP_FALLBACK_URL, "un http en la configuracion no puede convertirse en el enlace del lobby");
+  assert.equal(mobileAppUrl("http://app.example.co"), MOBILE_APP_FALLBACK_URL, "un http en la configuracion no puede convertirse en el enlace del acceso");
   assert.equal(mobileAppUrl("no-es-una-url"), MOBILE_APP_FALLBACK_URL);
   assert.equal(mobileAppUrl(""), MOBILE_APP_FALLBACK_URL, "variable declarada vacia es variable sin configurar");
 });
@@ -98,19 +103,31 @@ test("el boton del lobby se llama como el dueno lo pidio y la prosa visible cons
   }
 });
 
-test("el lobby monta la banda una sola vez, fuera del condicional de modulos", () => {
-  assert.match(page, /import \{ AppInstallBand \} from "@\/components\/lobby\/AppInstallBand";/, "la banda entra por componente, no copiada en el lobby");
-  assert.equal(page.split("<AppInstallBand />").length - 1, 1, "dos bandas serian dos botones de descarga en la misma pantalla");
-  const vacio = page.indexOf("No tienes módulos habilitados");
-  const banda = page.indexOf("<AppInstallBand />");
-  assert.ok(vacio > 0 && banda > vacio, "la banda va despues del bloque de modulos");
-  const tramo = page.slice(vacio, banda);
-  assert.match(tramo, /<\/section>\}/, "contraste: la banda esta despues del cierre del ternario, o sea no depende de los modulos habilitados");
-  assert.match(page.slice(banda), /<\/div>;/, "contraste: el corte sigue leyendo el cierre del lobby");
+test("la pantalla de acceso monta la banda una sola vez y fuera del formulario", () => {
+  assert.match(acceso, /import \{ AppInstallBand \} from "@\/components\/system\/AppInstallBand";/, "la banda entra por componente, no copiada en el acceso");
+  assert.equal(acceso.split("<AppInstallBand />").length - 1, 1, "dos bandas serian dos botones de descarga en la misma pantalla");
+  const cierre = acceso.indexOf("</form>");
+  const banda = acceso.indexOf("<AppInstallBand />");
+  assert.ok(cierre > 0 && banda > cierre, "la banda va despues del cierre del formulario: dentro, su boton seria un intento de entrar");
+  const columna = acceso.indexOf("apex-login-panel-stack");
+  assert.ok(columna > 0 && columna < banda, "formulario y banda comparten la columna fija del panel de acceso");
+  assert.match(acceso.slice(banda), /<\/div>\s*<\/div>\s*<\/section>/, "contraste: el corte sigue leyendo el cierre del panel, no se detuvo en el primer div");
+});
+
+test("el tablero deja de ofrecer la descarga: el boton vive antes de entrar", () => {
+  assert.equal(lobby.split("AppInstallBand").length - 1, 0, "la banda se retiro del lobby por orden del dueno: un segundo montaje es exactamente el defecto que se esta corrigiendo");
+  assert.doesNotMatch(lobby, /mobileAppInstall/, "el tablero no puede quedarse leyendo la libreria de la app por su cuenta");
+  // Contraste: si el acceso tampoco la montara, el assert de arriba seria verde por ceguera y no por medida.
+  assert.ok(acceso.includes("<AppInstallBand />"), "contraste: el acceso si monta la banda");
+});
+
+test("la banda se apila porque vive en la columna del acceso, no en un ancho de pagina", () => {
+  assert.doesNotMatch(band, /sm:flex-row|sm:w-auto|sm:p-5/, "los breakpoints miden la ventana: en el panel de 28rem un row aplastaria el boton contra el titulo");
+  assert.match(band, /buttonClasses\("primary", "touch", "w-full"\)/, "la accion ocupa el ancho de la columna y se pulsa con el pulgar");
 });
 
 test("el hero del lobby sigue sin botones y la banda no reusa las clases del CTA retirado", () => {
-  assert.doesNotMatch(page, /apex-lobby-cta-/, "el CTA del hero lo retiro el dueno: la banda no puede resucitar esa clase");
+  assert.doesNotMatch(lobby, /apex-lobby-cta-/, "el CTA del hero lo retiro el dueno: la banda no puede resucitar esa clase");
   assert.doesNotMatch(band, /apex-lobby-cta-/);
 });
 
@@ -149,9 +166,12 @@ test("en computador la guia avisa la exclusividad, entrega el enlace y no deja a
   assert.match(band, /navigator\.clipboard\.writeText\(url\)/);
 });
 
-test("la suite del lobby sigue leyendo el contrato heredado: nada de esto toca el hero ni los modulos", () => {
-  assert.match(page, /Creamos sistemas/);
-  assert.match(page, /Mis módulos/);
-  assert.match(page, /PORTFOLIO_MODULES\.filter\(\(module\) => access\.bySlug\[module\.slug\] === true\)/);
-  assert.match(page, /xl:grid-cols-4/);
+test("el tablero conserva el contrato heredado y el acceso conserva su formulario", () => {
+  assert.match(lobby, /Creamos sistemas/);
+  assert.match(lobby, /Mis módulos/);
+  assert.match(lobby, /PORTFOLIO_MODULES\.filter\(\(module\) => access\.bySlug\[module\.slug\] === true\)/);
+  assert.match(lobby, /xl:grid-cols-4/);
+  // Contraste: si el acceso se reescribiera entero, el corte `</form>` del montaje no significaria nada.
+  assert.match(acceso, /onSubmit=\{submit\}/);
+  assert.match(acceso, /Entrar de forma segura/);
 });

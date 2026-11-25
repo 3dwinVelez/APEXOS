@@ -1,4 +1,4 @@
-# App movil de APEXOS y su acceso desde el lobby
+# App movil de APEXOS y su acceso desde la pantalla de ingreso
 
 ## Que es cada cosa
 
@@ -12,7 +12,7 @@ Hay dos aplicaciones web distintas y no conviene mezclarlas:
 | Para que sirve | operacion completa: modulos, reportes, administracion | marcar jornada y registrar actividades desde el celular |
 | Dispositivos | cualquier pantalla | solo celulares |
 
-La app movil **no vive en este repositorio**. Este documento describe como se llega a ella desde el lobby; su comportamiento y su restriccion de dispositivo los define `AppApexos`.
+La app movil **no vive en este repositorio**. Este documento describe como se llega a ella desde la pantalla de acceso; su comportamiento y su restriccion de dispositivo los define `AppApexos`.
 
 ## La restriccion de dispositivo
 
@@ -25,7 +25,11 @@ Esto obliga a dos cosas en el portal:
 
 ## Como se entra a la app desde el portal
 
-El lobby (`apps/web/app/dashboard/page.tsx`) muestra la banda **APEXOS Web Móvil** con el boton **Descarga nuestra app**. El boton no es un enlace: abre la mini-guia, y la guia decide segun el aparato.
+La oferta vive en la **pantalla de acceso** (`apps/web/app/login/page.tsx`), debajo del formulario y en la misma columna fija del panel: es la pantalla con la que un usuario de celular ya se cruza, y no hay que tener sesion ni empresa habilitada para verla. El tablero (`apps/web/app/dashboard/page.tsx`) **no** ofrece la descarga: ahi ya se esta dentro, y quien necesita instalar la app es quien aun no entra.
+
+> Orden del dueno, 2026-11-25: «va en el inicio de sesion, no cuando se inicia sesion». El montaje del lobby se retiro y la banda se movio a `apps/web/components/system/AppInstallBand.tsx`.
+
+La banda **APEXOS Web Móvil** muestra el boton **Descarga nuestra app**. El boton no es un enlace ni un envio del formulario: es `type="button"` y abre la mini-guia, y la guia decide segun el aparato.
 
 La guia muestra siempre los cuatro pasos reales de la instalacion:
 
@@ -60,10 +64,10 @@ No hace falta configurar ninguna variable en Railway para que el boton funcione.
 
 | Instrumento | Que afirma |
 |---|---|
-| `apps/web/test/mobile-app-install.test.mjs` | contrato de la libreria: clasificacion de dispositivos con agentes reales, copy sin deformar, un solo punto de montaje en el lobby, enlace con `rel` seguro, ausencia de enlace en escritorio |
-| `npm run certify:app-install:local` | navegador real con el artefacto de produccion: banda visible con y sin modulos, guia abierta por el boton, cuatro pasos, enlace exacto en celular, aviso y copiado en computador, tema claro y oscuro, y que el destino de la URL responde y es la app movil |
+| `apps/web/test/mobile-app-install.test.mjs` | contrato de la libreria y de las dos pantallas: clasificacion de dispositivos con agentes reales, copy sin deformar, un solo montaje en el acceso y despues del `</form>`, **cero** montajes en el tablero, layout apilado sin breakpoints de ventana, enlace con `rel` seguro, ausencia de enlace en escritorio |
+| `npm run certify:app-install:local` | navegador real con el artefacto de produccion: banda visible **sin sesion** en el acceso, boton que no envia el formulario, guia abierta por el boton, cuatro pasos, enlace exacto en celular, aviso y copiado en computador, tema claro y oscuro, el tablero con modulos servidos **sin banda ni enlace** a la app, y que el destino de la URL responde y es la app movil |
 
-La evidencia queda en `docs/qa/evidence/app-install-lobby-20261124/`.
+La evidencia de la montura actual queda en `docs/qa/evidence/app-install-acceso-20261125/`. La corrida anterior, con la banda dentro del tablero, queda en `docs/qa/evidence/app-install-lobby-20261124/` como registro de lo que se retiro.
 
 El copiado se mide por las dos vias: con el portapapeles del navegador (en un entorno sin portapapeles el portal reporta honestamente que no pudo copiar y muestra el enlace) y con un portapapeles grabador que afirma que la cadena copiada es exactamente la URL de la app.
 

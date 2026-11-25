@@ -10,8 +10,8 @@ export function AppInstallBand() {
   const [guideOpen, setGuideOpen] = useState(false);
 
   return (
-    <section aria-labelledby="app-install-title" className="rounded-card border border-line bg-surface p-4 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <section aria-labelledby="app-install-title" className="rounded-card border border-line bg-surface p-4">
+      <div className="flex flex-col gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-apex text-white">
             <Smartphone size={20} />
@@ -21,7 +21,7 @@ export function AppInstallBand() {
             <p className="text-sm text-content-muted">{APP_INSTALL_LABELS.bandHint}</p>
           </div>
         </div>
-        <button className={buttonClasses("primary", "touch", "w-full shrink-0 sm:w-auto")} onClick={() => setGuideOpen(true)} type="button">
+        <button className={buttonClasses("primary", "touch", "w-full")} onClick={() => setGuideOpen(true)} type="button">
           {APP_INSTALL_LABELS.bandAction}
         </button>
       </div>

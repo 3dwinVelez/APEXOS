@@ -97,7 +97,7 @@ Verificable: en móvil la guía muestra los pasos y el enlace a la app; en escri
 ## 10. Autorizaciones requeridas
 
 - [x] Trabajar en `desarrollo` y empujar a `origin/desarrollo` (autorización permanente acotada de AGENTS.md).
-- [ ] Promoción `desarrollo -> develop`: requiere manifiesto de alcance y `npm run qa:preqa:evidence`. El dueño ya dijo que el destino es `develop`, pero la compuerta se corre aparte y con evidencia.
+- [x] Promoción `desarrollo -> develop`: autorizada por el dueño el 2026-11-25 («extiende solo el cambio del boton hacia develop»), corrida con manifiesto de alcance v2 y `npm run qa:preqa:evidence` en verde. Cerrada en `95bf7d5d`; ver sección 13. El botón viaja solo: `main` no se tocó.
 - [ ] Ninguna autorización para `main`, Railway, Supabase ni despliegues.
 
 ## 11. Documentación, agentes y publicación (obligatoria)
@@ -129,3 +129,58 @@ Verificable: en móvil la guía muestra los pasos y el enlace a la app; en escri
   1. Decidir si el botón debe apuntar a una instancia de la app que lea datos de producción —la enlazada hoy se autodeclara `environment: QA`— (dueño + `apexos-backend`). Es una variable de build o el valor quemado, no un cambio de lógica.
   2. Promoción `desarrollo -> develop` con manifiesto de alcance v2 y `npm run qa:preqa:evidence` (`apexos-git-guardian` + `apexos-qa` + dueño).
   3. Repetir la guía en el navegador desplegado de QA una vez exista ese despliegue (dueño).
+
+## 13. Promoción a `develop` cerrada (2026-11-25)
+
+- **Orden del dueño**: «porfavor extiende solo el cambio del boton hacia develop» (2026-11-25). Solo el botón y su guía; `main` queda intacto.
+- **Transporte**: `replay_puntual`, no merge. Medido antes de decidir: `origin/develop` tenía **138** commits propios y un merge barrería más de **1.000** rutas ajenas. El candidato se armó sobre `c0fbb4b9` en el worktree `apexos-cand-boton-app-develop-20261125` (rama auxiliar `codex/qa-boton-app-movil-develop-20261125`).
+- **Inventario**: **26** rutas exactas (**1 M** + **25 A**), **0** borrados, **0** excepciones de origen. El manifiesto es `docs/qa/manifests/boton-app-movil-lobby-develop-20261125-scope.json` y su gemelo pre-QA `...-preqa.json`.
+- **Compuertas, las tres verdes**: `ALCANCE DE PROMOCION VALIDO: boton-app-movil-lobby-develop-20261125 (26 rutas, transporte puntual: cada blob verificado contra origin/desarrollo)`; `AUTORIZACION PRE-QA VALIDA: boton-app-movil-lobby-develop-20261125`; `git-governance-guard.js promote desarrollo-to-develop` callado con código de salida **0** sobre un worktree limpio.
+- **Un rojo que era del instrumento, no del candidato**: la primera corrida del portón de alcance se hizo dentro del árbol del candidato y salió «ni el candidato ni el destino contienen el commit funcional certificado». Causa medida: `develop` trae un `validate-promotion-scope.js` de **113** líneas (blob `a98fc805`) que aún no sabe leer `transport: replay_puntual`; la versión canónica de `desarrollo` tiene **222** líneas (blob `7d0b5dfa`). Se re-corró la misma compuerta con el instrumento de la rama donde nació el cambio, apuntando al candidato por sha. No se aflojó el candado ni se tocó una ruta del candidato para complacerlo. Los otros dos instrumentos sí son idénticos en las dos ramas (`fde6dae3` y `21aae5c1`).
+- **Medido dentro del árbol del destino**: prueba de contrato del botón **11/11** y las cuatro suites del lobby que ya vivían en `develop` **35/35**, 0 fallos. Los invariantes del replay con el instrumento del repo: **18/18** carry, 0 edit por hunks, y su control de mutación verde con **3** derivas que ponen rojo.
+- **Publicación**: fast-forward `c0fbb4b9..95bf7d5d` en `origin/develop`, verificado con `--dry-run` antes (sin signo `+`, o sea no forzado). Dos commits: `b28fabf0` (aplicación, 18 rutas) y `95bf7d5d` (portón, 8 rutas). En `desarrollo` quedó `9e9052ea` con las mismas 8 rutas espejadas, porque el candado compara cada blob contra `origin/desarrollo` vivo.
+- **Paridad después del empuje**: **26** rutas publicadas, **0** blobs distintos entre `origin/develop` y `origin/desarrollo`.
+- **Señal de despliegue en QA**: el lobby servido en `apexos-web-qa-production` ya trae el botón —el chunk `2i5x12au5xr0p.js` del `/dashboard` contiene literalmente «Descarga nuestra app», «Crear acceso directo» y `appapexos-production.up.railway.app`—; en la raíz `/` no aparece, que es lo diseñado. Esto prueba el artefacto, no reemplaza la corrida de los 111 controles contra QA.
+- **Qué no subió, medido**: `package.json` (164 líneas en `desarrollo` contra 139 en `develop`, con tres líneas ajenas en el medio) —el instrumento se corre por `node` directo y el alias queda pendiente—; `docs/design/APEXOS_COMPONENT_CATALOG.md` (no existe en `develop`); el canon de agentes completo (cinco agentes más nuevos en `desarrollo`); `apps/control-tower/**` (no promociona por regla de repositorio). Todo declarado como deriva en el manifiesto, no callado.
+- **Pendientes con dueño**:
+  1. Correr el instrumento de navegador (111 controles) contra el lobby de QA ya desplegado y versionar el DESPUÉS (`apexos-qa`).
+  2. Alinear el canon de agentes de `develop` con `desarrollo` en una intervención aparte (`equipo-apexos` + `apexos-git-guardian`).
+  3. Decidir si el enlace debe apuntar a una instancia de la app que lea producción (dueño + `apexos-backend`).
+  4. Orden expresa para borrar la rama auxiliar `codex/qa-boton-app-movil-develop-20261125` y su worktree (`apexos-git-guardian`).
+
+## 14. Secuela: la oferta se muda al inicio de sesión (2026-11-25)
+
+- **Orden del dueño**: «lo pusiste en donde no era: el botón está bien, pero va en el inicio de sesión, no cuando se inicia sesión» (2026-11-25, con dos capturas: la banda al pie del tablero y la pantalla de acceso). El botón, la guía y el copy no cambian; cambia **dónde se monta** y, con eso, a quién llega.
+- **Por qué el tablero era el sitio equivocado**: al tablero se entra con sesión y empresa habilitada. Quien necesita instalar la app es justamente quien aún no la tiene: en un celular nuevo, la primera pantalla del producto es el acceso. Montada en el lobby, la oferta solo era visible para el usuario que ya resolvió entrar por otro lado.
+
+### Inventario exacto de la secuela
+
+| Estado | Ruta | Qué hace |
+|---|---|---|
+| `M` | `apps/web/app/login/page.tsx` | nueva columna fija `apex-login-panel-stack` (`mx-auto w-full max-w-md`) que envuelve formulario y banda; la banda entra con `<div className="apex-login-app-install mt-8">` **después** de `</form>`; el `max-w-md` pasa del `<form>` a la columna |
+| `M` | `apps/web/app/dashboard/page.tsx` | se retiran el `import` y el montaje de la banda (3 líneas) |
+| `R`+`M` | `apps/web/components/lobby/AppInstallBand.tsx` → `apps/web/components/system/AppInstallBand.tsx` | `git mv` fuera del apellido `lobby`, que mentía tras la mudanza; el directorio `components/lobby/` desaparece; diseño apilado: `p-4` fijo, `flex-col` sin `sm:flex-row`, botón `w-full` sin `sm:w-auto` |
+| `M` | `apps/web/test/mobile-app-install.test.mjs` | contrato re-anclado: lee acceso, tablero y banda; **11 → 13** pruebas |
+| `M` | `scripts/certifications/mobile-app-install-browser-local.js` | arnés re-anclado a la pantalla de acceso, con puerta de hidratación y pasada de ausencia en el tablero |
+| `M` | `docs/project/app-movil.md` | título, montaje, tabla de instrumentos y ruta de evidencia |
+| `M` | `docs/design/APEXOS_COMPONENT_CATALOG.md` | la fila «diálogo que bifurca por dispositivo» apunta a `components/system/` y describe la columna del acceso |
+| `A` | `docs/qa/evidence/app-install-acceso-20261125/**` | certificación verde (1 JSON, 9 PNG) |
+| `A` | `docs/qa/evidence/app-install-acceso-20261125-mutaciones/certification.json` | control de mutación (1 JSON; las capturas se borran, el rojo es numérico) |
+| `M` | `agents/**` y `.qoder/skills/**` | `apexos-frontend`, `apexos-qa`, `apexos-brief`, `equipo-apexos` y `agents/CHANGELOG.md` |
+
+### Medición
+
+- **Prueba de contrato**: **13/13** (`node --experimental-strip-types --no-warnings --test apps/web/test/mobile-app-install.test.mjs`). Tres pruebas nuevas y una reescrita: la pantalla de acceso monta la banda **una sola vez y después del `</form>`** (con control de contraste que exige que el acceso sí la monte); el tablero tiene **cero** menciones de `AppInstallBand` y cero de la librería; la banda se apila (prohibido `sm:flex-row`, `sm:w-auto`, `sm:p-5`) y su acción primaria sale de `buttonClasses("primary","touch","w-full")`; el contrato heredado del tablero sigue leyéndose sobre la variable correcta.
+- **Certificación en navegador real**: `npm run certify:app-install:local` → **126/126**, 0 rojos. Artefacto de producción servido por `next start` (`BUILD_ID R-dJE_2uSjVBDXuUGfcyo`, `git_head b802a251`), **cuatro** escenarios (móvil claro/oscuro, escritorio claro/oscuro), nueve capturas (guía abierta, banda a la vista y `tablero-sin-banda.png`) y el destino externo vivo: **200** con título «APEXOS Web Móvil».
+- **Lo nuevo que se jura, y no se juraba**: la banda está visible **sin sesión** (`tiene_token: false`, campos vacíos, formulario pintado); el botón es `type="button"` y **no** está dentro del `<form>` (medido con `closest("form")`, no por el fuente); pulsarlo no manda nada a `/auth/login` —censo de peticiones del arnés: **0** envíos—, la URL sigue en `/login` y no aparece token; en móvil (390 px) la banda cabe en la columna sin desbordar (**308 px** de botón, **0 px** de desborde horizontal) y en escritorio (**294 px**); el acceso sigue pintado detrás de la guía; y el **tablero con sesión y seis módulos servidos no ofrece la banda ni enlaza a la app** (`banda: false`, `#app-install-title`: **0** nodos, enlaces: **0**).
+- **La trampa que este corte destapa**: `/login` es una ruta **estática** (`○ /login`), así que la banda llega escrita en el HTML antes de que React enganche sus oyentes. El arnés antiguo llegaba al lobby pasando antes por el acceso, y ese viaje extra calentaba los *chunks*; montada la banda en el propio acceso, el primer clic caía sobre una página todavía sorda. La primera corrida salió **96/122 con 26 rojos**, todos en los dos escenarios móviles, y el rojo acusaba al producto («la guía no abre») de un problema del instrumento. Se verificó con una sonda aparte: en el mismo viewport móvil, esperando 4 s, la guía **sí** monta (diálogo de 448 px con sus cuatro pasos). La puerta no es un sueño: el arnés pulsa el revelador de contraseña del propio formulario y lee el `type` del campo —si no cambia, la página no hidrató y el escenario se declara rojo con esa causa—, devuelve el campo a `password` y solo entonces pulsa la banda. Medido: hidratación entre **449 ms** y **582 ms** por escenario.
+- **Control de mutación, visto en rojo y revertido**: sobre un build aparte (`BUILD_ID 5IPZ7QZH2NbmEAVtEtjg0`) se metieron a propósito los dos defectos que la secuela quiere impedir —re-montar la banda en el tablero y colgarla dentro del `<form>`— y la corrida salió **121/126 con 5 rojos** exactamente los esperados: `el_tablero_no_ofrece_la_banda` (`{"banda":true,"nodos":1}`) y `la_banda_fuera_del_formulario` en los cuatro escenarios (`{"dentro":true}`). Sin ese control, los dos assert nuevos serían verdes por ceguera. La evidencia quedó en `docs/qa/evidence/app-install-acceso-20261125-mutaciones/certification.json`.
+- **Suite web completa**: **907 pruebas, 902 pasan, 5 fallan** —los mismos cinco preexistentes de la sección 12 (`editor de presupuesto`, `registro de funciones del dashboard`, `escrituras self-service de HR`, `falta de HR no bloquea flota`, `ficha enlaza sucursal`)—, ninguno lee las rutas tocadas. Nota de procedimiento: la suite hay que correrla **desde `apps/web`**; desde el raíz del repo sube a 9 rojos porque `ibc-nomina-ui.test.mjs` y `public-service-requests-security.test.mjs` resuelven sus fuentes con `process.cwd()` y no con el directorio del archivo.
+- **Gobernanza**: `agents:preflight` ruteó la secuela a `apexos-frontend`, `apexos-qa`, `apexos-brief` y `equipo-apexos` (los cuatro avanzan en este mismo commit); `agents:sync`, `agents:check`, `agents:preflight` y `agents:coverage -- --paths` verdes; `test:agents` **46/46**; `typecheck` del workspace sin errores; `next build` exitoso y `next-env.d.ts` devuelto a su estado commiteado (el build lo voltea, no forma parte de la intervención).
+- **Qué no se hizo**: no se tocó `develop` ni `main`; no se desplegó; no se cambió el copy ni la URL ni la lógica de detección de dispositivo; no se borró la evidencia anterior (`app-install-lobby-20261124` queda como registro de lo que se retiró).
+- **Consecuencia sobre la promoción del §13**: `origin/develop` recibió la montura vieja —la banda dentro del tablero— y **no** tiene esta corrección. `main` nunca tuvo la banda, así que producción sigue limpia. Llevar la secuela a `develop` requiere autorización nueva del dueño con su propio manifiesto; este cierre solo publica `desarrollo`.
+- **Pendientes con dueño**:
+  1. Autorizar (o no) que la corrección de montura viaje a `develop`, que hoy sirve el botón en el lobby (`dueño` + `apexos-git-guardian`).
+  2. Correr el instrumento de navegador contra el acceso de QA desplegado y versionar el DESPUÉS (`apexos-qa`).
+  3. Decidir si el enlace debe apuntar a una instancia de la app que lea producción (dueño + `apexos-backend`).
+  4. Orden expresa para borrar la rama auxiliar `codex/qa-boton-app-movil-develop-20261125` y su worktree (`apexos-git-guardian`).
