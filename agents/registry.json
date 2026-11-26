@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.112.0",
+      "version": "2.113.0",
       "updated_at": "2026-11-26",
-      "sha256": "177f7a0afdfed964891855607345bdba67444e5af40defdae7235c5dcedc3def",
+      "sha256": "a710fd89d2afe418b90290ed8ee0eb6d35cc63abeb7baf3d255cc91b884ccfff",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -179,7 +179,8 @@
         "alcance-que-retoma-el-dueno-con-accion-exacta",
         "inventario-generado-se-contrainta-contra-el-diff",
         "host-de-ambiente-heredado-del-canon",
-        "consecuencia-de-ambiente-se-cita-con-su-medicion"
+        "consecuencia-de-ambiente-se-cita-con-su-medicion",
+        "brief-se-reconcilia-contra-el-arbol-ejecutado"
       ]
     },
     {
@@ -215,9 +216,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.50.0",
+      "version": "2.51.0",
       "updated_at": "2026-11-26",
-      "sha256": "7b4bd87daccdfdacdedceb249b63fe25748fc3f433440fbee95c3d83244f47ed",
+      "sha256": "e93c4bdfca005b4ce844aaf1e06e73384a632216e844a761f79299b79234a84a",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -264,15 +265,17 @@
         "marca-durable-sobrevive-al-cierre",
         "lenguaje-cercano-al-dueno",
         "paridad-de-requisito-contra-el-servidor",
-        "enlace-directo-sin-portapapeles"
+        "enlace-directo-sin-portapapeles",
+        "matematica-de-eje-ejecutable-en-el-contrato",
+        "tema-y-telefono-medidos-en-navegador"
       ]
     },
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.45.0",
+      "version": "2.46.0",
       "updated_at": "2026-11-26",
-      "sha256": "11dfb3f2bf361312565d497d872fd1c5fca693f6fa7f777ae6071b9ee27f140e",
+      "sha256": "9c2ad0cc645bdcf0bdeb382a223562844d94c24a27956e953571c780714bacd2",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -309,7 +312,8 @@
         "porton-de-origen-por-blob",
         "residual-mismo-blob-mismo-manifiesto",
         "clasificacion-de-rutas-por-destino",
-        "scratch-del-porton-fuera-del-candidato"
+        "scratch-del-porton-fuera-del-candidato",
+        "restauracion-post-build-verificada-por-hash"
       ]
     },
     {
@@ -351,9 +355,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.135.0",
+      "version": "2.136.0",
       "updated_at": "2026-11-26",
-      "sha256": "6620ee5670214470a2033c131a81cf0d93fb65ce821b02e9c20aef724482e214",
+      "sha256": "753be09ba30f275066e3ac697e4dcbe1b71034375a100a62e638f09824368460",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -455,7 +459,9 @@
         "ledger-del-destino-en-solo-lectura",
         "direccion-de-ambiente-resuelta-por-resolvedor-publico",
         "desplegado-servido-y-migrado-se-miden-aparte",
-        "instrumento-desde-su-arbol-y-se-lee-que-escribio"
+        "instrumento-desde-su-arbol-y-se-lee-que-escribio",
+        "arnes-nuevo-se-prueba-contra-el-arbol-anterior",
+        "base-local-por-plantilla-y-no-por-db-push"
       ]
     },
     {
@@ -512,9 +518,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.76.0",
+      "version": "2.77.0",
       "updated_at": "2026-11-26",
-      "sha256": "74be60226c79282a1d6f2f352c20d6af14921be95a89f28a3af56cf9ea0c7c6e",
+      "sha256": "73d91f48ced6e98bd5e7e673253d070967fb53008a96483a3a9f40b9055fe9db",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -570,7 +576,8 @@
         "contingencia-se-cierra-con-mecanismo-y-retiro",
         "tema-adicional-es-el-cambio-exclusivo",
         "transporte-se-mide-contra-la-distancia-del-destino",
-        "autorizacion-con-consecuencia-se-cierra-y-se-rinde"
+        "autorizacion-con-consecuencia-se-cierra-y-se-rinde",
+        "arbol-compartido-se-reporta-por-patas"
       ]
     }
   ],
@@ -608,8 +615,8 @@
     {
       "name": "Catálogo de componentes UI",
       "path": "docs/design/APEXOS_COMPONENT_CATALOG.md",
-      "updated_at": "2026-11-25",
-      "sha256": "94e4a21e80b404b389c9cc3d80410061e7883dca495abcc1eed086611f116f68"
+      "updated_at": "2026-11-26",
+      "sha256": "83f5f606415f18e49cd5ee47f726bab2c542aef8d8066a9b6db09589ea745540"
     },
     {
       "name": "Aislamiento multi-tenant",

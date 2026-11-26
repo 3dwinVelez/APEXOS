@@ -1,0 +1,91 @@
+{
+  "certification": "rediseno-horarios-mallas-artefacto-servido",
+  "date": "2026-11-26",
+  "environment": "LOCAL",
+  "repo": "desarrollo@419f6135 (working tree con la pantalla 4473068e447ceb22627176cadd5d91e3d1d3397b)",
+  "instrumento": "next build con NEXT_DIST_DIR=.next-rediseno + censo de literales en los chunks servidos",
+  "purpose": "El rediseño agrega controles nuevos (selector de vista, aria-label de la franja, stepper de marcaciones). Un literal puede quedar solo en el payload RSC del servidor y no viajar en el chunk que descarga el navegador; se census los archivos generados, no la fuente.",
+  "build": {
+    "command": "cd apps/web && NEXT_DIST_DIR=.next-rediseno npm run build",
+    "exit_code": 0,
+    "compiled": "✓ Compiled successfully in 118s",
+    "build_id": "c2YvmImDGG9_e4Xtw2Tfz",
+    "dist_dir": "apps/web/.next-rediseno",
+    "client_chunks_js": 182
+  },
+  "markers": [
+    {
+      "literal": "Línea de tiempo",
+      "client_chunks": 2,
+      "server_files": 4,
+      "chunks": [
+        ".next-rediseno/static/chunks/2d2nfrt6dqsyh.js",
+        ".next-rediseno/static/chunks/0jadq1lw-bejr.js"
+      ]
+    },
+    {
+      "literal": "Abrir detalle del horario",
+      "client_chunks": 1,
+      "server_files": 2,
+      "chunks": [
+        ".next-rediseno/static/chunks/2d2nfrt6dqsyh.js"
+      ],
+      "nota": "91.501 bytes; es el chunk de la pagina de horarios. Ambos marcadores del rediseno caen en el mismo chunk, que es el que el navegador descarga para /dashboard/talento-humano/rutas."
+    },
+    {
+      "literal": "Trazabilidad cronológica",
+      "client_chunks": 2,
+      "server_files": 4
+    },
+    {
+      "literal": "Sin evidencia fotográfica",
+      "client_chunks": 2,
+      "server_files": 4
+    },
+    {
+      "literal": "Se asociara al guardar",
+      "client_chunks": 1,
+      "server_files": 2,
+      "nota": "needle de la pata de asociacion de usuario que sigue viva tras el rediseño (herencia preservada)."
+    },
+    {
+      "literal": "Editar empleado",
+      "client_chunks": 1,
+      "server_files": 2,
+      "nota": "idem: la apertura de la ficha laboral existente conserva su titulo."
+    }
+  ],
+  "censos_que_no_aplican": [
+    {
+      "literales": ["Debes ir al módulo", "PQR del día"],
+      "resultado": "0 en chunks y 0 en server; 0 en app/dashboard/talento-humano y components.",
+      "interpretacion": "No son literales de esta pantalla en el arbol actual. La pata antigua del arnes esperaba `Abrir` como texto del boton de la fila; el rediseño lo retira (la fila entera es el acceso y las acciones viven detras de `Mas acciones`), y la pata nueva lo certifica asi. No se perdio cobertura: se reemplazo por dos aserciones que si pueden fallar."
+    }
+  ],
+  "side_effects_verificados": [
+    {
+      "archivo": "apps/web/next-env.d.ts",
+      "blob_antes_del_build": "150e3398778d9a336d5027e8873c1b6d5a57af8b",
+      "blob_del_build": "cfd8c00ee81c4dd9abe60e7a1379f9562700255e",
+      "blob_actual": "150e3398778d9a336d5027e8873c1b6d5a57af8b",
+      "accion": "restaurado desde .local/next-env.prebuild"
+    },
+    {
+      "archivo": "apps/web/tsconfig.json",
+      "blob_antes_del_build": "a1c29f9eb3e697582c2326c679331c37d849b74b",
+      "blob_del_build": "46971ace7d9076caf07f0c9195dd62ab5fda92d8",
+      "blob_actual": "a1c29f9eb3e697582c2326c679331c37d849b74b",
+      "accion": "restaurado desde .local/tsconfig.prebuild"
+    }
+  ],
+  "nota_restauracion": "Los dos archivos ya estaban sucios en el arbol de trabajo por un frente ajeno en vuelo (referencias a .next-dev-company-modal). El build los reescribio con sus rutas propias y tardo dos pasadas en devolverlos: el primer `cp` del comando compuesto se ejecuto desde un directorio equivocado y no encontro el respaldo. La segunda pasada, con rutas absolutas, devolvio los blobs exactos. Ninguno de los dos archivos va en este commit.",
+  "alcance_y_limites": [
+    "Este censo prueba que el literal viaja en el artefacto compilado; no prueba que el navegador lo pinte. Eso lo certifica la pata de navegador (6/6) sobre el dev server real.",
+    "No se construyo el arbol anterior, asi que no hay ANTES por artefacto. El control de ausencia por fuente es el mutante contra el blob anterior del certificador.",
+    "El directorio .next-rediseno es output local y esta cubierto por .gitignore: no se publica."
+  ],
+  "verificacion": "grep -rlF sobre .next-rediseno/static/chunks y .next-rediseno/server con los literales crudos; hash-object sobre los dos archivos generados antes y despues.",
+  "status": "passed",
+  "started_at": "2026-11-26T20:03:43.000Z",
+  "finished_at": "2026-11-26T20:12:30.000Z"
+}

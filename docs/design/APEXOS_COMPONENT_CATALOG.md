@@ -1,6 +1,6 @@
 # Catálogo de componentes y homologación UI — APEXOS
 
-Versión: 1.2 — 2026-11-24
+Versión: 1.3 — 2026-11-26
 
 Índice normativo para construir pantallas en `apps/web`. No reemplaza los estándares; los ordena para que una pantalla nueva no invente un patrón distinto.
 
@@ -74,6 +74,7 @@ Se copia el patrón, no el código completo:
 | Espacio de trabajo operativo | `apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx` | Navegación interna, filtros y estados |
 | Detalle dentro del listado | `apps/web/app/dashboard/comercio/clientes/page.tsx` | Abrir por el dato, un solo botón de regreso |
 | Diálogo que bifurca por dispositivo | `apps/web/components/system/AppInstallBand.tsx` | Banda apilada (`flex-col`, sin breakpoints de ventana) en la columna fija del acceso `apps/web/app/login/page.tsx`, despues del `</form>` y con `type="button"` para no enviar las credenciales; `ModalFrame` con `footer` distinto en celular y en computador, enlace externo con `target="_blank"` y `rel="noopener noreferrer"`, aviso condicional como contenido (`role="note"`) y no como alerta, y copy tomado siempre de una librería (`lib/mobileAppInstall.ts`) |
+| Dos vistas del mismo listado (tabla y eje de tiempo) | `apps/web/app/dashboard/talento-humano/rutas/page.tsx` | Un solo `filteredRoutes` alimenta las dos vistas; el selector vive en la barra de filtros, son botones con `aria-pressed` (no `TabsList`, que es navegación entre páginas) y la vista por defecto se declara en el estado inicial. La franja y el nombre son el mismo acceso (`aria-label` en la franja, `title` en el nombre) sobre `onClick` de la fila; los indicadores caben en una fila adaptativa `grid-cols-[repeat(auto-fit,minmax(150px,1fr))]`; la ventana flotadora se abre con `createPortal` y `document.body` y usa la tinta del tenant (`bg-neutral-950/70` + `backdrop-blur-sm`). Su matemática de eje y los píxeles táctiles se certifican en `apps/web/test/hr-schedule-timeline-view.test.mjs` y `scripts/certifications/hr-punch-mobile-evidence-local.js`, no a ojo sobre la captura |
 
 Si la pantalla de referencia no cubre el caso, se elige la más cercana y se documenta la diferencia. No se usa una pantalla con tablas crudas como referencia.
 
