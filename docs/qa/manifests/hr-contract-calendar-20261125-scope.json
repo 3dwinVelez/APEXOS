@@ -1,0 +1,121 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-contract-calendar-20261125",
+  "base_commit": "2943da63f623f4c86834ffa6355957f1e75e4190",
+  "base_commits": {
+    "develop": "2943da63f623f4c86834ffa6355957f1e75e4190"
+  },
+  "target_head": "2943da63f623f4c86834ffa6355957f1e75e4190",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "certified_commit": "fd9cb8dc4e1aa3e3d3e32609e875a966b1a6ea7c",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "fd9cb8dc4e1aa3e3d3e32609e875a966b1a6ea7c",
+    "implementation_commits": [
+      "cd0693c397ae80f0cde7dbb670c25cd0e598e4fe"
+    ],
+    "reconstruction": "Exact date-correction hunks on current QA; only the new local certificate added to the target wrapper"
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/contractCalendarDate.js",
+    "apps/api/src/modules/hr/contractFoundationRepair.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-contract-calendar-date.test.js",
+    "scripts/certifications/hr-contract-calendar-local.js",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/repair-hr-contract-calendar.js"
+  ],
+  "change_intent": {
+    "summary": "Preserve contract calendar dates and provide explicit guarded correction of a one-day initial-contract offset",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/contractCalendarDate.js",
+    "apps/api/src/modules/hr/contractFoundationRepair.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-contract-calendar-date.test.js",
+    "docs/qa/manifests/hr-contract-calendar-20261125-preqa.json",
+    "docs/qa/manifests/hr-contract-calendar-20261125-scope.json",
+    "scripts/certifications/hr-contract-calendar-local.js",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/repair-hr-contract-calendar.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/contractCalendarDate.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/contractFoundationRepair.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-contract-calendar-date.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-contract-calendar-20261125-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-contract-calendar-20261125-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-contract-calendar-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/repair-hr-contract-calendar.js"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Calendar dates for hires, expiry, Bogota default salary history, amendments and rehires",
+      "status": "passed",
+      "evidence": [
+        "hr-contract-calendar-20261125-preqa.json"
+      ]
+    },
+    {
+      "name": "Preview, audited repair of 21 initial contracts, idempotent batch execution and browser reload",
+      "status": "passed",
+      "evidence": [
+        "hr-contract-calendar-20261125-preqa.json"
+      ]
+    },
+    {
+      "name": "Permissions, tenant isolation, stale expected values, financial movements and payroll serialization",
+      "status": "passed",
+      "evidence": [
+        "hr-contract-calendar-20261125-preqa.json"
+      ]
+    }
+  ]
+}

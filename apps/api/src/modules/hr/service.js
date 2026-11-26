@@ -6,6 +6,8 @@ const { terminationDeductions } = require("./terminationDeductions");
 const { punchPhotoItems, punchMonitorMetadata } = require("./punchEvidence");
 const { findUserForEmployee } = require("./employeeUserLink");
 const prisma = require("../../core/prisma");
+const { contractCalendarKey } = require("./contractCalendarDate");
+const repairEmployeeContractFoundation = require("./contractFoundationRepair").foundationRepairService(prisma);
 const banks = require("./banks").bankService(prisma);
 const { buildDaviviendaPayrollFile } = require("./davivienda-file");
 const { Prisma } = require("@prisma/client");
@@ -1148,7 +1150,7 @@ async function syncEmployeeSalaryHistory(tx, tenantId, employeeId, input = {}, a
   if (input.salary_base === undefined) return;
   const salary = Number(input.salary_base || 0);
   if (!(salary > 0)) return;
-  const validFrom = input.hire_date ? new Date(input.hire_date) : new Date();
+  const validFrom = input.hire_date ? new Date(contractCalendarKey(input.hire_date)) : startOfDay();
   const reason = input.salary_reason || "Actualizacion maestro empleado";
   await tx.$executeRaw`
     UPDATE th_empleado_salarios
@@ -1182,10 +1184,12 @@ async function syncEmployeeSalaryHistory(tx, tenantId, employeeId, input = {}, a
 function employeeContractPayload(input = {}, employee = {}) {
   const metadata = employee.metadata && typeof employee.metadata === "object" ? employee.metadata : {};
   const accounting = metadata.accounting && typeof metadata.accounting === "object" ? metadata.accounting : {};
+  const initialDate = input.valid_from || input.hire_date || employee.hire_date;
+  const finalDate = input.end_date || input.valid_to;
   return {
     contract_type: normalizeContractType(input.contract_type || employee.contract_type),
-    valid_from: dateOnly(input.valid_from || input.hire_date || employee.hire_date || new Date()),
-    valid_to: input.end_date || input.valid_to ? dateOnly(input.end_date || input.valid_to) : null,
+    valid_from: dateOnly(initialDate ? contractCalendarKey(initialDate) : new Date()),
+    valid_to: finalDate ? dateOnly(contractCalendarKey(finalDate)) : null,
     salary_base: Number(input.salary_base ?? employee.salary_base ?? 0),
     cost_center: input.cost_center ?? metadata.cost_center ?? "",
     society_code: input.society_code ?? accounting.society_code ?? metadata.society_code ?? null,
@@ -1230,7 +1234,7 @@ async function ensureEmployeeContractFoundation(tx, tenantId, employee, user = {
     LIMIT 1
   `;
   if (existing[0]) return existing[0];
-  const payload = employeeContractPayload({}, employee);
+  const payload = employeeContractPayload({ end_date: employee.end_date }, employee);
   const continuityGroupId = randomUUID();
   const rows = await tx.$queryRaw`
     INSERT INTO th_empleado_contratos (
@@ -1415,7 +1419,7 @@ async function createEmployee(tenantId, input) {
         department: input.department || input.area || "Operacion",
         salary_base: Number(input.salary_base || 0),
         salary_type: input.salary_type || "monthly",
-        hire_date: input.hire_date ? new Date(input.hire_date) : new Date(),
+        hire_date: input.hire_date ? new Date(input.hire_date) : startOfDay(),
         end_date: input.end_date ? new Date(input.end_date) : null,
         contract_type: normalizeContractType(input.contract_type),
         metadata: {
@@ -8825,6 +8829,7 @@ const terminationManualAdjustments = require("./terminationManualAdjustments")({
 const terminationDayReviews = require("./terminationDayReviews")({ db: prisma, context: terminationManualAdjustments.context, build: buildEmployeeTerminationLiquidation, error: validationError });
 
 module.exports = {
+  repairEmployeeContractFoundation,
   listTerminationManualAdjustments: terminationManualAdjustments.list,
   listTerminationDayReviews: terminationDayReviews.list,
   saveTerminationDayReview: terminationDayReviews.save,

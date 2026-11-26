@@ -1,0 +1,105 @@
+{
+  "change_id": "hr-contract-calendar-20261125",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "2943da63f623f4c86834ffa6355957f1e75e4190",
+  "commit": "fd9cb8dc4e1aa3e3d3e32609e875a966b1a6ea7c",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-contract-calendar-20261125-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-contract-calendar-20261125-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-contract-calendar-20261125-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-contract-calendar-20261125-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-contract-calendar-20261125-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-contract-calendar-local.js",
+    "evidence": [
+      "hr-contract-calendar-20261125-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-contract-calendar-local.js",
+    "evidence": [
+      "hr-contract-calendar-20261125-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "statement": "si autorizo — autorización al despliegue de la API en QA y reparación de los 21 contratos del 31/10 al 01/11/2026",
+    "approved_by": "Usuario",
+    "approved_at": "2026-11-26T00:57:31.259478+00:00"
+  },
+  "execution": {
+    "functional_commit": "fd9cb8dc4e1aa3e3d3e32609e875a966b1a6ea7c",
+    "functional": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "started_at": "2026-11-26T00:52:38.553Z",
+      "checks": [
+        "new hires keep first-of-month and year boundaries in master, contract and contract API",
+        "default hire date follows Bogota today; amendments and rehires preserve their explicit calendar date",
+        "preview is read only and repair of 21 seeded contracts is audited and idempotent without duplicates",
+        "authentication, write permission, tenant isolation and stale expected values prevent repair",
+        "amendments, financial movements and concurrent payroll transactions block repair",
+        "versioned batch runner previews the complete plan, verifies tenant and replays safely",
+        "real employee dialog shows the corrected calendar date and retains it after reload"
+      ],
+      "repaired_contracts": 21,
+      "finished_at": "2026-11-26T00:54:29.562Z"
+    },
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1795654326328",
+      "source_database_modified": false,
+      "fixture_schema_hunks": [
+        "20261016123000_sedes_replace_origins: sections 1-2 only",
+        "20260919110000_time_route_kind_descanso",
+        "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+      ],
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-26T00:54:29.664Z"
+    },
+    "unit_regression": {
+      "passed": 41,
+      "failed": 0
+    },
+    "source_match": "Archived candidate sources match certified Git blobs after LF/CRLF normalization",
+    "qa_data_repair": "21-record private plan prepared, not applied. API deployment required; no remote migrations."
+  }
+}

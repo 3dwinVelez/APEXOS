@@ -5,8 +5,9 @@ const { execFileSync, spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
 const certificate = process.argv.find(arg => arg.startsWith('--certificate='))?.slice(14) || 'hr-employee-user-link-local.js';
 const candidateClient = ['hr-time-report-local.js', 'hr-hide-web-marking-local.js'].includes(certificate) ? require('./hr-test-prisma-local')(root) : {};
-if (!['hr-hide-web-marking-local.js', 'hr-time-report-local.js', 'hr-schedule-employee-source-local.js', 'hr-cross-device-sync-local.js', 'hr-termination-day-review-local.js', 'hr-employee-banks-local.js', 'hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js', 'hr-payroll-markings-local.js', 'hr-marking-existing-employee-local.js', 'hr-termination-document-search-local.js', 'hr-termination-complete-local.js'].includes(certificate)) throw Error('Unsupported certification script');
+if (!['hr-contract-calendar-local.js', 'hr-hide-web-marking-local.js', 'hr-time-report-local.js', 'hr-schedule-employee-source-local.js', 'hr-cross-device-sync-local.js', 'hr-termination-day-review-local.js', 'hr-employee-banks-local.js', 'hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js', 'hr-payroll-markings-local.js', 'hr-marking-existing-employee-local.js', 'hr-termination-document-search-local.js', 'hr-termination-complete-local.js'].includes(certificate)) throw Error('Unsupported certification script');
 const outputDirectories = {
+  "hr-contract-calendar-local.js": "hr-contract-calendar",
   "hr-hide-web-marking-local.js": "hr-hide-web-marking",
   "hr-time-report-local.js": "hr-time-report",
   "hr-schedule-employee-source-local.js": "hr-schedule-employee-source",
@@ -55,7 +56,7 @@ const hasRouteKind = docker(['exec', container, 'psql', '-U', 'apex', '-d', data
 if (!hasRouteKind) apply(fs.readFileSync(path.join(root, 'apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql')));
 // The historical local snapshot used TEXT, while the versioned authorization
 // migration creates UUID. Match that contract only in the disposable fixture.
-const sessionIdType = ['hr-payroll-markings-local.js', 'hr-hide-web-marking-local.js', 'hr-time-report-local.js', 'hr-schedule-employee-source-local.js'].includes(certificate)
+const sessionIdType = ['hr-contract-calendar-local.js', 'hr-payroll-markings-local.js', 'hr-hide-web-marking-local.js', 'hr-time-report-local.js', 'hr-schedule-employee-source-local.js'].includes(certificate)
   ? docker(['exec', container, 'psql', '-U', 'apex', '-d', database, '-Atc', "SELECT data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='AuthorizationSession' AND column_name='id'"]).toString().trim()
   : null;
 if (sessionIdType === 'text') apply('ALTER TABLE "AuthorizationSession" ALTER COLUMN "id" TYPE uuid USING "id"::uuid;');
