@@ -58,13 +58,17 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
   async function view(name){await page.waitForFunction(text=>[...document.querySelectorAll('button')].some(el=>el.textContent.trim()===text),{},name);await page.evaluate(text=>[...document.querySelectorAll('button')].find(el=>el.textContent.trim()===text).click(),name);}
   async function rowMenu(id){await page.waitForSelector('tr[data-route-id="'+id+'"] button[aria-label^="Mas acciones"]');await page.evaluate(id=>document.querySelector('tr[data-route-id="'+id+'"] button[aria-label^="Mas acciones"]').click(),id);}
   const rowSelector=id=>'[data-schedule-view="timeline"] [data-route-id="'+id+'"]';
+  // Un rojo del hub no explica nada si no se sabe donde termino el navegador: la caida se versiona.
+  async function diagnostico(nombre,fn){try{await fn();}catch(error){fs.writeFileSync(path.join(folder,'diagnostico-'+nombre+'.json'),JSON.stringify({url:page.url(),titulo:await page.title(),claves_locales:await page.evaluate(()=>Object.keys(localStorage)),texto:await page.evaluate(()=>(document.body.innerText||'').slice(0,600)),error:String(error && error.message||error)},null,2)+'\n');throw error;}}
   await check('one hub entry opens programming and existing links select the matching tab',async()=>{
-   await page.waitForSelector('section[aria-label="Herramientas activas de talento humano"] a[href$="/rutas"]');
-   assert.equal(await page.$$eval('section[aria-label="Herramientas activas de talento humano"] a',links=>links.filter(link=>/\/(rutas|mallas)$/.test(link.pathname)).length),1);
-   await page.click('section[aria-label="Herramientas activas de talento humano"] a[href$="/rutas"]');
-   await page.waitForSelector(scheduleNav+' a[aria-current="page"][href$="/rutas"]');
-   await page.waitForSelector(rowSelector(route.id));
-   assert.equal(await page.$eval('h1',el=>el.textContent),'Horarios y mallas');
+   await diagnostico('hub',async()=>{
+    await page.waitForSelector('section[aria-label="Herramientas activas de talento humano"] a[href$="/rutas"]');
+    assert.equal(await page.$$eval('section[aria-label="Herramientas activas de talento humano"] a',links=>links.filter(link=>/\/(rutas|mallas)$/.test(link.pathname)).length),1);
+    await page.click('section[aria-label="Herramientas activas de talento humano"] a[href$="/rutas"]');
+    await page.waitForSelector(scheduleNav+' a[aria-current="page"][href$="/rutas"]');
+    await page.waitForSelector(rowSelector(route.id));
+    assert.equal(await page.$eval('h1',el=>el.textContent),'Horarios y mallas');
+   });
   });
   await check('the schedule opens its detail from the timeline bar, which is the default view',async()=>{
    await page.waitForSelector('button[aria-label^="Abrir detalle del horario"]');
@@ -157,8 +161,13 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
    const createdResponse=page.waitForResponse(r=>r.url().endsWith('/hr/routes')&&r.request().method()==='POST');
    await button('Asignar horario','[role="dialog"]');const created=await createdResponse;assert.equal(created.status(),200);const record=await created.json();
    await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));
+   // El listado esta fijado a un dia y la jornada nueva nace dos dias despues: con la tabla abierta y el
+   // filtro en hoy la fila no debe existir. Eso es lo que la pata de develop asumia sin medirlo.
+   await view('Tabla');
+   assert.equal(await page.$$eval('tr[data-route-id="'+record.id+'"]',rows=>rows.length),0,'el filtro de fecha deja ver filas de otro dia');
+   await setInput('input[aria-label="Filtrar por fecha"]',String(record.date||'').slice(0,10)||future(2));
+   await page.waitForSelector('tr[data-route-id="'+record.id+'"]');
    // Editar y Clonar ya no viven sueltos en la fila: se abren desde el menu de mas acciones de la tabla.
-   await view('Tabla');await page.waitForSelector('tr[data-route-id="'+record.id+'"]');
    await rowMenu(record.id);
    await button('Editar','tr[data-route-id="'+record.id+'"]');
    await page.type('[role="dialog"] textarea','QA horario editado');
