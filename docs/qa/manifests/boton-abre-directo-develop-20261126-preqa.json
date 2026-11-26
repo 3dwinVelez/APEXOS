@@ -1,0 +1,113 @@
+{
+  "change_id": "boton-abre-directo-develop-20261126",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "promotion_branch": "(HEAD despegado en .tmp/wt-dev-boton-20261126, sin rama nueva)",
+  "commit": "994c9fc5bf54042325562a07b045f518f33eb993",
+  "target_head": "5d46c49729c04701107e54ae3b0b2e3a4a8ac3c0",
+  "origen_certificado": "017ed83a2eed2879ac06fd28014f4a3352a17835",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/app-install-abrir-directo-20261126/certification.json",
+        "../evidence/app-install-abrir-directo-20261126/url-admin-local.json",
+        "../evidence/boton-abre-directo-develop-20261126/suites-candidato.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/app-install-abrir-directo-20261126/certification.json",
+        "../evidence/boton-abre-directo-develop-20261126/paridad-rutas-llevadas.txt",
+        "../evidence/app-install-abrir-directo-20261126/url-admin-local-muestreo-pronto.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-abre-directo-develop-20261126/paridad-rutas-llevadas.txt",
+        "../evidence/boton-abre-directo-develop-20261126/suites-candidato.json",
+        "../evidence/boton-abre-directo-develop-20261126/spec-invariantes.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-abre-directo-develop-20261126/suites-candidato.json",
+        "../evidence/app-install-abrir-directo-20261126/certification.json",
+        "../evidence/url-app-admin-develop-20261125/qa-remoto.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-abre-directo-develop-20261126/suites-candidato.json",
+        "../evidence/boton-abre-directo-develop-20261126/invariantes-replay.json",
+        "../evidence/boton-abre-directo-develop-20261126/porton-develop.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/mobile-app-install-browser-local.js",
+    "evidence": [
+      "../evidence/app-install-abrir-directo-20261126/certification.json",
+      "../evidence/boton-abre-directo-develop-20261126/porton-develop.json"
+    ],
+    "controls": 137,
+    "passed": 137,
+    "failed": 0,
+    "arbol": "medida en origin/desarrollo sobre el artefacto de produccion servido por next start (build_id f_4CN15EWmM1zT94jWSHT, head c897242041): cuatro escenarios (acceso movil claro/oscuro y acceso escritorio claro/oscuro) con la banda sin sesion, la guia abierta por el boton, el enlace unico con href/target/rel, el censo de ventanas que el navegador crea al pulsar, y el tablero servido sin banda ni enlace. Las rutas que producen y miden esa pantalla viajan byte a byte al candidato (invariantes-replay.json 17/17).",
+    "escenarios": [
+      "acceso-movil-claro",
+      "acceso-movil-oscuro",
+      "acceso-escritorio-claro",
+      "acceso-escritorio-oscuro",
+      "tablero-sin-banda",
+      "ventana-nueva-destino-app"
+    ],
+    "capturas": 9,
+    "destino_externo": "si: se consulta el destino de la app movil para afirmar que responde y que es la app, ademas del censado de ventanas que abre el boton",
+    "controles_de_mutacion": "19 rojos nombrados en docs/qa/evidence/app-install-control-mutacion-20261126/certification.json: al devolver el boton de copiar y su rótulo, el arnes deja de ver la ventana nueva y de contar el enlace, y fallan los controles de celular, computador y portapapeles. La fuente quedo restaurada y verificada blob por blob. El arnes tambien se pruebo contra si mismo: si el enlace no esta pintado o si la guia ya estaba abierta antes del clic, el control cae.",
+    "despues_pendiente": "la corrida de mobile-app-install-qa.js contra el portal de QA desplegado desde develop es la pata que falta: hasta ahora la accion directa esta medida contra el artefacto local y contra el portal de QA con la version anterior del boton (docs/qa/evidence/url-app-admin-develop-20261125/qa-navegador.json, que era sonda manual). Se versiona despues del push y del despliegue."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/boton-abre-directo-develop-20261126/invariantes-replay.json",
+      "../evidence/boton-abre-directo-develop-20261126/control-de-mutacion-instrumento.json",
+      "../evidence/boton-abre-directo-develop-20261126/paridad-rutas-llevadas.txt",
+      "../evidence/boton-abre-directo-develop-20261126/porton-develop.json",
+      "../evidence/boton-abre-directo-develop-20261126/suites-candidato.json"
+    ],
+    "basis": "La regresion del replay se mide por invariantes y no por narrativa: 17/17 rutas byte a byte contra origin/desarrollo, con el control de mutacion del propio instrumento en verde (3 derivas que quedan rojas) y cero hunks: este porton no necesita fusionar nada porque no toca ninguna ruta compartida. porton-develop.json retrata las nueve rutas compartidas del frente: seis estan IGUALES y las tres divergentes (schema.prisma, rbac.js, pantalla de Administracion) conservan en develop el marcador del frente medido con expresion regular sobre el blob de origin/develop, mas el contenido de otros frentes que queda intacto por no tocarse. Sobre el arbol del candidato corren el contrato del API (11/11), el contrato web (19/19), los cuatro sintacticos de los instrumentos y prisma validate, y se verifican los dos rechazos del arnes de ambiente (sin fixture y con origen de Produccion). El instrumento promocional existe en develop con el mismo blob (309ddade) que en desarrollo."
+  },
+  "validation_summary": {
+    "certified_application_commit": "994c9fc5bf54042325562a07b045f518f33eb993",
+    "baseline_preserved": "5d46c49729c04701107e54ae3b0b2e3a4a8ac3c0",
+    "certificacion_local": "137/137 en navegador real + 28/28 del enlace administrable, control de mutacion 19 rojos nombrados",
+    "contrato_api_en_el_candidato": "11/11",
+    "contrato_web_en_el_candidato": "19/19",
+    "invariantes_replay": "17/17 carry, 0 edit por hunks, 0 waivers de origen",
+    "suite_web_completa_en_desarrollo": "924 pruebas, 910 pasan, 14 rojas, atribuidas una por una en docs/briefs/2026-11-25-url-app-administrable.md seccion 14.2: nueve son arneses que piden un servidor en 127.0.0.1:3001 y cinco son aserciones de otros frentes (contabilidad, centro de comandos, respaldo de HR, flota, estructura contable). Ninguno de los cinco archivos lee AppInstallBand.tsx, mobileAppInstall.ts ni mobile-app-install.test.mjs, medido con grep sobre cada archivo.",
+    "suite_web_completa_no_ejecutada_en_el_candidato": "apps/web/test/*.test.mjs en bloque y la certificacion en navegador piden un build y un servidor; el worktree no tiene node_modules propio y no se creo uno, para no repetir la caida del 2026-11-20 (git worktree remove vaciando 1173 archivos a traves de un enlace). Node resuelve las dependencias caminando hacia arriba desde .tmp/. Se declara el limite aqui en lugar de presentar la corrida como hecha.",
+    "evidence_policy": "La evidencia viaja versionada en docs/qa/evidence/boton-abre-directo-develop-20261126 y en los JSON de app-install-abrir-directo-20261126, app-install-control-mutacion-20261126 y url-app-admin-develop-20261125; las cinco capturas PNG quedan en el arbol de origen por el plan de choque de disco (2026-11-18)."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-26T11:00:00-05:00",
+    "instruction": "extiende el cambio del boton de manera controlada y cerrada al ambiente main aunque la url pertenezca a qa lo importante en este caso es migrar la funcion y el boton de manera correcta ya la url me encargo yo de actualizarla solo un tema adicional en ves de permitirle al usuario copiar la url genera un boton que lo lleve directamente a la url asi evitamos muchas cosas procesa el trabajo que tienes y sigue el proceso de migracion correcto desde desarrollo hasta main con estos cambios y condiciones, no debes tocar ni afectar otros temas adicionales debe ser un commit exclusivo para este cambio",
+    "authorization_flags": {
+      "candidate_on_detached_head": true,
+      "direct_push_to_develop": true
+    },
+    "authorization_basis": "La orden del 2026-11-26 ampara el viaje de ESTE frente hacia develop y el trabajo necesario para corroborar sus funciones en QA, y autoriza expresamente seguir el proceso hasta main. Ese viaje a main no se decide aqui: exige su propio manifiesto de alcance y la aprobacion QA funcional. No otorga force push, reescritura de historia compartida, infraestructura, cambios en Railway/Supabase, aplicacion de la migracion 20261125183000 en la base de Produccion ni borrado de ramas."
+  },
+  "nota_punta": "El SHA de este campo es el commit cuyo arbol lleva el contenido certificado y la evidencia del porton (994c9fc5). La punta que se empuja y contra la que corren los portones es posterior y describe un manifiesto que no puede contener su propio SHA: se consigna entera en la contabilidad despues del push, con el resultado verbatim del scope, del pre-QA y del guardian."
+}

@@ -114,6 +114,13 @@ const ADMIN_CAPABILITY_RULES = {
   master_data: {
     read: [["usuarios", ["access", "view", "create", "edit", "manage_users"]]],
     edit: [["usuarios", ["edit", "manage_users"]], ["configuracion", ["configure", "administer"]]]
+  },
+  // Configuracion de plataforma (hoy: el enlace de la app movil del acceso). Sin esta fila, un rol
+  // con matriz legacy quedaria negado aunque administre configuracion, porque la matriz corta antes
+  // de mirar el permiso grueso admin:write.
+  platform_settings: {
+    read: [["configuracion", ["access", "view", "configure", "administer"]]],
+    edit: [["configuracion", ["configure", "administer"]]]
   }
 };
 

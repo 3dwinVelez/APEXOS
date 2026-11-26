@@ -1,0 +1,78 @@
+{
+  "origen": "origin/desarrollo 017ed83a (el boton del acceso abre la app en vez de copiar la direccion)",
+  "origin_ref": "origin/desarrollo",
+  "base_ref": "origin/develop",
+  "carry": [
+    {
+      "file": "apps/web/components/system/AppInstallBand.tsx",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/lib/mobileAppInstall.ts",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/test/mobile-app-install.test.mjs",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/briefs/2026-11-25-url-app-administrable.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/project/app-movil.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-abrir-directo-20261126/certification.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-abrir-directo-20261126/url-admin-local-muestreo-pronto.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-abrir-directo-20261126/url-admin-local.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-control-mutacion-20261126/certification.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/url-app-admin-develop-20261125/qa-cierre.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/url-app-admin-develop-20261125/qa-navegador-sonda.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/url-app-admin-develop-20261125/qa-navegador.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/url-app-admin-develop-20261125/qa-remoto.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "scripts/certifications/mobile-app-install-browser-local.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "scripts/certifications/mobile-app-install-qa.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "scripts/certifications/mobile-app-url-admin-local.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "scripts/certifications/mobile-app-url-admin-qa.js",
+      "from_ref": "origin/desarrollo"
+    }
+  ],
+  "delete": [],
+  "edit": [],
+  "nota": "Diecisiete rutas viajan byte a byte desde origin/desarrollo 017ed83a: cinco de producto/prueba (AppInstallBand.tsx, mobileAppInstall.ts, mobile-app-install.test.mjs) y cuatro instrumentos (mobile-app-install-browser-local.js, mobile-app-url-admin-local.js y los dos de ambiente, que no vivian en develop), dos documentos y ocho JSON de evidencia. Cero eliminaciones y cero hunks: este porton no necesita tocar ninguna ruta compartida, porque schema.prisma, middleware/rbac.js y la pantalla de Administracion ya Traen el frente desde el porton url-app-administrable-develop-20261125. Lo ajeno queda fuera por construccion: ninguna de estas rutas tiene lineas de otro frente."
+}

@@ -4302,3 +4302,16 @@ model ComercioPromotionSend {
 
 
 
+// Configuracion tecnica de la plataforma, no dato operativo de un cliente. Cada despliegue tiene
+// su propia base, asi que la fila vale para el ambiente que la guarda: es lo que permite cambiar,
+// por ejemplo, a que app movil envia la pantalla de acceso sin reconstruir el portal.
+model PlatformSetting {
+  id         Int      @id @default(autoincrement())
+  key        String   @unique
+  value      Json     @default("{}")
+  updated_by String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("platform_settings")
+}
