@@ -5,9 +5,9 @@
   "target_branch": "develop",
   "qa_status": "pending",
   "promotion_branch": "(HEAD despegado en .tmp/wt-dev-boton-20261126, sin rama nueva)",
-  "commit": "HEAD-del-candidato",
-  "target_head": "5d46c497",
-  "origen_certificado": "017ed83a",
+  "commit": "994c9fc5bf54042325562a07b045f518f33eb993",
+  "target_head": "5d46c49729c04701107e54ae3b0b2e3a4a8ac3c0",
+  "origen_certificado": "017ed83a2eed2879ac06fd28014f4a3352a17835",
   "checks": {
     "functional": {
       "status": "passed",
@@ -61,7 +61,14 @@
     "passed": 137,
     "failed": 0,
     "arbol": "medida en origin/desarrollo sobre el artefacto de produccion servido por next start (build_id f_4CN15EWmM1zT94jWSHT, head c897242041): cuatro escenarios (acceso movil claro/oscuro y acceso escritorio claro/oscuro) con la banda sin sesion, la guia abierta por el boton, el enlace unico con href/target/rel, el censo de ventanas que el navegador crea al pulsar, y el tablero servido sin banda ni enlace. Las rutas que producen y miden esa pantalla viajan byte a byte al candidato (invariantes-replay.json 17/17).",
-    "escenarios": ["acceso-movil-claro", "acceso-movil-oscuro", "acceso-escritorio-claro", "acceso-escritorio-oscuro", "tablero-sin-banda", "ventana-nueva-destino-app"],
+    "escenarios": [
+      "acceso-movil-claro",
+      "acceso-movil-oscuro",
+      "acceso-escritorio-claro",
+      "acceso-escritorio-oscuro",
+      "tablero-sin-banda",
+      "ventana-nueva-destino-app"
+    ],
     "capturas": 9,
     "destino_externo": "si: se consulta el destino de la app movil para afirmar que responde y que es la app, ademas del censado de ventanas que abre el boton",
     "controles_de_mutacion": "19 rojos nombrados en docs/qa/evidence/app-install-control-mutacion-20261126/certification.json: al devolver el boton de copiar y su rótulo, el arnes deja de ver la ventana nueva y de contar el enlace, y fallan los controles de celular, computador y portapapeles. La fuente quedo restaurada y verificada blob por blob. El arnes tambien se pruebo contra si mismo: si el enlace no esta pintado o si la guia ya estaba abierta antes del clic, el control cae.",
@@ -80,8 +87,8 @@
     "basis": "La regresion del replay se mide por invariantes y no por narrativa: 17/17 rutas byte a byte contra origin/desarrollo, con el control de mutacion del propio instrumento en verde (3 derivas que quedan rojas) y cero hunks: este porton no necesita fusionar nada porque no toca ninguna ruta compartida. porton-develop.json retrata las nueve rutas compartidas del frente: seis estan IGUALES y las tres divergentes (schema.prisma, rbac.js, pantalla de Administracion) conservan en develop el marcador del frente medido con expresion regular sobre el blob de origin/develop, mas el contenido de otros frentes que queda intacto por no tocarse. Sobre el arbol del candidato corren el contrato del API (11/11), el contrato web (19/19), los cuatro sintacticos de los instrumentos y prisma validate, y se verifican los dos rechazos del arnes de ambiente (sin fixture y con origen de Produccion). El instrumento promocional existe en develop con el mismo blob (309ddade) que en desarrollo."
   },
   "validation_summary": {
-    "certified_application_commit": "HEAD-del-candidato",
-    "baseline_preserved": "5d46c497",
+    "certified_application_commit": "994c9fc5bf54042325562a07b045f518f33eb993",
+    "baseline_preserved": "5d46c49729c04701107e54ae3b0b2e3a4a8ac3c0",
     "certificacion_local": "137/137 en navegador real + 28/28 del enlace administrable, control de mutacion 19 rojos nombrados",
     "contrato_api_en_el_candidato": "11/11",
     "contrato_web_en_el_candidato": "19/19",
@@ -101,5 +108,6 @@
       "direct_push_to_develop": true
     },
     "authorization_basis": "La orden del 2026-11-26 ampara el viaje de ESTE frente hacia develop y el trabajo necesario para corroborar sus funciones en QA, y autoriza expresamente seguir el proceso hasta main. Ese viaje a main no se decide aqui: exige su propio manifiesto de alcance y la aprobacion QA funcional. No otorga force push, reescritura de historia compartida, infraestructura, cambios en Railway/Supabase, aplicacion de la migracion 20261125183000 en la base de Produccion ni borrado de ramas."
-  }
+  },
+  "nota_punta": "El SHA de este campo es el commit cuyo arbol lleva el contenido certificado y la evidencia del porton (994c9fc5). La punta que se empuja y contra la que corren los portones es posterior y describe un manifiesto que no puede contener su propio SHA: se consigna entera en la contabilidad despues del push, con el resultado verbatim del scope, del pre-QA y del guardian."
 }
