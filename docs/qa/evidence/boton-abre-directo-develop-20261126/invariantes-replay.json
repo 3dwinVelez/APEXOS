@@ -1,0 +1,151 @@
+{
+  "instrumento": "promotion-migration-check",
+  "ejecutado_en": "2026-11-26T17:09:08.517Z",
+  "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\.tmp\\wt-dev-boton-20261126",
+  "spec": "docs/qa/evidence/boton-abre-directo-develop-20261126/spec-invariantes.json",
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "contra": "commit HEAD",
+  "label": "invariantes del replay",
+  "passed": true,
+  "total": 17,
+  "rotos": 0,
+  "results": [
+    {
+      "tipo": "carry",
+      "file": "apps/web/components/system/AppInstallBand.tsx",
+      "esperado": "5b53bb641442e411ce3c97a54848c1f39a1a0c90",
+      "actual": "5b53bb641442e411ce3c97a54848c1f39a1a0c90",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/mobileAppInstall.ts",
+      "esperado": "7c72557908be4f3f4304882c5157cd08ca2b61b4",
+      "actual": "7c72557908be4f3f4304882c5157cd08ca2b61b4",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/mobile-app-install.test.mjs",
+      "esperado": "2fa5dd9830ded02df4854b305894b035930ae697",
+      "actual": "2fa5dd9830ded02df4854b305894b035930ae697",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/briefs/2026-11-25-url-app-administrable.md",
+      "esperado": "a22c77806841461952938f6dc8273a477ab3a8e2",
+      "actual": "a22c77806841461952938f6dc8273a477ab3a8e2",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/project/app-movil.md",
+      "esperado": "18fe14653742211b616f583fce3b70415340786d",
+      "actual": "18fe14653742211b616f583fce3b70415340786d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-abrir-directo-20261126/certification.json",
+      "esperado": "2ef471c1c075e1eba1cacbc22f3adecd22fe6fb9",
+      "actual": "2ef471c1c075e1eba1cacbc22f3adecd22fe6fb9",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-abrir-directo-20261126/url-admin-local-muestreo-pronto.json",
+      "esperado": "a057e85320093d014da4aa7da1ecdd9f490982ca",
+      "actual": "a057e85320093d014da4aa7da1ecdd9f490982ca",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-abrir-directo-20261126/url-admin-local.json",
+      "esperado": "4205ff85b32bfd2006d801bc1c5762d1f47e2504",
+      "actual": "4205ff85b32bfd2006d801bc1c5762d1f47e2504",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/app-install-control-mutacion-20261126/certification.json",
+      "esperado": "f6a1de675a7f6733a7d768a59f519c3bf4dfb2fd",
+      "actual": "f6a1de675a7f6733a7d768a59f519c3bf4dfb2fd",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/url-app-admin-develop-20261125/qa-cierre.json",
+      "esperado": "ab6a087f745b80ce3e31eb1291d8f6f033b2676e",
+      "actual": "ab6a087f745b80ce3e31eb1291d8f6f033b2676e",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/url-app-admin-develop-20261125/qa-navegador-sonda.json",
+      "esperado": "4275931ab347f92378604b43f692ba956e7a49a8",
+      "actual": "4275931ab347f92378604b43f692ba956e7a49a8",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/url-app-admin-develop-20261125/qa-navegador.json",
+      "esperado": "ef07b5a7c286c3890b89dfc32b9806a55173f66c",
+      "actual": "ef07b5a7c286c3890b89dfc32b9806a55173f66c",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/url-app-admin-develop-20261125/qa-remoto.json",
+      "esperado": "df664661ab997348b1f7f0be0d3aed832258efcc",
+      "actual": "df664661ab997348b1f7f0be0d3aed832258efcc",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/mobile-app-install-browser-local.js",
+      "esperado": "a3c2539c1b02ede348470bcbdace50977f3f3822",
+      "actual": "a3c2539c1b02ede348470bcbdace50977f3f3822",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/mobile-app-install-qa.js",
+      "esperado": "215242fc318cb7bbe64737ba7396f525b3fbc968",
+      "actual": "215242fc318cb7bbe64737ba7396f525b3fbc968",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/mobile-app-url-admin-local.js",
+      "esperado": "bc3aac34cdc491bf8d8a4a4b4cd0bd504aa7a4e5",
+      "actual": "bc3aac34cdc491bf8d8a4a4b4cd0bd504aa7a4e5",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/mobile-app-url-admin-qa.js",
+      "esperado": "e5a7151fd3a005a57e5d943a63102c193222bf33",
+      "actual": "e5a7151fd3a005a57e5d943a63102c193222bf33",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    }
+  ]
+}

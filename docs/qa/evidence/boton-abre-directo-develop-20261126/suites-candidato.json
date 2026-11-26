@@ -1,0 +1,93 @@
+{
+  "cambio": "boton-abre-directo-develop-20261126",
+  "ejecutado_en": "2026-11-26T17:10:37.829Z",
+  "arbol": "candidato e769ffd1 sobre origin/develop 5d46c497, contenido de origin/desarrollo 017ed83a",
+  "nota_resolucion": "El worktree vive dentro de .tmp/ del arbol principal y no tiene node_modules propio: Node resuelve caminando hacia arriba hasta APEXOS/node_modules, sin enlaces ni copias, para no tocar el disco ni repetir la caida del 2026-11-20 (git worktree remove borrando a traves de un enlace). packages/ no viaja en este porton y ninguna de sus rutas se toca.",
+  "suites": [
+    {
+      "cmd": "node --test apps/api/test/admin-platform-mobile-app-url.test.js",
+      "stdout": "TAP version 13\n# (node:15936) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: la escritura rechaza toda direccion que no sea https con dominio y acepta la valida\nok 1 - la escritura rechaza toda direccion que no sea https con dominio y acepta la valida\n  ---\n  duration_ms: 5.8049\n  type: 'test'\n  ...\n# Subtest: la lectura publica siempre devuelve un https, aunque la base mienta o no exista\nok 2 - la lectura publica siempre devuelve un https, aunque la base mienta o no exista\n  ---\n  duration_ms: 6.8756\n  type: 'test'\n  ...\n# Subtest: la lectura publica se sirve cacheada y el guardado la invalida\nok 3 - la lectura publica se sirve cacheada y el guardado la invalida\n  ---\n  duration_ms: 1.9291\n  type: 'test'\n  ...\n# Subtest: la lectura de administracion declara ambiente, autor y no usa la cache tibia\nok 4 - la lectura de administracion declara ambiente, autor y no usa la cache tibia\n  ---\n  duration_ms: 2.5145\n  type: 'test'\n  ...\n# Subtest: guardar persiste el enlace, deja auditoria atribuible y avisa si se restauro el destino\nok 5 - guardar persiste el enlace, deja auditoria atribuible y avisa si se restauro el destino\n  ---\n  duration_ms: 1.7495\n  type: 'test'\n  ...\n# Subtest: la autoria sale del correo de la cuenta aunque el token no lo traiga\nok 6 - la autoria sale del correo de la cuenta aunque el token no lo traiga\n  ---\n  duration_ms: 1.3703\n  type: 'test'\n  ...\n# Subtest: una cuenta ilegible no pierde el guardado: la autoria degrada al id\nok 7 - una cuenta ilegible no pierde el guardado: la autoria degrada al id\n  ---\n  duration_ms: 1.3722\n  type: 'test'\n  ...\n# Subtest: solo un superadministrador de APEXOS escribe el enlace: el rol grueso no alcanza\nok 8 - solo un superadministrador de APEXOS escribe el enlace: el rol grueso no alcanza\n  ---\n  duration_ms: 1.6564\n  type: 'test'\n  ...\n# Subtest: la matriz legacy no cierra la puerta de lectura a quien administra configuracion\nok 9 - la matriz legacy no cierra la puerta de lectura a quien administra configuracion\n  ---\n  duration_ms: 4.4771\n  type: 'test'\n  ...\n# Subtest: la lectura publica no hereda el authenticate y la escritura exige capacidad\nok 10 - la lectura publica no hereda el authenticate y la escritura exige capacidad\n  ---\n  duration_ms: 2.5605\n  type: 'test'\n  ...\n# Subtest: el esquema es de plataforma: global, con clave unica, sin columna de empresa y forward-only\nok 11 - el esquema es de plataforma: global, con clave unica, sin columna de empresa y forward-only\n  ---\n  duration_ms: 3.1788\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 270.6354\n",
+      "exito": true,
+      "pass": 11,
+      "fail": 0,
+      "salidas": [
+        "# tests 11",
+        "# pass 11",
+        "# fail 0",
+        "# cancelled 0"
+      ],
+      "crudo": []
+    },
+    {
+      "cmd": "node --experimental-strip-types --no-warnings --test apps/web/test/mobile-app-install.test.mjs",
+      "stdout": "TAP version 13\n# Subtest: la URL de la app es https, sin barra final y cae al destino conocido si la configuracion esta torcida\nok 1 - la URL de la app es https, sin barra final y cae al destino conocido si la configuracion esta torcida\n  ---\n  duration_ms: 1.5651\n  type: 'test'\n  ...\n# Subtest: la deteccion distingue celular, iPad y computador, y un portatil tactil sigue siendo computador\nok 2 - la deteccion distingue celular, iPad y computador, y un portatil tactil sigue siendo computador\n  ---\n  duration_ms: 1.5208\n  type: 'test'\n  ...\n# Subtest: sin cristal tactil la guia nace del lado escritorio, dentro y fuera del navegador\nok 3 - sin cristal tactil la guia nace del lado escritorio, dentro y fuera del navegador\n  ---\n  duration_ms: 2.1783\n  type: 'test'\n  ...\n# Subtest: la guia ensena Chrome, los tres puntos, Instalar app y el acceso directo\nok 4 - la guia ensena Chrome, los tres puntos, Instalar app y el acceso directo\n  ---\n  duration_ms: 0.5177\n  type: 'test'\n  ...\n# Subtest: el boton del lobby se llama como el dueno lo pidio y la prosa visible conserva sus tildes\nok 5 - el boton del lobby se llama como el dueno lo pidio y la prosa visible conserva sus tildes\n  ---\n  duration_ms: 0.2958\n  type: 'test'\n  ...\n# Subtest: la pantalla de acceso monta la banda una sola vez y fuera del formulario\nok 6 - la pantalla de acceso monta la banda una sola vez y fuera del formulario\n  ---\n  duration_ms: 0.3355\n  type: 'test'\n  ...\n# Subtest: el tablero deja de ofrecer la descarga: el boton vive antes de entrar\nok 7 - el tablero deja de ofrecer la descarga: el boton vive antes de entrar\n  ---\n  duration_ms: 0.2724\n  type: 'test'\n  ...\n# Subtest: la banda se apila porque vive en la columna del acceso, no en un ancho de pagina\nok 8 - la banda se apila porque vive en la columna del acceso, no en un ancho de pagina\n  ---\n  duration_ms: 0.1749\n  type: 'test'\n  ...\n# Subtest: el hero del lobby sigue sin botones y la banda no reusa las clases del CTA retirado\nok 9 - el hero del lobby sigue sin botones y la banda no reusa las clases del CTA retirado\n  ---\n  duration_ms: 0.3659\n  type: 'test'\n  ...\n# Subtest: la banda pasa por ModalFrame y buttonClasses, sin hex ni ventanillas nativas\nok 10 - la banda pasa por ModalFrame y buttonClasses, sin hex ni ventanillas nativas\n  ---\n  duration_ms: 0.6694\n  type: 'test'\n  ...\n# Subtest: la accion de la guia es un enlace directo a la app, en celular y en computador\nok 11 - la accion de la guia es un enlace directo a la app, en celular y en computador\n  ---\n  duration_ms: 0.434\n  type: 'test'\n  ...\n# Subtest: en computador la guia avisa la exclusividad y entrega el enlace escrito, sin portapapeles\nok 12 - en computador la guia avisa la exclusividad y entrega el enlace escrito, sin portapapeles\n  ---\n  duration_ms: 0.2584\n  type: 'test'\n  ...\n# Subtest: el tablero conserva el contrato heredado y el acceso conserva su formulario\nok 13 - el tablero conserva el contrato heredado y el acceso conserva su formulario\n  ---\n  duration_ms: 0.1278\n  type: 'test'\n  ...\n# Subtest: el enlace administrado se lee sin sesion, se escribe por administracion y se agota rapido\nok 14 - el enlace administrado se lee sin sesion, se escribe por administracion y se agota rapido\n  ---\n  duration_ms: 0.0963\n  type: 'test'\n  ...\n# Subtest: el valor administrado manda y cualquier respuesta torcida cae al respaldo del ambiente\nok 15 - el valor administrado manda y cualquier respuesta torcida cae al respaldo del ambiente\n  ---\n  duration_ms: 2.8435\n  type: 'test'\n  ...\n# Subtest: una lectura lenta o que revienta no deja el acceso colgado\nok 16 - una lectura lenta o que revienta no deja el acceso colgado\n  ---\n  duration_ms: 1512.0672\n  type: 'test'\n  ...\n# Subtest: la banda arranca con el respaldo y toma el enlace administrado cuando responde la plataforma\nok 17 - la banda arranca con el respaldo y toma el enlace administrado cuando responde la plataforma\n  ---\n  duration_ms: 0.3045\n  type: 'test'\n  ...\n# Subtest: el administrador de configuracion monta el apartado del enlace y escribe por el endpoint de administracion\nok 18 - el administrador de configuracion monta el apartado del enlace y escribe por el endpoint de administracion\n  ---\n  duration_ms: 0.7686\n  type: 'test'\n  ...\n# Subtest: la ventana del enlace no escribe su destino, no usa ventanillas nativas y deja ver el ambiente\nok 19 - la ventana del enlace no escribe su destino, no usa ventanillas nativas y deja ver el ambiente\n  ---\n  duration_ms: 0.4153\n  type: 'test'\n  ...\n1..19\n# tests 19\n# suites 0\n# pass 19\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1740.9049\n",
+      "exito": true,
+      "pass": 19,
+      "fail": 0,
+      "salidas": [
+        "# tests 19",
+        "# pass 19",
+        "# fail 0",
+        "# cancelled 0"
+      ],
+      "crudo": []
+    }
+  ],
+  "sintacticos": [
+    {
+      "file": "scripts/certifications/mobile-app-install-browser-local.js",
+      "cmd": "node --check scripts/certifications/mobile-app-install-browser-local.js",
+      "stdout": "",
+      "exito": true,
+      "pass": 0,
+      "fail": 0,
+      "salidas": [],
+      "crudo": []
+    },
+    {
+      "file": "scripts/certifications/mobile-app-url-admin-local.js",
+      "cmd": "node --check scripts/certifications/mobile-app-url-admin-local.js",
+      "stdout": "",
+      "exito": true,
+      "pass": 0,
+      "fail": 0,
+      "salidas": [],
+      "crudo": []
+    },
+    {
+      "file": "scripts/certifications/mobile-app-install-qa.js",
+      "cmd": "node --check scripts/certifications/mobile-app-install-qa.js",
+      "stdout": "",
+      "exito": true,
+      "pass": 0,
+      "fail": 0,
+      "salidas": [],
+      "crudo": []
+    },
+    {
+      "file": "scripts/certifications/mobile-app-url-admin-qa.js",
+      "cmd": "node --check scripts/certifications/mobile-app-url-admin-qa.js",
+      "stdout": "",
+      "exito": true,
+      "pass": 0,
+      "fail": 0,
+      "salidas": [],
+      "crudo": []
+    }
+  ],
+  "rechazos_del_arnes_de_ambiente": {
+    "sin_fixture_rechaza": true,
+    "origen_de_produccion_rechaza": true,
+    "motivo_sin_fixture": "if (!FIXTURE) throw new Error(\"Falta --fixture=<ruta del json que dejo --seed-only>: la clave no se pasa por la linea de comandos.\");\r Error: Falta --fixture=<r",
+    "motivo_produccion": "if (ORIGIN !== QA_WEB_HOST) throw new Error(`BLOQUEADO: solo se puede correr contra ${QA_WEB_HOST}.`);\r Error: BLOQUEADO: solo se puede correr contra https://ap"
+  },
+  "schema_valido": {
+    "exito": true,
+    "verificacion": "se exige el literal 'is valid' del CLI, ausencia de codigos P10xx y que el modelo PlatformSetting este completo con su @@map",
+    "prisma_valido": true,
+    "sin_error_de_schema": true,
+    "platform_setting_completo": true,
+    "crudo": "The schema at apps\\api\\prisma\\schema.prisma is valid 🚀"
+  },
+  "veredicto": "TODO VERDE SOBRE EL ARBOL DEL CANDIDATO: dos suites, cuatro sintacticos, dos rechazos exigidos y schema valido"
+}
