@@ -470,17 +470,22 @@ async function main() {
         const { page, ventanillas, leido } = await abrirGuia(UA_ESCRITORIO);
         await page.close();
         assert.equal(leido.texto, FALLBACK, `la pantalla mostro ${leido.texto}`);
-        assert.equal(leido.href, null, "en computador no puede haber enlace: es el callejon que el aviso evita");
+        assert.equal(leido.href, FALLBACK, `en computador el boton directo debe llevar el respaldo, recibio ${leido.href}`);
+        assert.equal(leido.target, "_blank", "el boton del computador no puede reemplazar la pantalla de acceso");
+        assert.equal(leido.rel, "noopener noreferrer");
         assert.deepEqual(ventanillas, [], `aparecieron ventanillas nativas: ${ventanillas}`);
-        return { texto: leido.texto, href: leido.href, ventanillas: ventanillas.length, fuente_en_base: validada.fuente };
+        return { texto: leido.texto, href: leido.href, target: leido.target, ventanillas: ventanillas.length, fuente_en_base: validada.fuente };
       });
       await registrar("acceso_de_computador_muestra_el_valor_administrado", "despues de guardar por el API, la pantalla cambia de destino sin esperar el TTL", "producto", async () => {
         await paso("PUT", "/api/v1/admin/platform/mobile-app", superadmin.token, { url: configurado });
         const { page, ventanillas, leido } = await abrirGuia(UA_ESCRITORIO);
         await page.close();
         assert.equal(leido.texto, configurado, `la pantalla sigue mostrando ${leido.texto}`);
+        // El boton directo del computador apunta al valor administrado: si el ancla siguiera quemada o
+        // apuntara al respaldo, el enlace administrado no llegaria al usuario que esta en un equipo.
+        assert.equal(leido.href, configurado, `el boton del computador abre ${leido.href}, no el valor administrado`);
         assert.deepEqual(ventanillas, [], "el flujo del enlace uso una ventanilla nativa");
-        return { texto: leido.texto, antes: FALLBACK, despues: configurado };
+        return { texto: leido.texto, href: leido.href, antes: FALLBACK, despues: configurado };
       });
       await registrar("celular_abre_el_enlace_administrado", "el ancla lleva el valor de la base, en pestana nueva y sin exponer la ventana", "producto", async () => {
         const { page, leido } = await abrirGuia(UA_ANDROID);
@@ -507,6 +512,13 @@ async function main() {
       stage = "navegador_administracion";
       await registrar("la_ventana_de_administracion_muestra_el_ambiente_y_guarda", "sesion real, apartado del catalogo, ambiente 'qa', autor y guardado visible", "producto", async () => {
         const page = await browser.newPage();
+        // El chip «Ambiente que respondió» pinta "-" mientras la lectura no ha llegado: si se muestrea en
+        // cuanto abre el dialogo, el "-" es del arnés y no del producto. Se registran las respuestas reales
+        // para que la evidencia diga si el API contesto o si la ventana nunca alcanzo a leerlo.
+        const lecturas = [];
+        page.on("response", (res) => {
+          if (res.url().includes("/admin/platform/mobile-app")) lecturas.push({ status: res.status(), url: res.url() });
+        });
         await page.setViewport({ width: 1440, height: 900 });
         await page.goto(`${origen}/login`, { waitUntil: "networkidle2", timeout: 90000 });
         await page.type("input[name='email']", superadmin.correo);
@@ -548,8 +560,15 @@ async function main() {
             fuente: /administrado en este ambiente/.test(texto) ? "base" : /aún no se ha administrado/.test(texto) ? "respaldo" : null
           };
         });
-        const visto = await leerVentana();
-        assert.equal(visto.ambiente, "qa", `la pantalla mostro ambiente "${visto.ambiente}"`);
+        const inicioLectura = Date.now();
+        let visto = await leerVentana();
+        while (visto.ambiente === "-" && Date.now() - inicioLectura < 20000) {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          visto = await leerVentana();
+        }
+        const esperaLecturaMs = Date.now() - inicioLectura;
+        assert.ok(lecturas.some((l) => l.status === 200), `la ventana nunca leyo el ambiente: respuestas del API ${JSON.stringify(lecturas)}`);
+        assert.equal(visto.ambiente, "qa", `la pantalla mostro ambiente "${visto.ambiente}" despues de ${esperaLecturaMs} ms con lecturas ${JSON.stringify(lecturas)}`);
         assert.ok(visto.tieneCampo, "no hay campo de direccion en la ventana");
         assert.equal(visto.valor, FALLBACK, `el campo arranca en ${visto.valor}`);
         assert.ok(visto.avisoAlcance, "la ventana no dice que el cambio es solo de este ambiente");
@@ -582,7 +601,7 @@ async function main() {
         const leido = await paso("GET", "/api/v1/public/platform/mobile-app", null, undefined);
         assert.equal(leido.body.url, nuevo, "la pantalla guardo pero el acceso no cambio");
         await page.close();
-        return { ambiente: visto.ambiente, autor_antes: visto.autor, autor_despues: trasGuardar.autor, guardado: nuevo, lectura_publica: leido.body.url, confirmacion, captura: capturaGuardado };
+        return { ambiente: visto.ambiente, autor_antes: visto.autor, autor_despues: trasGuardar.autor, guardado: nuevo, lectura_publica: leido.body.url, confirmacion, captura: capturaGuardado, espera_lectura_ms: esperaLecturaMs, lecturas_http: lecturas };
       });
     }
 

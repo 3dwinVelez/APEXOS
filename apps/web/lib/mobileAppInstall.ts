@@ -99,11 +99,8 @@ export const APP_INSTALL_LABELS = {
   guideTitle: "Instala APEXOS en tu celular",
   guideDescription: "Se instala desde Chrome y queda con su propio icono.",
   openApp: "Abrir la app",
-  copyLink: "Copiar enlace",
   desktopNotice: "La app es exclusiva para celulares. Si la abres desde el computador, APEXOS no te dejará instalarla y te lo dirá en pantalla.",
-  desktopHint: "Envíate el enlace por WhatsApp o correo y ábrelo con Chrome en tu celular. Estos son los pasos que verás allí.",
-  copied: "Enlace copiado. Ya puedes enviarlo a tu celular.",
-  copyBlocked: "Tu navegador no permitió copiar. El enlace está escrito abajo: selecciónalo y cópialo.",
+  desktopHint: "El botón abre la app en una pestaña nueva, pero instalarla se hace en el celular con Chrome. Estos son los pasos que verás allí.",
   installedHint: "¿Ya la instalaste? Ábrela desde su icono y entra con el mismo correo y la misma contraseña."
 } as const;
 

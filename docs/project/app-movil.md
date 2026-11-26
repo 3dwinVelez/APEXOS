@@ -20,7 +20,7 @@ La app esta configurada con `allowDesktop: false` y orientacion vertical. Si se 
 
 Esto obliga a dos cosas en el portal:
 
-1. Nunca enviar a una persona desde un computador directo a la app, porque llega a un callejon donde no puede instalar nada.
+1. Decir antes de abrir que en un computador la app no instala, para que el boton no sorprenda a nadie. Desde el 2026-11-26 el boton **si** abre en las dos pantallas (orden del dueno, ver abajo): quien esta en un equipo llega al aviso propio de la app, y el enlace sigue escrito en la guia para llevárselo al celular.
 2. Explicar antes como se instala, porque la instalacion no pasa por tiendas: se hace desde Chrome del celular.
 
 ## Como se entra a la app desde el portal
@@ -38,10 +38,12 @@ La guia muestra siempre los cuatro pasos reales de la instalacion:
 3. Elige «Instalar app» (en algunos equipos dice «Añadir a pantalla principal» o «Crear acceso directo»).
 4. Confirma y crea el acceso directo.
 
-Despues, el pie del dialogo cambia:
+El pie del dialogo es **el mismo en las dos pantallas**: un boton **Abrir la app** que es un enlace directo al servicio, con `target="_blank"` y `rel="noopener noreferrer"`. Antes, en computador el boton ofrecia **Copiar enlace**; el dueno pidio cambiarlo el 2026-11-26 ("en vez de permitirle al usuario copiar la url, genera un boton que lo lleve directamente a la url"). El portapapeles depende del permiso del navegador, y un copiado fallido dejaba a la persona con una cadena a medias: abrir directo elimina ese paso.
 
-- **En celular**: boton **Abrir la app**, que es un enlace directo al servicio con `target="_blank"` y `rel="noopener noreferrer"`. Cierra con la advertencia de que al abrirla se entra con el mismo correo y la misma contraseña.
-- **En computador**: un aviso visible de que la app es exclusiva para celulares, el boton **Copiar enlace** para llevárselo al celular por WhatsApp o correo, y el enlace escrito en pantalla para seleccionarlo a mano si el navegador no permite copiar. No hay ningun enlace a la app en este caso.
+Lo que cambia segun el aparato es el cuerpo del dialogo:
+
+- **En celular**: cierra con la advertencia de que al abrirla se entra con el mismo correo y la misma contraseña.
+- **En computador**: un aviso visible de que la app es exclusiva para celulares, y el enlace escrito en pantalla para quien necesite seleccionarlo a mano. El boton abre igual; lo que la app responde en un equipo es su propio aviso de que instalar se hace en el celular.
 
 Todo el texto vive en `apps/web/lib/mobileAppInstall.ts` (`APP_INSTALL_LABELS` e `INSTALL_STEPS`). La pantalla no escribe cadenas propias: si alguien cambia un paso alli, la prueba de contrato y la certificacion lo exigen.
 
@@ -81,19 +83,20 @@ No hace falta configurar ninguna variable en Railway para que el boton funcione.
 
 | Instrumento | Que afirma |
 |---|---|
-| `apps/web/test/mobile-app-install.test.mjs` | contrato de la libreria y de las dos pantallas: clasificacion de dispositivos con agentes reales, copy sin deformar, un solo montaje en el acceso y despues del `</form>`, **cero** montajes en el tablero, layout apilado sin breakpoints de ventana, enlace con `rel` seguro, ausencia de enlace en escritorio |
-| `npm run certify:app-install:local` | navegador real con el artefacto de produccion: banda visible **sin sesion** en el acceso, boton que no envia el formulario, guia abierta por el boton, cuatro pasos, enlace exacto en celular, aviso y copiado en computador, tema claro y oscuro, el tablero con modulos servidos **sin banda ni enlace** a la app, y que el destino de la URL responde y es la app movil |
+| `apps/web/test/mobile-app-install.test.mjs` | contrato de la libreria y de las dos pantallas: clasificacion de dispositivos con agentes reales, copy sin deformar, un solo montaje en el acceso y despues del `</form>`, **cero** montajes en el tablero, layout apilado sin breakpoints de ventana, **un solo enlace directo en la guia y sin ramificar por dispositivo**, y ausencia total del portapapeles en la pantalla y en la libreria |
+| `npm run certify:app-install:local` | navegador real con el artefacto de produccion: banda visible **sin sesion** en el acceso, boton que no envia el formulario, guia abierta por el boton, cuatro pasos, enlace exacto con `target` y `rel` en **celular y computador**, que pulsar la accion **abre una ventana nueva cuyo destino es la URL de la app** (medida por el target que crea el navegador, no por el atributo), aviso de exclusividad y enlace escrito en computador, tema claro y oscuro, el tablero con modulos servidos **sin banda ni enlace** a la app, y que el destino de la URL responde y es la app movil |
 | `apps/api/test/admin-platform-mobile-app-url.test.js` | contrato del servicio y de las dos rutas: la lectura publica no hereda el `authenticate` ni el tenant, la escritura exige capacidad y superadminico, los cinco rechazos con nombre propio, la autoria que sale del correo de la cuenta aunque el token no lo traiga, y el respaldo cuando el valor guardado no sirve |
 | `node scripts/certifications/mobile-app-url-admin-local.js --web` | veintiocho chequeos sobre una base efimera local con el artefacto de produccion servido: la migracion aplicada dos veces con el mismo DDL, la matriz 401/401/403/200, el guardado que se ve en el acceso sin esperar el TTL de la cache, el respaldo cuando la fila se tuerce, y la ventana de Administracion con sesion real mostrando el ambiente que respondio, el autor con su correo y el aviso de alcance. Deja tres capturas al lado del JSON |
 | `node scripts/certifications/mobile-app-url-admin-qa.js` | diecisiete controles contra el **ambiente desplegado**, no contra el puesto: que el `/health` del API de QA sirve el commit promocionado, que la tabla existe en la base que lee ese API (seis columnas), que el servidor declara `qa` por si solo -sin bandera del arnes-, la matriz 401/401/403/200, los cinco rechazos con nombre propio sin escribir una fila, que guardar se ve en la lectura publica en 80 ms, que la autoria es el correo y que el cambio dejo `AuditLog` con valor anterior y nuevo. Siembra dos cuentas efimeras y las retira por el endpoint (`--seed-only` deja una viva para la pata de navegador y `--retire` la cierra). Aborta si el env-file no declara `TARGET_ENV=qa`, si alguna URL toca el project ref de Produccion o si el host de API no es el de QA |
+| `node scripts/certifications/mobile-app-install-qa.js` | navegador real contra el **portal de QA servido**, versionado desde el 2026-11-26 para cerrar la sonda manual: lee el copy de `lib/mobileAppInstall.ts`, exige la cuenta efimera sembrada por el instrumento de API (la clave nunca va por linea de comandos), administra un marcador propio, y exige que la guia sirva **ese** marcador en celular y en computador, que el clic abra **una** ventana hacia el, que no quede ningun rastro de portapapeles y que al final el enlace vuelva al quemado. Aborta si el origen toca Produccion y no pisa evidencia existente |
 
-La corrida contra el ambiente queda en `docs/qa/evidence/url-app-admin-develop-20261125/`: `qa-remoto.json` (17/17, cuenta retirada y login bloqueado despues), `qa-navegador.json` y `qa-navegador-sonda.json` (la ventana de Administracion leida del DOM del QA desplegado: `AMBIENTE QUE RESPONDIÓ: qa`, el autor con su correo, el guardado que cambia el destino que copia la guia del acceso y el boton «Volver al destino por defecto» que desaparece cuando ya estas en el defecto), y `qa-cierre.json` (enlace devuelto al quemado en 202 ms y **cero** cuentas de prueba activas). La sonda de navegador es corrida manual: lo repetible y versionado es el instrumento de API.
+La corrida contra el ambiente queda en `docs/qa/evidence/url-app-admin-develop-20261125/`: `qa-remoto.json` (17/17, cuenta retirada y login bloqueado despues), `qa-navegador.json` y `qa-navegador-sonda.json` (la ventana de Administracion leida del DOM del QA desplegado: `AMBIENTE QUE RESPONDIÓ: qa`, el autor con su correo, el guardado que cambia el destino que copia la guia del acceso y el boton «Volver al destino por defecto» que desaparece cuando ya estas en el defecto), y `qa-cierre.json` (enlace devuelto al quemado en 202 ms y **cero** cuentas de prueba activas). Desde el 2026-11-26 esa pata de navegador **ya tiene arnés versionado** (`scripts/certifications/mobile-app-install-qa.js`, arriba): las corridas `qa-navegador*.json` de este archivo quedan como registro de la sonda manual que destapo el pendiente, no como el instrumento repetible.
 
 La corrida local del enlace administrable queda en `docs/qa/evidence/url-app-administrable-20261125/` (`local-certification.json` con `build_id` y `head` anclados, `ventana-admin-antes.png`, `ventana-admin-despues.png`, `acceso-celular-enlace-administrado.png`). El instrumento **no** tiene alias en `package.json` todavia: se invoca con la linea de arriba, porque ese archivo trae cambios de otros frentes sin commitear y este corte no los mezcla.
 
 La evidencia de la montura actual queda en `docs/qa/evidence/app-install-acceso-20261125/`. La corrida anterior, con la banda dentro del tablero, queda en `docs/qa/evidence/app-install-lobby-20261124/` como registro de lo que se retiro.
 
-El copiado se mide por las dos vias: con el portapapeles del navegador (en un entorno sin portapapeles el portal reporta honestamente que no pudo copiar y muestra el enlace) y con un portapapeles grabador que afirma que la cadena copiada es exactamente la URL de la app.
+La guia **no usa el portapapeles**: la accion es abrir. El arnés lo afirma por el comportamiento, no por el fuente -pulsar el boton tiene que crear una ventana nueva cuyo destino empiece por la URL administrada-, y el contrato de fuente exige que no quede ningun rastro de `navigator.clipboard` ni de las cadenas de copiado. El enlace escrito en pantalla se queda como respaldo a mano.
 
 ## Pendientes que dependen del dueno
 

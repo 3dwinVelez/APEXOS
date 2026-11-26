@@ -39,6 +39,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8").replace(/\
 const lobby = read("app/dashboard/page.tsx");
 const acceso = read("app/login/page.tsx");
 const band = read("components/system/AppInstallBand.tsx");
+const lib = read("lib/mobileAppInstall.ts");
 const admin = read("app/dashboard/administracion/page.tsx");
 
 const UAS = {
@@ -144,7 +145,7 @@ test("la banda pasa por ModalFrame y buttonClasses, sin hex ni ventanillas nativ
   assert.match(band, /<ModalFrame\b/, "el dialogo flota por portal: un fixed dentro del lobby queda atrapado por .apex-page-enter");
   assert.match(band, /tone="brand"/, "las ventanas del panel comparten el marco de marca");
   const acciones = [...band.matchAll(/<(?:button|a)\b[^>]*>/g)].map((match) => match[0]);
-  assert.ok(acciones.length >= 3, `contraste: el barrido encontro ${acciones.length} acciones, se esperan al menos boton, enlace y copiado`);
+  assert.ok(acciones.length >= 2, `contraste: el barrido encontro ${acciones.length} acciones, se esperan el boton de la banda y el enlace directo de la guia`);
   assert.equal(acciones.filter((tag) => /className=\{buttonClasses\(/.test(tag)).length, acciones.length, "toda accion toma las clases del helper: ninguna escribe su tinta a mano");
   assert.doesNotMatch(band, /#[0-9a-fA-F]{3,8}\b/, "ningun color literal: la tinta sale de los tokens");
   assert.doesNotMatch(band, /(?:\bwindow\.|\bglobalThis\.)(?:alert|confirm|prompt)\s*\(/, "un fallo del portapapeles se anuncia en el dialogo, no con una ventanilla");
@@ -152,25 +153,30 @@ test("la banda pasa por ModalFrame y buttonClasses, sin hex ni ventanillas nativ
   assert.match("<button onClick={() => window.alert('x')}>", /(?:\bwindow\.|\bglobalThis\.)(?:alert|confirm|prompt)\s*\(/);
 });
 
-test("en el celular la accion primaria es el enlace a la app, en pestana nueva y sin exponer la ventana", () => {
-  const footer = band.slice(band.indexOf("footer={handheld"), band.indexOf("icon={<Smartphone"));
+test("la accion de la guia es un enlace directo a la app, en celular y en computador", () => {
+  const footer = band.slice(band.indexOf("footer={"), band.indexOf("icon={<Smartphone"));
   assert.ok(footer.length > 40, `contraste: el barrido del footer midio ${footer.length} caracteres, no esta leyendo la accion`);
-  assert.match(footer, /handheld\s*\?\s*<a\b[\s\S]*:\s*<button/, "el enlace solo existe en la rama de celular y el boton de copiar solo en la de escritorio");
+  assert.doesNotMatch(footer, /handheld/, "la accion directa no puede volver a ramificarse por dispositivo: el dueno pidio un boton que lleve a la URL");
+  assert.match(footer, /<a\b/, "la accion de la guia es un enlace, no un boton con manejador");
+  assert.equal((footer.match(/<button/g) || []).length, 0, "no queda boton de copiar: el portapapeles salio de la pantalla");
   const anchor = footer.match(/<a\b[^>]*>/g) || [];
-  assert.equal(anchor.length, 1, "un segundo enlace a la app en escritorio es exactamente el callejon que el aviso quiere evitar");
-  assert.match(anchor[0], /href=\{url\}/, "el destino sale de mobileAppUrl(), no de un literal");
+  assert.equal(anchor.length, 1, "una sola accion directa en la guia, no dos rutas al mismo destino");
+  assert.match(anchor[0], /href=\{url\}/, "el destino sale del valor administrado, no de un literal");
   assert.match(anchor[0], /target="_blank"/);
   assert.match(anchor[0], /rel="noopener noreferrer"/);
+  assert.match(footer, />\{APP_INSTALL_LABELS\.openApp\}<\/a>/, "el rotulo dice abrir: no ofrece copiar lo que lleva directo");
   assert.doesNotMatch(band, /appapexos/, "la URL no se escribe en el JSX: vive en la libreria y en el respaldo de configuracion");
 });
 
-test("en computador la guia avisa la exclusividad, entrega el enlace y no deja al usuario sin el", () => {
+test("en computador la guia avisa la exclusividad y entrega el enlace escrito, sin portapapeles", () => {
   assert.match(band, /!handheld\s*\?\s*\([\s\S]*?APP_INSTALL_LABELS\.desktopNotice/, "el aviso vive en la rama de escritorio");
   assert.match(band, /role="note"/, "el aviso es contenido, no un alerta que interrumpe la lectura");
-  assert.match(band, /setFeedback\(APP_INSTALL_LABELS\.copyBlocked\)/, "si el navegador no concede el portapapeles hay que decirlo, no callarlo");
-  assert.match(band, />\{url\}<\/p>/, "el enlace queda escrito y seleccionable: copiar es el atajo, no la unica salida");
-  assert.match(band, /aria-live="polite"[^>]*>\{feedback\}/, "el resultado del copiado se anuncia sin moverle la pantalla");
-  assert.match(band, /navigator\.clipboard\.writeText\(url\)/);
+  assert.match(band, />\{url\}<\/p>/, "el enlace queda escrito y seleccionable: es el respaldo cuando la pestana no sirve");
+  assert.doesNotMatch(band, /navigator\.clipboard|copyLink|setFeedback/, "el portapapeles salio del contrato: la accion es abrir");
+  assert.doesNotMatch(band, /APP_INSTALL_LABELS\.(copyLink|copied|copyBlocked)/, "ningun rotulo de copiado puede seguir vivo en la pantalla");
+  assert.doesNotMatch(lib, /copyLink:|copied:|copyBlocked:/, "las cadenas de copiado se retiran de la libreria, no se dejan huecas");
+  // Contraste: el barrido ve el portapapeles cuando existe, si no el verde seria por ceguera.
+  assert.match("<button onClick={() => navigator.clipboard.writeText(u)}>abrir</button>", /navigator\.clipboard/);
 });
 
 test("el tablero conserva el contrato heredado y el acceso conserva su formulario", () => {

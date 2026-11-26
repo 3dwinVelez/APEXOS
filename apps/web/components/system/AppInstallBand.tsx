@@ -3,7 +3,7 @@
 import { buttonClasses } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { APP_INSTALL_LABELS, INSTALL_STEPS, fetchConfiguredMobileAppUrl, handheldSignal, isHandheldDevice, mobileAppUrl } from "@/lib/mobileAppInstall";
-import { Copy, Info, Smartphone } from "lucide-react";
+import { Info, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function AppInstallBand() {
@@ -43,24 +43,11 @@ export function AppInstallBand() {
 
 function AppInstallGuide({ onClose, url }: { onClose: () => void; url: string }) {
   const [handheld] = useState(() => isHandheldDevice(handheldSignal()));
-  const [feedback, setFeedback] = useState("");
-
-  async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(url);
-      setFeedback(APP_INSTALL_LABELS.copied);
-    } catch {
-      // Sin portapapeles concedido el enlace sigue escrito en la pantalla: no hay callejon.
-      setFeedback(APP_INSTALL_LABELS.copyBlocked);
-    }
-  }
 
   return (
     <ModalFrame
       description={APP_INSTALL_LABELS.guideDescription}
-      footer={handheld
-        ? <a className={buttonClasses("primary", "touch", "w-full")} href={url} rel="noopener noreferrer" target="_blank">{APP_INSTALL_LABELS.openApp}</a>
-        : <button className={buttonClasses("primary", "touch", "w-full")} onClick={() => void copyLink()} type="button"><Copy size={16} />{APP_INSTALL_LABELS.copyLink}</button>}
+      footer={<a className={buttonClasses("primary", "touch", "w-full")} href={url} rel="noopener noreferrer" target="_blank">{APP_INSTALL_LABELS.openApp}</a>}
       icon={<Smartphone size={18} />}
       maxWidth="md:!max-w-lg"
       onClose={onClose}
@@ -94,8 +81,6 @@ function AppInstallGuide({ onClose, url }: { onClose: () => void; url: string })
       ) : (
         <p className="mt-3 text-xs text-content-muted">{APP_INSTALL_LABELS.installedHint}</p>
       )}
-
-      {feedback ? <p aria-live="polite" className="mt-2 text-xs text-apex">{feedback}</p> : null}
     </ModalFrame>
   );
 }

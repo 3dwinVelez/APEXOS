@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.106.0",
+      "version": "2.107.0",
       "updated_at": "2026-11-26",
-      "sha256": "7dc93a090344c1ac18d5b336ddeffccc2c4ceb4bdff7e6a3d14b1968c3553f37",
+      "sha256": "a4ec0a219e1911d4ad999503ed1fff162f5dcb1d5f689cad48e43039c52ec2ae",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -172,7 +172,8 @@
         "instrumento-nuevo-entra-al-inventario",
         "brief-de-contingencia-con-normas-mecanicas",
         "cifra-de-brief-con-artefacto-reproducible",
-        "promocion-pendiente-con-veredicto-medido"
+        "promocion-pendiente-con-veredicto-medido",
+        "cuenta-antes-despues-con-comando"
       ]
     },
     {
@@ -206,9 +207,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.49.0",
-      "updated_at": "2026-11-25",
-      "sha256": "696c1378bb24265a41109ee6fae631fbcb390cad20490299a001eff7d188ee85",
+      "version": "2.50.0",
+      "updated_at": "2026-11-26",
+      "sha256": "7b4bd87daccdfdacdedceb249b63fe25748fc3f433440fbee95c3d83244f47ed",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -254,7 +255,8 @@
         "route-api-mismo-contrato-de-pantalla",
         "marca-durable-sobrevive-al-cierre",
         "lenguaje-cercano-al-dueno",
-        "paridad-de-requisito-contra-el-servidor"
+        "paridad-de-requisito-contra-el-servidor",
+        "enlace-directo-sin-portapapeles"
       ]
     },
     {
@@ -339,9 +341,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.129.0",
+      "version": "2.130.0",
       "updated_at": "2026-11-26",
-      "sha256": "14e7ec2793b37a2fad8428fa499e6545b97aae5788cd83f2ff109d5ae708579c",
+      "sha256": "14991e0e9d16b6476e45c8e3c56d94269853b599a19c9e24f65c53b8f338feaf",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -434,7 +436,9 @@
         "antes-y-despues-de-la-corrida-de-escritura",
         "lenguaje-cercano-al-dueno",
         "rojo-del-arnes-se-atribuye-y-se-cura",
-        "certificador-hermetico-con-control-de-mutacion"
+        "certificador-hermetico-con-control-de-mutacion",
+        "espera-acotada-en-lectura-async",
+        "evidencia-publica-no-se-pisa"
       ]
     },
     {
@@ -491,9 +495,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.73.0",
+      "version": "2.74.0",
       "updated_at": "2026-11-26",
-      "sha256": "dfaab8c3ba75dcb1bc75ff1abf9d447c7a94bc7df011d1b39b3e5d60ed51c165",
+      "sha256": "c4a12d11626f921156d9eed5ea21f3ffa376fe64ae3a4024becc37e466e24b83",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -546,7 +550,8 @@
         "residuo-de-despliegue-cuantificado-en-campo",
         "lenguaje-cercano-al-dueno",
         "residuo-declarado-se-cierra-en-el-mismo-paquete",
-        "contingencia-se-cierra-con-mecanismo-y-retiro"
+        "contingencia-se-cierra-con-mecanismo-y-retiro",
+        "tema-adicional-es-el-cambio-exclusivo"
       ]
     }
   ],
