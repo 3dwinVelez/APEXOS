@@ -1,0 +1,18 @@
+{
+  "medido_en": "2026-11-26T17:45:25.309Z",
+  "consulta": "GET _prisma_migrations (solo lectura, service role del ambiente)",
+  "head_medido": "39a54b76",
+  "origin_main": "e3c2ad17",
+  "filas_del_ledger": 72,
+  "terminadas": 71,
+  "sin_finalizar": [
+    "20260814003500_sales_invoicing_cxc"
+  ],
+  "migraciones_en_el_arbol_del_candidato": 72,
+  "aplicaria_en_produccion": [
+    "20261125183000_platform_settings"
+  ],
+  "deuda_ajena_del_arbol": [],
+  "migraciones_de_main_no_aplicadas": [],
+  "veredicto": "EL DESPLIEGUE SOLO PODRIA APLICAR LA MIGRACION PROPIA: cero deuda ajena en el arbol de main"
+}

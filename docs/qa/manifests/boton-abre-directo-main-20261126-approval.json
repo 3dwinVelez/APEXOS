@@ -1,0 +1,102 @@
+{
+  "change_id": "boton-abre-directo-main-20261126",
+  "commit": "0dd67a5bf7ce7eaf372386fc3372eacc7521d888",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "creado": "2026-11-26T13:10:00-05:00",
+  "authorized_by_dueno": "dueno del proyecto (Edwin), 2026-11-26: «extiende el cambio del boton de manera controlada y cerrada al ambiente main aunque la url pertenezca a qa lo importante en este caso es migrar la funcion y el boton de manera correcta ya la url me encargo yo de actualizarla solo un tema adicional en ves de permitirle al usuario copiar la url genera un boton que lo lleve directamente a la url asi evitamos muchas cosas procesa el trabajo que tienes y sigue el proceso de migracion correcto desde desarrollo hasta main con estos cambios y condiciones, no debes tocar ni afectar otros temas adicionales debe ser un commit exclusivo para este cambio»",
+  "manifiesto_de_alcance": "./boton-abre-directo-main-20261126-scope.json",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/app-install-abrir-directo-20261126/certification.json",
+        "../evidence/url-app-administrable-20261125/local-certification.json",
+        "../evidence/boton-abre-directo-main-20261126/suites-despues.json"
+      ],
+      "notes": "La banda del acceso abre la app en una pestana nueva en celular y en computador (137 controles de navegador sobre artefacto servido) y el enlace administrado se lee sin sesion y se escribe auditado (28 controles de ventana sobre base efimera). Las dos suites de contrato corren, ademas, dentro del arbol de main: 31 + 40 controles."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-abre-directo-develop-20261126/suites-candidato.json",
+        "../evidence/boton-abre-directo-main-20261126/suites-despues.json"
+      ],
+      "notes": "Los cinco rechazos con nombre propio (URL_APP_MOVIL_NO_HTTPS, CON_CREDENCIALES, CON_FRAGMENTO, DOMINIO_INCOMPLETO, DEMASIADO_LARGA) y la matriz 401/401/403/200; cuando la fila falta o se tuerce, el acceso degrada al quemado y la ventana avisa en vez de pintar un destino a medias."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-abre-directo-main-20261126/suites-despues.json"
+      ],
+      "notes": "Los cuatro instrumentos que viajan pasan `node --check`, y el arnes de ambiente conserva sus dos rechazos exigidos: sin fixture se niega a correr y si el origen toca Produccion aborta."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-abre-directo-main-20261126/invariantes-main.json",
+        "../evidence/boton-abre-directo-main-20261126/control-de-mutacion.json"
+      ],
+      "notes": "promotion-migration-check sobre el arbol del candidato: carry byte a byte validado, cero ediciones y cero borrados declarados, con su control de mutacion de tres derivas. Las suites transversales de RBAC, capacidades de rol, alias de modulo y estado de usuario corren en el candidato y en la linea base con cero rojas en las dos."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-abre-directo-main-20261126/suites-antes.json",
+        "../evidence/boton-abre-directo-main-20261126/suites-despues.json",
+        "../evidence/boton-abre-directo-main-20261126/ledger-produccion.json"
+      ],
+      "notes": "Mismo instrumento en origin/main puro y en el candidato: 41 controles verdes antes, 71 despues, cero rojos en las dos corridas. prisma validate en verde. El ledger de Produccion leido en solo lectura: 72 filas, 71 terminadas y UNA sola migracion pendiente en el arbol, la propia."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/mobile-app-install-browser-local.js",
+    "evidence": [
+      "../evidence/app-install-abrir-directo-20261126/certification.json"
+    ],
+    "notes": "Ciento treinta y siete controles de navegador real con el artefacto de produccion servido, mas el control de mutacion (118 de 137 con la banda alterada y diecinueve rojos exigidos). El flujo completo pedido por el dueno: acceso -> banda -> guia -> boton -> ventana nueva hacia la URL administrada."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/boton-abre-directo-main-20261126/invariantes-main.json"
+    ],
+    "notes": "Instrumento transversal del replay, con su selftest de mutaciones en control-de-mutacion.json."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/mobile-app-install-qa.js",
+    "evidence": [
+      "../evidence/boton-abre-directo-qa-20261126/qa-navegador.json",
+      "../evidence/boton-abre-directo-qa-20261126/siembra.json",
+      "../evidence/boton-abre-directo-qa-20261126/qa-cierre.json"
+    ],
+    "notes": "Catorce controles de navegador contra el portal de QA desplegado con cuenta efimera de la empresa modelo: la guia sirve el marcador administrado en celular y en computador, el clic abre UNA ventana hacia el, no queda rastro de portapapeles y el enlace vuelve al quemado en 194 ms con cero cuentas de prueba activas al cerrar."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "e3c2ad171946621c4e167404ef5c56c466f43e4f",
+    "trigger": "Si en Produccion la pantalla de acceso deja de mostrar la banda, el boton no abre una ventana hacia la URL administrada, la lectura publica responde distinto de 200 o la ventana de Administracion escribe fuera del ambiente declarado, se revierte el commit promocionado con `git revert` sobre main y se empuja la reversa por el mismo porton; el binario estable queda en e3c2ad17.",
+    "notas": [
+      "La reversa no toca la base: si el despliegue creo platform_settings, la tabla queda vacia y el acceso sigue respondiendo el respaldo quemado, que es el comportamiento anterior al frente.",
+      "Ningun archivo de otros frentes entra en el revert: el inventario del porton es exacto y las tres rutas fusionadas solo suman lineas del frente."
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-26T13:10:00-05:00",
+    "authorization_flags": {
+      "candidate_on_detached_head": true,
+      "direct_push_to_main": true,
+      "produccion_db_write": false
+    },
+    "nota": "Autoriza las 45 rutas de este inventario hacia main. No autoriza force push, rebase, infraestructura, Railway/Supabase, escritura en la base de Produccion ni borrado de ramas."
+  }
+}
