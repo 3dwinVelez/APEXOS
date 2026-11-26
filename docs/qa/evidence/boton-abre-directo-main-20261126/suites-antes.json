@@ -1,0 +1,188 @@
+{
+  "cambio": "boton-abre-directo-main-20261126",
+  "etiqueta": "antes",
+  "ejecutado_en": "2026-11-26T17:44:10.868Z",
+  "arbol": {
+    "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\.tmp\\wt-main-lineabase-20261126",
+    "head": "e3c2ad17",
+    "origin_main": "e3c2ad17",
+    "origin_desarrollo": "76dbc4a7"
+  },
+  "nota_resolucion": "El worktree vive dentro de .tmp/ del arbol principal y no tiene node_modules propio: Node resuelve caminando hacia arriba hasta APEXOS/node_modules, sin enlaces ni copias, para no tocar el disco ni repetir la caida del 2026-11-20.",
+  "suites_api": [
+    {
+      "file": "apps/api/test/rbac-module-access.test.js",
+      "cmd": "node --test apps/api/test/rbac-module-access.test.js",
+      "exito": true,
+      "pass": 4,
+      "fail": 0,
+      "salida_completa": "TAP version 13\n# (node:21708) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: RBAC reconoce todos los identificadores vigentes de Inventario\nok 1 - RBAC reconoce todos los identificadores vigentes de Inventario\n  ---\n  duration_ms: 6.7278\n  type: 'test'\n  ...\n# Subtest: RBAC normaliza espacios y mayusculas en los modulos del tenant\nok 2 - RBAC normaliza espacios y mayusculas en los modulos del tenant\n  ---\n  duration_ms: 1.4792\n  type: 'test'\n  ...\n# Subtest: RBAC mantiene bloqueado Inventario cuando no esta habilitado\nok 3 - RBAC mantiene bloqueado Inventario cuando no esta habilitado\n  ---\n  duration_ms: 1.3322\n  type: 'test'\n  ...\n# Subtest: RBAC reconoce los identificadores tecnicos usados por permisos y sincronizacion\nok 4 - RBAC reconoce los identificadores tecnicos usados por permisos y sincronizacion\n  ---\n  duration_ms: 1.2281\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 464.5359\n",
+      "salidas": [
+        "# tests 4",
+        "# pass 4",
+        "# fail 0",
+        "# cancelled 0"
+      ],
+      "crudo": []
+    },
+    {
+      "file": "apps/api/test/admin-role-capabilities.test.js",
+      "cmd": "node --test apps/api/test/admin-role-capabilities.test.js",
+      "exito": true,
+      "pass": 8,
+      "fail": 0,
+      "salida_completa": "TAP version 13\n# (node:9736) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: reconoce administradores confiables por role_type aunque el nombre sea personalizado\nok 1 - reconoce administradores confiables por role_type aunque el nombre sea personalizado\n  ---\n  duration_ms: 4.6393\n  type: 'test'\n  ...\n# Subtest: un gestor de usuarios cumple solo las capacidades concedidas en su matriz\nok 2 - un gestor de usuarios cumple solo las capacidades concedidas en su matriz\n  ---\n  duration_ms: 1.3532\n  type: 'test'\n  ...\n# Subtest: admin write agregado no permite crear usuarios cuando la matriz solo concede editar\nok 3 - admin write agregado no permite crear usuarios cuando la matriz solo concede editar\n  ---\n  duration_ms: 0.9197\n  type: 'test'\n  ...\n# Subtest: mantiene compatibilidad con roles antiguos que solo tienen permisos RBAC agregados\nok 4 - mantiene compatibilidad con roles antiguos que solo tienen permisos RBAC agregados\n  ---\n  duration_ms: 0.682\n  type: 'test'\n  ...\n# Subtest: la capacidad no omite suscripcion ni alcance del tenant\nok 5 - la capacidad no omite suscripcion ni alcance del tenant\n  ---\n  duration_ms: 1.0784\n  type: 'test'\n  ...\n# Subtest: las rutas de usuarios y roles exigen capacidades granulares\nok 6 - las rutas de usuarios y roles exigen capacidades granulares\n  ---\n  duration_ms: 31.9127\n  type: 'test'\n  ...\n# Subtest: la edicion administrativa aplica los campos enviados y no conserva silenciosamente el valor anterior\nok 7 - la edicion administrativa aplica los campos enviados y no conserva silenciosamente el valor anterior\n  ---\n  duration_ms: 57.1454\n  type: 'test'\n  ...\n# Subtest: todas las operaciones administrativas por id acotan usuario y rol al tenant autenticado\nok 8 - todas las operaciones administrativas por id acotan usuario y rol al tenant autenticado\n  ---\n  duration_ms: 2.2533\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 584.3011\n",
+      "salidas": [
+        "# tests 8",
+        "# pass 8",
+        "# fail 0",
+        "# cancelled 0"
+      ],
+      "crudo": []
+    },
+    {
+      "file": "apps/api/test/payroll-module-alias.test.js",
+      "cmd": "node --test apps/api/test/payroll-module-alias.test.js",
+      "exito": true,
+      "pass": 1,
+      "fail": 0,
+      "salida_completa": "TAP version 13\n# (node:7004) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: payroll is enabled by the active human-resources module aliases\nok 1 - payroll is enabled by the active human-resources module aliases\n  ---\n  duration_ms: 1.6662\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 302.4093\n",
+      "salidas": [
+        "# tests 1",
+        "# pass 1",
+        "# fail 0",
+        "# cancelled 0"
+      ],
+      "crudo": []
+    },
+    {
+      "file": "apps/api/test/admin-user-status-regression.test.js",
+      "cmd": "node --test apps/api/test/admin-user-status-regression.test.js",
+      "exito": true,
+      "pass": 7,
+      "fail": 0,
+      "salida_completa": "TAP version 13\n# (node:20328) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n# (Use `node --trace-warnings ...` to show where the warning was created)\n# Subtest: desactivar usuario responde con el registro inactivo y revoca sesiones\nok 1 - desactivar usuario responde con el registro inactivo y revoca sesiones\n  ---\n  duration_ms: 154.0828\n  type: 'test'\n  ...\n# Subtest: el cambio de estado no puede operar sobre un usuario de otro tenant\nok 2 - el cambio de estado no puede operar sobre un usuario de otro tenant\n  ---\n  duration_ms: 11.5801\n  type: 'test'\n  ...\n# Subtest: la ruta publica el resultado exitoso del servicio sin convertirlo en 404\nok 3 - la ruta publica el resultado exitoso del servicio sin convertirlo en 404\n  ---\n  duration_ms: 1.1895\n  type: 'test'\n  ...\n# Subtest: reactivar un usuario inactivo opera sobre el mismo id que se desactivó\nok 4 - reactivar un usuario inactivo opera sobre el mismo id que se desactivó\n  ---\n  duration_ms: 10.4069\n  type: 'test'\n  ...\n# Subtest: el bloqueo de acceso de una cuenta inactiva no se pierde en un 404 al leerla\nok 5 - el bloqueo de acceso de una cuenta inactiva no se pierde en un 404 al leerla\n  ---\n  duration_ms: 9.7734\n  type: 'test'\n  ...\n# Subtest: inactivar desde el acceso responde con la fila escrita, no con un 404 posterior\nok 6 - inactivar desde el acceso responde con la fila escrita, no con un 404 posterior\n  ---\n  duration_ms: 9.9457\n  type: 'test'\n  ...\n# Subtest: toda lectura de cuenta en administracion ve la inactiva y conserva su tenant\nok 7 - toda lectura de cuenta en administracion ve la inactiva y conserva su tenant\n  ---\n  duration_ms: 2.4776\n  type: 'test'\n  ...\n1..7\n# tests 7\n# suites 0\n# pass 7\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 472.5254\n",
+      "salidas": [
+        "# tests 7",
+        "# pass 7",
+        "# fail 0",
+        "# cancelled 0"
+      ],
+      "crudo": []
+    }
+  ],
+  "suites_web": [
+    {
+      "file": "apps/web/test/login-phase-zero-ux.test.mjs",
+      "cmd": "node --experimental-strip-types --no-warnings --test apps/web/test/login-phase-zero-ux.test.mjs",
+      "exito": true,
+      "pass": 17,
+      "fail": 0,
+      "salida_completa": "TAP version 13\n# Subtest: el login conserva el flujo de autenticacion y mejora seguridad visual y accesibilidad\nok 1 - el login conserva el flujo de autenticacion y mejora seguridad visual y accesibilidad\n  ---\n  duration_ms: 27.8937\n  type: 'test'\n  ...\n# Subtest: el login define superficies diferenciadas para tema claro y oscuro\nok 2 - el login define superficies diferenciadas para tema claro y oscuro\n  ---\n  duration_ms: 19.5862\n  type: 'test'\n  ...\n# Subtest: la portada pública comparte el lenguaje visual moderno y adaptable del login\nok 3 - la portada pública comparte el lenguaje visual moderno y adaptable del login\n  ---\n  duration_ms: 46.0102\n  type: 'test'\n  ...\n# Subtest: la onda del login tiene movimiento suave y respeta reduced motion\nok 4 - la onda del login tiene movimiento suave y respeta reduced motion\n  ---\n  duration_ms: 1.2265\n  type: 'test'\n  ...\n# Subtest: la guia APEX AI es contextual y sus controles no propagan navegacion\nok 5 - la guia APEX AI es contextual y sus controles no propagan navegacion\n  ---\n  duration_ms: 33.0973\n  type: 'test'\n  ...\n# Subtest: los permisos usan skeleton y EmptyState admite icono y dos acciones\nok 6 - los permisos usan skeleton y EmptyState admite icono y dos acciones\n  ---\n  duration_ms: 4.54\n  type: 'test'\n  ...\n# Subtest: el feedback global ofrece toast accesible, cierre y reintento\nok 7 - el feedback global ofrece toast accesible, cierre y reintento\n  ---\n  duration_ms: 4.1892\n  type: 'test'\n  ...\n# Subtest: los ajustes de inventario bloquean doble envío y reintentan con la misma idempotencia\nok 8 - los ajustes de inventario bloquean doble envío y reintentan con la misma idempotencia\n  ---\n  duration_ms: 26.9353\n  type: 'test'\n  ...\n# Subtest: los traslados bloquean doble envío y reutilizan la idempotencia al reintentar\nok 9 - los traslados bloquean doble envío y reutilizan la idempotencia al reintentar\n  ---\n  duration_ms: 28.6954\n  type: 'test'\n  ...\n# Subtest: el cargue inicial informa validación y contabilización, con bloqueo y reintento\nok 10 - el cargue inicial informa validación y contabilización, con bloqueo y reintento\n  ---\n  duration_ms: 26.1899\n  type: 'test'\n  ...\n# Subtest: el maestro de productos bloquea guardados simultáneos y comunica el resultado\nok 11 - el maestro de productos bloquea guardados simultáneos y comunica el resultado\n  ---\n  duration_ms: 32.6742\n  type: 'test'\n  ...\n# Subtest: los maestros secundarios de inventario bloquean duplicados y notifican resultados\nok 12 - los maestros secundarios de inventario bloquean duplicados y notifican resultados\n  ---\n  duration_ms: 58.5768\n  type: 'test'\n  ...\n# Subtest: compras y transporte ofrecen estados vacíos accionables\nok 13 - compras y transporte ofrecen estados vacíos accionables\n  ---\n  duration_ms: 66.3571\n  type: 'test'\n  ...\n# Subtest: el sidebar colapsado ofrece tooltips visuales y navegación accesible\nok 14 - el sidebar colapsado ofrece tooltips visuales y navegación accesible\n  ---\n  duration_ms: 26.5197\n  type: 'test'\n  ...\n# Subtest: la base visual cumple contraste AA y preferencias de foco y movimiento\nok 15 - la base visual cumple contraste AA y preferencias de foco y movimiento\n  ---\n  duration_ms: 7.1554\n  type: 'test'\n  ...\n# Subtest: los flujos prioritarios anuncian errores y confirmaciones\nok 16 - los flujos prioritarios anuncian errores y confirmaciones\n  ---\n  duration_ms: 20.6664\n  type: 'test'\n  ...\n# Subtest: stock identifica filtros y anuncia errores y resultados accesiblemente\nok 17 - stock identifica filtros y anuncia errores y resultados accesiblemente\n  ---\n  duration_ms: 31.1566\n  type: 'test'\n  ...\n1..17\n# tests 17\n# suites 0\n# pass 17\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 859.5735\n",
+      "salidas": [
+        "# tests 17",
+        "# pass 17",
+        "# fail 0",
+        "# cancelled 0"
+      ],
+      "crudo": []
+    },
+    {
+      "file": "apps/web/test/login-error-contrast.test.mjs",
+      "cmd": "node --experimental-strip-types --no-warnings --test apps/web/test/login-error-contrast.test.mjs",
+      "exito": true,
+      "pass": 2,
+      "fail": 0,
+      "salida_completa": "TAP version 13\n# Subtest: login usa una clase dedicada para errores de autenticacion\nok 1 - login usa una clase dedicada para errores de autenticacion\n  ---\n  duration_ms: 3.6627\n  type: 'test'\n  ...\n# Subtest: mensaje de error del login tiene contraste propio en tema claro y oscuro\nok 2 - mensaje de error del login tiene contraste propio en tema claro y oscuro\n  ---\n  duration_ms: 0.9665\n  type: 'test'\n  ...\n1..2\n# tests 2\n# suites 0\n# pass 2\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 242.0904\n",
+      "salidas": [
+        "# tests 2",
+        "# pass 2",
+        "# fail 0",
+        "# cancelled 0"
+      ],
+      "crudo": []
+    },
+    {
+      "file": "apps/web/test/admin-company-modal-frame.test.mjs",
+      "cmd": "node --experimental-strip-types --no-warnings --test apps/web/test/admin-company-modal-frame.test.mjs",
+      "exito": true,
+      "pass": 2,
+      "fail": 0,
+      "salida_completa": "TAP version 13\n# Subtest: los dialogos de empresa usan ModalFrame portado y no capas fixed inline\nok 1 - los dialogos de empresa usan ModalFrame portado y no capas fixed inline\n  ---\n  duration_ms: 1.8917\n  type: 'test'\n  ...\n# Subtest: crear y editar envian su formulario desde el pie del modal\nok 2 - crear y editar envian su formulario desde el pie del modal\n  ---\n  duration_ms: 0.8304\n  type: 'test'\n  ...\n1..2\n# tests 2\n# suites 0\n# pass 2\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 282.4552\n",
+      "salidas": [
+        "# tests 2",
+        "# pass 2",
+        "# fail 0",
+        "# cancelled 0"
+      ],
+      "crudo": []
+    }
+  ],
+  "sintacticos": [
+    {
+      "file": "scripts/certifications/promotion-migration-check.js",
+      "cmd": "node --check scripts/certifications/promotion-migration-check.js",
+      "exito": true,
+      "pass": 0,
+      "fail": 0,
+      "salida_completa": "",
+      "salidas": [],
+      "crudo": []
+    }
+  ],
+  "fusionadas": [
+    {
+      "file": "apps/api/prisma/schema.prisma",
+      "lineas_main": 3941,
+      "lineas_candidato": 3941,
+      "nuevas_sin_origen_en_el_frente": [],
+      "lineas_de_main_perdidas": [],
+      "main_intacto": true,
+      "solo_suma_el_frente": true
+    },
+    {
+      "file": "apps/api/src/middleware/rbac.js",
+      "lineas_main": 364,
+      "lineas_candidato": 364,
+      "nuevas_sin_origen_en_el_frente": [],
+      "lineas_de_main_perdidas": [],
+      "main_intacto": true,
+      "solo_suma_el_frente": true
+    },
+    {
+      "file": "apps/api/src/modules/admin/public-routes.js",
+      "lineas_main": 56,
+      "lineas_candidato": 56,
+      "nuevas_sin_origen_en_el_frente": [],
+      "lineas_de_main_perdidas": [],
+      "main_intacto": true,
+      "solo_suma_el_frente": true
+    }
+  ],
+  "schema_valido": {
+    "exito": false,
+    "verificacion": "se exige el literal 'is valid' del CLI y que el modelo PlatformSetting este completo con su @@map; la cadena de conexion es inventada, nunca una credencial real",
+    "prisma_valido": true,
+    "platform_setting_completo": false,
+    "salidas": [],
+    "crudo": [],
+    "lineas_clave": [
+      "The schema at apps\\api\\prisma\\schema.prisma is valid 🚀"
+    ]
+  },
+  "totales": {
+    "suites_api": {
+      "verde": true,
+      "pass": 20,
+      "fail": 0
+    },
+    "suites_web": {
+      "verde": true,
+      "pass": 21,
+      "fail": 0
+    },
+    "sintacticos": true,
+    "fusionadas": true
+  },
+  "veredicto": "Linea base del mismo instrumento sobre origin/main puro: 20+21 controles en verde, 0 en rojo"
+}
