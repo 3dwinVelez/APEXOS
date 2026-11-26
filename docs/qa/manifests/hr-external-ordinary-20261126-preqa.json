@@ -1,0 +1,120 @@
+{
+  "change_id": "hr-external-ordinary-20261126",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "081027de6e1c1a29ccf8bd24f512dff5eb9c28f0",
+  "commit": "a7f47f0daa32b2b48c71649e61ce7ecbb19f6beb",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-external-ordinary-20261126-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-external-ordinary-20261126-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-external-ordinary-20261126-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-external-ordinary-20261126-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-external-ordinary-20261126-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-external-ordinary-local.js",
+    "evidence": [
+      "hr-external-ordinary-20261126-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-external-ordinary-local.js",
+    "evidence": [
+      "hr-external-ordinary-20261126-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario",
+    "approved_at": "2026-11-26T22:44:39.204171+00:00",
+    "statement": "despliega a qa",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "branch_note": "Reuse the existing authorized HR QA branch; no branch creation, force push, direct develop/main push or production release."
+  },
+  "execution": {
+    "functional_commit": "a7f47f0daa32b2b48c71649e61ce7ecbb19f6beb",
+    "certification": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "started_at": "2026-11-26T22:40:33.882Z",
+      "checks": [
+        "quincenal month-wide and mismatched keys are rejected before payroll or closure writes",
+        "real API derives master contract, imports malla concepts and leaves preview read only",
+        "RBAC, cross tenant reads and unauthorized writes cannot create termination",
+        "integrated manual API binds employee and cutoff, preserves classification and deduplicates retries",
+        "browser finds employee, derives contract, previews full modal, saves and reopens all concepts",
+        "saved termination excludes employee from fortnight preview and real payroll creation despite active employee",
+        "rehire restores only the new contract period while settled historical periods stay excluded",
+        "loans post once, recalculation preserves totals and deletion restores balances and payroll eligibility",
+        "pending calculation splits second fortnight without paying the first twice",
+        "existing payroll after cutoff blocks an overlapping backdated final liquidation",
+        "all four standard benefit payment functions preserve payments when provisions regenerate",
+        "manual concepts retain salary classification and alter only eligible final benefit bases",
+        "final settlement consumes provisions, posts four linked vouchers and prevents duplicate payments or reopening history",
+        "permissions reject unauthenticated and unauthorized external imports; another tenant cannot resolve own employees",
+        "real Excel imports all 21 accumulated ordinary rows; trial, receipt and reload keep salary instead of a fortnight of Sunday pay",
+        "existing imported rows remain ordinary without reimport; repeat import skips duplicates; definitive document and PDF preserve corrected concepts",
+        "1750905 monthly salary pays 875452.50 for 15 days and equivalent hours follow the configured divisor while explicit hours remain unchanged"
+      ],
+      "finished_at": "2026-11-26T22:42:47.818Z"
+    },
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1795732813135",
+      "source_database_modified": false,
+      "fixture_schema_hunks": [
+        "20261016123000_sedes_replace_origins: sections 1-2 only",
+        "20260919110000_time_route_kind_descanso",
+        "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+      ],
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-26T22:42:47.910Z"
+    },
+    "unit_regression": {
+      "passed": 36,
+      "failed": 0
+    },
+    "support_scripts": "Node syntax checks of service and certification passed; real browser compiled payroll pages; actual saved PDF text verified with PyMuPDF. No frontend implementation changes.",
+    "source_verification": "All 11 archived functional paths match certified Git blobs with checkout EOL normalization; only reviewed payroll hunks replayed on current QA. The target wrapper certificate inventory was preserved.",
+    "implementation_commits": [
+      "180ef5e966a2b4723320557a24d3c5b385516f89",
+      "012400cf24c6f4d8bd89caa35f5eb88bba5e5a0e"
+    ],
+    "scope_note": "Accumulated ordinary import remains salary instead of inheriting Sunday classification from its reference date. Inferred equivalent hours use the effective monthly basis; explicit hours and individual Sundays retain their existing paths. No reimport required, no migrations or deletion, no retrospective rewrite of saved payroll."
+  }
+}

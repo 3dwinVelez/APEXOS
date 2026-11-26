@@ -1,0 +1,148 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-external-ordinary-20261126",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "base_commits": {
+    "develop": "081027de6e1c1a29ccf8bd24f512dff5eb9c28f0",
+    "main": "e3c2ad171946621c4e167404ef5c56c466f43e4f"
+  },
+  "target_head": "081027de6e1c1a29ccf8bd24f512dff5eb9c28f0",
+  "certified_commit": "a7f47f0daa32b2b48c71649e61ce7ecbb19f6beb",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "a7f47f0daa32b2b48c71649e61ce7ecbb19f6beb",
+    "implementation_commits": [
+      "180ef5e966a2b4723320557a24d3c5b385516f89",
+      "012400cf24c6f4d8bd89caa35f5eb88bba5e5a0e"
+    ],
+    "reconstruction": "Punctual reviewed ordinary payroll fixes on current remote develop; no old tree snapshot used as baseline."
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/accumulatedOrdinaryTime.js",
+    "apps/api/src/modules/hr/adjustmentCalendarConcept.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-accumulated-ordinary-time.test.js",
+    "apps/api/test/hr-adjustment-calendar-concept.test.js",
+    "docs/qa/certifications/hr-external-ordinary-20261126.md",
+    "docs/qa/certifications/hr-external-ordinary-hours-20261126.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-external-ordinary-browser-local.js",
+    "scripts/certifications/hr-external-ordinary-local.js",
+    "scripts/certifications/hr-termination-complete-local.js"
+  ],
+  "change_intent": {
+    "summary": "Correct accumulated ordinary imported salary classification and infer its equivalent hours from the configured monthly divisor, preserving individual-day and explicit-hours treatment.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/accumulatedOrdinaryTime.js",
+    "apps/api/src/modules/hr/adjustmentCalendarConcept.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-accumulated-ordinary-time.test.js",
+    "apps/api/test/hr-adjustment-calendar-concept.test.js",
+    "docs/qa/certifications/hr-external-ordinary-20261126.md",
+    "docs/qa/certifications/hr-external-ordinary-hours-20261126.md",
+    "docs/qa/manifests/hr-external-ordinary-20261126-preqa.json",
+    "docs/qa/manifests/hr-external-ordinary-20261126-scope.json",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-external-ordinary-browser-local.js",
+    "scripts/certifications/hr-external-ordinary-local.js",
+    "scripts/certifications/hr-termination-complete-local.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/accumulatedOrdinaryTime.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/adjustmentCalendarConcept.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-accumulated-ordinary-time.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-adjustment-calendar-concept.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-external-ordinary-20261126.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-external-ordinary-hours-20261126.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-external-ordinary-20261126-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-external-ordinary-20261126-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-external-ordinary-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-external-ordinary-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-termination-complete-local.js"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Actual XLSX import, 21 existing-style ordinary records, trial, browser receipt, reload, definitive persistence and PDF",
+      "status": "passed",
+      "evidence": [
+        "hr-external-ordinary-20261126-preqa.json"
+      ]
+    },
+    {
+      "name": "Salary 1750905 produces basic 875452.50 for 15 days and 105 equivalent hours; effective divisor changes and explicit 120-hour records are preserved",
+      "status": "passed",
+      "evidence": [
+        "hr-external-ordinary-20261126-preqa.json"
+      ]
+    },
+    {
+      "name": "Individual Sundays, explicit overtime and surcharge concepts, duplicate import protection and stored import integrity",
+      "status": "passed",
+      "evidence": [
+        "hr-external-ordinary-20261126-preqa.json"
+      ]
+    },
+    {
+      "name": "Worker termination, contract/day review, manual concepts, benefit accrual and payment reversal, loans and payroll exclusion",
+      "status": "passed",
+      "evidence": [
+        "hr-external-ordinary-20261126-preqa.json"
+      ]
+    },
+    {
+      "name": "Authentication, write permissions, tenant isolation, payroll period boundaries and adjacent UI navigation",
+      "status": "passed",
+      "evidence": [
+        "hr-external-ordinary-20261126-preqa.json"
+      ]
+    }
+  ]
+}
