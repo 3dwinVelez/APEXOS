@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.111.0",
+      "version": "2.112.0",
       "updated_at": "2026-11-26",
-      "sha256": "9546337b4b984da6e54271525ddb9058e04f6af766f3085ae6dea71358967eb5",
+      "sha256": "177f7a0afdfed964891855607345bdba67444e5af40defdae7235c5dcedc3def",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -178,15 +178,16 @@
         "pendiente-retirado-se-reescribe",
         "alcance-que-retoma-el-dueno-con-accion-exacta",
         "inventario-generado-se-contrainta-contra-el-diff",
-        "host-de-ambiente-heredado-del-canon"
+        "host-de-ambiente-heredado-del-canon",
+        "consecuencia-de-ambiente-se-cita-con-su-medicion"
       ]
     },
     {
       "name": "apexos-db-nube",
       "role": "experto-base-datos-nube",
-      "version": "2.12.0",
-      "updated_at": "2026-11-25",
-      "sha256": "69e930befc9657f249f8eed2e297cfe06c737ee637286dfb2f71f872ace76bae",
+      "version": "2.14.0",
+      "updated_at": "2026-11-26",
+      "sha256": "b5ea8f7707879d4773671c9c9fdb5cca2b664acd2d16d3316978bf186a796b98",
       "source": ".qoder/skills/apexos-db-nube/SKILL.md",
       "mirror": "agents/apexos-db-nube/SKILL.md",
       "controls": [
@@ -206,7 +207,9 @@
         "rename-vista-compatibilidad-y-filas-posteriores",
         "sincronizacion-multi-ambiente",
         "rescate-jsonb-indice-ligero-sha256",
-        "lenguaje-cercano-al-dueno"
+        "lenguaje-cercano-al-dueno",
+        "pre-deploy-se-mide-en-el-ambiente",
+        "checksum-de-migracion-contra-el-blob"
       ]
     },
     {
@@ -348,9 +351,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.134.0",
+      "version": "2.135.0",
       "updated_at": "2026-11-26",
-      "sha256": "80f5ab9e9963b1c17c4bc1f862cb77d0c48b7a9b2235a54cbb17337dd03700b1",
+      "sha256": "6620ee5670214470a2033c131a81cf0d93fb65ce821b02e9c20aef724482e214",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -450,7 +453,9 @@
         "ambiente-despliega-por-servicios",
         "aserto-contra-la-salida-completa",
         "ledger-del-destino-en-solo-lectura",
-        "direccion-de-ambiente-resuelta-por-resolvedor-publico"
+        "direccion-de-ambiente-resuelta-por-resolvedor-publico",
+        "desplegado-servido-y-migrado-se-miden-aparte",
+        "instrumento-desde-su-arbol-y-se-lee-que-escribio"
       ]
     },
     {
@@ -507,9 +512,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.75.0",
+      "version": "2.76.0",
       "updated_at": "2026-11-26",
-      "sha256": "ffff55916a5fbfa0304f2f6b8ffdbcd9d1cce73331a55e21aca60c51541404a9",
+      "sha256": "74be60226c79282a1d6f2f352c20d6af14921be95a89f28a3af56cf9ea0c7c6e",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -564,7 +569,8 @@
         "residuo-declarado-se-cierra-en-el-mismo-paquete",
         "contingencia-se-cierra-con-mecanismo-y-retiro",
         "tema-adicional-es-el-cambio-exclusivo",
-        "transporte-se-mide-contra-la-distancia-del-destino"
+        "transporte-se-mide-contra-la-distancia-del-destino",
+        "autorizacion-con-consecuencia-se-cierra-y-se-rinde"
       ]
     }
   ],

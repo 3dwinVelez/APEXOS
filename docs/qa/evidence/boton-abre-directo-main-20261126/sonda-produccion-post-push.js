@@ -9,7 +9,7 @@ const PROYECTO_PROD = 'jzbwzmkidfthknsohhnr';
 const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Mobile Safari/537.36';
 
 const ETIQUETA = WEB.includes('railway.app') ? 'railway' : 'dominio';
-const SALIDA = path.resolve(__dirname, 'post-push-produccion-' + ETIQUETA + '.json');
+const SALIDA = path.resolve(__dirname, 'post-push-produccion-' + (process.env.SONDA_ETIQUETA || ETIQUETA) + '.json');
 if (fs.existsSync(SALIDA) && !process.argv.includes('--force')) {
   console.error('ABORTA: la evidencia ya existe, no se pisa sin --force declarado ->', SALIDA);
   process.exit(2);

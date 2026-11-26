@@ -1,0 +1,16 @@
+{
+  "medido_en": "2026-11-26T18:36:30.742Z",
+  "consulta": "GET _prisma_migrations (solo lectura, service role del ambiente)",
+  "head_medido": "0ec1cff0",
+  "origin_main": "0ec1cff0",
+  "filas_del_ledger": 73,
+  "terminadas": 72,
+  "sin_finalizar": [
+    "20260814003500_sales_invoicing_cxc"
+  ],
+  "migraciones_en_el_arbol_del_candidato": 72,
+  "aplicaria_en_produccion": [],
+  "deuda_ajena_del_arbol": [],
+  "migraciones_de_main_no_aplicadas": [],
+  "veredicto": "ARBOL Y BASE ALINEADOS: no queda ni una migracion pendiente en el arbol del candidato"
+}

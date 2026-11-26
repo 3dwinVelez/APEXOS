@@ -131,5 +131,85 @@
       "api.apexos.com.co": "NXDOMAIN: la API de Produccion no tiene dominio propio, el portal llama al host de Railway",
       "consecuencia": "El documento decia que Produccion vivia en app.apexos.com.co. Era un nombre inventado; el real es www.apexos.com.co. Corregido en docs/project/app-movil.md y re-medida la sonda contra el nombre cierto: el resultado no cambia (0 de 10 chunks con el boton)."
     }
+  },
+  "despliegue_en_produccion": {
+    "autorizado_por": "el dueno, el 2026-11-26, preguntado con la consecuencia escrita: «¿Autorizas el despliegue en Producción ahora?» → «Sí, desplegar API + portal». La opcion elegida declara que el pre-deploy del API corre npx prisma migrate deploy contra la base real de clientes.",
+    "disparado_con": "railway redeploy -p 0afe38cc-6080-49d2-aa24-2d5625250ac2 -e production -s <servicio> --from-source -y --json (los dos servicios, respuesta {\"success\":true})",
+    "porque_from_source": "un redeploy sin la bandera reconstruye el ultimo despliegue (e3c2ad17); --from-source es lo que hace que baje la punta de main",
+    "despliegue_api": {
+      "servicio": "apexos-api-prod (7096734e-9a49-4542-be26-b4285b429f17)",
+      "creado": "2026-11-26T18:21:24.156Z",
+      "commit": "0ec1cff04c1b",
+      "despliegue": "2c69066b-d9de-4d7c-b72c-25376a32fc86",
+      "estado_al_disparar": "BUILDING",
+      "estado_final": "SUCCESS (leido el 2026-11-26T18:38:00Z con railway deployment list --json)"
+    },
+    "despliegue_web": {
+      "servicio": "apexos-web-prod (07ddbe4e-1139-4def-b412-7f4a2461733a)",
+      "creado": "2026-11-26T18:21:44.038Z",
+      "commit": "0ec1cff04c1b",
+      "despliegue": "ce9e5ed7-61b9-4547-8576-c97123f78101",
+      "estado_al_disparar": "BUILDING",
+      "estado_final": "SUCCESS (leido el 2026-11-26T18:38:00Z con railway deployment list --json)"
+    },
+    "punto_de_partida": "e3c2ad171946 (despliegues 2026-11-24T21:50:44Z, hoy REMOVED)",
+    "plan_de_reversa": "controlled_revert a e3c2ad17 segun docs/qa/manifests/boton-abre-directo-main-20261126-approval.json; la tabla platform_settings es aditiva y no borra nada"
+  },
+  "despues_del_despliegue": {
+    "medido_en": "2026-11-26T18:26:13Z (portal) · 18:32:05Z (migracion) · 18:36:30Z (ledger) · 18:36:40Z (sonda post-migracion)",
+    "instrumentos": "sonda-produccion-post-push.js (GET al API, GET al portal y los 10 chunks que /login referencia) y mide-ledger-produccion.js (GET _prisma_migrations). Ambos de solo lectura; la unica escritura a la base fue la migracion declarada y su correccion de checksum.",
+    "evidencia": [
+      "post-push-produccion-postdespliegue-railway.json",
+      "post-push-produccion-postdespliegue-dominio.json",
+      "post-push-produccion-postmigracion-dominio.json",
+      "ledger-despues-del-despliegue.json",
+      "checksum-corregido.json"
+    ],
+    "binario_servido": {
+      "GET /health": "200 status OK, modules 19, commit 0ec1cff04c1b",
+      "igual_en": "el host de Railway y www.apexos.com.co responden el mismo binario"
+    },
+    "ruta_publica": {
+      "GET /api/v1/public/platform/mobile-app": 200,
+      "cuerpo": { "url": "https://appapexos-production.up.railway.app" },
+      "lectura": "es el respaldo quemado: todavia no hay fila en platform_settings porque el dueno se reservo escribir el valor"
+    },
+    "censo_del_portal_antes": { "html_bytes": 18569, "Abrir la app": 0, "Copiar enlace": 0, "navigator.clipboard": 0, "banda_en_el_html": 0 },
+    "censo_del_portal_despues": {
+      "html_bytes": 19960,
+      "chunks": 10,
+      "Abrir la app": 2,
+      "Copiar enlace": 0,
+      "navigator.clipboard": 0,
+      "banda_en_el_html": 2,
+      "chunk_del_boton": "/_next/static/chunks/16blt3te1f70c.js (29380 bytes, 2 apariciones)",
+      "identico_entre_host_railway_y_dominio": true
+    },
+    "la_migracion_no_la_cerro_el_despliegue": {
+      "medido_antes_del_despliegue": "el ledger seguia en 72 filas / 71 terminadas y sin fila de 20261125183000_platform_settings; GET rest/v1/platform_settings respondio 404 PGRST205 (la tabla no existe)",
+      "prueba_en_logs": "el API de Produccion registro `prisma:error Invalid prisma.platformSetting.findUnique()` a las 18:24:35Z, 18:26:16Z y 18:26:21Z",
+      "como_degrada": "la ruta publica sigue respondiendo 200 con el respaldo quemado y la escritura administrada responderia 503 CONFIGURACION_PLATAFORMA_NO_INSTALADA (apps/api/src/modules/admin/platform-config-service.js:106). No hay corte de servicio, pero administrar el enlace es imposible.",
+      "consecuencia": "lo que el porton decia como hipotesis (`pre-deploy npx prisma migrate deploy`) no ocurrio en este servicio: el despliegue trajo el arbol, no la base. Desplegado no es migrado."
+    },
+    "como_se_cerro_la_base": {
+      "antes_en_solo_lectura": "prisma migrate status contra el pooler de Produccion (aws-1-sa-east-1.pooler.supabase.com:5432): 72 migraciones encontradas, una sola pendiente y es la propia. Cero deuda ajena, igual que el censo por REST.",
+      "aplicado": "prisma migrate deploy --schema <arbol del candidato 0ec1cff0> a las 18:32:05Z: `Applying migration 20261125183000_platform_settings` / `All migrations have been successfully applied.`",
+      "despues_en_solo_lectura": "prisma migrate status: 'Database schema is up to date!'; ledger 73 filas / 72 terminadas / pendiente ninguna; la fila propia con finished_at 2026-11-26T18:32:05.850612+00:00 y applied_steps_count=1",
+      "lectura_del_api_despues": "tres GETs a la ruta publica despues de las 18:36Z no producen ningun prisma:error nuevo (el ultimo registrado es 18:26:21Z)"
+    },
+    "el_checksum_quedo_mal_y_se_corrigio": {
+      "hecho": "deploy registro en Produccion 670d97219a25… y QA tiene 34031aeb5cf4… para la misma migracion",
+      "causa": "el puesto tiene core.autocrlf=true: el arbol materializa el migration.sql con CRLF y Prisma le calcula el SHA-256 a esos bytes. El blob de git es LF y vale 34031aeb5cf4…",
+      "por_que_importa": "un checksum que no coincide con el archivo versionado convierte el proximo contraste de ledger en un falso fallo y empuja a corregir el ledger en vez del producto (regla 12 de apexos-db-nube, medida en Comercio el 2026-11-08).",
+      "remedio": "corrige-checksum-produccion.js: lee el hash del blob con `git cat-file` (nunca del arbol), aborta si el project ref no es jzbwzmkidfthknsohhnr, aborta si la fila no vale exactamente el hash CRLF esperado, y hace un UPDATE de UNA fila y UNA columna. Verificado re-leyendo por REST.",
+      "resultado": "Produccion y QA comparten checksum 34031aeb5cf4… = el del blob"
+    },
+    "pendiente_declarado_los_permisos_postgrest": {
+      "medido": "GET rest/v1/platform_settings con la service role de Produccion responde 403 42501 ('Grant the required privileges … GRANT SELECT ON public.platform_settings TO service_role'), mientras platform_admins y employees responden 200. En QA la misma tabla si es legible (200, con la fila mobile_app.url).",
+      "por_que_no_es_un_fallo_del_producto": "los unicos consumidores de platform_settings son Prisma y el rol dueno: grep en apps/ devuelve schema.prisma:4716, admin/routes.js:98 y :102, platform-config-service.js:106, sus tests y la migracion. No existe ninguna lectura por PostgREST/Supabase-REST de esta tabla, asi que no hay respaldo silencioso que pueda caer.",
+      "impacto_real": "mis instrumentos de censo por REST no pueden ver la tabla en Produccion (por eso la verificacion del checksum y de la fila se apoya en _prisma_migrations y en los logs del API, no en la tabla).",
+      "dueno_de_la_decision": "el dueno. Anadir GRANT a la migracion ya aplicada crearia un DDL que el archivo no describe y habria que promoverlo; dejarlo asi no rompe nada. Queda escrito, no ejecutado."
+    },
+    "veredicto": "PRODUCCION SIRVE EL CANDIDATO Y TIENE LA TABLA: salud 0ec1cff04c1b, ruta publica 200, el boton aparece 2 veces en el chunk 16blt3te1f70c.js de los 10 del /login (antes 0 de 10), con 0 'Copiar enlace' y 0 'navigator.clipboard' en los dos hosts; la migracion 20261125183000_platform_settings aplicada y con el checksum del blob. Lo unico que falta es que el dueno escriba la URL: mientras no la escriba, la banda ofrece el respaldo quemado."
   }
 }

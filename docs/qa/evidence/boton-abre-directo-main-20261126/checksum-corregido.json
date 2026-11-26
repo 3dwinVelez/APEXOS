@@ -1,0 +1,20 @@
+{
+  "medido_en": "2026-11-26T18:35:25.756Z",
+  "migracion": "20261125183000_platform_settings",
+  "checksum_canonico_del_blob": "34031aeb5cf4ba88a514034f05193f169aab10b29da73de666fe91666657ca2a",
+  "checksum_del_arbol_de_trabajo": "34031aeb5cf4ba88a514034f05193f169aab10b29da73de666fe91666657ca2a",
+  "antes": {
+    "migration_name": "20261125183000_platform_settings",
+    "finished_at": "2026-11-26T18:32:05.850612+00:00",
+    "applied_steps_count": 1,
+    "checksum": "670d97219a259b4d4c7dd5416eb47f2cbb2fc64b08df29f287fd173f9e9f75d4"
+  },
+  "accion": "UPDATE de UNA fila, UNA columna (checksum), con la guarda del hash anterior en el WHERE",
+  "despues": {
+    "migration_name": "20261125183000_platform_settings",
+    "finished_at": "2026-11-26T18:32:05.850612+00:00",
+    "applied_steps_count": 1,
+    "checksum": "34031aeb5cf4ba88a514034f05193f169aab10b29da73de666fe91666657ca2a"
+  },
+  "veredicto": "LEDGER DE PRODUCCION ALINEADO CON EL BLOB: el checksum ya coincide con QA y con git"
+}

@@ -11,7 +11,7 @@ const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 
 const RAIZ = process.cwd();
-const SALIDA = path.join(RAIZ, "docs/qa/evidence/boton-abre-directo-main-20261126/ledger-produccion.json");
+const SALIDA = process.env.LEDGER_SALIDA || path.join(RAIZ, "docs/qa/evidence/boton-abre-directo-main-20261126/ledger-produccion.json");
 const REF_PRODUCCION = "jzbwzmkidfthknsohhnr";
 // El env vive fuera de git (.gitignore:7 config/*.env) y el worktree del candidato no lo trae: se lee
 // del arbol del puesto, nunca se copia ni se versiona.
@@ -70,7 +70,9 @@ const doc = {
     .filter((m) => m !== "20261125183000_platform_settings"),
   veredicto: pendientes.length === 1 && pendientes[0] === "20261125183000_platform_settings"
     ? "EL DESPLIEGUE SOLO PODRIA APLICAR LA MIGRACION PROPIA: cero deuda ajena en el arbol de main"
-    : `ATENCION: el arbol trae ${pendientes.length} migraciones no aplicadas (${pendientes.join(", ")})`
+    : pendientes.length === 0
+      ? "ARBOL Y BASE ALINEADOS: no queda ni una migracion pendiente en el arbol del candidato"
+      : `ATENCION: el arbol trae ${pendientes.length} migraciones no aplicadas (${pendientes.join(", ")})`
 };
 fs.writeFileSync(SALIDA, JSON.stringify(doc, null, 2) + "\n");
 console.log(doc.veredicto);

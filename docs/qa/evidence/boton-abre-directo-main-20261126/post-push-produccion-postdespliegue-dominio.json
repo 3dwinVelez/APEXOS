@@ -1,0 +1,50 @@
+{
+  "medido_en": "2026-11-26T18:26:22.737Z",
+  "proyecto_ref": "jzbwzmkidfthknsohhnr",
+  "api": {
+    "base": "https://apexos-api-prod-production.up.railway.app",
+    "health": {
+      "estado": 200,
+      "cuerpo": {
+        "status": "OK",
+        "version": "2.0",
+        "modules": 19,
+        "commit": "0ec1cff04c1b",
+        "service_certification": "products-v2"
+      }
+    },
+    "ruta_publica": {
+      "estado": 200,
+      "cuerpo": {
+        "url": "https://appapexos-production.up.railway.app"
+      }
+    }
+  },
+  "web": {
+    "base": "https://www.apexos.com.co",
+    "login": {
+      "estado": 200,
+      "html_bytes": 19960,
+      "chunks_referenciados": 10,
+      "total": {
+        "abrir_la_app": 2,
+        "copiar_enlace": 0,
+        "navigator_clipboard": 0
+      },
+      "chunks_con_texto": [
+        {
+          "ruta": "/_next/static/chunks/16blt3te1f70c.js",
+          "bytes": 29380,
+          "abrir_la_app": 2,
+          "copiar_enlace": 0,
+          "navigator_clipboard": 0,
+          "banda": 1
+        }
+      ],
+      "banda_en_html": 2
+    }
+  },
+  "candidato_empujado": "0ec1cff0",
+  "punto_de_partida": "e3c2ad17",
+  "veredicto": "PRODUCCION SIRVE EL CANDIDATO: salud 0ec1cff04c1b, ruta publica 200"
+}
