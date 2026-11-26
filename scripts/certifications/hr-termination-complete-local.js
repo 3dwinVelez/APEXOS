@@ -15,13 +15,13 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
 (async()=>{try {
   const run=randomUUID(), password='Qa!9'+randomUUID(), hash=await bcrypt.hash(password,10);
   async function account(label, permissions) {
-    const tenant=await db.tenant.create({data:{name:'QA payroll markings '+label+' '+run,active_modules:['M-17','M-22']}});
+    const tenant=await db.tenant.create({data:{name:'QA payroll markings '+label+' '+run,active_modules:process.env.HR_WORKSPACE_MOCKUP_CERT === '1' ? ['M-17','M-22','M-07'] : ['M-17','M-22']}});
     const role=await db.role.create({data:{tenant_id:tenant.id,name:'QA Payroll',metadata:{role_type:'admin_empresa'},permissions:{create:permissions.map(([module,action])=>({module,action}))}}});
     const user=await db.user.create({data:{tenant_id:tenant.id,name:'QA Edwar '+label,email:`payroll-${label}-${run}@example.invalid`,password:hash,role_id:role.id}});
     const employee=await db.employee.create({data:{tenant_id:tenant.id,user_id:user.id,code:'QA-'+label,position:'QA',department:'QA',salary_base:3000000,hire_date:new Date('2026-11-01T05:00:00Z'),contract_type:'indefinite',metadata:{name:user.name,document:'1234567'}}});
     return {tenant,user,employee};
   }
-  const own=await account('own',[['payroll','read'],['payroll','write'],['hr','read'],['hr','write'],['admin','read']]);
+  const own=await account('own',[['payroll','read'],['payroll','write'],['hr','read'],['hr','write'],['admin','read'],...(process.env.HR_WORKSPACE_MOCKUP_CERT === '1' ? [['accounting','read']] : [])]);
   const coworker=await db.employee.create({data:{tenant_id:own.tenant.id,code:'QA-COWORKER',position:'QA',department:'QA',salary_base:3000000,hire_date:new Date('2026-11-01T05:00:00Z'),metadata:{name:'QA Empleado vigente',document:'9876543'}}});
   const foreign=await account('foreign',[['payroll','read'],['payroll','write']]);
   const noRole=await db.role.create({data:{tenant_id:own.tenant.id,name:'No payroll permission'}});
@@ -153,6 +153,7 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
       assert.equal(auth.length,3);
       for(const id of loans.slice(0,2))await page.type(`[data-libranza-id="${id}"] input[placeholder="Referencia del documento firmado"]`,'Autorizacion final QA');
       async function button(text){await page.waitForFunction(text=>[...document.querySelectorAll('button')].some(el=>el.textContent.trim()===text&&!el.disabled),{},text);await page.evaluate(text=>[...document.querySelectorAll('button')].find(el=>el.textContent.trim()===text).click(),text);}
+      if(process.env.HR_WORKSPACE_MOCKUP_CERT === '1') await page.screenshot({path:path.join(folder,'workspace-termination.png'),fullPage:true});
       await button('Liquidacion de prueba');
       await page.waitForSelector('dialog[open]');
       const text=await page.$eval('dialog',el=>el.textContent);
@@ -189,7 +190,8 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
       assert.ok(!documents.some(row=>row.employee_id===own.employee.id));
       assert.ok(documents.some(row=>row.employee_id===coworker.id));
       await page.waitForFunction(()=>document.body.innerText.includes('Vista de prueba sin guardar'));
-      const payrollText=await page.evaluate(()=>[...document.querySelectorAll('section')].find(section=>section.querySelector('h2')?.textContent==='Documentos por empleado')?.querySelector('tbody')?.textContent || '');
+      await page.waitForFunction(()=>[...document.querySelectorAll('section')].find(section=>section.querySelector('h2')?.textContent.startsWith('Documentos por empleado'))?.querySelector('tbody')?.textContent.includes('QA Empleado vigente'));
+      const payrollText=await page.evaluate(()=>[...document.querySelectorAll('section')].find(section=>section.querySelector('h2')?.textContent.startsWith('Documentos por empleado'))?.querySelector('tbody')?.textContent || '');
       assert.ok(!payrollText.includes('QA Edwar own'),payrollText);
       assert.ok(payrollText.includes('QA Empleado vigente'),payrollText);
       await page.screenshot({path:path.join(folder,'payroll-excludes-terminated.png')});
@@ -303,5 +305,6 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
     assert.equal(Number((await db.$queryRaw`SELECT balance_amount FROM th_prestaciones_saldos WHERE tenant_id=${own.tenant.id} AND id=${unpaidBalanceId}`)[0].balance_amount),10000);
     for(const id of priorPayments)assert.equal((await call(benefitRoute+'/documentos/'+id,token,'DELETE')).status,200);
   });
+  if (process.env.HR_WORKSPACE_MOCKUP_CERT === '1') await require('./hr-workspace-mockup-browser-local')({origin,token,foreignToken,deniedToken,call,own,period,check});
   result.status='passed';
 } catch(error) {result.status='failed';result.error=error.message;console.error(error.stack);process.exitCode=1;} finally {result.finished_at=new Date().toISOString();if(output)fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));if(app)await app.close();await db.$disconnect();}})();

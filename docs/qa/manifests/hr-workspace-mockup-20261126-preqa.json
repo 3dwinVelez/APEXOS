@@ -1,0 +1,123 @@
+{
+  "change_id": "hr-workspace-mockup-20261126",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "9824d04f3768bd53ee3f83d9d70c10ecb860766e",
+  "commit": "9e9dbe7dba50d54af3e6716c784f76a498c4ca6d",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-workspace-mockup-20261126-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-workspace-mockup-20261126-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-workspace-mockup-20261126-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-workspace-mockup-20261126-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-workspace-mockup-20261126-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-workspace-mockup-local.js",
+    "evidence": [
+      "hr-workspace-mockup-20261126-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-workspace-mockup-local.js",
+    "evidence": [
+      "hr-workspace-mockup-20261126-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario",
+    "approved_at": "2026-11-26T19:22:12.191247+00:00",
+    "statement": "sube a qa",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "branch_note": "Reuse the already authorized and existing HR QA branch. No branch creation, direct develop push, remote migration or production deployment."
+  },
+  "execution": {
+    "functional_commit": "9e9dbe7dba50d54af3e6716c784f76a498c4ca6d",
+    "certification": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "started_at": "2026-11-26T19:18:20.341Z",
+      "checks": [
+        "quincenal month-wide and mismatched keys are rejected before payroll or closure writes",
+        "real API derives master contract, imports malla concepts and leaves preview read only",
+        "RBAC, cross tenant reads and unauthorized writes cannot create termination",
+        "integrated manual API binds employee and cutoff, preserves classification and deduplicates retries",
+        "browser finds employee, derives contract, previews full modal, saves and reopens all concepts",
+        "saved termination excludes employee from fortnight preview and real payroll creation despite active employee",
+        "rehire restores only the new contract period while settled historical periods stay excluded",
+        "loans post once, recalculation preserves totals and deletion restores balances and payroll eligibility",
+        "pending calculation splits second fortnight without paying the first twice",
+        "existing payroll after cutoff blocks an overlapping backdated final liquidation",
+        "all four standard benefit payment functions preserve payments when provisions regenerate",
+        "manual concepts retain salary classification and alter only eligible final benefit bases",
+        "final settlement consumes provisions, posts four linked vouchers and prevents duplicate payments or reopening history",
+        "authentication and write permissions protect all redesigned financial operations; foreign company previews contain no own records",
+        "loan configuration, employee search, assignment summary, persistence, filters, details and real Excel export",
+        "contribution preview, subsystem summary, tab navigation, creation and reload use persisted real documents",
+        "provision period selection, concept totals, employee filter, creation and annual balance sidebar use real payroll",
+        "four payment category cards, actual balances, creation, persisted voucher and annulment restore availability",
+        "all five workspaces adapt to mobile without page overflow or browser runtime errors"
+      ],
+      "finished_at": "2026-11-26T19:21:00.410Z"
+    },
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1795720685656",
+      "source_database_modified": false,
+      "fixture_schema_hunks": [
+        "20261016123000_sedes_replace_origins: sections 1-2 only",
+        "20260919110000_time_route_kind_descanso",
+        "20260727042000_authorization_versions: AuthorizationSession.id UUID contract"
+      ],
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-26T19:21:00.530Z"
+    },
+    "unit_regression": {
+      "passed": 18,
+      "failed": 0
+    },
+    "typecheck": "passed: complete current QA candidate web project",
+    "eslint": "passed: changed pages and shared component; zero errors",
+    "source_verification": "All 15 archived functional paths match the certified Git tree with checkout EOL normalization. The only certification-time source adjustment aligns the legacy payroll source-label tests with the already deployed QA redesign; application sources were unchanged.",
+    "implementation_commits": [
+      "1bc4d96d249c0e5b4a6c2bb93cdbefab68970f7b",
+      "d8228baaf4a7fa585bd08ce067bf75c098670f2b"
+    ],
+    "preservation": "Replayed only reviewed implementation hunks on the current remote develop. Retained current auth, mobile identity, payroll rates, public access, platform configuration, and all other target modules. No deletions or migrations."
+  }
+}

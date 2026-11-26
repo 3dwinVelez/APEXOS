@@ -1,0 +1,165 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-workspace-mockup-20261126",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "base_commits": {
+    "develop": "9824d04f3768bd53ee3f83d9d70c10ecb860766e",
+    "main": "e3c2ad171946621c4e167404ef5c56c466f43e4f"
+  },
+  "target_head": "9824d04f3768bd53ee3f83d9d70c10ecb860766e",
+  "certified_commit": "9e9dbe7dba50d54af3e6716c784f76a498c4ca6d",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "9e9dbe7dba50d54af3e6716c784f76a498c4ca6d",
+    "implementation_commits": [
+      "1bc4d96d249c0e5b4a6c2bb93cdbefab68970f7b",
+      "d8228baaf4a7fa585bd08ce067bf75c098670f2b"
+    ],
+    "reconstruction": "Reviewed workspace changes replayed onto current remote QA. Isolated wrapper retains target certificate inventory; payroll tests retain the target page location and accept deployed UI labels."
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+    "apps/web/app/dashboard/talento-humano/libranzas/page.tsx",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx",
+    "apps/web/app/dashboard/talento-humano/provisiones/page.tsx",
+    "apps/web/components/hr/HrWorkspace.module.css",
+    "apps/web/components/hr/HrWorkspace.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "docs/qa/certifications/hr-workspace-mockup-20261126.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-termination-complete-local.js",
+    "scripts/certifications/hr-workspace-mockup-browser-local.js",
+    "scripts/certifications/hr-workspace-mockup-local.js"
+  ],
+  "change_intent": {
+    "summary": "Redesign HR loan assignment/report, worker termination, social contributions, provisions and benefit payments; read actual annual provision balances without changing financial calculations.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+    "apps/web/app/dashboard/talento-humano/libranzas/page.tsx",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx",
+    "apps/web/app/dashboard/talento-humano/provisiones/page.tsx",
+    "apps/web/components/hr/HrWorkspace.module.css",
+    "apps/web/components/hr/HrWorkspace.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "docs/qa/certifications/hr-workspace-mockup-20261126.md",
+    "docs/qa/manifests/hr-workspace-mockup-20261126-preqa.json",
+    "docs/qa/manifests/hr-workspace-mockup-20261126-scope.json",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-termination-complete-local.js",
+    "scripts/certifications/hr-workspace-mockup-browser-local.js",
+    "scripts/certifications/hr-workspace-mockup-local.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/libranzas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/provisiones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/HrWorkspace.module.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/HrWorkspace.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-workspace-mockup-20261126.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-workspace-mockup-20261126-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-workspace-mockup-20261126-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-termination-complete-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-workspace-mockup-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-workspace-mockup-local.js"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Five HR workspaces, responsive views, filters, XLSX export, persistence and reload",
+      "status": "passed",
+      "evidence": [
+        "hr-workspace-mockup-20261126-preqa.json"
+      ]
+    },
+    {
+      "name": "Final termination contract, day review, manual salary concepts, loans and payroll exclusion",
+      "status": "passed",
+      "evidence": [
+        "hr-workspace-mockup-20261126-preqa.json"
+      ]
+    },
+    {
+      "name": "Benefit accruals, payment vouchers, reversals and actual annual balances",
+      "status": "passed",
+      "evidence": [
+        "hr-workspace-mockup-20261126-preqa.json"
+      ]
+    },
+    {
+      "name": "Authentication, payroll permissions, tenant isolation, payroll period boundaries and adjacent payroll navigation",
+      "status": "passed",
+      "evidence": [
+        "hr-workspace-mockup-20261126-preqa.json"
+      ]
+    }
+  ]
+}
