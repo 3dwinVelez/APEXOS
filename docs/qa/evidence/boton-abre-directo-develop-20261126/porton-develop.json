@@ -1,0 +1,93 @@
+{
+  "cambio": "boton-abre-directo-develop-20261126",
+  "ejecutado_en": "2026-11-26T17:11:31.160Z",
+  "puntas": {
+    "origin/develop": "5d46c497",
+    "origin/desarrollo": "017ed83a",
+    "candidato": "e769ffd1"
+  },
+  "antepasado_comun_develop_desarrollo": "d667276f2f95a0abe27abd5d37cd883e35f2ad02",
+  "divergencia_de_ramas": {
+    "commits_solo_en_desarrollo": 5,
+    "commits_solo_en_develop": 156,
+    "lectura": "El numero grande no es alcance: es la deriva historica de develop. Lo que sube se mide por arbol (rutas_en_el_diff), no por linaje."
+  },
+  "diff_bruto_candidato_vs_develop": "17 files changed, 4732 insertions(+), 121 deletions(-)",
+  "rutas_en_el_diff": 17,
+  "inventario_del_manifiesto": 17,
+  "retrato_de_rutas_compartidas": [
+    {
+      "file": "apps/api/prisma/schema.prisma",
+      "blob_desarrollo": "a34ea70f",
+      "blob_develop": "6d173d81",
+      "estado": "DIVERGE",
+      "contenido_del_frente_en_develop": true,
+      "en_el_diff_del_porton": false
+    },
+    {
+      "file": "apps/api/src/middleware/rbac.js",
+      "blob_desarrollo": "89840094",
+      "blob_develop": "c3cc5238",
+      "estado": "DIVERGE",
+      "contenido_del_frente_en_develop": true,
+      "en_el_diff_del_porton": false
+    },
+    {
+      "file": "apps/web/app/dashboard/administracion/page.tsx",
+      "blob_desarrollo": "2061599e",
+      "blob_develop": "6ee0e856",
+      "estado": "DIVERGE",
+      "contenido_del_frente_en_develop": true,
+      "en_el_diff_del_porton": false
+    },
+    {
+      "file": "apps/web/app/login/page.tsx",
+      "blob_desarrollo": "dff7d279",
+      "blob_develop": "dff7d279",
+      "estado": "IGUAL",
+      "contenido_del_frente_en_develop": null,
+      "en_el_diff_del_porton": false
+    },
+    {
+      "file": "apps/api/src/modules/admin/platform-config-service.js",
+      "blob_desarrollo": "48ac73ed",
+      "blob_develop": "48ac73ed",
+      "estado": "IGUAL",
+      "contenido_del_frente_en_develop": null,
+      "en_el_diff_del_porton": false
+    },
+    {
+      "file": "apps/api/src/modules/admin/public-routes.js",
+      "blob_desarrollo": "88301faf",
+      "blob_develop": "88301faf",
+      "estado": "IGUAL",
+      "contenido_del_frente_en_develop": null,
+      "en_el_diff_del_porton": false
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.js",
+      "blob_desarrollo": "cc385079",
+      "blob_develop": "cc385079",
+      "estado": "IGUAL",
+      "contenido_del_frente_en_develop": null,
+      "en_el_diff_del_porton": false
+    },
+    {
+      "file": "apps/api/prisma/migrations/20261125183000_platform_settings/migration.sql",
+      "blob_desarrollo": "120b0baa",
+      "blob_develop": "120b0baa",
+      "estado": "IGUAL",
+      "contenido_del_frente_en_develop": null,
+      "en_el_diff_del_porton": false
+    },
+    {
+      "file": "apps/api/test/admin-platform-mobile-app-url.test.js",
+      "blob_desarrollo": "c766defc",
+      "blob_develop": "c766defc",
+      "estado": "IGUAL",
+      "contenido_del_frente_en_develop": null,
+      "en_el_diff_del_porton": false
+    }
+  ],
+  "lectura": "Las nueve rutas compartidas del frente NO estan en el diff de este porton: seis viajan byte a byte desde el porton url-app-administrable-develop-20261125 (el servicio, las dos rutas de API, su contrato, la migracion y public-routes), la pantalla de acceso ya tiene la banda (login/page.tsx IGUAL), y las tres con DIVERGE (schema.prisma, middleware/rbac.js, la pantalla de Administracion) divergen por contenido de OTROS frentes y no por este: en las tres el marcador del frente sigue vivo en develop, medido con expresion regular sobre el blob de origin/develop (model PlatformSetting, platform_settings, MOBILE_APP_ADMIN_ENDPOINT), no de memoria. Por eso el boton viaja sin tocarlas, y por eso tocarlas estaria prohibido."
+}

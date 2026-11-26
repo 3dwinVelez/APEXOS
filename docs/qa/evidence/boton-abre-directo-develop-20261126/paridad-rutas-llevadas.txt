@@ -1,0 +1,26 @@
+PARIDAD DE RUTAS LLEVADAS · boton-abre-directo-develop-20261126
+candidato e769ffd1 | origin/desarrollo 017ed83a | origin/develop 5d46c497
+
+RUTA                                                                     DESARROLLO CANDIDATO  DEVELOP    VEREDICTO
+apps/web/components/system/AppInstallBand.tsx                            5b53bb64   5b53bb64   b3c824ef   BYTE-IDENTICA
+apps/web/lib/mobileAppInstall.ts                                         7c725579   7c725579   b95eb59b   BYTE-IDENTICA
+apps/web/test/mobile-app-install.test.mjs                                2fa5dd98   2fa5dd98   2d7807b7   BYTE-IDENTICA
+docs/briefs/2026-11-25-url-app-administrable.md                          a22c7780   a22c7780   87ada8b5   BYTE-IDENTICA
+docs/project/app-movil.md                                                18fe1465   18fe1465   086e2661   BYTE-IDENTICA
+docs/qa/evidence/app-install-abrir-directo-20261126/certification.json   2ef471c1   2ef471c1   AUSENTE    BYTE-IDENTICA
+docs/qa/evidence/app-install-abrir-directo-20261126/url-admin-local-muestreo-pronto.json a057e853   a057e853   AUSENTE    BYTE-IDENTICA
+docs/qa/evidence/app-install-abrir-directo-20261126/url-admin-local.json 4205ff85   4205ff85   AUSENTE    BYTE-IDENTICA
+docs/qa/evidence/app-install-control-mutacion-20261126/certification.json f6a1de67   f6a1de67   AUSENTE    BYTE-IDENTICA
+docs/qa/evidence/url-app-admin-develop-20261125/qa-cierre.json           ab6a087f   ab6a087f   AUSENTE    BYTE-IDENTICA
+docs/qa/evidence/url-app-admin-develop-20261125/qa-navegador-sonda.json  4275931a   4275931a   AUSENTE    BYTE-IDENTICA
+docs/qa/evidence/url-app-admin-develop-20261125/qa-navegador.json        ef07b5a7   ef07b5a7   AUSENTE    BYTE-IDENTICA
+docs/qa/evidence/url-app-admin-develop-20261125/qa-remoto.json           df664661   df664661   AUSENTE    BYTE-IDENTICA
+scripts/certifications/mobile-app-install-browser-local.js               a3c2539c   a3c2539c   1d0e479d   BYTE-IDENTICA
+scripts/certifications/mobile-app-install-qa.js                          215242fc   215242fc   AUSENTE    BYTE-IDENTICA
+scripts/certifications/mobile-app-url-admin-local.js                     bc3aac34   bc3aac34   ce62331b   BYTE-IDENTICA
+scripts/certifications/mobile-app-url-admin-qa.js                        e5a7151f   e5a7151f   AUSENTE    BYTE-IDENTICA
+
+TOTAL: 17 rutas en el diff neto
+BYTE-IDENTICAS: 17
+BORRADOS: 0
+RUTAS FUERA DEL FRENTE EN EL DIFF: 0

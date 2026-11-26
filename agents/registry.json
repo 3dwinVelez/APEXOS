@@ -341,9 +341,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.130.0",
+      "version": "2.131.0",
       "updated_at": "2026-11-26",
-      "sha256": "14991e0e9d16b6476e45c8e3c56d94269853b599a19c9e24f65c53b8f338feaf",
+      "sha256": "9aa9b433071adebf4242adda4497ca06d4115676f6964ec3b7f08e43a69f7f9e",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -438,7 +438,8 @@
         "rojo-del-arnes-se-atribuye-y-se-cura",
         "certificador-hermetico-con-control-de-mutacion",
         "espera-acotada-en-lectura-async",
-        "evidencia-publica-no-se-pisa"
+        "evidencia-publica-no-se-pisa",
+        "porton-puntual-nace-en-origen"
       ]
     },
     {
