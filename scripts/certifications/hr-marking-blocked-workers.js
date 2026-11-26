@@ -17,6 +17,13 @@
 // Exige `--days=7` o mas: la ventana la fija `--days`, no este flag, y con la ventana por defecto
 // el ANTES se queda en dos dias. El instrumento se bloquea antes de publicar ese numero corto.
 //
+// `--canal` responde si la HERRAMIENTA es el inconveniente: de que canal declarado salen las
+// marcaciones que si entraron (la web que marca declara `apexos-mobile`), si llegaron en vivo o
+// desde la cola (`metadata.queued_at`), con que tipo de foto de justificacion, en que ruta y en que
+// dispositivo se acumulan los rechazos y los envios perdidos, y si los rechazos de una misma cuenta
+// llegan en rafaga (cola reenviando el mismo cuerpo) o separados (mano humana). Selects agregados:
+// ninguna lectura del censo proyecta el cuerpo base64 de una foto, y el selftest lo exige.
+//
 // La ventana es la jornada colombiana (UTC-5): 05:00Z del dia hasta 05:00Z del
 // siguiente. Las marcaciones se filtran por la columna `date`, que ya guarda el
 // dia calendario; los rechazos se filtran por `timestamp` porque el operario
@@ -95,6 +102,16 @@ function hostOf(url) {
   } catch {
     return "(ilegible)";
   }
+}
+
+// El host del pooler es parte de la credencial de Produccion: identifica la instancia y se filtra
+// igual que una cadena de conexion. La evidencia necesita afirmar A QUE ambiente se le pregunto
+// (eso lo da `ambiente` + `archivo_ambiente`), no el nombre de la maquina. Los hosts locales si se
+// versionan: 127.0.0.1 no es un secreto y es lo que permite distinguir una corrida de scratch.
+function hostParaEvidencia(url) {
+  const host = hostOf(url);
+  if (/supabase|pooler/i.test(host)) return "(pooler de Supabase: el nombre de host no se versiona en evidencia)";
+  return host;
 }
 
 function isoDay(value) {
@@ -182,6 +199,197 @@ function validarVentanaDeSemana(ventana, diasMinimos = 7) {
     throw new Error(`--semana promete ${diasMinimos} dias de diagnostico pero la ventana leida cubre ${dias.toFixed(2)}; corra con --days=${diasMinimos} o mas`);
   }
   return dias;
+}
+
+// ---- Censo de canales (`--canal`) ---------------------------------------------------------------
+// El dueño volcó la operación a la web para tener UNA fuente de captura. Cuando algo no entra hay
+// que poder decir si la herramienta es la responsable (todos los teléfonos fallan igual y en canales
+// que ya no deberían existir) o un cliente concreto (un solo teléfono repitiendo). Eso se mide:
+// canal declarado por el servidor, tipo de foto declarado, dispositivo y si los rechazos de una
+// misma cuenta llegan en ráfaga —firma de una cola que reenvía— o separados —firma de mano humana—.
+// Las dos lecturas son SELECT agregados: NINGUNA proyecta el cuerpo de la foto. Leer
+// `extra_evidence->>'base64_data'` detoasta megas por fila y convierte la medición en el problema
+// que mide (plan de disco 2026-11-18); por eso el censo pregunta por la EXISTENCIA de la clave.
+function sqlCensoDeCanales() {
+  return `
+SELECT "tenant_id" AS tenant,
+       COALESCE("metadata"->>'source', '(sin source)') AS canal,
+       CASE WHEN COALESCE("metadata"->>'offline', '(sin declaracion)') = 'true' THEN 'abierto_sin_senal'
+            WHEN COALESCE("metadata"->>'queued_at', '') <> '' THEN 'reintento_de_cola'
+            ELSE 'en_vivo' END AS envio,
+       CASE WHEN COALESCE("extra_evidence"->>'type', '') = '' THEN '(sin evidencia adjunta)'
+            ELSE "extra_evidence"->>'type' END AS tipo_declarado,
+       CASE WHEN "extra_evidence" ? 'base64_data' THEN 'con_foto_inline' ELSE 'sin_foto_inline' END AS cuerpo,
+       CASE WHEN COALESCE("extra_evidence"->>'storage_path', '') = '' THEN 'sin_ruta_almacen'
+            ELSE 'con_ruta_almacen' END AS respaldo,
+       COUNT(*)::int AS marcaciones,
+       COUNT(DISTINCT "employee_id")::int AS trabajadores,
+       COALESCE(SUM(CASE WHEN jsonb_typeof("extra_evidence"->'size') = 'number'
+                         THEN ("extra_evidence"->>'size')::int ELSE 0 END), 0)::bigint AS bytes_declarados
+FROM "TimePunch"
+WHERE "date" >= $1::timestamptz AND "date" < $2::timestamptz
+GROUP BY 1, 2, 3, 4, 5, 6
+ORDER BY marcaciones DESC, tenant, canal
+`;
+}
+
+// Quiénes lograron adjuntar la foto de justificación y con qué tipo declarado, partido por el corte.
+// Sin esta lectura no se puede afirmar que "la herramienta funciona para los demás": el único
+// denominador honesto es cuántos aceptados con evidencia hay del otro lado de la puerta.
+function sqlCensoDeEvidencia() {
+  return `
+SELECT "employee_id" AS empleado,
+       CASE WHEN COALESCE("extra_evidence"->>'type', '') = '' THEN '(sin tipo declarado)'
+            ELSE "extra_evidence"->>'type' END AS tipo_declarado,
+       CASE WHEN "extra_evidence" ? 'base64_data' THEN 'con_foto_inline' ELSE 'sin_foto_inline' END AS cuerpo,
+       COUNT(*) FILTER (WHERE "punched_at" < $3::timestamptz)::int AS antes_del_corte,
+       COUNT(*) FILTER (WHERE "punched_at" >= $3::timestamptz)::int AS despues_del_corte
+FROM "TimePunch"
+WHERE "date" >= $1::timestamptz AND "date" < $2::timestamptz
+  AND jsonb_typeof("extra_evidence") = 'object'
+  AND COALESCE("extra_evidence"->>'type', '') <> ''
+GROUP BY 1, 2, 3
+ORDER BY empleado, tipo_declarado
+`;
+}
+
+// Las marcaciones que no traen estampa de canal hay que nombrarlas, no contarlas en bloque: esta
+// lectura devuelve SOLO nombres de clave del jsonb `metadata` (jamais su valor, jamas un cuerpo),
+// para poder decir si son correcciones administrativas, rescates del propio triage o capturas que
+// llegaron sin estampa.
+function sqlCensoDeEstampas() {
+  return `
+SELECT k AS clave_de_metadata,
+       COUNT(*)::int AS marcaciones,
+       COUNT(DISTINCT "employee_id")::int AS trabajadores
+FROM "TimePunch", jsonb_object_keys("metadata") AS k
+WHERE "date" >= $1::timestamptz AND "date" < $2::timestamptz
+  AND COALESCE("metadata"->>'source', '') = ''
+GROUP BY 1
+ORDER BY marcaciones DESC, clave_de_metadata
+LIMIT 25
+`;
+}
+
+function afirmarQueElCensoNombraClavesDelMetadata(sql, nombre) {
+  if (!/jsonb_object_keys\(\s*"metadata"\s*\)/.test(sql)) {
+    throw new Error(`${nombre} dejo de enumerar los NOMBRES de clave del metadata: las marcaciones sin canal quedan en un bloque inatribuible y el dueno vuelve a preguntar "entonces quien las hizo"`);
+  }
+  return { nombra_claves_del_metadata: true };
+}
+
+function afirmarQueElCensoNoArrastraCuerpos(sql, nombre, { exigePresencia = true } = {}) {
+  const lecturasDeCuerpo = (sql.match(/->>\s*'base64_data'/g) || []).length;
+  if (lecturasDeCuerpo > 0) {
+    throw new Error(`${nombre} proyecta el cuerpo de la foto (${lecturasDeCuerpo} lectura(s) de base64_data): eso detoasta megas por fila en Produccion y viola la regla 58`);
+  }
+  const presenciasDeClave = (sql.match(/\?\s*'base64_data'/g) || []).length;
+  if (exigePresencia && presenciasDeClave === 0) {
+    throw new Error(`${nombre} dejó de preguntar por la existencia de la clave base64_data: sin ese criterio no se separa el respaldo del cuerpo y el censo miente sobre la evidencia`);
+  }
+  return { lecturas_de_cuerpo: 0, presencias_de_clave: presenciasDeClave };
+}
+
+// La pregunta del dueño tiene forma de número: si la operación quedó homologada en la web, TODAS
+// las marcaciones aceptadas deberían traer el canal que declara ese cliente. Todo lo que caiga
+// fuera de ese canal es otra fuente viva, y hay que nombrarla con su conteo, no dejarla en "se ve
+// parecido". El `envio` (en vivo / cola reintentada / abierto sin señal) es el que dice si el
+// cuerpo de la foto que llega es de este minuto o de un guardado anterior.
+const CANAL_WEB_QUE_MARCA = "apexos-mobile";
+
+function agruparCensoDeCanales(filas = [], { canalEsperado = CANAL_WEB_QUE_MARCA } = {}) {
+  const acumular = (mapa, clave, fila) => {
+    const actual = mapa.get(clave) || { clave, marcaciones: 0, trabajadores: 0, tipos: new Set(), inline: 0, respaldo: 0, bytes_declarados: 0 };
+    actual.marcaciones += Number(fila.marcaciones || 0);
+    actual.trabajadores += Number(fila.trabajadores || 0);
+    actual.tipos.add(fila.tipo_declarado);
+    if (fila.cuerpo === "con_foto_inline") actual.inline += Number(fila.marcaciones || 0);
+    if (fila.respaldo === "con_ruta_almacen") actual.respaldo += Number(fila.marcaciones || 0);
+    actual.bytes_declarados += Number(fila.bytes_declarados || 0);
+    mapa.set(clave, actual);
+  };
+  const porCanal = new Map();
+  const porTipo = new Map();
+  const porEnvio = new Map();
+  const porTenant = new Map();
+  for (const fila of filas) {
+    if (!Number.isFinite(Number(fila.marcaciones))) {
+      throw new Error(`el censo de canales devolvio una fila sin conteo numerico: ${JSON.stringify(fila)}`);
+    }
+    acumular(porCanal, fila.canal, fila);
+    acumular(porTipo, fila.tipo_declarado, fila);
+    acumular(porEnvio, fila.envio, fila);
+    // El censo se corre con SQL crudo y el aislamiento de tenant lo sostiene el middleware, no la
+    // base: si la lectura cruza empresas hay que verlo escrito, no confiar en que no cruzo.
+    acumular(porTenant, fila.tenant || "(sin tenant)", fila);
+  }
+  const sellar = (mapa) => [...mapa.values()]
+    .map((x) => ({
+      clave: x.clave,
+      marcaciones: x.marcaciones,
+      trabajadores: x.trabajadores,
+      con_foto_inline: x.inline,
+      con_ruta_de_almacen: x.respaldo,
+      megas_declarados: Math.round((x.bytes_declarados / 1048576) * 10) / 10,
+      tipos: [...x.tipos].sort()
+    }))
+    .sort((a, b) => b.marcaciones - a.marcaciones);
+  const total = [...porCanal.values()].reduce((suma, x) => suma + x.marcaciones, 0);
+  const enElCanal = (porCanal.get(canalEsperado) || { marcaciones: 0, trabajadores: 0 }).marcaciones;
+  return {
+    canal_que_declara_la_web: canalEsperado,
+    total_marcaciones: total,
+    canales_distintos: porCanal.size,
+    tipos_distintos: porTipo.size,
+    tenants_observados: porTenant.size,
+    marcaciones_en_el_canal_de_la_web: enElCanal,
+    marcaciones_fuera_del_canal_de_la_web: total - enElCanal,
+    porcentaje_en_el_canal_de_la_web: total > 0 ? Math.round((enElCanal / total) * 1000) / 10 : null,
+    por_canal: sellar(porCanal),
+    por_tipo_declarado: sellar(porTipo),
+    por_envio: sellar(porEnvio),
+    por_tenant: sellar(porTenant)
+  };
+}
+
+// Ráfaga = el mismo operario reintentando en segundos. Es la firma de una cola que reenvía el
+// mismo cuerpo (IndexedDB conserva la foto con el tipo declarado en el momento del click), y
+// distingue eso de un trabajador que vuelve a oprimir el botón media hora después.
+function rafagaDeReintentos(filas = [], umbralSegundos = 180) {
+  const instantes = filas.map((fila) => new Date(fila).getTime()).filter((ms) => Number.isFinite(ms)).sort((a, b) => a - b);
+  const brechas = [];
+  for (let i = 1; i < instantes.length; i += 1) brechas.push(Math.round((instantes[i] - instantes[i - 1]) / 1000));
+  const breves = brechas.filter((segundos) => segundos <= umbralSegundos).length;
+  const separados = brechas.length - breves;
+  let senal = "unica";
+  if (brechas.length > 0) senal = breves > separados ? "rafaga" : "disperso";
+  return { intentos: instantes.length, brechas_segundos: brechas, senal, umbral_segundos: umbralSegundos };
+}
+
+// El porcentaje de concentración solo se afirma con denominador mayor que cero: un 0 % inventado
+// sobre una ventana sin rechazos leería "no es la herramienta" sin haber medido nada. El recorte "top 5"
+// satura al 100 % cuando hay menos claves que el recorte, así que se reporta aparte el peso de la
+// PRIMERA clave: es el número que dice si un solo teléfono acumula la caída.
+function concentracionPorClave(filas = [], claveDe, top = 5) {
+  const conteos = new Map();
+  for (const fila of filas) {
+    const clave = String(claveDe(fila));
+    conteos.set(clave, (conteos.get(clave) || 0) + 1);
+  }
+  const ordenadas = [...conteos].sort((a, b) => b[1] - a[1]);
+  const total = filas.length;
+  const enTop = ordenadas.slice(0, top).reduce((suma, pareja) => suma + pareja[1], 0);
+  const porcentaje = (parte) => (total > 0 ? Math.round((parte / total) * 1000) / 10 : null);
+  return {
+    total,
+    claves_distintas: conteos.size,
+    en_el_top: enTop,
+    porcentaje_en_el_top: porcentaje(enTop),
+    primera_clave: ordenadas.length ? ordenadas[0][0] : null,
+    ocurrencias_en_la_primera_clave: ordenadas.length ? ordenadas[0][1] : 0,
+    porcentaje_en_la_primera_clave: porcentaje(ordenadas.length ? ordenadas[0][1] : 0),
+    top: ordenadas.slice(0, top).map(([clave, ocurrencias]) => ({ clave, ocurrencias }))
+  };
 }
 
 // El nombre completo de un trabajador es registro laboral, no diagnóstico: para actuar alcanza con
@@ -735,6 +943,87 @@ async function main() {
     const nocheDeMartes = diaColombia(new Date("2026-11-25T01:32:10.933Z"));
     informa(`${nocheDeMartes === "2026-11-24" ? "ok  " : "FALLO"} las 20:32 CO del 24 se cuentan el martes y no el miercoles UTC: ${nocheDeMartes}`);
 
+    // Controles del modo `--canal`: la pregunta es si la HERRAMIENTA es el inconveniente o es un
+    // cliente concreto, y eso no se responde con una impresion. Un canal inesperado tiene que verse
+    // (no diluirse en un total), la rafaga tiene que distinguirse del reintento separado, la
+    // concentracion no puede afirmarse sin denominador y la lectura jamas puede arrastrar el cuerpo
+    // de una foto: eso detoasta megas por fila y convierte la medicion en el problema que mide.
+    {
+      const filasFalsas = [
+        { tenant: "t1", canal: "apexos-mobile", envio: "en_vivo", tipo_declarado: "image/jpeg", cuerpo: "con_foto_inline", respaldo: "con_ruta_almacen", marcaciones: 300, trabajadores: 18, bytes_declarados: 5 * 1048576 },
+        { tenant: "t1", canal: "apexos-mobile", envio: "reintento_de_cola", tipo_declarado: "(sin evidencia adjunta)", cuerpo: "sin_foto_inline", respaldo: "sin_ruta_almacen", marcaciones: 70, trabajadores: 12, bytes_declarados: 0 },
+        { tenant: "t1", canal: "app_legada", envio: "en_vivo", tipo_declarado: "image/jpeg", cuerpo: "con_foto_inline", respaldo: "con_ruta_almacen", marcaciones: 9, trabajadores: 3, bytes_declarados: 1048576 }
+      ];
+      const censoFalso = agruparCensoDeCanales(filasFalsas);
+      const sumaPorCanal = censoFalso.por_canal.reduce((s, x) => s + x.marcaciones, 0);
+      const sumaPorEnvio = censoFalso.por_envio.reduce((s, x) => s + x.marcaciones, 0);
+      const canalInesperado = censoFalso.por_canal.find((x) => x.clave === "app_legada");
+      informa(`${sumaPorCanal === 379 && sumaPorEnvio === 379 && censoFalso.tenants_observados === 1 && censoFalso.marcaciones_en_el_canal_de_la_web === 370 && censoFalso.marcaciones_fuera_del_canal_de_la_web === 9 && canalInesperado && Math.round(censoFalso.porcentaje_en_el_canal_de_la_web) === 98 ? "ok  " : "FALLO"} el censo no disuelve un canal inesperado y las sumas cuadran: total ${censoFalso.total_marcaciones} | en la web ${censoFalso.marcaciones_en_el_canal_de_la_web} (${censoFalso.porcentaje_en_el_canal_de_la_web} %) | fuera ${censoFalso.marcaciones_fuera_del_canal_de_la_web} | suma por canal ${sumaPorCanal} | suma por envio ${sumaPorEnvio} | tenants observados ${censoFalso.tenants_observados}`);
+
+      // El mismo numero de rechazos dice dos cosas distintas segun como llegan: tres en un minuto es
+      // una cola que reenvia el mismo cuerpo; tres en tres dias es un operario que lo intento a mano.
+      const rafagaFalsa = rafagaDeReintentos([
+        new Date("2026-11-26T13:52:10Z"), new Date("2026-11-26T13:53:05Z"), new Date("2026-11-26T13:53:40Z")
+      ]);
+      const dispersoFalso = rafagaDeReintentos([
+        new Date("2026-11-24T01:32:00Z"), new Date("2026-11-25T01:21:00Z"), new Date("2026-11-26T13:52:00Z")
+      ]);
+      const unicoFalso = rafagaDeReintentos([new Date("2026-11-26T13:52:00Z")]);
+      informa(`${rafagaFalsa.senal === "rafaga" && dispersoFalso.senal === "disperso" && unicoFalso.senal === "unica" && rafagaFalsa.intentos === 3 && rafagaFalsa.brechas_segundos[0] === 55 ? "ok  " : "FALLO"} tres rechazos en un minuto son rafaga de cola y tres en tres dias son disperso (rojo provocado si se invierte la comparacion breves/separados): ${rafagaFalsa.senal}/${dispersoFalso.senal}/${unicoFalso.senal} brechas ${rafagaFalsa.brechas_segundos.join("/")}`);
+
+      const perdidasFalsas = [
+        ...Array.from({ length: 11 }, () => ({ device: "Android / Chrome 158" })),
+        { device: "iPhone / Safari 18" }
+      ];
+      const concentrada = concentracionPorClave(perdidasFalsas, (fila) => fila.device);
+      const vacia = concentracionPorClave([], (fila) => fila.device);
+      informa(`${concentrada.total === 12 && concentrada.claves_distintas === 2 && concentrada.primera_clave === "Android / Chrome 158" && concentrada.porcentaje_en_la_primera_clave === 91.7 && concentrada.porcentaje_en_el_top === 100 && vacia.total === 0 && vacia.primera_clave === null && vacia.porcentaje_en_el_top === null && vacia.porcentaje_en_la_primera_clave === null ? "ok  " : "FALLO"} la concentracion nombra la clave que acumula y no se afirma con denominador cero (rojo provocado si se reporta el top como si fuera la primera clave): ${concentrada.primera_clave} ${concentrada.ocurrencias_en_la_primera_clave}/${concentrada.total} = ${concentrada.porcentaje_en_la_primera_clave} % | top 5 ${concentrada.porcentaje_en_el_top} % con solo ${concentrada.claves_distintas} claves | ventana sin perdidas = ${vacia.porcentaje_en_la_primera_clave}`);
+
+      const lecturaSanaCanales = afirmarQueElCensoNoArrastraCuerpos(sqlCensoDeCanales(), "sqlCensoDeCanales");
+      const lecturaSanaEvidencia = afirmarQueElCensoNoArrastraCuerpos(sqlCensoDeEvidencia(), "sqlCensoDeEvidencia");
+      let guardaConCuerpo = "NO_BLOQUEO (FALLO)";
+      try {
+        afirmarQueElCensoNoArrastraCuerpos(`SELECT "extra_evidence"->>'base64_data' AS foto FROM "TimePunch" WHERE "extra_evidence" ? 'base64_data'`, "sqlMutado");
+      } catch (error) {
+        guardaConCuerpo = error.message.includes("base64_data") ? "BLOQUEADO" : `MENSAJE INESPERADO (${error.message.slice(0, 40)})`;
+      }
+      let guardaSinClave = "NO_BLOQUEO (FALLO)";
+      try {
+        afirmarQueElCensoNoArrastraCuerpos(`SELECT count(*) FROM "TimePunch"`, "sqlSinPresencia");
+      } catch (error) {
+        guardaSinClave = error.message.includes("base64_data") ? "BLOQUEADO" : `MENSAJE INESPERADO (${error.message.slice(0, 40)})`;
+      }
+      informa(`${guardaConCuerpo === "BLOQUEADO" && guardaSinClave === "BLOQUEADO" && lecturaSanaCanales.lecturas_de_cuerpo === 0 && lecturaSanaEvidencia.presencias_de_clave >= 1 ? "ok  " : "FALLO"} la lectura del censo no puede arrastrar el cuerpo de la foto ni dejar de preguntar por la clave: sanas ${lecturaSanaCanales.presencias_de_clave}/${lecturaSanaEvidencia.presencias_de_clave} presencia(s), 0 cuerpo(s) | SQL con cuerpo = ${guardaConCuerpo} | SQL sin la clave = ${guardaSinClave}`);
+
+      const sqlEstampasReal = sqlCensoDeEstampas();
+      let estampasDejanDeNombrar = "NO_BLOQUEO (FALLO)";
+      try {
+        afirmarQueElCensoNombraClavesDelMetadata(sqlEstampasReal.replace(/jsonb_object_keys\("metadata"\)/, "metadata"), "sqlCensoDeEstampas mutado");
+      } catch (error) {
+        estampasDejanDeNombrar = error.message.includes("NOMBRES de clave") ? "BLOQUEADO" : `MENSAJE INESPERADO (${error.message.slice(0, 40)})`;
+      }
+      let estampasArrastranCuerpo = "NO_BLOQUEO (FALLO)";
+      try {
+        afirmarQueElCensoNoArrastraCuerpos(sqlEstampasReal.replace("jsonb_object_keys(\"metadata\") AS k", "jsonb_object_keys(\"metadata\") AS k, \"metadata\"->>'base64_data' AS cuerpo"), "sqlCensoDeEstampas mutado", { exigePresencia: false });
+      } catch (error) {
+        estampasArrastranCuerpo = error.message.includes("base64_data") ? "BLOQUEADO" : `MENSAJE INESPERADO (${error.message.slice(0, 40)})`;
+      }
+      informa(`${estampasDejanDeNombrar === "BLOQUEADO" && estampasArrastranCuerpo === "BLOQUEADO" ? "ok  " : "FALLO"} el censo de stampas nombra las marcaciones sin canal por CLAVE de metadata y nunca por valor: SQL que deja de enumerar = ${estampasDejanDeNombrar} | SQL que proyecta la foto = ${estampasArrastranCuerpo}`);
+
+      // Host sintético: la prueba es que CUALQUIER pooler de Supabase se redacte, no el de la casa.
+      const hostNube = hostParaEvidencia("postgresql://usuario:contrasena@aws-0-ejemplo-0000.pooler.supabase.com:6543/postgres");
+      const hostLocal = hostParaEvidencia("postgresql://user:pass@127.0.0.1:55432/postgres");
+      informa(`${/no se versiona/.test(hostNube) && hostLocal === "127.0.0.1" ? "ok  " : "FALLO"} la evidencia nombra el ambiente sin versionar el host de la nube: pooler -> "${hostNube}" | local -> ${hostLocal}`);
+
+      let conteoMalo = "NO_BLOQUEO (FALLO)";
+      try {
+        agruparCensoDeCanales([{ canal: "apexos-mobile", envio: "en_vivo", tipo_declarado: "image/jpeg", cuerpo: "sin_foto_inline", respaldo: "sin_ruta_almacen" }]);
+      } catch (error) {
+        conteoMalo = error.message.includes("conteo numerico") ? "BLOQUEADO" : `MENSAJE INESPERADO (${error.message.slice(0, 40)})`;
+      }
+      informa(`${conteoMalo === "BLOQUEADO" ? "ok  " : "FALLO"} una fila del censo sin conteo numerico se bloquea en vez de sumar como NaN (rojo provocado si se tolera el NaN): ${conteoMalo}`);
+    }
+
     console.log(failed === 0 ? "SELFTEST PASADO" : `SELFTEST BLOQUEADO (${failed} fallo(s) impresos)`);
     process.exit(failed === 0 ? 0 : 1);
   }
@@ -937,7 +1226,7 @@ async function main() {
     const porCausaCruda = histograma(fallasFrontend, (row) => row.detail || "(sin detalle)", 12);
 
     const reporte = {
-      medicion: { archivo_ambiente: path.relative(ROOT, envFile), ambiente: declared, host: hostOf(databaseUrl), dia: dateText, ventana_utc: [window.from.toISOString(), window.to.toISOString()], leido_en: new Date().toISOString(), escrituras: 0, sin_nombres: args["sin-nombres"] === true },
+      medicion: { archivo_ambiente: path.relative(ROOT, envFile), ambiente: declared, host: hostParaEvidencia(databaseUrl), dia: dateText, ventana_utc: [window.from.toISOString(), window.to.toISOString()], leido_en: new Date().toISOString(), escrituras: 0, sin_nombres: args["sin-nombres"] === true },
       total_rechazos: rejected.length,
       nivel_fuente: porNivel,
       rechazos_por_codigo: porCodigo,
@@ -1291,6 +1580,119 @@ async function main() {
       for (const foto of fotoDespues) {
         console.log(`  ${foto.hora_colombia} CO  ${foto.utc}  user ${String(foto.user_id).padStart(5)}  emp ${String(foto.empleado_id ?? "-").padEnd(5)} ${foto.clase}  ${foto.status} ${foto.code}  ${foto.ruta}`);
         console.log(`        "${foto.mensaje}"  [${foto.dispositivo}]  marcas del mismo trabajador en la hora siguiente: ${foto.marcas_del_mismo_trabajador_en_la_hora_siguiente}${foto.tipos_de_esas_marcas.length ? ` (${foto.tipos_de_esas_marcas.join(",")})` : " -> LA HORA NO VOLVIO A ENTRAR"}`);
+      }
+    }
+
+    // --canal responde si la HERRAMIENTA es el inconveniente: de donde salen las marcaciones que si
+    // entraron (canal declarado por el cliente, en vivo o desde la cola), con que tipo de foto las
+    // acompaan, donde se concentran los rechazos y los envios perdidos, y si las rechazos de una
+    // misma cuenta llegan en rafaga. Todo SELECT agregado: ninguna lectura arrastra un cuerpo.
+    if (args.canal) {
+      const guardas = {
+        censo_de_canales: afirmarQueElCensoNoArrastraCuerpos(sqlCensoDeCanales(), "sqlCensoDeCanales"),
+        censo_de_evidencia: afirmarQueElCensoNoArrastraCuerpos(sqlCensoDeEvidencia(), "sqlCensoDeEvidencia")
+      };
+      const filasCrudas = await prisma.$queryRawUnsafe(sqlCensoDeCanales(), window.from, window.to);
+      const censo = agruparCensoDeCanales(filasCrudas);
+      const corteCanal = args.semana ? new Date(String(args.semana)) : new Date(window.from.getTime() + Math.floor((window.to - window.from) / 2));
+      if (!Number.isFinite(corteCanal.getTime())) throw new Error(`--canal no puede partir la evidencia con un corte invalido: ${args.semana}`);
+      const filasEvidencia = await prisma.$queryRawUnsafe(sqlCensoDeEvidencia(), window.from, window.to, corteCanal);
+      const sqlEstampas = sqlCensoDeEstampas();
+      afirmarQueElCensoNombraClavesDelMetadata(sqlEstampas, "sqlCensoDeEstampas");
+      guardas.censo_de_estampas = afirmarQueElCensoNoArrastraCuerpos(sqlEstampas, "sqlCensoDeEstampas", { exigePresencia: false });
+      const filasEstampas = await prisma.$queryRawUnsafe(sqlEstampas, window.from, window.to);
+      const evidenciaPorEmpleado = new Map();
+      for (const fila of filasEvidencia) {
+        const clave = String(fila.empleado);
+        const actual = evidenciaPorEmpleado.get(clave) || { empleado: Number(fila.empleado), tipos: new Set(), antes: 0, despues: 0 };
+        actual.tipos.add(fila.tipo_declarado);
+        actual.antes += Number(fila.antes_del_corte || 0);
+        actual.despues += Number(fila.despues_del_corte || 0);
+        evidenciaPorEmpleado.set(clave, actual);
+      }
+
+      const rechazosDeFoto = rejected.filter((fila) => claseDeRechazo(fila).startsWith("foto-"));
+      const fotoDespuesDeCorte = args.semana ? rechazosDeFoto.filter((fila) => new Date(fila.at) >= corteCanal) : rechazosDeFoto;
+      const transporte = rejected.filter((fila) => claseDeRechazo(fila) === "transporte-caido");
+
+      const porCuenta = new Map();
+      for (const fila of fotoDespuesDeCorte) {
+        const clave = `${fila.tenant_id}|${fila.user_id}`;
+        if (!porCuenta.has(clave)) porCuenta.set(clave, []);
+        porCuenta.get(clave).push(fila.at);
+      }
+      const cuentas = [...porCuenta].map(([clave, instantes]) => {
+        const [tenantId, userId] = clave.split("|");
+        const empleado = userId === "null" ? null : (employeeByUser.get(`${tenantId}|${userId}`) || null);
+        const rafaga = rafagaDeReintentos(instantes);
+        const suEvidencia = empleado ? (evidenciaPorEmpleado.get(String(empleado.id)) || null) : null;
+        return {
+          user_id: userId === "null" ? null : Number(userId),
+          empleado_id: empleado ? empleado.id : null,
+          rechazos_de_foto_despues_del_corte: instantes.length,
+          dispositivos: [...new Set(fotoDespuesDeCorte.filter((fila) => `${fila.tenant_id}|${fila.user_id}` === clave).map((fila) => fila.device))],
+          senal_de_reintento: rafaga.senal,
+          brechas_segundos: rafaga.brechas_segundos,
+          fotos_de_justificacion_aceptadas_antes_del_corte: suEvidencia ? suEvidencia.antes : 0,
+          fotos_de_justificacion_aceptadas_despues_del_corte: suEvidencia ? suEvidencia.despues : 0,
+          tipos_que_si_entraron: suEvidencia ? [...suEvidencia.tipos].sort() : []
+        };
+      }).sort((a, b) => b.rechazos_de_foto_despues_del_corte - a.rechazos_de_foto_despues_del_corte);
+
+      const trabajadoresConFotoAceptada = [...evidenciaPorEmpleado.values()];
+      reporte.canal = {
+        criterio: `el canal se lee de metadata->>'source' (la web que marca declara "${CANAL_WEB_QUE_MARCA}"); el envio distingue en vivo, cola reintentada (metadata.queued_at) y abierto sin senal (metadata.offline). Las lecturas son agregados de jsonb y NINGUNA proyecta el cuerpo de la foto.`,
+        escrituras: 0,
+        ventana_utc: [window.from.toISOString(), window.to.toISOString()],
+        corte_utc: corteCanal.toISOString(),
+        guardas_de_lectura: guardas,
+        censo,
+        estampas_de_marcaciones_sin_canal: filasEstampas.map((fila) => ({
+          clave_de_metadata: String(fila.clave_de_metadata),
+          marcaciones: Number(fila.marcaciones || 0),
+          trabajadores: Number(fila.trabajadores || 0)
+        })),
+        evidencia_aceptada: {
+          trabajadores_que_adjuntaron_foto_en_la_ventana: trabajadoresConFotoAceptada.length,
+          los_mesmos_despues_del_corte: trabajadoresConFotoAceptada.filter((x) => x.despues > 0).length,
+          tipos_declarados_aceptados: [...new Set(trabajadoresConFotoAceptada.flatMap((x) => [...x.tipos]))].sort()
+        },
+        rechazos: {
+          por_ruta: histograma(rejected, (fila) => fila.route || "(sin ruta)", 12),
+          por_dispositivo: histograma(rejected, (fila) => fila.device || "(sin user agent)", 12),
+          foto_por_dispositivo: histograma(rechazosDeFoto, (fila) => `${fila.device} | ${fila.code || "(sin codigo)"}`, 12),
+          concentracion_de_envios_perdidos_por_dispositivo: concentracionPorClave(transporte, (fila) => fila.device || "(sin user agent)"),
+          concentracion_de_envios_perdidos_por_cuenta: concentracionPorClave(transporte, (fila) => fila.user_id ?? "(sin sesion)")
+        },
+        cuentas_con_rechazos_de_foto: cuentas
+      };
+
+      console.log(`\nCENSO DE CANALES (marcaciones aceptadas, ventana leida, 0 escrituras):`);
+      console.log(`  total ${censo.total_marcaciones} | canales distintos ${censo.canales_distintos} | en el canal de la web (${CANAL_WEB_QUE_MARCA}) ${censo.marcaciones_en_el_canal_de_la_web} (${censo.porcentaje_en_el_canal_de_la_web ?? "-"} %) | fuera ${censo.marcaciones_fuera_del_canal_de_la_web}`);
+      for (const fila of censo.por_canal) {
+        console.log(`  canal ${String(fila.clave).padEnd(26)} ${String(fila.marcaciones).padStart(5)} marcaciones  trabajadores ${String(fila.trabajadores).padStart(4)}  foto inline ${String(fila.con_foto_inline).padStart(4)}  ruta de almacen ${String(fila.con_ruta_de_almacen).padStart(4)}  ${fila.megas_declarados} MB declarados  tipos ${fila.tipos.join(",")}`);
+      }
+      for (const fila of censo.por_tenant) console.log(`  tenant ${fila.clave}  ${fila.marcaciones} marcaciones`);
+      console.log(`\n  stampas del metadata en las marcaciones que no declaran canal (solo NOMBRES de clave, nunca el cuerpo):`);
+      for (const fila of reporte.canal.estampas_de_marcaciones_sin_canal) {
+        console.log(`    ${String(fila.marcaciones).padStart(5)}  ${String(fila.clave_de_metadata).padEnd(24)} trabajadores ${fila.trabajadores}`);
+      }
+      for (const fila of censo.por_envio) {
+        console.log(`  envio ${String(fila.clave).padEnd(20)} ${String(fila.marcaciones).padStart(5)}`);
+      }
+      console.log(`\n  foto de justificacion: ${reporte.canal.evidencia_aceptada.trabajadores_que_adjuntaron_foto_en_la_ventana} trabajadores la adjuntaron en la ventana (${reporte.canal.evidencia_aceptada.los_mesmos_despues_del_corte} de ellos despues del corte); tipos que si entraron: ${reporte.canal.evidencia_aceptada.tipos_declarados_aceptados.join(", ") || "ninguno"}`);
+      console.log(`\nRECHAZOS POR RUTA (todo lo que reboto en la ventana, incluido lo que no es marcacion):`);
+      for (const fila of reporte.canal.rechazos.por_ruta) console.log(`  ${String(fila.ocurrencias).padStart(5)}  ${fila.clave}  cuentas ${fila.usuarios}`);
+      console.log(`\nRECHAZOS DE FOTO POR DISPOSITIVO Y PUERTA:`);
+      for (const fila of reporte.canal.rechazos.foto_por_dispositivo) console.log(`  ${String(fila.ocurrencias).padStart(5)}  ${fila.clave}  cuentas ${fila.usuarios}`);
+      for (const llave of ["concentracion_de_envios_perdidos_por_dispositivo", "concentracion_de_envios_perdidos_por_cuenta"]) {
+        const c = reporte.canal.rechazos[llave];
+        console.log(`\nENVOS PERDIDOS ${llave.includes("cuenta") ? "por cuenta" : "por dispositivo"}: total ${c.total} en ${c.claves_distintas} claves | la primera (${c.primera_clave}) acumula ${c.ocurrencias_en_la_primera_clave} (${c.porcentaje_en_la_primera_clave ?? "-"} %) | top 5 ${c.en_el_top} (${c.porcentaje_en_el_top ?? "-"} %)`);
+        for (const fila of c.top) console.log(`  ${String(fila.ocurrencias).padStart(5)}  ${fila.clave}`);
+      }
+      console.log(`\nRAFAGAS DE REINTENTO en las cuentas con rechazos de foto${args.semana ? " despues del corte" : " (sin --semana: toda la ventana)"}:`);
+      for (const cuenta of cuentas) {
+        console.log(`  user ${String(cuenta.user_id).padStart(5)}  emp ${String(cuenta.empleado_id ?? "-").padEnd(5)}  ${cuenta.rechazos_de_foto_despues_del_corte} rechazo(s)  ${cuenta.senal_de_reintento}  brechas ${cuenta.brechas_segundos.join("/")}s  fotos aceptadas antes ${cuenta.fotos_de_justificacion_aceptadas_antes_del_corte} / despues ${cuenta.fotos_de_justificacion_aceptadas_despues_del_corte}  tipos ${cuenta.tipos_que_si_entraron.join(",") || "-"}`);
       }
     }
 
