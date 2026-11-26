@@ -1,0 +1,15 @@
+{
+  "environment": "LOCAL",
+  "started_at": "2026-11-26T20:16:48.210Z",
+  "checks": [
+    "summary exposes photo availability and counters without image bytes",
+    "single carries the bytes and the batch is an index that counts the same evidence without them",
+    "the schedule opens its detail from the timeline bar, which is the default view",
+    "the table view opens the same detail from the row and hides its actions behind the menu",
+    "the redesign repaints through the app theme control and stays usable on a phone",
+    "Reports journey trace renders the activity photograph and opens its enlargement"
+  ],
+  "status": "passed",
+  "photo_source": "TimePunch.metadata.identity_photo, with legacy support",
+  "finished_at": "2026-11-26T20:19:06.238Z"
+}

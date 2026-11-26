@@ -1,0 +1,36 @@
+{
+  "fecha": "2026-11-26T20:00:31.530Z",
+  "instrumento": "apps/web/test/hr-schedule-timeline-view.test.mjs",
+  "mutants": [
+    {
+      "mutante": "vista_por_defecto_a_tabla",
+      "aplicado": true,
+      "checks_rojos": 1,
+      "pruebas_rojas": [
+        "la vista por defecto es la linea de tiempo y se puede cambiar a tabla"
+      ]
+    },
+    {
+      "mutante": "eje_dividido_en_24",
+      "aplicado": true,
+      "checks_rojos": 2,
+      "pruebas_rojas": [
+        "la barra se posiciona con la razon del eje de dieciseis horas",
+        "el recorte se dibuja y se nombra, no se omite"
+      ]
+    },
+    {
+      "mutante": "hex_literal_en_la_franja",
+      "aplicado": true,
+      "checks_rojos": 1,
+      "pruebas_rojas": [
+        "el estado se pinta con tokens del sistema y sin hexadecimal literal"
+      ]
+    }
+  ],
+  "restaurado": {
+    "conteo": "# tests 11 # pass 11 # fail 0",
+    "blob": "4473068e447ceb22627176cadd5d91e3d1d3397b",
+    "blob_igual_que_antes_del_control": true
+  }
+}

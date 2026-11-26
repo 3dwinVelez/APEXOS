@@ -53,13 +53,100 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
   async function button(text,scope=''){await page.waitForFunction((text,scope)=>[...document.querySelectorAll(scope+' button')].some(el=>el.textContent.trim()===text&&!el.disabled),{},text,scope);await page.evaluate((text,scope)=>[...document.querySelectorAll(scope+' button')].find(el=>el.textContent.trim()===text&&!el.disabled).click(),text,scope);}
   async function setInput(selector,value){await page.$eval(selector,(el,value)=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,value);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));},value);}
   const future=offset=>{const date=new Date(day+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+offset);return date.toISOString().slice(0,10);};
+  // El listado tiene dos vistas y la por defecto es la linea de tiempo: las patas que necesitan la tabla
+  // la piden por su boton, y las que solo buscan la fila no dependen de como este pintada.
+  async function view(name){await page.waitForFunction(text=>[...document.querySelectorAll('button')].some(el=>el.textContent.trim()===text),{},name);await page.evaluate(text=>[...document.querySelectorAll('button')].find(el=>el.textContent.trim()===text).click(),name);}
+  async function rowMenu(id){await page.waitForSelector('tr[data-route-id="'+id+'"] button[aria-label^="Mas acciones"]');await page.evaluate(id=>document.querySelector('tr[data-route-id="'+id+'"] button[aria-label^="Mas acciones"]').click(),id);}
+  const rowSelector=id=>'[data-schedule-view="timeline"] [data-route-id="'+id+'"]';
   await check('one hub entry opens programming and existing links select the matching tab',async()=>{
    await page.waitForSelector('section[aria-label="Herramientas activas de talento humano"] a[href$="/rutas"]');
    assert.equal(await page.$$eval('section[aria-label="Herramientas activas de talento humano"] a',links=>links.filter(link=>/\/(rutas|mallas)$/.test(link.pathname)).length),1);
    await page.click('section[aria-label="Herramientas activas de talento humano"] a[href$="/rutas"]');
    await page.waitForSelector(scheduleNav+' a[aria-current="page"][href$="/rutas"]');
-   await page.waitForSelector('tr[data-route-id="'+route.id+'"]');
+   await page.waitForSelector(rowSelector(route.id));
    assert.equal(await page.$eval('h1',el=>el.textContent),'Horarios y mallas');
+  });
+  await check('the schedule opens its detail from the timeline bar, which is the default view',async()=>{
+   await page.waitForSelector('button[aria-label^="Abrir detalle del horario"]');
+   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Línea de tiempo')?.getAttribute('aria-pressed')),'true','la linea de tiempo es la vista por defecto');
+   // La barra del eje es un boton con nombre propio: pulsarla tiene que abrir la misma ventana.
+   await page.waitForFunction(()=>[...document.querySelectorAll('button[aria-label^="Abrir detalle del horario"]')].some(node=>node.getBoundingClientRect().width>0));
+   await page.evaluate(()=>[...document.querySelectorAll('button[aria-label^="Abrir detalle del horario"]')].find(node=>node.getBoundingClientRect().width>0).click());
+   await page.waitForFunction(()=>document.body.innerText.includes('Trazabilidad cronologica del equipo')||document.body.innerText.includes('Trazabilidad cronológica del equipo'));
+   await page.waitForFunction(()=>[...document.querySelectorAll('[role="dialog"] img')].filter(node=>node.src.startsWith('data:image/')&&node.complete&&node.naturalWidth>0).length>=6);
+   assert.equal(await page.evaluate(()=>document.querySelector('[role="dialog"]').innerText.includes('Sin evidencia fotografica')),false);
+   await page.screenshot({path:path.join(folder,'timeline.png')});
+   await page.evaluate(()=>[...document.querySelectorAll('[role="dialog"] button')].find(node=>node.querySelector('img')).click());
+   await page.waitForSelector('button[aria-label="Cerrar evidencia"]');
+   await page.screenshot({path:path.join(folder,'lightbox.png')});
+   await page.evaluate(()=>document.querySelector('button[aria-label="Cerrar monitor"]').click());
+   await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));
+  });
+  await check('the table view opens the same detail from the row and hides its actions behind the menu',async()=>{
+   await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(node=>node.textContent.trim()==='Tabla'));
+   await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Tabla').click());
+   await page.waitForSelector('tr[data-route-id]');
+   // La fila entera es el acceso; Editar y Clonar viven detras del menu de mas acciones.
+   assert.equal(await page.evaluate(()=>document.querySelectorAll('tr[data-route-id] td button[aria-label^="Mas acciones"]').length>0),true,'cada fila ofrece su menu de acciones');
+   await page.evaluate(()=>document.querySelector('tr[data-route-id]').click());
+   await page.waitForFunction(()=>document.body.innerText.includes('Monitor de horario')||Boolean(document.querySelector('[aria-label="Monitor de horario"]')));
+   await page.screenshot({path:path.join(folder,'table-row-detail.png')});
+   await page.evaluate(()=>document.querySelector('button[aria-label="Cerrar monitor"]').click());
+   await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));
+   await page.evaluate(()=>document.querySelector('tr[data-route-id] button[aria-label^="Mas acciones"]').click());
+   await page.waitForFunction(()=>[...document.querySelectorAll('tr[data-route-id] button')].some(node=>node.textContent.trim()==='Editar'));
+   await page.screenshot({path:path.join(folder,'table-row-menu.png')});
+   await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Línea de tiempo').click());
+  });
+  await check('the redesign repaints through the app theme control and stays usable on a phone',async()=>{
+   await page.waitForSelector(rowSelector(route.id)+' > div:last-child > button');
+   const probe=()=>{const track=document.querySelector('[data-schedule-view="timeline"] li[data-route-id] > div:last-child');const bar=track.querySelector('button');const barStyle=getComputedStyle(bar),trackStyle=getComputedStyle(track),bodyStyle=getComputedStyle(document.body);
+    const blend=(front,back)=>{const f=front.match(/[\d.]+/g).map(Number),b=back.match(/[\d.]+/g).map(Number),a=f.length>3?f[3]:1;return 'rgb('+f.slice(0,3).map((value,index)=>Math.round(value*a+b[index]*(1-a))).join(' ')+')'};
+    return {page:bodyStyle.backgroundColor,track:blend(trackStyle.backgroundColor,bodyStyle.backgroundColor),barBg:blend(barStyle.backgroundColor,trackStyle.backgroundColor),ink:getComputedStyle(bar.querySelector('span')).color,touch:bar.getBoundingClientRect().height};};
+   // Contraste WCAG 2.1 de la etiqueta sobre su propia franja: se exige en los dos temas.
+   const ratio=(fg,bg)=>{const lum=value=>{const [r,g,b]=value.match(/\d+/g).slice(0,3).map(part=>{const channel=Number(part)/255;return channel<=0.03928?channel/12.92:Math.pow((channel+0.055)/1.055,2.4)});return 0.2126*r+0.7152*g+0.0722*b};const a=lum(fg),c=lum(bg);return (Math.max(a,c)+0.05)/(Math.min(a,c)+0.05)};
+   const medidas={};
+   const registra=(clave,medida)=>medidas[clave]={tinta:medida.ink,fondo:medida.barBg,pista:medida.track,pagina:medida.page,tactil_px:Math.round(medida.touch),contraste:+ratio(medida.ink,medida.barBg).toFixed(2)};
+   const light=await page.evaluate(probe);registra('escritorio_claro',light);
+   await page.evaluate(()=>document.querySelector('button[aria-label="Mi cuenta"]').click());
+   await page.waitForFunction(()=>[...document.querySelectorAll('[aria-label="Tema de la plataforma"] button')].some(node=>node.textContent.trim()==='Oscuro'));
+   await page.evaluate(()=>[...document.querySelectorAll('[aria-label="Tema de la plataforma"] button')].find(node=>node.textContent.trim()==='Oscuro').click());
+   await new Promise(resolve=>setTimeout(resolve,500));
+   const dark=await page.evaluate(probe);registra('escritorio_oscuro',dark);
+   assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('dark')),true,'el tema oscuro de la app vive en html.dark');
+   assert.notEqual(dark.page,light.page,'el fondo del tablero no cambia entre claro y oscuro');
+   assert.notEqual(dark.track,light.track,'la pista del horario no cambia entre claro y oscuro');
+   assert.notEqual(dark.ink,light.ink,'la tinta de la franja no se aclara en tema oscuro');
+   assert.ok(ratio(light.ink,light.barBg)>=4.5,'la etiqueta de la franja no alcanza AA en tema claro: '+ratio(light.ink,light.barBg).toFixed(2));
+   assert.ok(ratio(dark.ink,dark.barBg)>=4.5,'la etiqueta de la franja no alcanza AA en tema oscuro: '+ratio(dark.ink,dark.barBg).toFixed(2));
+   await page.screenshot({path:path.join(folder,'timeline-dark.png')});
+   await page.evaluate(()=>[...document.querySelectorAll('[aria-label="Tema de la plataforma"] button')].find(node=>node.textContent.trim()==='Claro').click());
+   await page.evaluate(()=>document.querySelector('[role="dialog"] button[aria-label="Cerrar"]').click());
+   await page.waitForFunction(()=>!document.querySelector('[aria-label="Tema de la plataforma"]'));
+   await new Promise(resolve=>setTimeout(resolve,300));
+   // Telefono: la pista desborda con scroll horizontal, los indicadores se apilan y la ventana ocupa el ancho.
+   await page.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true});
+   // El cambio de dispositivo puede recargar la vista: se espera la linea de tiempo pintada, no un tiempo fijo.
+   await page.waitForSelector('[data-schedule-view="timeline"] .overflow-x-auto li[data-route-id] > div:last-child > button',{visible:true,timeout:90000});
+   await new Promise(resolve=>setTimeout(resolve,300));
+   const phone=await page.evaluate(()=>{const scroller=document.querySelector('[data-schedule-view="timeline"] .overflow-x-auto');const kpis=document.querySelector('[data-schedule-view="timeline"]')?.closest('section')?.querySelector('[class*="auto-fit"]');const bar=document.querySelector('[data-schedule-view="timeline"] li[data-route-id] > div:last-child > button');return {scrolls:scroller.scrollWidth>scroller.clientWidth,tracks:kpis?getComputedStyle(kpis).gridTemplateColumns.split(' ').length:0,touch:bar.getBoundingClientRect().height};});
+   assert.equal(phone.scrolls,true,'en el telefono la pista no necesita scroll horizontal');
+   assert.ok(phone.tracks>0&&phone.tracks<6,'los indicadores no se apilan en el telefono: '+phone.tracks+' columnas');
+   assert.ok(phone.touch>=40,'la franja del horario se toca con menos de 40 px en el telefono: '+Math.round(phone.touch)+' px');
+   medidas.telefono={ancho_vw:390,scroll_horizontal:phone.scrolls,columnas_de_indicadores:phone.tracks,tactil_px:Math.round(phone.touch)};
+   await page.screenshot({path:path.join(folder,'timeline-phone.png')});
+   await page.evaluate(()=>[...document.querySelectorAll('[data-schedule-view="timeline"] button[aria-label^="Abrir detalle del horario"]')].find(node=>node.getBoundingClientRect().width>0).click());
+   await page.waitForSelector('[aria-label="Monitor de horario"]');
+   const wide=await page.evaluate(()=>{const dialog=document.querySelector('[role="dialog"]');return {width:dialog.getBoundingClientRect().width,vw:window.innerWidth};});
+   assert.ok(wide.width>=wide.vw-1,'la ventana del detalle no ocupa el ancho completo en el telefono: '+Math.round(wide.width)+' de '+wide.vw);
+   medidas.ventana_movil={ancho_px:Math.round(wide.width),viewport_px:wide.vw};
+   await page.screenshot({path:path.join(folder,'detail-phone.png')});
+   await page.evaluate(()=>document.querySelector('button[aria-label="Cerrar monitor"]').click());
+   await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));
+   // Los numeros que exige el informe salen de la corrida, no de la cuenta a ojo sobre el CSS.
+   medidas.medido_en='navegador real headless sobre el servidor de desarrollo que levanta el propio certificador (1500x1100 y 390x844)';
+   fs.writeFileSync(path.join(folder,'medidas-linea-de-tiempo.json'),JSON.stringify(medidas,null,2)+'\n');
+   await page.setViewport({width:1500,height:1100});
   });
   await check('programming creates, edits and clones schedules without duplicating them when tabs change',async()=>{
    const initial=await db.timeRoute.count({where:{tenant_id:tenant.id}});
@@ -70,11 +157,15 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
    const createdResponse=page.waitForResponse(r=>r.url().endsWith('/hr/routes')&&r.request().method()==='POST');
    await button('Asignar horario','[role="dialog"]');const created=await createdResponse;assert.equal(created.status(),200);const record=await created.json();
    await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));
+   // Editar y Clonar ya no viven sueltos en la fila: se abren desde el menu de mas acciones de la tabla.
+   await view('Tabla');await page.waitForSelector('tr[data-route-id="'+record.id+'"]');
+   await rowMenu(record.id);
    await button('Editar','tr[data-route-id="'+record.id+'"]');
    await page.type('[role="dialog"] textarea','QA horario editado');
    const editedResponse=page.waitForResponse(r=>r.url().endsWith('/hr/routes/'+record.id)&&r.request().method()==='PATCH');
    await button('Guardar cambios','[role="dialog"]');assert.equal((await editedResponse).status(),200);
    await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));
+   await rowMenu(record.id);
    await button('Clonar','tr[data-route-id="'+record.id+'"]');
    await setInput('[role="dialog"] input[type="date"]',future(3));
    const cloneResponse=page.waitForResponse(r=>r.url().endsWith('/hr/routes')&&r.request().method()==='POST');await button('Asignar horario','[role="dialog"]');assert.equal((await cloneResponse).status(),200);
@@ -84,9 +175,9 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
    await page.screenshot({path:path.join(folder,'unified-programming.png')});
    await page.click(scheduleNav+' a[href$="/mallas"]');
    await page.waitForSelector(scheduleNav+' a[aria-current="page"][href$="/mallas"]');
-   await page.waitForSelector('tr[data-route-id="'+route.id+'"]');
+   await page.waitForSelector(rowSelector(route.id));
    assert.equal(await page.$$eval('button',buttons=>buttons.filter(el=>['Nuevo horario','Editar','Clonar','Eliminar'].includes(el.textContent.trim())).length),0);
-   await page.reload({waitUntil:'domcontentloaded'});await page.waitForSelector('tr[data-route-id="'+route.id+'"]');
+   await page.reload({waitUntil:'domcontentloaded'});await page.waitForSelector(rowSelector(route.id));
    assert.equal(await db.timeRoute.count({where:{tenant_id:tenant.id}}),initial+2);
    await page.goBack({waitUntil:'domcontentloaded'});await page.waitForSelector(scheduleNav+' a[aria-current="page"][href$="/rutas"]');
    await page.goForward({waitUntil:'domcontentloaded'});await page.waitForSelector(scheduleNav+' a[aria-current="page"][href$="/mallas"]');
@@ -95,7 +186,8 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
    await page.screenshot({path:path.join(folder,'unified-followup-mobile.png')});await page.setViewport({width:1500,height:1100});
   });
   await check('chronological team trace displays all mobile photos and opens lightbox',async()=>{
-   await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(node=>node.textContent.trim()==='Abrir'));
+   // En Seguimiento el listado tambien abre en la linea de tiempo: el boton Abrir vive en la tabla.
+   await view('Tabla');
    await button('Abrir','tr[data-route-id="'+route.id+'"]');
    assert.equal(await page.$$eval('[role="dialog"] button',buttons=>buttons.filter(el=>['Editar','Eliminar'].includes(el.textContent.trim())).length),0);
    await page.waitForFunction(()=>document.body.innerText.includes('Trazabilidad cronologica del equipo')||document.body.innerText.includes('Trazabilidad cronológica del equipo'));
@@ -103,10 +195,10 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
    await page.evaluate(()=>[...document.querySelectorAll('[role="dialog"] button')].filter(node=>node.textContent.trim()==='Cargar evidencia').forEach(node=>node.click()));
    await page.waitForFunction(()=>[...document.querySelectorAll('[role="dialog"] img')].filter(node=>node.src.startsWith('data:image/')&&node.complete&&node.naturalWidth>0).length>=6);
    assert.equal(await page.evaluate(()=>document.querySelector('[role="dialog"]').innerText.includes('Sin evidencia fotografica')),false);
-   await page.screenshot({path:path.join(folder,'timeline.png')});
+   await page.screenshot({path:path.join(folder,'seguimiento-monitor.png')});
    await page.evaluate(()=>[...document.querySelectorAll('[role="dialog"] button')].find(node=>node.querySelector('img')).click());
    await page.waitForSelector('button[aria-label="Cerrar evidencia"]');
-   await page.screenshot({path:path.join(folder,'lightbox.png')});
+   await page.screenshot({path:path.join(folder,'seguimiento-lightbox.png')});
   });
   await check('Reports journey trace renders the activity photograph and opens its enlargement',async()=>{
    await page.goto(new URL('/dashboard/talento-humano/reportes',page.url()).href,{waitUntil:'domcontentloaded',timeout:180000});
