@@ -1,0 +1,118 @@
+{
+  "change_id": "boton-abre-directo-main-20261126",
+  "medido_en": "2026-11-26T17:53:25.663Z",
+  "puntas": {
+    "origin/main_antes": "e3c2ad171946621c4e167404ef5c56c466f43e4f",
+    "origin/main_despues": "0ec1cff04c1b48a8a7d76b1219223efc76689164",
+    "origin/develop": "9824d04f3768bd53ee3f83d9d70c10ecb860766e",
+    "origin/desarrollo_al_empacar": "6196d18e42f2731f70df2386a416f6db92de1326"
+  },
+  "respaldo": {
+    "tag_local": "backup/premain-boton-20261126",
+    "sha": "e3c2ad171946621c4e167404ef5c56c466f43e4f"
+  },
+  "arbol_del_candidato": {
+    "base": "origin/main e3c2ad17",
+    "commits": [
+      {
+        "sha": "58551b8a",
+        "que_hace": "merge `-s ours` con origin/desarrollo: cero bytes cambiados, solo ancla el commit certificado como ancestro"
+      },
+      {
+        "sha": "39a54b76",
+        "que_hace": "el frente completo: 31 rutas de blob liso y 3 rutas con hunks fusionados"
+      },
+      {
+        "sha": "3848b2ce",
+        "que_hace": "evidence del porton: el driver, sus dos corridas y la medició del ledger de Producción"
+      },
+      {
+        "sha": "0dd67a5b",
+        "que_hace": "generador de manifiestos, invariantes de replay y su control de mutación"
+      },
+      {
+        "sha": "0ec1cff0",
+        "que_hace": "plegado de los once archivos de documentación ya publicados en origin/desarrollo: cero rutas de producto"
+      }
+    ],
+    "rutas_del_diff": 45,
+    "rutas_de_producto_e_instrumentos": 15,
+    "carry_byte_a_byte": 42,
+    "divergentes": [
+      "apps/api/prisma/schema.prisma",
+      "apps/api/src/middleware/rbac.js",
+      "apps/api/src/modules/admin/public-routes.js"
+    ],
+    "nota_divergencia": "Las tres rutas divergentes son las compartidas con otros frentes (schema.prisma, rbac.js, public-routes.js). Estan declaradas una por una en origin_waivers del manifiesto de alcance y su contenido se afirmo por linea: cero lineas de main perdidas y toda linea nueva pertenece al patch de d667276f."
+  },
+  "compuertas": {
+    "porton_de_alcance": "ALCANCE DE PROMOCION VALIDO: boton-abre-directo-main-20261126 (45 rutas, transporte por ascendencia del commit certificado, origen verificado contra origin/desarrollo)",
+    "aprobacion_qa": "APROBACION QA VALIDA: boton-abre-directo-main-20261126",
+    "control_de_mutacion_del_porton": "con origin_waivers vacios el mismo porton responde ALCANCE DE PROMOCION INVALIDO: contenido sin origen en desarrollo, no se promociona: [M:apps/api/prisma/schema.prisma, M:apps/api/src/middleware/rbac.js, M:apps/api/src/modules/admin/public-routes.js]",
+    "control_de_mutacion_de_la_aprobacion": "con environment=LOCAL y checks.functional.status=pending responde APROBACION QA BLOQUEADA con las dos lineas `- environment debe ser QA` y `- checks.functional.status debe ser passed`",
+    "gobernanza": "sin la bandera: GOBIERNO GIT BLOQUEADO: Promocion develop-to-main requiere APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DEVELOP_A_MAIN · con la bandera: salida 0",
+    "invariantes_de_replay": "INVARIANTES DE REPLAY VALIDAS: 31/31 (spec del porton) y el mismo instrumento sobre el arbol ya plegado",
+    "control_de_mutacion_del_instrumento": "CONTROL DE MUTACION VALIDO: 3 derivas medidas",
+    "dry_run": "e3c2ad17..0ec1cff0 0ec1cff0 -> main (fast-forward del target certificado, cero fuerza)",
+    "empuje": "e3c2ad17..0ec1cff0 confirmado con git ls-remote: refs/heads/main = 0ec1cff04c1b48a8a7d76b1219223efc76689164"
+  },
+  "suites": {
+    "antes_origin_main": "api 20/20 · web 21/21 · sintacticos 3/3 · schema sin PlatformSetting",
+    "despues_candidato": "api 31/31 · web 40/40 · sintacticos 4/4 · fusionadas 3/3 solo suman · prisma validate 'is valid'",
+    "archivo_antes": "../evidence/boton-abre-directo-main-20261126/suites-antes.json",
+    "archivo_despues": "../evidence/boton-abre-directo-main-20261126/suites-despues.json"
+  },
+  "base_de_produccion": {
+    "lectura": "solo lectura del ledger por REST (GET _prisma_migrations), ninguna sentencia",
+    "filas": 72,
+    "terminadas": 71,
+    "sin_finalizar": [
+      "20260814003500_sales_invoicing_cxc"
+    ],
+    "migraciones_del_arbol_del_candidato": 72,
+    "unicas_pendientes_en_produccion": [
+      "20261125183000_platform_settings"
+    ],
+    "deuda_ajena_que_subria_un_deploy": [],
+    "consecuencia": "El pre-deploy del servicio (`npx prisma migrate deploy`) no puede traer mas que la migración propia: las 71 del árbol de main ya están aplicadas. Este portón no ejecutó ninguna escritura en la base; lo que el despliegue haga queda dicho aqui y se comprueba despues.",
+    "archivo": "../evidence/boton-abre-directo-main-20261126/ledger-produccion.json"
+  },
+  "linea_base_antes_del_despliegue": {
+    "health_commit": "e3c2ad171946",
+    "GET /api/v1/public/platform/mobile-app": 404,
+    "medido": "curl contra el host del API de Produccion, minutos despues del empuje y antes de que terminara el despliegue"
+  },
+  "verificado_local": {
+    "rama_trabajo": "desarrollo",
+    "candidato": "HEAD despegado en .tmp/wt-main-boton-20261126, sin rama nueva",
+    "validadores_usados": "los canonicos de origin/desarrollo (main trae versiones mas viejas de los tres: validate-promotion-scope a98fc805 vs 7d0b5dfa, validate-change-approval-evidence 904132f9 vs 9a0b7651, git-governance-guard 6dfa53f8 vs 21aae5c1)"
+  },
+  "despues_del_empuje": {
+    "medido_en": "2026-11-26T18:02:00Z",
+    "instrumento": "sonda-produccion-post-push.js (tres GET al API, un GET al portal y los 10 chunks que /login referencia; cero escrituras)",
+    "evidencia": "post-push-produccion.json",
+    "health_commit": "e3c2ad171946",
+    "GET /api/v1/public/platform/mobile-app": 404,
+    "censo_del_portal": {
+      "chunks": 10,
+      "Abrir la app": 0,
+      "Copiar enlace": 0,
+      "navigator.clipboard": 0,
+      "banda_en_el_html": 0
+    },
+    "railway": {
+      "proyecto": "APEXOS PROD (0afe38cc-6080-49d2-aa24-2d5625250ac2)",
+      "ultimo_despliegue": "bfc039e6 (apexos-api-prod) y 4554ca61 (apexos-web-prod), ambos 2026-11-24T21:50:44Z, meta.branch=main, meta.commitHash=e3c2ad171946621c4e167404ef5c56c466f43e4f",
+      "despliegues_nuestras_tras_el_empuje": 0,
+      "leido_con": "railway deployment list --json (solo lectura)"
+    },
+    "veredicto": "EL ARBOL DE MAIN TIENE EL FRENTE, EL AMBIENTE NO: origin/main corre 0ec1cff0 pero Produccion sigue sirviendo e3c2ad17 y la ruta publica 404; el empuje no disparo despliegue.",
+    "consecuencia": "Desplegar es accion aparte y con autorizacion expresa del dueno: el pre-deploy del API corre `npx prisma migrate deploy` contra la base de Produccion, y eso es una migracion remota. Mientras no se despliegue, el acceso de Produccion no muestra la banda y la ventana de Administracion no existe ahi.",
+    "lo_que_hay_que_verificar_despues": [
+      "GET /health del API de Produccion debe responder commit 0ec1cff0…",
+      "GET /api/v1/public/platform/mobile-app debe responder 200 con el respaldo quemado mientras el dueno no escriba el valor",
+      "censo de los chunks de /login: \"Abrir la app\" presente, \"Copiar enlace\" 0, \"navigator.clipboard\" 0",
+      "re-leer el ledger: la fila 20261125183000_platform_settings debe pasar de pendiente a terminada con applied_steps_count=1"
+    ]
+  }
+}

@@ -213,3 +213,36 @@ Del directorio de este corte se comitean **cinco** capturas (la guía en celular
 - `qa-cierre.json`: **6** notas de limpieza —restauración por el endpoint en **HTTP 200**, acceso público de vuelta al quemado en **194 ms**, la cuenta retirada con **login bloqueado en 401 después** y **0** cuentas de prueba activas—. El residuo declarado sigue siendo el mismo que el corte anterior: queda **una** fila `mobile_app.url` con el destino quemado porque el guardado de la casa bloquea el borrado físico de `PlatformSetting`, así que la ventana dira «administrado en este ambiente» aunque el enlace que ve el usuario sea el mismo.
 
 **Dueño de lo que falta.** El **valor** del enlace en cada ambiente es del dueño: QA apunta hoy al destino quemado (que se autodeclara QA) y Producción no tiene la función ni la tabla. Aplicar la migración `20261125183000_platform_settings` en la base de Producción **no** está autorizado en esta intervención y exige orden expresa.
+
+## 17. El viaje a `main` (2026-11-26, después del QA desplegado)
+
+**La orden del dueño que autoriza este tramo.** «extiende el cambio del boton de manera controlada y cerrada al ambiente main aunque la url pertenezca a qa lo importante en este caso es migrar la funcion y el boton de manera correcta ya la url me encargo yo de actualizarla […] sigue el proceso de migracion correcto desde desarrollo hasta main con estos cambios y condiciones, no debes tocar ni afectar otros temas adicionales debe ser un commit exclusivo para este cambio».
+
+**Por qué a main no puede subir un solo blob.** `origin/main` estaba en `e3c2ad17`, a cientos de commits de `desarrollo`, y tres rutas del frente son compartidas: `apps/api/prisma/schema.prisma`, `apps/api/src/middleware/rbac.js` y `apps/api/src/modules/admin/public-routes.js`. Llevar el blob de desarrollo habría hecho dos daños a la vez: borrar contenido propio de main y traer de contrabando lo que main nunca recibió (`device_id` de la telemetría, el código de módulo `apex-control` y 417 líneas de modelos ajenos). Se promocionó **por replay de rutas con hunks fusionados**: 45 rutas en el inventario, **42** byte a byte con `origin/desarrollo` y **3** con la excepción de origen nombrada archivo por archivo. El `git apply -3` del schema arrastraba la cola ajena de desarrollo, así que el modelo `PlatformSetting` se anexó a mano sobre el archivo de main.
+
+**Lo que se midió, no lo que se narró.**
+- Par ANTES/DESPUES con el mismo instrumento sobre el árbol: en `origin/main` puro **20** pruebas de API y **21** de web, cero rojas; en el candidato **31** y **40**, cero rojas. Sintácticos **4/4** y `prisma validate` con el literal `is valid`.
+- Las tres rutas fusionadas, afirmadas línea por línea: **cero** líneas de main perdidas y **toda** línea nueva pertenece al parche de `d667276f` (`suites-despues.json`).
+- `promotion-migration-check`: **31/31** invariantes válidas (carry, cero ediciones, cero borrados) y su control de mutación con **3** derivas medidas.
+- Portón de alcance: **APROBADO** con 45 rutas; con `origin_waivers: []` el mismo portón responde **INVALIDO** nombrando las tres rutas. Aprobación QA: **VÁLIDA**; alterarle el ambiente o un check la bloquea. Gobernanza: **BLOQUEADO** sin `APEXOS_PROMOTION_AUTH`, salida **0** con la bandera.
+- Respaldo `backup/premain-boton-20261126 = e3c2ad17`, `--dry-run` mostró `e3c2ad17..0ec1cff0` (fast-forward, cero fuerza) y el empuje quedó confirmado con `git ls-remote`.
+
+**La base de Producción, contada antes de empujar.** El servicio de API tiene pre-deploy `npx prisma migrate deploy`, así que un despliegue escribe DDL. Se leyó el ledger en **solo lectura**: **72** filas, **71** terminadas y **una** sola sin finalizar (`20260814003500_sales_invoicing_cxc`, ajenos a este frente). El árbol del candidato trae **72** migraciones y la única pendiente en Producción es la propia, `20261125183000_platform_settings`: **cero** deuda ajena puede colarse. Este portón no ejecutó ninguna sentencia contra la base de Producción.
+
+**Puntas después del empuje.** `origin/main = 0ec1cff0`, `origin/develop = 9824d04f`, `origin/desarrollo = 6196d18e` (los manifiestos declaran el árbol `0dd67a5b`; el commit plegado añade solo documentación, cero rutas de producto). Ningún archivo de `agents/**` viajó a main: el canon sigue su propia contabilidad, como en los portones previos de esta rama, y `docs/DATABASE_CONVENTIONS.md` se quedó fuera porque entre main y desarrollo hay 126 líneas de otros frentes.
+
+### 17.1 El ambiente después del empuje: promovido no es desplegado, y se midió con sonda propia
+
+El empuje a `main` **no disparó ningún despliegue**. Medido el 2026-11-26T18:02Z con `scripts` versionados en el directorio de evidencia (`sonda-produccion-post-push.js`, salida `post-push-produccion.json`) y con `railway deployment list` en solo lectura:
+
+| Qué se leyó | Valor |
+|---|---|
+| `GET /health` del API de Producción | `commit: e3c2ad171946` — sigue en el punto de partida |
+| `GET /api/v1/public/platform/mobile-app` | **404** (la ruta todavía no corre ahí) |
+| Chunks que `/login` referencia en el portal de Producción | **10**; `Abrir la app` **0**, `Copiar enlace` **0**, `navigator.clipboard` **0**, banda en el HTML **0** |
+| Último despliegue del proyecto `APEXOS PROD` | `bfc039e6` (API) y `4554ca61` (web), ambos **2026-11-24T21:50:44Z**, `meta.branch = main`, `meta.commitHash = e3c2ad17…` |
+| Despliegues nuevos tras el empuje | **0** |
+
+Dos precisiones que el informe debe dejar separadas. **(1)** El árbol promocionado ya contiene el frente completo (banda, enlace administrable, botón directo y migración), pero **el ambiente serve el binario anterior**: mientras nadie despliegue, el acceso de Producción no muestra la banda y la ventana de Administración no existe ahí. **(2)** Desplegar Producción no es una acción neutra de infraestructura: el pre-deploy del API corre `npx prisma migrate deploy`, así que desplegar **es también migrar la base de Producción**, y eso exige orden expresa del dueño según `AGENTS.md`. La cuenta del ledger citada arriba es la que acota el riesgo de ese paso (la única migración pendiente del árbol es la propia; `20260814003500_sales_invoicing_cxc` es una fila **sin finalizar** que ya estaba ahí, no una migración que este frente vaya a aplicar).
+
+**Error propio, declarado.** Al cerrar la contabilidad corrí `mide-ledger-produccion.js` desde el árbol de `desarrollo` en vez del candidato: el mismo script devolvió **6** pendientes y un veredicto de «atención» que es cierto sobre `desarrollo` y falso sobre lo que se promocionó a `main`. La corrida buena (`head_medido 39a54b76`, `deuda_ajena_del_arbol: []`) quedó restaurada contra `HEAD` y la regla se versionó en `apexos-qa` 2.133.0: todo censo de ledger guarda el `HEAD` del árbol que leyó. Lo que queda por verificar después del despliegue está listado en `porton-main.json` → `despues_del_empuje.lo_que_hay_que_verificar_despues` (salud con `0ec1cff0`, lectura pública **200** con el quemado, censo de chunks con el botón presente y la fila `platform_settings` pasada a terminada con `applied_steps_count = 1`).

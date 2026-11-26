@@ -1,0 +1,43 @@
+{
+  "medido_en": "2026-11-26T18:02:00.042Z",
+  "proyecto_ref": "jzbwzmkidfthknsohhnr",
+  "api": {
+    "base": "https://apexos-api-prod-production.up.railway.app",
+    "health": {
+      "estado": 200,
+      "cuerpo": {
+        "status": "OK",
+        "version": "2.0",
+        "modules": 19,
+        "commit": "e3c2ad171946",
+        "service_certification": "products-v2"
+      }
+    },
+    "ruta_publica": {
+      "estado": 404,
+      "cuerpo": {
+        "message": "Route GET:/api/v1/public/platform/mobile-app not found",
+        "error": "Not Found",
+        "statusCode": 404
+      }
+    }
+  },
+  "web": {
+    "base": "https://apexos-web-prod-production.up.railway.app",
+    "login": {
+      "estado": 200,
+      "html_bytes": 18562,
+      "chunks_referenciados": 10,
+      "total": {
+        "abrir_la_app": 0,
+        "copiar_enlace": 0,
+        "navigator_clipboard": 0
+      },
+      "chunks_con_texto": [],
+      "banda_en_html": 0
+    }
+  },
+  "candidato_empujado": "0ec1cff0",
+  "punto_de_partida": "e3c2ad17",
+  "veredicto": "PRODUCCION TODAVIA NO SIRVE EL CANDIDATO: la salud responde e3c2ad171946 y la ruta publica 404; el boton del acceso aparece en 0 de 10 chunks"
+}

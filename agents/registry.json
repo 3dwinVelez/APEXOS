@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.109.0",
+      "version": "2.110.0",
       "updated_at": "2026-11-26",
-      "sha256": "8201bb96a530eb78e820f9176d967ea92e1ee7ba2e1fb954102c0645797d1708",
+      "sha256": "6f5304a7d039b1ec181077445a5329959b50c4c12df03de90008253b7524c991",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -175,7 +175,9 @@
         "promocion-pendiente-con-veredicto-medido",
         "cuenta-antes-despues-con-comando",
         "contabilidad-de-porton-viaja-despues",
-        "pendiente-retirado-se-reescribe"
+        "pendiente-retirado-se-reescribe",
+        "alcance-que-retoma-el-dueno-con-accion-exacta",
+        "inventario-generado-se-contrainta-contra-el-diff"
       ]
     },
     {
@@ -264,9 +266,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.44.0",
-      "updated_at": "2026-11-25",
-      "sha256": "7e8012ae3f2354a553d8dce29cc2daf5fbc713c3a1f22aa1aef0fcb85a0d638f",
+      "version": "2.45.0",
+      "updated_at": "2026-11-26",
+      "sha256": "11dfb3f2bf361312565d497d872fd1c5fca693f6fa7f777ae6071b9ee27f140e",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -301,7 +303,9 @@
         "evidencia-de-corrida-sin-identidad-con-firma-del-manifiesto",
         "lenguaje-cercano-al-dueno",
         "porton-de-origen-por-blob",
-        "residual-mismo-blob-mismo-manifiesto"
+        "residual-mismo-blob-mismo-manifiesto",
+        "clasificacion-de-rutas-por-destino",
+        "scratch-del-porton-fuera-del-candidato"
       ]
     },
     {
@@ -343,9 +347,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.132.0",
+      "version": "2.133.0",
       "updated_at": "2026-11-26",
-      "sha256": "73c6c8703fc68bb4249bc2b6d6b60b9ec0314bfeeca2fe80ce85fce34b5717e1",
+      "sha256": "06e1001b83e906137f188a4ac646c212a3d967b49fb1f0b55c45590917e7397d",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -442,7 +446,9 @@
         "espera-acotada-en-lectura-async",
         "evidencia-publica-no-se-pisa",
         "porton-puntual-nace-en-origen",
-        "ambiente-despliega-por-servicios"
+        "ambiente-despliega-por-servicios",
+        "aserto-contra-la-salida-completa",
+        "ledger-del-destino-en-solo-lectura"
       ]
     },
     {
@@ -499,9 +505,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.74.0",
+      "version": "2.75.0",
       "updated_at": "2026-11-26",
-      "sha256": "c4a12d11626f921156d9eed5ea21f3ffa376fe64ae3a4024becc37e466e24b83",
+      "sha256": "ffff55916a5fbfa0304f2f6b8ffdbcd9d1cce73331a55e21aca60c51541404a9",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -555,7 +561,8 @@
         "lenguaje-cercano-al-dueno",
         "residuo-declarado-se-cierra-en-el-mismo-paquete",
         "contingencia-se-cierra-con-mecanismo-y-retiro",
-        "tema-adicional-es-el-cambio-exclusivo"
+        "tema-adicional-es-el-cambio-exclusivo",
+        "transporte-se-mide-contra-la-distancia-del-destino"
       ]
     }
   ],
