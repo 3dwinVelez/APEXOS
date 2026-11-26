@@ -1,0 +1,137 @@
+{
+  "instrumento": "promotion-migration-check",
+  "origen": "origin/desarrollo (la punta viva del frente)",
+  "origin_ref": "origin/desarrollo",
+  "base_ref": "origin/main",
+  "against": "commit",
+  "file": "HEAD",
+  "carry": [
+    {
+      "file": "apps/api/prisma/migrations/20261125183000_platform_settings/migration.sql",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/src/modules/admin/platform-config-service.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/api/test/admin-platform-mobile-app-url.test.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/app/dashboard/administracion/page.tsx",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/app/login/page.tsx",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/components/system/AppInstallBand.tsx",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/lib/mobileAppInstall.ts",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "apps/web/test/mobile-app-install.test.mjs",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/briefs/2026-11-25-url-app-administrable.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/project/app-movil.md",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-abrir-directo-20261126/certification.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-abrir-directo-20261126/url-admin-local-muestreo-pronto.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/app-install-abrir-directo-20261126/url-admin-local.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/boton-abre-directo-develop-20261126/control-de-mutacion-instrumento.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/boton-abre-directo-develop-20261126/escribe-manifiesto-scope.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/boton-abre-directo-develop-20261126/invariantes-replay.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/boton-abre-directo-develop-20261126/paridad-rutas-llevadas.txt",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/boton-abre-directo-develop-20261126/porton-develop.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/boton-abre-directo-develop-20261126/spec-invariantes.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/boton-abre-directo-develop-20261126/suites-candidato.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/boton-abre-directo-develop-20261126/suites-candidato.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/boton-abre-directo-qa-20261126/qa-cierre.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/boton-abre-directo-qa-20261126/qa-navegador.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/boton-abre-directo-qa-20261126/siembra.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/evidence/url-app-administrable-20261125/local-certification.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/manifests/boton-abre-directo-develop-20261126-preqa.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "docs/qa/manifests/boton-abre-directo-develop-20261126-scope.json",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "scripts/certifications/mobile-app-install-browser-local.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "scripts/certifications/mobile-app-install-qa.js",
+      "from_ref": "origin/desarrollo"
+    },
+    {
+      "file": "scripts/certifications/mobile-app-url-admin-local.js",
+      "from_ref": "origin/desarrollo"
+    }
+  ],
+  "delete": [],
+  "edit": [],
+  "nota": "Las tres rutas con hunks fusionados (schema.prisma, rbac.js, public-routes.js) NO van en carry: su blob no es el de desarrollo porque main trae su propio contenido. Se afirma por otro lado, en suites-despues.json: cero lineas de main perdidas y toda linea nueva pertenece al patch de d667276f. Cero ediciones: este porton no quita ninguna linea de main."
+}
