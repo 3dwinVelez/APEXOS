@@ -7727,6 +7727,29 @@ async function listEmployeeTerminationLiquidations(tenantId, query = {}) {
   `);
 }
 
+// Read the actual provision ledger, including posted payments and reversals.
+// The benefit report has separate reporting semantics and is not a payment balance.
+async function annualSocialBenefitProvisionBalances(tenantId, query = {}) {
+  const year = String(query.year || "");
+  if (!/^\d{4}$/.test(year) || Number(year) < 1) {
+    throw validationError("Indica un año válido de cuatro dígitos.", 400, "PROVISION_ANIO_INVALIDO");
+  }
+  return prisma.runWithTenant(tenantId, async () => {
+    const rows = await prisma.$queryRaw`
+      SELECT concept_code, COALESCE(SUM(accrued_amount), 0) AS accrued_amount,
+             COALESCE(SUM(paid_amount), 0) AS paid_amount,
+             COALESCE(SUM(balance_amount), 0) AS balance_amount
+      FROM th_prestaciones_saldos
+      WHERE tenant_id = ${tenantId} AND source_document_type = 'provision'
+        AND date_start >= ${year + "-01-01"}::date AND date_start <= ${year + "-12-31"}::date
+      GROUP BY concept_code ORDER BY concept_code
+    `;
+    return { year, concepts: Object.fromEntries(rows.map(row => [row.concept_code, {
+      causado: money(row.accrued_amount), pagado: money(row.paid_amount), saldo: money(row.balance_amount)
+    }])) };
+  });
+}
+
 async function listEmployeeBenefitBalances(tenantId, query = {}) {
   const employeeId = numericId(query.employee_id);
   return prisma.runWithTenant(tenantId, async () => prisma.$queryRaw`
@@ -8963,6 +8986,7 @@ module.exports = {
   runEmployeeTerminationLiquidation,
   listEmployeeTerminationLiquidations,
   listEmployeeBenefitBalances,
+  annualSocialBenefitProvisionBalances,
   deleteEmployeeTerminationLiquidation,
   getEmployeeTerminationLiquidationPdf,
   previewSocialContributions,
