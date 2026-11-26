@@ -1,0 +1,125 @@
+{
+  "instrumento": "mobile-app-install-qa",
+  "ejecutado_en": "2026-11-26T17:28:43.077Z",
+  "ambiente": "QA (despliegue de develop)",
+  "origen": "https://apexos-web-qa-production.up.railway.app",
+  "cuenta_efimera": "qa.plat.web.202611261728@apexos.invalid",
+  "checks": [
+    {
+      "nombre": "el_portal_de_qa_proxyeia_la_lectura_publica",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "url": "https://appapexos-production.up.railway.app"
+      }
+    },
+    {
+      "nombre": "la_cuenta_efimera_entra_por_el_portal",
+      "ok": true,
+      "detalle": {
+        "status": 200
+      }
+    },
+    {
+      "nombre": "guardar_por_el_portal_cambia_el_valor_de_qa",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "environment": "qa",
+        "url": "https://apexos-api-qa-production.up.railway.app"
+      }
+    },
+    {
+      "nombre": "antes_de_pulsar_no_hay_guia",
+      "ok": true,
+      "detalle": {
+        "antes": false,
+        "pulsado": true
+      }
+    },
+    {
+      "nombre": "celular_un_solo_enlace_directo_en_la_guia",
+      "ok": true,
+      "detalle": {
+        "enlaces": 1,
+        "href": "https://apexos-api-qa-production.up.railway.app/"
+      }
+    },
+    {
+      "nombre": "celular_abre_el_valor_administrado_en_qa",
+      "ok": true,
+      "detalle": {
+        "href": "https://apexos-api-qa-production.up.railway.app/",
+        "esperado": "https://apexos-api-qa-production.up.railway.app/"
+      }
+    },
+    {
+      "nombre": "celular_en_pestananueva_y_sin_exponer_la_ventana",
+      "ok": true,
+      "detalle": {
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    },
+    {
+      "nombre": "la_guia_no_ofrece_copiar",
+      "ok": true,
+      "detalle": {
+        "rotulos": ""
+      }
+    },
+    {
+      "nombre": "computador_tambien_tiene_el_boton_directo",
+      "ok": true,
+      "detalle": {
+        "enlaces": 1,
+        "href": "https://apexos-api-qa-production.up.railway.app/"
+      }
+    },
+    {
+      "nombre": "computador_mantiene_el_aviso_de_exclusividad",
+      "ok": true,
+      "detalle": {
+        "trozo": "Instala APEXOS en tu celular\n\nSe instala desde Chrome y queda con su propio icono.\n\nLa app es exclusiva para celulares. "
+      }
+    },
+    {
+      "nombre": "computador_deja_el_enlace_escrito_como_respaldo",
+      "ok": true,
+      "detalle": {
+        "incluye_marcador": true
+      }
+    },
+    {
+      "nombre": "pulsar_el_boton_abre_una_ventana_a_la_url",
+      "ok": true,
+      "detalle": {
+        "abrio": true,
+        "creadas": 1,
+        "destinos": [
+          "https://apexos-api-qa-production.up.railway.app/"
+        ]
+      }
+    },
+    {
+      "nombre": "abrir_no_dejo_ventanilla_nativa",
+      "ok": true,
+      "detalle": {
+        "vistas": 0
+      }
+    },
+    {
+      "nombre": "restaurar_devuelve_el_destino_quemado",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "restaurada": true
+      }
+    }
+  ],
+  "notas": [],
+  "veredicto": {
+    "passed": 14,
+    "total": 14
+  }
+}

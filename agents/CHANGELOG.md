@@ -14,6 +14,15 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 - **Instrumento nuevo.** `scripts/certifications/mobile-app-install-qa.js`: navegador real contra el portal de QA servido, con marcador administrado (`https://apexos-api-qa-production.up.railway.app`), censos de ventanas, restauración del quemado, guarda de origen (aborta si toca el project ref de Producción), cuenta efímera del `--seed-only` del instrumento de API y bloqueo de sobreescritura de evidencia. Cierra el pendiente de la sonda manual del 2026-11-25. Su corrida exige el despliegue en QA del frente, así que corre después del portón a `develop`.
 - **Documentación.** `docs/project/app-movil.md` (decisión del 2026-11-26, pie unificado, fila del arnés de QA y pendientes por ambiente) y `docs/briefs/2026-11-25-url-app-administrable.md` §14 con el inventario, las cifras y los dos errores.
 
+### El ambiente despliega por servicios: el portal de QA ya servía el botón aunque el API siguiera atras (`boton-abre-directo-qa-desplegado-20261126`)
+
+- **agente: `apexos-qa` 2.132.0 (regla 143)**
+- **Orden del dueño, literal:** *«…sigue el proceso de migracion correcto desde desarrollo hasta main con estos cambios y condiciones, no debes tocar ni afectar otros temas adicionales debe ser un commit exclusivo para este cambio»*
+- **Qué se midió.** Después del empuje a `develop`, el portal de QA se identificó **por artefacto servido**: **10** chunks de `/login` → `Abrir la app` **2**, `Copiar enlace` **0**, `navigator.clipboard` **0**. La pata de navegador versionada cerró **14/14** contra el ambiente (`docs/qa/evidence/boton-abre-directo-qa-20261126/qa-navegador.json`), con siembra (`--seed-only`, el servidor se declaró `qa` solo) y retiro: **0** cuentas vivas, enlace devuelto al quemado en **194 ms**, login bloqueado en **401** después (`siembra.json`, `qa-cierre.json`).
+- **Por qué el `/health` del API sigue en `5d46c49729c0` y no es un frente sin desplegar:** el portón llevó **cero** rutas de `apps/api`; el binario del API promocionado es el mismo y su lectura pública responde **200**. La regla nueva exige nombrar el servicio, no «el ambiente», y pasar `--expect-commit` con el commit que el ambiente sirve de verdad.
+- **Producción, medida y no supuesta:** `/health` sirve `e3c2ad171946` y `/api/v1/public/platform/mobile-app` responde **404** - la función no está allí. Aplicar `20261125183000_platform_settings` en la base de Producción **no** está autorizado en esta intervención.
+- **Lo que NO se hizo:** cero escritura en Producción, cero migración remota, cero variable de entorno, cero `force push`, cero rama nueva.
+
 ### La contabilidad del portón a `develop` y la regla de que el inventario no puede prometer rutas que no viajaron (`boton-abre-directo-contabilidad-develop-20261126`)
 
 - **agente: `apexos-brief` 2.108.0 (regla 121)**

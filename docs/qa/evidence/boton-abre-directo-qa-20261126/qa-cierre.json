@@ -1,0 +1,13 @@
+{
+  "modo": "retiro",
+  "ejecutado_en": "2026-11-26T17:29:07.705Z",
+  "notas": [
+    "restaurar por el endpoint: HTTP 200, restaurada true",
+    "acceso publico de vuelta al respaldo en 194 ms: https://appapexos-production.up.railway.app",
+    "fila final: {\"url\":\"https://appapexos-production.up.railway.app\"} actualizada por qa.plat.web.202611261728@apexos.invalid",
+    "residuo declarado: la prueba deja UNA fila con el destino quemado (etiqueta 'administrado en este ambiente' en vez de 'respaldo'). El enlace que ve el usuario es el mismo.",
+    "qa.plat.web.202611261728@apexos.invalid: retiro HTTP 200, login despues HTTP 401",
+    "cuentas de prueba todavia activas en QA: 0"
+  ],
+  "cuentas_vivas": 0
+}

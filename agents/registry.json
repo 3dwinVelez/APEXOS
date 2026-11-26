@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.108.0",
+      "version": "2.109.0",
       "updated_at": "2026-11-26",
-      "sha256": "da3f6c22730f3aa07b661cf413437118308d81d53045658c553aae1965fe4b19",
+      "sha256": "8201bb96a530eb78e820f9176d967ea92e1ee7ba2e1fb954102c0645797d1708",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -174,7 +174,8 @@
         "cifra-de-brief-con-artefacto-reproducible",
         "promocion-pendiente-con-veredicto-medido",
         "cuenta-antes-despues-con-comando",
-        "contabilidad-de-porton-viaja-despues"
+        "contabilidad-de-porton-viaja-despues",
+        "pendiente-retirado-se-reescribe"
       ]
     },
     {
@@ -342,9 +343,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.131.0",
+      "version": "2.132.0",
       "updated_at": "2026-11-26",
-      "sha256": "9aa9b433071adebf4242adda4497ca06d4115676f6964ec3b7f08e43a69f7f9e",
+      "sha256": "73c6c8703fc68bb4249bc2b6d6b60b9ec0314bfeeca2fe80ce85fce34b5717e1",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -440,7 +441,8 @@
         "certificador-hermetico-con-control-de-mutacion",
         "espera-acotada-en-lectura-async",
         "evidencia-publica-no-se-pisa",
-        "porton-puntual-nace-en-origen"
+        "porton-puntual-nace-en-origen",
+        "ambiente-despliega-por-servicios"
       ]
     },
     {

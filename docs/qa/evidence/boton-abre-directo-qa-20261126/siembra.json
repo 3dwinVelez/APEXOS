@@ -1,0 +1,16 @@
+{
+  "modo": "siembra_para_navegador",
+  "ejecutado_en": "2026-11-26T17:28:38.167Z",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "cuenta": {
+    "id": 917,
+    "email": "qa.plat.web.202611261728@apexos.invalid",
+    "rol": "APEX_ADMIN"
+  },
+  "administracion_lee": {
+    "status": 200,
+    "environment": "qa",
+    "source": "base"
+  },
+  "fixture": ".tmp/qa-ephemeral-boton-20261126.json"
+}
