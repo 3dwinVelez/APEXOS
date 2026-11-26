@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.113.0",
+      "version": "2.114.0",
       "updated_at": "2026-11-26",
-      "sha256": "a710fd89d2afe418b90290ed8ee0eb6d35cc63abeb7baf3d255cc91b884ccfff",
+      "sha256": "32e2b797c6080e4a78e69964ab0342203c773622f66f662a5126d2fb31259691",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -180,7 +180,8 @@
         "inventario-generado-se-contrainta-contra-el-diff",
         "host-de-ambiente-heredado-del-canon",
         "consecuencia-de-ambiente-se-cita-con-su-medicion",
-        "brief-se-reconcilia-contra-el-arbol-ejecutado"
+        "brief-se-reconcilia-contra-el-arbol-ejecutado",
+        "brief-exige-el-antes-del-destino"
       ]
     },
     {
@@ -216,9 +217,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.51.0",
+      "version": "2.52.0",
       "updated_at": "2026-11-26",
-      "sha256": "e93c4bdfca005b4ce844aaf1e06e73384a632216e844a761f79299b79234a84a",
+      "sha256": "1cc375e42c852a87a0ed80cba9fb8b85cf0aa8ded869e97f657d30a4e93ce334",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -267,7 +268,8 @@
         "paridad-de-requisito-contra-el-servidor",
         "enlace-directo-sin-portapapeles",
         "matematica-de-eje-ejecutable-en-el-contrato",
-        "tema-y-telefono-medidos-en-navegador"
+        "tema-y-telefono-medidos-en-navegador",
+        "registro-fuera-del-rango-visible-se-declara"
       ]
     },
     {
@@ -355,9 +357,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.136.0",
+      "version": "2.137.1",
       "updated_at": "2026-11-26",
-      "sha256": "753be09ba30f275066e3ac697e4dcbe1b71034375a100a62e638f09824368460",
+      "sha256": "86f21624538129980c93e08b65e15e95dc8daef8e4500f6fe17e9e645f0701f0",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -461,7 +463,8 @@
         "desplegado-servido-y-migrado-se-miden-aparte",
         "instrumento-desde-su-arbol-y-se-lee-que-escribio",
         "arnes-nuevo-se-prueba-contra-el-arbol-anterior",
-        "base-local-por-plantilla-y-no-por-db-push"
+        "base-local-por-plantilla-y-no-por-db-push",
+        "antes-contra-los-blobs-del-destino"
       ]
     },
     {

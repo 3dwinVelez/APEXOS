@@ -1,0 +1,12 @@
+{
+  "environment": "LOCAL",
+  "commit": "e3b2046db21abee989d4c66cdc1de12cc7c431a9",
+  "started_at": "2026-11-26T21:25:23.553Z",
+  "checks": [
+    "summary exposes photo availability and counters without image bytes",
+    "single and batch use TimePunch identity photos, retain extra support and ActivityEvidence"
+  ],
+  "status": "failed",
+  "error": "Waiting for selector `[data-schedule-view=\"timeline\"] [data-route-id=\"1\"]` failed",
+  "finished_at": "2026-11-26T21:28:31.805Z"
+}

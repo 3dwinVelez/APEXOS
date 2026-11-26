@@ -1,0 +1,7 @@
+[
+  {
+    "file": "scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "reason": "Unica ruta del diff cuyo blob no es el de origin/desarrollo. El instrumento adelanto por dos mitades: origin/develop trae las siete patas del frente de QA de espacio de trabajo (hub unificado, creacion/edicion/clonacion, trazabilidad cronologica, reportes y paleta de comandos, esta ultima imposible de correr en desarrollo porque exige apps/web/app/dashboard/talento-humano/bancos y fn-contab-pyg-ampliado) y origin/desarrollo trae las tres patas del eje de tiempo. Llevar el blob de desarrollo revertiria las siete patas ajenas; llevar el de develop dejaria el rediseño sin medir. El candidato fusiona las dos mitades sobre el arbol de develop y la fusion se mide ahi, no en desarrollo.",
+    "approval": "dueno del proyecto (Edwin), 2026-11-26: la orden de promover a develop exige llevar el cambio sin afectar otros temas adicionales, y esa misma orden impide revertir las patas del frente ajeno; la excepcion se autoriza por esa condicion y queda acotada a esta ruta. El blob resultante se certifica con la corrida de navegador del candidato (candidato-develop/certification.json), su censo de patas (candidato-develop/instrumento-fusionado.json) y el control de mutacion (candidato-develop/control-mutacion-candidato.json)."
+  }
+]

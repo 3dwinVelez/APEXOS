@@ -1,0 +1,55 @@
+(node:22052) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:17964) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+▲ Next.js 16.3.5 (webpack)
+- Local:         http://127.0.0.1:3317
+- Network:       http://127.0.0.1:3317
+✓ Ready in 1562ms
+✓ Running next.config.ts took 152ms
+
+  We detected TypeScript in your project and reconfigured your tsconfig.json file for you. Strict-mode is set to false by default.
+  The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+  	- include was updated to add '.next-hr-user-association/types/**/*.ts'
+  	- include was updated to add '.next-hr-user-association/dev/types/**/*.ts'
+
+- Experiments (use with caution):
+  · optimizePackageImports
+
+○ Compiling /login ...
+ GET /login 200 in 2.3s (next.js: 1073ms, application-code: 1192ms)
+ GET /login 200 in 334ms (next.js: 31ms, application-code: 302ms)
+○ Compiling /dashboard/talento-humano ...
+ GET /dashboard/talento-humano 200 in 8.9s (next.js: 7.0s, application-code: 1910ms)
+○ Compiling /manifest.webmanifest ...
+ GET /manifest.webmanifest 200 in 20.1s (next.js: 19.8s, application-code: 276ms)
+ GET /dashboard/talento-humano/rutas 200 in 13.9s (next.js: 11.6s, application-code: 2.3s)
+ GET /login 200 in 15.2s (next.js: 12.5s, application-code: 2.7s)
+ GET / 200 in 15.2s (next.js: 12.5s, application-code: 2.7s)
+ GET /dashboard 200 in 15.2s (next.js: 12.5s, application-code: 2.7s)
+ GET /manifest.webmanifest 200 in 96ms (next.js: 30ms, application-code: 66ms)
+ GET /manifest.webmanifest 200 in 66ms (next.js: 17ms, application-code: 49ms)
+ GET /manifest.webmanifest 200 in 82ms (next.js: 29ms, application-code: 53ms)
+ GET /dashboard/talento-humano/rutas 200 in 1177ms (next.js: 102ms, application-code: 1075ms)
+ GET /dashboard/talento-humano/rutas 200 in 897ms (next.js: 55ms, application-code: 842ms)
+ GET /manifest.webmanifest 200 in 241ms (next.js: 52ms, application-code: 190ms)
+○ Compiling /dashboard/talento-humano/mallas ...
+ GET /dashboard/talento-humano/mallas 200 in 6.1s (next.js: 5.8s, application-code: 251ms)
+ GET /manifest.webmanifest 200 in 349ms (next.js: 85ms, application-code: 264ms)
+ GET /dashboard/talento-humano/mallas 200 in 775ms (next.js: 13ms, application-code: 761ms)
+ GET /manifest.webmanifest 200 in 19ms (next.js: 6ms, application-code: 13ms)
+ GET /dashboard/talento-humano/rutas 200 in 582ms (next.js: 237ms, application-code: 345ms)
+ GET /manifest.webmanifest 200 in 79ms (next.js: 29ms, application-code: 50ms)
+ GET /manifest.webmanifest 200 in 136ms (next.js: 28ms, application-code: 109ms)
+○ Compiling /dashboard/talento-humano/reportes ...
+ GET /dashboard/talento-humano/reportes 200 in 57s (next.js: 46s, application-code: 10.9s)
+ GET /manifest.webmanifest 200 in 229ms (next.js: 118ms, application-code: 111ms)
+ GET /dashboard/talento-humano 200 in 1651ms (next.js: 178ms, application-code: 1474ms)
+ GET /manifest.webmanifest 200 in 35ms (next.js: 9ms, application-code: 26ms)
+○ Compiling /dashboard/talento-humano/bancos ...
+ GET /dashboard/talento-humano/bancos 200 in 8.2s (next.js: 8.1s, application-code: 197ms)
+ GET /manifest.webmanifest 200 in 330ms (next.js: 75ms, application-code: 255ms)
+○ Compiling /dashboard/contabilidad/pyg/ampliado ...
+ GET /dashboard/contabilidad/pyg/ampliado 200 in 13.6s (next.js: 13.2s, application-code: 410ms)
+ GET /manifest.webmanifest 200 in 444ms (next.js: 139ms, application-code: 305ms)

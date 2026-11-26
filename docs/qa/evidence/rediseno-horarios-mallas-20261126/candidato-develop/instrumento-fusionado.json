@@ -1,0 +1,57 @@
+{
+  "medido_en": "2026-11-26",
+  "metodo": "extraido con /await check\\('([^']+)'/ sobre `git show <ref>:scripts/certifications/hr-punch-mobile-evidence-local.js`",
+  "blobs": {
+    "origen_desarrollo": "446321b898e32902a64d29b0ff11fe16a57b7ff3",
+    "destino_develop": "18f579b8303607a8d21445ad9a1edfcf37d430e8",
+    "candidato": "f49d9561eb368e63516c70ac64e58a745ab0762a"
+  },
+  "patas": {
+    "desarrollo": 6,
+    "develop": 7,
+    "candidato": 10
+  },
+  "patas_desarrollo": [
+    "summary exposes photo availability and counters without image bytes",
+    "single carries the bytes and the batch is an index that counts the same evidence without them",
+    "the schedule opens its detail from the timeline bar, which is the default view",
+    "the table view opens the same detail from the row and hides its actions behind the menu",
+    "the redesign repaints through the app theme control and stays usable on a phone",
+    "Reports journey trace renders the activity photograph and opens its enlargement"
+  ],
+  "patas_develop": [
+    "summary exposes photo availability and counters without image bytes",
+    "single and batch use TimePunch identity photos, retain extra support and ActivityEvidence",
+    "one hub entry opens programming and existing links select the matching tab",
+    "programming creates, edits and clones schedules without duplicating them when tabs change",
+    "chronological team trace displays all mobile photos and opens lightbox",
+    "Reports journey trace renders the activity photograph and opens its enlargement",
+    "command palette finds bank master and expanded PYG and opens both real pages"
+  ],
+  "patas_candidato": [
+    "summary exposes photo availability and counters without image bytes",
+    "single and batch use TimePunch identity photos, retain extra support and ActivityEvidence",
+    "one hub entry opens programming and existing links select the matching tab",
+    "the schedule opens its detail from the timeline bar, which is the default view",
+    "the table view opens the same detail from the row and hides its actions behind the menu",
+    "the redesign repaints through the app theme control and stays usable on a phone",
+    "programming creates, edits and clones schedules without duplicating them when tabs change",
+    "chronological team trace displays all mobile photos and opens lightbox",
+    "Reports journey trace renders the activity photograph and opens its enlargement",
+    "command palette finds bank master and expanded PYG and opens both real pages"
+  ],
+  "patas_de_develop_perdidas_en_el_candidato": [],
+  "patas_nuevas_del_frente": [
+    "the schedule opens its detail from the timeline bar, which is the default view",
+    "the table view opens the same detail from the row and hides its actions behind the menu",
+    "the redesign repaints through the app theme control and stays usable on a phone"
+  ],
+  "adaptaciones": [
+    "las patas que necesitan la tabla la piden por su boton (`view('Tabla')`) porque la vista por defecto paso a ser la linea de tiempo",
+    "Editar y Clonar se abren con `rowMenu(id)` (el menu de mas acciones) en lugar de pulsarlos sueltos en la fila",
+    "las filas se buscan por `[data-schedule-view=\"timeline\"] [data-route-id=...]`, que funciona en las dos vistas",
+    "las capturas de la pata de trazabilidad se renombran a seguimiento-monitor.png y seguimiento-lightbox.png para no pisar las de la linea de tiempo"
+  ],
+  "sintaxis": "node --check dentro del arbol del candidato",
+  "veredicto": "VERDE: las 7 patas de develop siguen en el candidato y se suman 3 del frente del eje"
+}

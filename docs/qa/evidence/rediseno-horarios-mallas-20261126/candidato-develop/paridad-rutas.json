@@ -1,0 +1,103 @@
+{
+  "instrumento": "promotion-migration-check",
+  "ejecutado_en": "2026-11-26T21:21:58.616Z",
+  "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS",
+  "spec": "docs/qa/evidence/rediseno-horarios-mallas-20261126/candidato-develop/spec-invariantes.json",
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "contra": "commit e3b2046d",
+  "label": "invariantes del replay",
+  "passed": true,
+  "total": 11,
+  "rotos": 0,
+  "results": [
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+      "esperado": "4473068e447ceb22627176cadd5d91e3d1d3397b",
+      "actual": "4473068e447ceb22627176cadd5d91e3d1d3397b",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-schedule-timeline-view.test.mjs",
+      "esperado": "f8cb6bd18f6d1e2076e3437236e07e3d1422e191",
+      "actual": "f8cb6bd18f6d1e2076e3437236e07e3d1422e191",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/briefs/2026-11-26-rediseno-horarios-mallas.md",
+      "esperado": "513d7c0f8fd38ae3ce772b25db7167ff67ee276c",
+      "actual": "513d7c0f8fd38ae3ce772b25db7167ff67ee276c",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/design/APEXOS_COMPONENT_CATALOG.md",
+      "esperado": "68d9d167abad00473f5a7bd052135a493a985a67",
+      "actual": "68d9d167abad00473f5a7bd052135a493a985a67",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/certifications/rediseno-horarios-mallas-20261126.md",
+      "esperado": "46767f5872b79d76bd306e66af14d6f7f18b8304",
+      "actual": "46767f5872b79d76bd306e66af14d6f7f18b8304",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/artefacto-produccion.json",
+      "esperado": "d42d2d9a215034bac1cc721d7f30ae30d0d83d78",
+      "actual": "d42d2d9a215034bac1cc721d7f30ae30d0d83d78",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/certification.json",
+      "esperado": "e3cb778604c270e51c3650ffe281ddbb91c90af9",
+      "actual": "e3cb778604c270e51c3650ffe281ddbb91c90af9",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/control-mutacion-arnes-pantalla-anterior.json",
+      "esperado": "0286386f38f65fe94e3fcd535adccc33f1d0d795",
+      "actual": "0286386f38f65fe94e3fcd535adccc33f1d0d795",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/control-mutacion-contrato.json",
+      "esperado": "ef4add7c6ec8bdafd2b67a3fc86bd3b152dd45d1",
+      "actual": "ef4add7c6ec8bdafd2b67a3fc86bd3b152dd45d1",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/isolated-certification.json",
+      "esperado": "e666d4412de104b2162bac5d8671387454a64532",
+      "actual": "e666d4412de104b2162bac5d8671387454a64532",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/medidas-linea-de-tiempo.json",
+      "esperado": "4355d9431cfb3eb42abd3089f246eacccba1dac1",
+      "actual": "4355d9431cfb3eb42abd3089f246eacccba1dac1",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    }
+  ]
+}

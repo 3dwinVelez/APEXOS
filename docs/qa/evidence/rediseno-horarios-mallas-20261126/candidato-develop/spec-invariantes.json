@@ -1,0 +1,43 @@
+{
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "candidato": "081027de6e1c1a29ccf8bd24f512dff5eb9c28f0",
+  "porte": "las once rutas del frente viajan byte a byte; scripts/certifications/hr-punch-mobile-evidence-local.js NO esta aqui porque se fusiona sobre el arbol de develop y se mide ahi (ver instrumento-fusionado.json)",
+  "carry": [
+    {
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "file": "apps/web/test/hr-schedule-timeline-view.test.mjs"
+    },
+    {
+      "file": "docs/briefs/2026-11-26-rediseno-horarios-mallas.md"
+    },
+    {
+      "file": "docs/design/APEXOS_COMPONENT_CATALOG.md"
+    },
+    {
+      "file": "docs/qa/certifications/rediseno-horarios-mallas-20261126.md"
+    },
+    {
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/artefacto-produccion.json"
+    },
+    {
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/certification.json"
+    },
+    {
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/control-mutacion-arnes-pantalla-anterior.json"
+    },
+    {
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/control-mutacion-contrato.json"
+    },
+    {
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/isolated-certification.json"
+    },
+    {
+      "file": "docs/qa/evidence/rediseno-horarios-mallas-20261126/medidas-linea-de-tiempo.json"
+    }
+  ],
+  "delete": [],
+  "edit": []
+}

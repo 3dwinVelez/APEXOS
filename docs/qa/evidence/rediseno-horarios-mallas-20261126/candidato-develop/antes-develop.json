@@ -1,0 +1,36 @@
+{
+  "control": "ANTES del porton de promocion desarrollo -> develop",
+  "pregunta": "pasa el arbol puro de origin/develop su propio instrumento de navegador?",
+  "metodo": "en el arbol del candidato se restauraron los dos blobs exactos de origin/develop (git checkout baf47021 -- apps/web/app/dashboard/talento-humano/rutas/page.tsx scripts/certifications/hr-punch-mobile-evidence-local.js) y se corrio el instrumento de develop sin tocar nada mas",
+  "blobs_medidos": {
+    "page_tsx": "c79f3da7530ca27e5a2d3126f580276fbb33e4ae",
+    "instrumento": "18f579b8303607a8d21445ad9a1edfcf37d430e8"
+  },
+  "base_develop": "baf47021",
+  "head_registrado": "e6d5e97df464a402c380fcd8c1860c25806a240f",
+  "nota_head": "el head que reporta el artefacto es el del arbol de trabajo, no el de lo medido: el instrumento lee git rev-parse HEAD. Lo que se restauro fueron los dos blobs que el navegador ve, por eso la corrida describe el arbol de develop.",
+  "ejecucion": {
+    "environment": "LOCAL",
+    "commit": "e6d5e97df464a402c380fcd8c1860c25806a240f",
+    "started_at": "2026-11-26T21:11:06.635Z",
+    "checks": [
+      "summary exposes photo availability and counters without image bytes",
+      "single and batch use TimePunch identity photos, retain extra support and ActivityEvidence",
+      "one hub entry opens programming and existing links select the matching tab"
+    ],
+    "status": "failed",
+    "error": "Waiting failed: 90000ms exceeded",
+    "finished_at": "2026-11-26T21:14:03.288Z"
+  },
+  "aislado": {
+    "status": "failed",
+    "environment": "LOCAL",
+    "database": "apexos_cert_hr_assoc_1795727451204",
+    "source_database_modified": false,
+    "fixture_schema_hunks": [],
+    "exit_code": 1,
+    "unexpected_5xx": [],
+    "checked_at": "2026-11-26T21:14:03.430Z"
+  },
+  "conclusion": "ROJO sobre el destino antes de cualquier carry. Falla la pata programacion creates, edits and clones: el listado esta fijado a un dia (dateFilter=initialDate y el API responde ?date=de-hoy), la jornada nueva nace dos dias despues y la fila nunca existe. El rojo no lo introduce el rediseño: la pata estaba asumiendo sin medir que la fila del otro dia aparecia."
+}

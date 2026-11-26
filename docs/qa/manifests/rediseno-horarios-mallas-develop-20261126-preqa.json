@@ -1,0 +1,91 @@
+{
+  "change_id": "rediseno-horarios-mallas-develop-20261126",
+  "commit": "e3b2046d",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "evidence": [
+      "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/certification.json",
+      "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/isolated-certification.json",
+      "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/medidas-linea-de-tiempo.json",
+      "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/instrumento-fusionado.json"
+    ],
+    "notas": "Diez patas corridas dentro del arbol del candidato con base efimera: las siete que ya traia develop mas las tres del eje de tiempo. El arnes aislado no toca la base fuente ni la nube."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/paridad-rutas.json",
+      "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/control-mutacion-candidato.json",
+      "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/control-de-mutacion-porton.json",
+      "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/antes-develop.json",
+      "../evidence/rediseno-horarios-mallas-20261126/artefacto-produccion.json"
+    ],
+    "notas": "Paridad de blobs ruta por ruta contra origin/desarrollo, auto-prueba del porton (el replay bueno verde y las tres derivas rojas) y control de mutacion del arnes: el instrumento queda rojo cuando la pantalla vuelve al blob anterior de develop, asi que el verde significa algo. El control ANTES deja medida la punta de partida."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/certification.json",
+        "../evidence/rediseno-horarios-mallas-20261126/certification.json",
+        "../evidence/rediseno-horarios-mallas-20261126/medidas-linea-de-tiempo.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/isolated-certification.json",
+        "../evidence/rediseno-horarios-mallas-20261126/isolated-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/instrumento-fusionado.json",
+        "../evidence/rediseno-horarios-mallas-20261126/control-mutacion-contrato.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/certification.json",
+        "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/paridad-rutas.json",
+        "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/control-de-mutacion-porton.json",
+        "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/antes-develop.json",
+        "../evidence/rediseno-horarios-mallas-20261126/control-mutacion-arnes-pantalla-anterior.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/rediseno-horarios-mallas-20261126/artefacto-produccion.json",
+        "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/medidas-linea-de-tiempo.json",
+        "../evidence/rediseno-horarios-mallas-20261126/candidato-develop/certification.json"
+      ]
+    }
+  },
+  "suites": {
+    "contrato_web": "apps/web/test/hr-schedule-timeline-view.test.mjs: 11/11 dentro del arbol del candidato",
+    "arnes_aislado": "hr-employee-user-association-isolated-local.js --certificate=hr-punch-mobile-evidence-local.js: base efimera, cero 5xx inesperados"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-26T11:00:00-05:00",
+    "authorization_flags": {
+      "direct_push_to_develop": true,
+      "candidate_on_detached_head": true,
+      "allowed_deletion": false,
+      "origin_waiver_for_certifier": true
+    },
+    "nota": "Las banderas cubren exclusivamente las 12 rutas de este inventario. Este documento no autoriza develop -> main, force push, migraciones en la base de Produccion, infraestructura ni cambios en Railway/Supabase."
+  },
+  "nota": "commit declara el SHA funcional medido dentro del arbol del candidato (e3b2046), no el sha del propio manifiesto. La pata contra el ambiente QA desplegado se corre despues del push y se versiona en la contabilidad posterior: describe una punta que no existe dentro del commit que la describe."
+}

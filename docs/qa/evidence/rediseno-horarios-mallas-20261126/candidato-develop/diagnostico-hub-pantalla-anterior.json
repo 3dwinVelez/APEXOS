@@ -1,0 +1,19 @@
+{
+  "url": "http://127.0.0.1:3317/dashboard/talento-humano/rutas",
+  "titulo": "APEX OS",
+  "claves_locales": [
+    "role_permissions",
+    "token",
+    "role_name",
+    "apex_onboarding_v1:anonymous",
+    "role_metadata",
+    "apex_navigation_trace_v1",
+    "tenant_active_modules",
+    "apex_last_activity",
+    "apex_collaboration_signal",
+    "apexos_role_context_fetched_at",
+    "apex_theme"
+  ],
+  "texto": "Saltar al contenido principal\nPágina cargada: talento humano · rutas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nAP\n\nSesión no identificada\n\nUsuario conectado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nRutas\nTalento Humano\n\nTalento Humano\n\nHorarios y mallas\n\nConsulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo.\n\nNuevo horario\nProgramación\nSeguimiento\nProgramación de jornadas\n\nCompara fecha, jornada, personas y estado antes de abrir o edit",
+  "error": "Waiting for selector `[data-schedule-view=\"timeline\"] [data-route-id=\"1\"]` failed"
+}
