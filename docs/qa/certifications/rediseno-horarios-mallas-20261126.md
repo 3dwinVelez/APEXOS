@@ -28,7 +28,7 @@ El PDF `Rediseno_Horarios_y_mallas.pdf` pide ocho cosas y las ocho se pueden ver
 | Abrir el detalle | botón explícito por fila | pulsar la franja (nombre y franja son el mismo acceso) o la fila entera; **6/6** en navegador |
 | Acciones «Editar / Clonar» | visibles en la fila | detrás de «⋯» con `aria-expanded`; el arnés exige que el menú exista **y** que «Editar» aparezca al abrirlo |
 | Estado | texto con chip | punto de color + texto, pintado solo con tokens del sistema (**cero** hex en la franja, lo corta el contrato) |
-| Eje | no existía | 06:00–22:00, **17** marcas, `left=(inicio−6)/16`, `width=duración/16`, nocturno recortado y nombrado |
+| Eje | no existía | 06:00–22:00, **9** marcas (de dos en dos sobre las 16 horas), `left=(inicio−6)/16`, `width=duración/16`, nocturno recortado y nombrado |
 | Contraste de la etiqueta sobre su franja | no medido | **12,39:1** claro y **14,49:1** oscuro (AA pide 4,5:1) |
 | Área tocable de la franja | **30 px** en la geometría antigua (misma cuenta CSS; hoy **30 px** medidos en escritorio por densidad de tablero) | **46 px medidos en 390 px** de ancho (el PDF pide ≥ 40 px táctiles) |
 | Ventana de detalle | modal ancho fijo | portal sobre `document.body`, `bg-neutral-950/70` + `backdrop-blur-sm`, **390 de 390 px** en teléfono |
@@ -43,7 +43,7 @@ El PDF `Rediseno_Horarios_y_mallas.pdf` pide ocho cosas y las ocho se pueden ver
 
 - 08:00–16:00 → `left:"12.5%"`, `width:"50%"`.
 - 22:00→02:00 (jornada nocturna) → no produce ancho negativo: sale recortada al borde del eje y con su aviso de recorte nombrado.
-- El eje tiene **17** marcas (06, 08, …, 22) y el tope de filas dibujadas es **60**, con aviso de filas ocultas.
+- El eje tiene **9** marcas (`TIMELINE_TICK_HOURS = [6,8,10,12,14,16,18,20,22]`, de dos en dos sobre las 16 horas) y el tope de filas dibujadas es **60**, con aviso de filas ocultas. *(Corregido en el corte de QA: estaba escrito «**17** marcas» y era el conteo de las horas del eje, no de las etiquetas; el contrato compara el arreglo de **9** y el navegador desplegado pintó **9**.)*
 - La vista por defecto es `"timeline"` y el selector alterna a tabla.
 - Cero literales hexadecimales en la franja y en el punto de estado: se usan `apex`, `success`, `warning`, `error`, `line`, `surface` y `content-*`.
 
@@ -80,7 +80,7 @@ Restaurado el blob bueno, la corrida completa quedó **6/6**. Esta es la prueba 
 
 ## 5. Límites de esta certificación
 
-- Todo lo anterior es **ambiente local**. La certificación del candidato sobre `develop` (§6) también lo es: el ambiente QA desplegado todavía no se mide contra el binario servido, y esa pata es obligatoria antes de considerar el frente servido (regla del repo: la certificación local no autoriza `main` y no sustituye la QA funcional).
+- Todo lo anterior es **ambiente local**. La certificación del candidato sobre `develop` (§6) también lo es; lo servido en el ambiente QA desplegado se mide por separado en **§7**, que es la pata que cierra el frente (regla del repo: la certificación local no autoriza `main` y no sustituye la QA funcional).
 - El censo de artefacto prueba que el literal viaja en el chunk compilado; no prueba que el navegador lo pinte —eso lo cubre la pata 3.2 sobre el dev server.
 - No se construyó el árbol anterior con `next build`, así que no hay ANTES por artefacto; el ANTES por fuente es el control 3.3.
 - Los cinco rojos de la suite web quedan como deuda de sus propios frentes: este documento los atribuye pero no los repara.
@@ -108,11 +108,53 @@ El candidato (`e3b2046d`) es un árbol despegado sobre `origin/develop@baf47021`
 
 **Error propio de este corte, declarado.** Al guardar la corrida del control de mutación copié el artefacto sobre `candidato-develop/certification.json` y **casi pierdo la corrida buena**: la restauré desde el respaldo `.local/BUENA-candidato/` del worktree, el rojo quedó renombrado `control-mutacion-candidato.json` y su diagnóstico `diagnostico-hub-pantalla-anterior.json`. El daño real no fue ese —el archivo se recuperó— sino lo de la fila 1 de la tabla: **la primera corrida roja del candidato no dejó evidencia** porque las corridas sucesivas escriben en la misma carpeta `.local`. Desde este corte la corrida buena se respalda en un directorio con nombre propio antes de tocar cualquier artefacto versionado, y todo artefacto se escribe a una ruta nueva y se valida antes de existir.
 
-## 7. Pendientes, con dueño
+## 7. QA funcional sobre el ambiente desplegado: **50 de 50** contra el portal de `develop`
 
-1. **Promover a `develop` y desplegar el candidato** —`equipo-apexos` + `apexos-git-guardian`—: las compuertas están corridas y verdes (§6: `qa:promotion:scope`, `qa:preqa:evidence`, paridad por blob con su selftest rojo en los **3** mutantes y el portón de gobernanza con `APEXOS_PROMOTION_AUTH`). Lo que queda es el empuje a `origin/develop` y constar el árbol servido. La orden del dueño autoriza `desarrollo -> develop` y ese despliegue; no autoriza nada más.
-2. **QA funcional en el ambiente desplegado** —`apexos-qa`—: repetir la tanda de controles contra el host y verificar por artefacto servido que el ambiente corre el candidato.
+La pata que faltaba. El instrumento nuevo es `scripts/certifications/hr-schedule-timeline-qa.js` y corre contra los host reales, no contra un servidor local: portal `https://apexos-web-qa-production.up.railway.app` y API `https://apexos-api-qa-production.up.railway.app` (los fija `config/qa.env` y el arnés se niega a correr si el host no parece QA o si la cadena de base no trae el proyecto esperado). Evidencia en `docs/qa/evidence/rediseno-horarios-mallas-20261126/qa-desplegado/`: la corrida versionada es **`certification.json`** (`run_id 20261126221616`, `status: passed`, **50/50**, **22:16:16Z–22:17:05Z**) con sus siete capturas `qa-1-linea-de-tiempo.png` … `qa-7-ventana-telefono.png`. Las cuatro corridas anteriores quedan versionadas como `certification-corrida-{1,2,3,4}.json` porque son las que encontraron los defectos del instrumento; no se borran.
+
+**Que el ambiente corre el candidato se probó por artefacto y no por el push.** El HTML de la pantalla (200, **11.500** bytes) referencia **15** chunks (**1.037.964** bytes descargados) y los cuatro literarios del rediseño —`Línea de tiempo`, `Abrir detalle del horario`, `Filtrar por fecha`, `Modo de vista del listado`— caen los cuatro en **un** chunk: **`2zlwn45pk_2rq.js`, 91.431 bytes**. La API servida reporta `commit baf4702127a4`, que es la punta previa de `develop`: el diff promocionado no llevaba **ninguna** ruta de `apps/api`, así que el backend no cambió y no debía cambiar. El portal sí reconstruyó. La sonda previa, corrida a las **21:45:34Z** y versionada en `candidato-develop/desplegado-qa.json`, midió del mismo artefacto **11.502** bytes de HTML, **15** chunks y **1.038.326** bytes: los **2** y los **362** bytes de diferencia son del propio Next (nonces y prefijos por petición), no de otra versión —el chunk del rediseño es el mismo `2zlwn45pk_2rq.js` en las dos lecturas—.
+
+**Lo que midió el navegador sobre el binario desplegado**, con una cuenta efímera de `NYVORA` (54 jornadas en total, **0** de hoy) y el filtro fijado en **2026-11-23**, el día que la API reportó más material (**23** rutas, 10 marcaciones, 11 evidencias):
+
+| Patas | Medido en QA |
+|---|---|
+| Vista por defecto | `aria-pressed` «Línea de tiempo» = **true**, «Tabla» = **false**, **0** `tr[data-route-id]` y el grupo con `aria-label="Modo de vista del listado"` presente |
+| Indicadores | **6** tarjetas en **1** sola fila de escritorio, **182** px por tarjeta |
+| Eje | **9** marcas de dos en dos, de **06:00** a **22:00** |
+| Matemática de la franja | **23** franjas con `left`/`width` dentro del eje, **0** desbordan. Muestra: horario **405**, 08:00–17:00 → `left 12,5%`, `width 56,25%` (=(8−6)/16 y 9/16) |
+| Acceso | **23** franjas con `aria-label="Abrir detalle del horario N…"`, **23** nombres de jornada como botón, **23** puntos de estado |
+| Ventana de detalle | horario **404**: `role=dialog`, `aria-modal=true`, **4** métricas (`Marcaciones`, `Actividades`, `Evidencias`, `En vivo`), trazabilidad cronológica presente, progreso **«1 de 4 pasos · Entrada › Almuerzo › Retorno › Cierre»**, **2** imágenes contadas por la API = **2** decodificadas, fondo `blur(4px)`, **0** escrituras |
+| Tabla | **23** filas con su punto y su «⋯»; **Editar/Clonar no existen a la vista** hasta abrir el menú; la fila completa abre el mismo detalle («Horario 405») |
+| Tema, desde el control de la app | el grupo **Claro/Oscuro/Sistema** se lee con el modal abierto (`Sistema` venía presionado); forzado **Claro** → `dark=false`, `apex_theme=light`, fondo `rgb(245,247,249)`, tinta `rgb(23,33,43)`, franja `rgb(245,229,201)`, contraste **13,14:1**; forzado **Oscuro** → `dark=true`, fondo `rgb(15,23,32)`, tinta `rgb(242,245,247)`, franja `rgb(61,50,28)`, contraste **11,47:1**. Fondo, pista y tinta cambian los tres |
+| Teléfono 390×844 | **6** tarjetas en **3** filas, pista con scroll horizontal de **281** px, **0** px de scroll de página, franja táctil de **46** px, la franja **404** abre también desde el teléfono y la ventana mide **390 de 390 px** con sus **4** métricas |
+| Higiene | **0** ventanillas nativas de la app, **0** respuestas `5xx`, **0** escrituras (todo fue `GET`/`OPTIONS`), **0** tarjetas de fallo técnico |
+
+**Los tres controles que impiden un verde vacío.** (a) El censo del eje se valida contra sí mismo: inyectado un `li[data-route-id]` falso en la lista, el arnés pasó de ver **23** a **24**, el selector de un contenedor inexistente devolvió **0** y al retirarlo volvieron **23** —o sea, la aserción de cantidad puede fallar—. (b) Se disparó a propósito un `window.alert` con prefijo `ARNES:` y el listener lo registró: si el arnés no pudiera ver una ventanilla nativa, el control de «cero ventanillas» sería verde por ceguera. (c) Ninguna comprobación de contenido se declara sobre un denominador de **0**: la jornada medida se elige por lo que la API contó (personas, marcaciones, evidencias) y no por la primera fila pintada, y si un denominador no existe la pata se reporta **`sin_denominador`** en lugar de pasar. En esta corrida **0** patas quedaron sin denominador.
+
+**Siete rojos, todos del instrumento, y lo que cada uno enseñó.** Quedan versionados porque un verde conseguido sin atribuir los rojos no prueba nada.
+
+| # | Rojo | Causa real | Cómo se cerró |
+|---|---|---|---|
+| 1 | `el_eje_va_de_0600_a_2200_con_diecisiete_marcas` (corrida 1) | **Error meu, publicado**: los documentos decían **17** marcas. `TIMELINE_TICK_HOURS = [6,8,…,22]` tiene **9** etiquetas cada dos horas; 17 era el conteo de las horas del eje | Corregido en este informe (§2 y §3.1) y en `agents/CHANGELOG.md`; la prueba ahora se llama `…_con_nueve_marcas_de_dos_en_dos` y el navegador desplegado pintó **9** |
+| 2 | `abrir_la_ventana_no_escribio_nada` (corrida 1) | El arnés contaba como escritura el `OPTIONS /api/v1/hr/operations-map`: es el *preflight* de CORS, no escribe | `GET`/`OPTIONS` son lectura; cualquier otro método queda registrado |
+| 3 | `el_tema_cambia_de_verdad_fondo_pista_y_tinta` (corrida 1) | El portal arranca en **Sistema** y en este puesto eso es oscuro: la pata medía «claro» sobre el tema oscuro y el par salía idéntico. Peor: `el_tema_oscuro_se_aplica_desde_mi_cuenta` estaba **verde sin haber pulsado nada**, porque el estado inicial ya era oscuro | Se fuerzan los dos temas desde el control de la app y se verifica `apex_theme` guardado (`light`/`dark`); la pata de «oscuro» ahora exige además que el control haya abierto el modal |
+| 4 | Abort en el paso de teléfono (corrida 1) | `setViewport({isMobile:true})` recarga la aplicación y el filtro de fecha **vuelve a hoy**; en QA hoy tiene **0** jornadas, así que el selector esperaba una franja que no existía | `asegurarListado(fecha)` re-fija la fecha medida después de cada recarga (viewport y cambio de tema) |
+| 5 | `pulsar_la_franja_abre_la_ventana_de_detalle` con `{"aria":"","fila_buscada":"402"}` (corrida 2) | La «mejor jornada» se elegía entre **todas** las fechas rankeadas, pero la pantalla pinta **un solo día**: la fila 402 nunca estuvo en el eje | El blanco se elige dentro de la fecha medida y el navegador toma la **primera** de esas filas que sí pinta franja, registrando `fila_buscada` y `fila_pulsada` |
+| 6 | Abort `Waiting failed: 120000ms exceeded` en `aplicarTema` (corrida 3) | El menú «⋯» de la fila quedaba abierto y **se comía el primer clic** sobre «Mi cuenta»; además el `waitForFunction` no tenía red y reventaba la corrida entera | `Escape` antes de abrir otro modal, reintento hasta **3** veces con censo del disparador, y ninguna espera del bloque de tema puede abortar: acumula rojo |
+| 7 | `el_control_de_cuenta_expone_el_grupo_de_tema` (corrida 4, **49/50**) | El censo de los tres botones se leía **antes** de abrir el modal, así que siempre salía vacío aunque el pulso hubiera funcionado (`abrio:true`, `pulsado:true`, `aria-pressed="true"`) | El censo se lee con el modal abierto; corrida 5 → **50/50** |
+
+**Deriva del tenant, declarada.** La corrida 1 cayó en `NYVORA QA ISOLATION CONTROL`, una empresa de control de aislamiento con **2** jornadas: el arnés elegía la primera empresa `NYVORA` que devolvía la consulta. Desde entonces prefiere la compañía operativa (descarta los nombres con `isolation`/`control`/`qa`) y mide **54** jornadas en `NYVORA`.
+
+**Cuentas dejadas en QA.** Cinco administradores efímeros, uno por corrida —`qa.timeline.admin.20261126215322@timeline-qa.test`, `…215904…`, `…220745…`, `…221454…`, `…221616…`—, todos con `cuenta_efimera_desactivada: true`: el `finally` del instrumento los retira por el endpoint de desactivación (`setUserActive(…, false)`), no por `UPDATE`. Siguen siendo filas inactivas en la base de QA y su borrado físico corresponde al dueño (§8, pendiente 4).
+
+**Lo que esta pata NO cubre.** Que el portal haya servido el candidato se prueba por contenido del chunk, no por un `health.commit` del frontend (el bundle de Next no lo embebe). La pata de creación/edición/clonación de jornadas no se corrió contra QA a propósito: escribe, y la orden pedía desplegar y certificar la lectura del rediseño; esa pata vive en el instrumento local y en su control ANTES contra los blobs de `develop` (§6). Y `main` no se tocó ni se midió: **no autorizado**.
+
+## 8. Pendientes, con dueño
+
+1. **Promover a `develop` y desplegar el candidato** —`equipo-apexos` + `apexos-git-guardian`—: **CERRADO en esta intervención**. `origin/develop` quedó en **`081027de`** como fast-forward de `baf47021` (sin `--force`), el blob de la pantalla es idéntico por `git rev-parse` en las dos ramas (**`4473068e…`**) y el portal sirve el chunk del rediseño (§7).
+2. **QA funcional en el ambiente desplegado** —`apexos-qa`—: **CERRADO**. **50/50** contra el binario desplegado, evidencia y siete capturas versionadas en §7.
 3. **`main`** —dueño—: **NO autorizado** en esta intervención; queda bloqueado hasta su orden expresa.
-4. **La pantalla crea un horario y no lo muestra si cae fuera del día filtrado** —`apexos-frontend`/dueño—: medido y documentado en el brief §9 y en la regla 67 del agente; es comportamiento anterior al rediseño y la orden no lo cambia, así que se entrega como decisión y no se arregló de paso.
-5. **GRANT de `platform_settings` en Producción** —dueño + `apexos-db-nube`—: pendiente ajeno a este frente, sigue sin decidir.
-6. **Compuerta alterna de selfie y los cuatro pendientes del turno anterior** —dueño—: en pausa por orden expresa suya.
+4. **Cinco cuentas efímeras inactivas en QA** —dueño + `apexos-qa`—: desactivadas por el instrumento, no borradas. Borrarlas exige entrada `allowed_deletions` en un manifiesto; se deja la lista de correos en §7.
+5. **La pantalla crea un horario y no lo muestra si cae fuera del día filtrado** —`apexos-frontend`/dueño—: medido y documentado en el brief §9 y en la regla 67 del agente; es comportamiento anterior al rediseño y la orden no lo cambia, así que se entrega como decisión y no se arregló de paso.
+6. **GRANT de `platform_settings` en Producción** —dueño + `apexos-db-nube`—: pendiente ajeno a este frente, sigue sin decidir.
+7. **Compuerta alterna de selfie y los cuatro pendientes del turno anterior** —dueño—: en pausa por orden expresa suya.

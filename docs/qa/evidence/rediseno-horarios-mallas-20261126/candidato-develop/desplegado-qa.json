@@ -1,0 +1,47 @@
+{
+  "medido_en": "2026-11-26T21:45:34.999Z",
+  "ambiente": "QA (apexos-web-qa-production.up.railway.app)",
+  "pregunta": "el portal de QA sirve el candidato 081027de?",
+  "metodo": "GET /dashboard/talento-humano/rutas (200, 11.502 bytes de HTML), extraer los src de script del HTML, descargar cada chunk y contar los literales",
+  "rutas_referenciadas": 15,
+  "bytes_descargados": 1038326,
+  "marker_chunk": [
+    [
+      "2zlwn45pk_2rq.js",
+      1
+    ]
+  ],
+  "hits": {
+    "aria-pressed": [
+      [
+        "074xe0dz6c47w.js",
+        8
+      ],
+      [
+        "2zlwn45pk_2rq.js",
+        4
+      ]
+    ],
+    "Línea de tiempo": [
+      [
+        "2zlwn45pk_2rq.js",
+        1
+      ]
+    ],
+    "Abrir detalle del horario": [
+      [
+        "2zlwn45pk_2rq.js",
+        1
+      ]
+    ],
+    "Filtrar por fecha": [
+      [
+        "2zlwn45pk_2rq.js",
+        1
+      ]
+    ]
+  },
+  "ausencias_esperadas": {
+    "Debes ir al módulo": "0 (no pertenece a esta pantalla, igual que en local)"
+  }
+}

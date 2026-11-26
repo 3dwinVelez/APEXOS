@@ -1,11 +1,11 @@
 {
   "instrumento": "promotion-migration-check",
-  "ejecutado_en": "2026-11-26T21:21:58.616Z",
+  "ejecutado_en": "2026-11-26T21:41:49.702Z",
   "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS",
   "spec": "docs/qa/evidence/rediseno-horarios-mallas-20261126/candidato-develop/spec-invariantes.json",
   "base_ref": "origin/develop",
   "origin_ref": "origin/desarrollo",
-  "contra": "commit e3b2046d",
+  "contra": "commit 081027de6e1c1a29ccf8bd24f512dff5eb9c28f0",
   "label": "invariantes del replay",
   "passed": true,
   "total": 11,
@@ -30,8 +30,8 @@
     {
       "tipo": "carry",
       "file": "docs/briefs/2026-11-26-rediseno-horarios-mallas.md",
-      "esperado": "513d7c0f8fd38ae3ce772b25db7167ff67ee276c",
-      "actual": "513d7c0f8fd38ae3ce772b25db7167ff67ee276c",
+      "esperado": "bb72345de139007c7e1272d73e4756a9b2037ae8",
+      "actual": "bb72345de139007c7e1272d73e4756a9b2037ae8",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -46,8 +46,8 @@
     {
       "tipo": "carry",
       "file": "docs/qa/certifications/rediseno-horarios-mallas-20261126.md",
-      "esperado": "46767f5872b79d76bd306e66af14d6f7f18b8304",
-      "actual": "46767f5872b79d76bd306e66af14d6f7f18b8304",
+      "esperado": "48b6c6a7992912a5287c7b76466a662ad5dc1aeb",
+      "actual": "48b6c6a7992912a5287c7b76466a662ad5dc1aeb",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },

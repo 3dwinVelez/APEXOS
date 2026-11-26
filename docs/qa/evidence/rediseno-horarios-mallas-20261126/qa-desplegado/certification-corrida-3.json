@@ -1,0 +1,649 @@
+{
+  "format": "apexos-hr-schedule-timeline-qa-v1",
+  "started_at": "2026-11-26T22:07:45.102Z",
+  "status": "failed",
+  "environment": "QA",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "frontend_url": "https://apexos-web-qa-production.up.railway.app",
+  "run_id": "20261126220745",
+  "deployed_api_commit": "baf4702127a4",
+  "tenant": "NYVORA",
+  "usuarios": [
+    {
+      "email": "qa.timeline.admin.20261126220745@timeline-qa.test",
+      "tenant": "NYVORA",
+      "role": "Administrador de empresa"
+    }
+  ],
+  "artefacto_servido": {
+    "http_ok": true,
+    "html_bytes": 11500,
+    "rutas_referenciadas": 15,
+    "chunks_leidos": 15,
+    "bytes": 1037964,
+    "census": {
+      "Línea de tiempo": [
+        {
+          "chunk": "2zlwn45pk_2rq.js",
+          "hits": 1,
+          "bytes": 91431
+        }
+      ],
+      "Abrir detalle del horario": [
+        {
+          "chunk": "2zlwn45pk_2rq.js",
+          "hits": 1,
+          "bytes": 91431
+        }
+      ],
+      "Filtrar por fecha": [
+        {
+          "chunk": "2zlwn45pk_2rq.js",
+          "hits": 1,
+          "bytes": 91431
+        }
+      ],
+      "Modo de vista del listado": [
+        {
+          "chunk": "2zlwn45pk_2rq.js",
+          "hits": 1,
+          "bytes": 91431
+        }
+      ]
+    }
+  },
+  "eleccion_de_fecha": {
+    "total_jornas": 54,
+    "hoy": "2026-11-26",
+    "jornadas_hoy": 0,
+    "candidatas": [
+      {
+        "fecha": "2026-11-23",
+        "rutas": 23,
+        "marcas": 10,
+        "evidencias": 11,
+        "puntaje": 44
+      },
+      {
+        "fecha": "2026-11-19",
+        "rutas": 4,
+        "marcas": 16,
+        "evidencias": 12,
+        "puntaje": 32
+      },
+      {
+        "fecha": "2026-09-19",
+        "rutas": 8,
+        "marcas": 16,
+        "evidencias": 4,
+        "puntaje": 28
+      },
+      {
+        "fecha": "2026-11-17",
+        "rutas": 8,
+        "marcas": 13,
+        "evidencias": 4,
+        "puntaje": 25
+      },
+      {
+        "fecha": "2026-08-13",
+        "rutas": 3,
+        "marcas": 12,
+        "evidencias": 3,
+        "puntaje": 18
+      },
+      {
+        "fecha": "2026-09-18",
+        "rutas": 5,
+        "marcas": 8,
+        "evidencias": 2,
+        "puntaje": 15
+      }
+    ],
+    "elegida": {
+      "fecha": "2026-11-23",
+      "rutas": 23,
+      "marcas": 10,
+      "evidencias": 11,
+      "puntaje": 44
+    },
+    "mejor_jornada": {
+      "fecha": "2026-11-23",
+      "id": "404",
+      "personas": 1,
+      "marcas": 1,
+      "evidencias": 2,
+      "puntaje": 4
+    },
+    "jornadas_del_dia": [
+      {
+        "fecha": "2026-11-23",
+        "id": "404",
+        "personas": 1,
+        "marcas": 1,
+        "evidencias": 2,
+        "puntaje": 4
+      },
+      {
+        "fecha": "2026-11-23",
+        "id": "411",
+        "personas": 1,
+        "marcas": 1,
+        "evidencias": 1,
+        "puntaje": 3
+      },
+      {
+        "fecha": "2026-11-23",
+        "id": "409",
+        "personas": 1,
+        "marcas": 1,
+        "evidencias": 1,
+        "puntaje": 3
+      },
+      {
+        "fecha": "2026-11-23",
+        "id": "422",
+        "personas": 1,
+        "marcas": 1,
+        "evidencias": 1,
+        "puntaje": 3
+      },
+      {
+        "fecha": "2026-11-23",
+        "id": "428",
+        "personas": 1,
+        "marcas": 1,
+        "evidencias": 1,
+        "puntaje": 3
+      },
+      {
+        "fecha": "2026-11-23",
+        "id": "426",
+        "personas": 1,
+        "marcas": 1,
+        "evidencias": 1,
+        "puntaje": 3
+      },
+      {
+        "fecha": "2026-11-23",
+        "id": "420",
+        "personas": 1,
+        "marcas": 1,
+        "evidencias": 1,
+        "puntaje": 3
+      },
+      {
+        "fecha": "2026-11-23",
+        "id": "430",
+        "personas": 1,
+        "marcas": 1,
+        "evidencias": 1,
+        "puntaje": 3
+      },
+      {
+        "fecha": "2026-11-23",
+        "id": "418",
+        "personas": 1,
+        "marcas": 1,
+        "evidencias": 1,
+        "puntaje": 3
+      },
+      {
+        "fecha": "2026-11-23",
+        "id": "424",
+        "personas": 1,
+        "marcas": 1,
+        "evidencias": 1,
+        "puntaje": 3
+      },
+      {
+        "fecha": "2026-11-23",
+        "id": "407",
+        "personas": 1,
+        "marcas": 0,
+        "evidencias": 0,
+        "puntaje": 1
+      },
+      {
+        "fecha": "2026-11-23",
+        "id": "423",
+        "personas": 1,
+        "marcas": 0,
+        "evidencias": 0,
+        "puntaje": 1
+      }
+    ]
+  },
+  "medidas": {
+    "ventana_desde_franja": {
+      "abierta": true,
+      "tiles": [
+        "Marcaciones",
+        "Actividades",
+        "Evidencias",
+        "En vivo"
+      ],
+      "metricas": [
+        "Marcaciones",
+        "Actividades",
+        "Evidencias",
+        "En vivo"
+      ],
+      "imagenes": 2,
+      "decodificadas": 2,
+      "trazabilidad": true,
+      "pasos": "212341 de 4 pasos",
+      "sinEvidencia": false,
+      "desenfoque": "blur(4px)",
+      "role": "dialog",
+      "ariaModal": "true",
+      "titulo": "Horario 404"
+    }
+  },
+  "no_medibles": [],
+  "checks": [
+    {
+      "name": "api_qa_responde_health",
+      "ok": true,
+      "payload": {
+        "status": 200,
+        "commit": "baf4702127a4"
+      }
+    },
+    {
+      "name": "qa_sirve_la_pantalla",
+      "ok": true,
+      "payload": {
+        "chunks": 15,
+        "bytes": 1037964
+      }
+    },
+    {
+      "name": "el_artefacto_servido_trae_la_linea_de_tiempo",
+      "ok": true,
+      "payload": {
+        "chunks": [
+          {
+            "chunk": "2zlwn45pk_2rq.js",
+            "hits": 1,
+            "bytes": 91431
+          }
+        ]
+      }
+    },
+    {
+      "name": "el_artefacto_servido_trae_el_acceso_desde_la_franja",
+      "ok": true,
+      "payload": {
+        "chunks": [
+          {
+            "chunk": "2zlwn45pk_2rq.js",
+            "hits": 1,
+            "bytes": 91431
+          }
+        ]
+      }
+    },
+    {
+      "name": "el_artefacto_servido_trae_el_filtro_de_fecha",
+      "ok": true,
+      "payload": {
+        "chunks": [
+          {
+            "chunk": "2zlwn45pk_2rq.js",
+            "hits": 1,
+            "bytes": 91431
+          }
+        ]
+      }
+    },
+    {
+      "name": "el_artefacto_servido_trae_el_grupo_de_vistas",
+      "ok": true,
+      "payload": {
+        "chunks": [
+          {
+            "chunk": "2zlwn45pk_2rq.js",
+            "hits": 1,
+            "bytes": 91431
+          }
+        ]
+      }
+    },
+    {
+      "name": "login_real_en_qa",
+      "ok": true,
+      "payload": {
+        "ms": 1809
+      }
+    },
+    {
+      "name": "el_selector_de_vista_existe_en_la_barra_de_filtros",
+      "ok": true,
+      "payload": [
+        {
+          "texto": "Línea de tiempo",
+          "presionado": "true"
+        },
+        {
+          "texto": "Tabla",
+          "presionado": "false"
+        }
+      ]
+    },
+    {
+      "name": "la_vista_por_defecto_es_linea_de_tiempo",
+      "ok": true,
+      "payload": {
+        "botones": [
+          {
+            "texto": "Línea de tiempo",
+            "presionado": "true"
+          },
+          {
+            "texto": "Tabla",
+            "presionado": "false"
+          }
+        ],
+        "filasTabla": 0,
+        "grupo": true,
+        "avisoVacia": true
+      }
+    },
+    {
+      "name": "qa_tiene_jornadas_que_medir",
+      "ok": true,
+      "payload": {
+        "total_jornas": 54,
+        "hoy": "2026-11-26",
+        "jornadas_hoy": 0,
+        "candidatas": [
+          {
+            "fecha": "2026-11-23",
+            "rutas": 23,
+            "marcas": 10,
+            "evidencias": 11,
+            "puntaje": 44
+          },
+          {
+            "fecha": "2026-11-19",
+            "rutas": 4,
+            "marcas": 16,
+            "evidencias": 12,
+            "puntaje": 32
+          },
+          {
+            "fecha": "2026-09-19",
+            "rutas": 8,
+            "marcas": 16,
+            "evidencias": 4,
+            "puntaje": 28
+          }
+        ]
+      }
+    },
+    {
+      "name": "el_filtro_de_fecha_vive_en_la_barra",
+      "ok": true
+    },
+    {
+      "name": "la_fecha_en_pantalla_es_la_fecha_medida",
+      "ok": true,
+      "payload": {
+        "fecha": "2026-11-23"
+      }
+    },
+    {
+      "name": "el_listado_pinta_filas_en_la_fecha_medida",
+      "ok": true,
+      "payload": {
+        "filas": 23,
+        "fecha": "2026-11-23",
+        "jornada_espera": 0
+      }
+    },
+    {
+      "name": "tras_fijar_la_fecha_sigue_sin_haber_tabla",
+      "ok": true
+    },
+    {
+      "name": "los_seis_indicadores_caben_en_una_sola_fila_de_escritorio",
+      "ok": true,
+      "payload": {
+        "rejillas": 1,
+        "tarjetas": 6,
+        "topes": 1,
+        "ancho": 182
+      }
+    },
+    {
+      "name": "el_eje_va_de_0600_a_2200_con_nueve_marcas_de_dos_en_dos",
+      "ok": true,
+      "payload": {
+        "unicas": [
+          "06:00",
+          "08:00",
+          "10:00",
+          "12:00",
+          "14:00",
+          "16:00",
+          "18:00",
+          "20:00",
+          "22:00"
+        ],
+        "total": 9
+      }
+    },
+    {
+      "name": "cada_franja_tiene_posicion_y_ancho_dentro_del_eje",
+      "ok": true,
+      "payload": {
+        "franjas": 23,
+        "desbordan": 0,
+        "muestra": [
+          {
+            "left": 12.5,
+            "width": 56.25,
+            "alto": 30,
+            "aria": "Abrir detalle del horario 405 · Jornada administrativa",
+            "titulo": "08:00 - 17:00 · Sin lectura"
+          },
+          {
+            "left": 12.5,
+            "width": 12.5,
+            "alto": 30,
+            "aria": "Abrir detalle del horario 406 · Jornada administrativa",
+            "titulo": "08:00 - 10:00 · Sin lectura"
+          },
+          {
+            "left": 12.5,
+            "width": 12.5,
+            "alto": 30,
+            "aria": "Abrir detalle del horario 408 · Jornada administrativa",
+            "titulo": "08:00 - 10:00 · Sin lectura"
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_franja_y_el_nombre_de_la_jornada_son_botones_accesibles",
+      "ok": true,
+      "payload": {
+        "filas": 23,
+        "franjas": 23,
+        "accesibles": 23,
+        "nombres": 23
+      }
+    },
+    {
+      "name": "cada_fila_pinta_su_punto_de_estado",
+      "ok": true,
+      "payload": {
+        "puntos": 23,
+        "filas": 23
+      }
+    },
+    {
+      "name": "el_arnes_ve_lo_que_se_inyecta_y_nada_lo_que_no_esta",
+      "ok": true,
+      "payload": {
+        "antes": 23,
+        "despues": 24,
+        "fantasma": 0,
+        "despuesDeRetirar": 23
+      }
+    },
+    {
+      "name": "el_arnes_detecta_una_ventanilla_nativa",
+      "ok": true,
+      "payload": {
+        "registradas": 1
+      }
+    },
+    {
+      "name": "pulsar_la_franja_abre_la_ventana_de_detalle",
+      "ok": true,
+      "payload": {
+        "aria": "Abrir detalle del horario 404 · Jornada administrativa",
+        "fila_buscada": "404",
+        "fila_pulsada": "404",
+        "role": "dialog",
+        "ariaModal": "true"
+      }
+    },
+    {
+      "name": "la_ventana_trae_su_tira_de_metricas",
+      "ok": true,
+      "payload": {
+        "tiles": [
+          "Marcaciones",
+          "Actividades",
+          "Evidencias",
+          "En vivo"
+        ],
+        "metricas": [
+          "Marcaciones",
+          "Actividades",
+          "Evidencias",
+          "En vivo"
+        ]
+      }
+    },
+    {
+      "name": "la_ventana_muestra_la_traza_cronologica_del_equipo",
+      "ok": true,
+      "payload": {
+        "trazabilidad": true
+      }
+    },
+    {
+      "name": "la_ventana_pasa_el_progreso_de_los_cuatro_pasos_de_la_persona",
+      "ok": true,
+      "payload": {
+        "personas": 1,
+        "pasos": "212341 de 4 pasos"
+      }
+    },
+    {
+      "name": "la_evidencia_contada_por_la_api_llega_decodificada_a_la_ventana",
+      "ok": true,
+      "payload": {
+        "contadas_por_api": 2,
+        "imagenes": 2,
+        "decodificadas": 2
+      }
+    },
+    {
+      "name": "la_ventana_es_un_flotante_desenfocado",
+      "ok": true,
+      "payload": {
+        "backdrop_filter": "blur(4px)"
+      }
+    },
+    {
+      "name": "abrir_la_ventana_no_escribio_nada",
+      "ok": true,
+      "payload": {
+        "escrituras": []
+      }
+    },
+    {
+      "name": "cerrar_la_ventana_devuelve_al_listado",
+      "ok": true
+    },
+    {
+      "name": "alternar_a_tabla_apaga_la_linea_de_tiempo",
+      "ok": true,
+      "payload": [
+        {
+          "texto": "Línea de tiempo",
+          "presionado": "false"
+        },
+        {
+          "texto": "Tabla",
+          "presionado": "true"
+        }
+      ]
+    },
+    {
+      "name": "la_tabla_pinta_filas_con_punto_de_estado_y_su_menu",
+      "ok": true,
+      "payload": {
+        "filas": 23,
+        "menus": 23,
+        "puntos": 23
+      }
+    },
+    {
+      "name": "las_acciones_no_estan_a_la_vista_hasta_abrir_el_menu",
+      "ok": true,
+      "payload": {
+        "editarVisible": false,
+        "clonarVisible": false,
+        "abrir": 23
+      }
+    },
+    {
+      "name": "la_fila_completa_abre_el_mismo_detalle",
+      "ok": true,
+      "payload": {
+        "fila_id": "405",
+        "abierta": true,
+        "titulo": "Horario 405"
+      }
+    },
+    {
+      "name": "el_menu_de_la_fila_revela_editar_y_clonar",
+      "ok": true,
+      "payload": {
+        "expandido": "true",
+        "editar": true,
+        "clonar": true
+      }
+    }
+  ],
+  "tenant_candidatos": [
+    "NYVORA QA ISOLATION CONTROL",
+    "NYVORA"
+  ],
+  "jornada_medida": {
+    "fecha": "2026-11-23",
+    "id": "404",
+    "personas": 1,
+    "marcas": 1,
+    "evidencias": 2,
+    "puntaje": 4
+  },
+  "cuenta_efimera_desactivada": true,
+  "verdict": {
+    "passed": 34,
+    "failed": 0,
+    "total": 34,
+    "sin_denominador": 0
+  },
+  "finished_at": "2026-11-26T22:10:22.004Z",
+  "error": {
+    "message": "Waiting failed: 120000ms exceeded",
+    "stack": "TimeoutError: Waiting failed: 120000ms exceeded\n    at new WaitTask (file:///C:/Users/mq1/Documents/Proyectos/APEXOS/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46:34)\n    at IsolatedWorld.waitForFunction (file:///C:/Users/mq1/Documents/Proyectos/APEXOS/node_modules/puppeteer-core/lib/puppeteer/api/Realm.js:49:26)\n    at CdpFrame.waitForFunction (file:///C:/Users/mq1/Documents/Proyectos/APEXOS/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:585:43)\n    at CdpFrame.<anonymous> (file:///C:/Users/mq1/Documents/Proyectos/APEXOS/node_modules/puppeteer-core/lib/puppeteer/util/decorators.js:101:27)\n    at CdpPage.waitForFunction (file:///C:/Users/mq1/Documents/Proyectos/APEXOS/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1464:37)"
+  }
+}

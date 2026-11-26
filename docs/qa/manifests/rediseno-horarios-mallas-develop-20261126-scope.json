@@ -1,7 +1,7 @@
 {
   "scope_schema_version": 2,
   "change_id": "rediseno-horarios-mallas-develop-20261126",
-  "creado": "2026-11-26T21:29:52.639Z",
+  "creado": "2026-11-26T21:42:02.207Z",
   "autorizado": "dueno del proyecto (Edwin), 2026-11-26: «procede con la implementacion en desarrollo y develop realiza el despliegue de manera correcta y segura no estas autorizado a llevarlo a produccion \"main\" hasta tener autorizacion explicita». La orden ampara desarrollo -> develop y el despliegue de QA. No autoriza main, force push, migraciones en la base de Produccion, infraestructura, Railway/Supabase ni borrado de ramas.",
   "target_branch": "develop",
   "source_branch": "desarrollo",
@@ -10,11 +10,11 @@
   "por_que_hay_una_excepcion": "scripts/certifications/hr-punch-mobile-evidence-local.js adelanto en develop y en desarrollo por frentes distintos: develop agregaron las patas del hub unificado, la creacion/edicion/clonacion y la paleta de comandos (que exige las paginas bancos y PYG, inexistentes en desarrollo), y desarrollo agrego las patas del eje de tiempo. Ningun blob viaja entero sin revertir al otro frente: el candidato fusiona las dos mitades sobre el arbol de develop y se mide ahi. Es la unica ruta del diff cuyo blob no es el de origin/desarrollo.",
   "base_commits": {
     "develop": "baf4702127a43e10db9cd01bea45a592cd9adaf8",
-    "desarrollo": "0bf3bf6cdbc5550719134e667ce3e3f08bba8e06"
+    "desarrollo": "155b4b73de599501813f2d530cc2515fbc2cbb3f"
   },
   "base_commit": "baf4702127a43e10db9cd01bea45a592cd9adaf8",
   "target_head": "baf4702127a43e10db9cd01bea45a592cd9adaf8",
-  "certified_commit": "e3b2046d",
+  "certified_commit": "e3b2046db21abee989d4c66cdc1de12cc7c431a9",
   "origen_certificado": "0bf3bf6c",
   "candidate_source": {
     "branch": "desarrollo",
@@ -30,7 +30,7 @@
       "certificaciones-qa",
       "documentacion-qa"
     ],
-    "summary": "Inventario exacto leido del diff baf4702..e3b2046: 12 rutas (2 bajo apps/, 1 bajo scripts/, 9 de documentacion/canon). Cero rutas bajo apps/api, packages/, infra/ o apps/control-tower. Cero borrados."
+    "summary": "Inventario exacto leido del diff baf4702..081027d: 12 rutas (2 bajo apps/, 1 bajo scripts/, 9 de documentacion/canon). Cero rutas bajo apps/api, packages/, infra/ o apps/control-tower. Cero borrados."
   },
   "expected_changes": [
     {
@@ -169,10 +169,10 @@
     "control de mutacion del arnes contra el blob anterior de la pantalla: rojo exigido",
     "node scripts/certifications/promotion-migration-check.js --spec docs/qa/evidence/rediseno-horarios-mallas-20261126/candidato-develop/spec-invariantes.json --against commit --ref <punta-candidato> --output .../paridad-rutas.json: once rutas carry, cero edit, cero delete",
     "node scripts/certifications/promotion-migration-check.js --selftest --output .../control-de-mutacion-porton.json: el replay bueno verde y las tres derivas rojas",
-    "npm run qa:promotion:scope -- docs/qa/manifests/rediseno-horarios-mallas-develop-20261126-scope.json e3b2046 origin/develop",
+    "npm run qa:promotion:scope -- docs/qa/manifests/rediseno-horarios-mallas-develop-20261126-scope.json 081027d origin/develop",
     "npm run qa:preqa:evidence -- docs/qa/manifests/rediseno-horarios-mallas-develop-20261126-preqa.json",
     "node scripts/git-governance-guard.js promote desarrollo-to-develop con APEXOS_PROMOTION_AUTH",
-    "git push --dry-run origin e3b2046:refs/heads/develop antes de empujar"
+    "git push --dry-run origin 081027d:refs/heads/develop antes de empujar"
   ],
   "deriva_declarada": [
     "El canon del equipo no viaja (13 rutas de agents/ y .qoder/skills/ del commit de origen quedan en desarrollo).",
@@ -180,17 +180,17 @@
     "apps/api/** no viaja: las dieciocho rutas del otro frente en desarrollo siguen siendo suyas.",
     "La pata contra el ambiente QA desplegado se corre DESPUES del push y se versiona en la contabilidad posterior: describe una punta que no existe dentro del commit que la describe.",
     "La pata de programacion del instrumento de develop estaba roja en su propio arbol (control ANTES) y se repara dentro del archivo waived: con el filtro de fecha en hoy la fila de una jornada creada dos dias despues no puede existir. La fusion anade el control de que el filtro manda y mueve el filtro a la fecha creada.",
-    "La primera corrida del candidato cayo en la pata del hub por compilacion fria del servidor de desarrollo (`.next-hr-user-association` vacio). El arnes ahora versiona url, claves de localStorage y el texto servido cuando el hub no aparece; la corrida buena no dejo ese diagnostico, es decir el hub se renderizo."
+    "La primera corrida del candidato cayo en la pata del hub. Su artefacto no sobrevivio (las corridas escriben en la misma .local/hr-punch-mobile-evidence/ y la copia del control de mutacion casi pisa la corrida buena: se restauro desde .local/BUENA-candidato/), asi que queda declarada como inferencia: el mismo arbol paso 10/10 despues sin tocar la pantalla, y la corrida buena registro 7 compilaciones en frio (rutas 13,9 s, manifest 20,1 s) en candidato-develop/next-buena.txt. El arnes ahora versiona url, titulo, claves de localStorage y el texto servido para que un rojo de hub no vuelva a quedarse sin evidencia."
   ],
   "verificado_local": {
-    "fecha_hora_local": "2026-11-26T21:29:52.639Z",
+    "fecha_hora_local": "2026-11-26T21:42:02.207Z",
     "rama_trabajo": "HEAD despegado en .tmp/wt-rediseno-develop (no se creo ninguna rama)",
     "puntas": {
       "origin/develop": "baf4702",
-      "origin/desarrollo": "0bf3bf6",
-      "candidato": "e3b2046"
+      "origin/desarrollo": "155b4b7",
+      "candidato": "081027d"
     },
-    "divergencia": "git rev-list --left-right --count origin/desarrollo...origin/develop = 14 / 163 (desarrollo trae 14 commits propios y develop 163)",
+    "divergencia": "git rev-list --left-right --count origin/desarrollo...origin/develop = 15 / 163 (desarrollo trae 14 commits propios y develop 163)",
     "rutas_inventario": 12,
     "rutas_producto_en_el_diff": 2,
     "paridad_blob_candidato": "11/12 rutas identicas a origin/desarrollo, 1 waiver nombrado, 0 borrados, 0 rutas sin origen sin justificar"

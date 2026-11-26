@@ -1,6 +1,6 @@
 {
   "change_id": "rediseno-horarios-mallas-develop-20261126",
-  "commit": "e3b2046d",
+  "commit": "e3b2046db21abee989d4c66cdc1de12cc7c431a9",
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",

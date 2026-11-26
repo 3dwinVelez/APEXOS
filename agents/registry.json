@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.114.0",
+      "version": "2.115.0",
       "updated_at": "2026-11-26",
-      "sha256": "32e2b797c6080e4a78e69964ab0342203c773622f66f662a5126d2fb31259691",
+      "sha256": "e9c192ce01f9735b254a2d1ee36710ad42b88158c43aea9819056f4b8d82f095",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -181,7 +181,8 @@
         "host-de-ambiente-heredado-del-canon",
         "consecuencia-de-ambiente-se-cita-con-su-medicion",
         "brief-se-reconcilia-contra-el-arbol-ejecutado",
-        "brief-exige-el-antes-del-destino"
+        "brief-exige-el-antes-del-destino",
+        "criterio-de-ambiente-se-prueba-por-artefacto-y-veredicto"
       ]
     },
     {
@@ -275,9 +276,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.46.0",
+      "version": "2.47.0",
       "updated_at": "2026-11-26",
-      "sha256": "9c2ad0cc645bdcf0bdeb382a223562844d94c24a27956e953571c780714bacd2",
+      "sha256": "0dc6bc9a4336b73bdc5a213fc1a99a7df9e7f528027c4c8b8f13f9a433f2df63",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -315,7 +316,8 @@
         "residual-mismo-blob-mismo-manifiesto",
         "clasificacion-de-rutas-por-destino",
         "scratch-del-porton-fuera-del-candidato",
-        "restauracion-post-build-verificada-por-hash"
+        "restauracion-post-build-verificada-por-hash",
+        "corrida-roja-se-versiona-y-buena-se-respalda"
       ]
     },
     {
@@ -357,9 +359,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.137.1",
+      "version": "2.138.0",
       "updated_at": "2026-11-26",
-      "sha256": "86f21624538129980c93e08b65e15e95dc8daef8e4500f6fe17e9e645f0701f0",
+      "sha256": "6d7b1cf51248ceec17ce45b826939748fc1436c007bd8244ce08948a0fad0f3e",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -464,7 +466,8 @@
         "instrumento-desde-su-arbol-y-se-lee-que-escribio",
         "arnes-nuevo-se-prueba-contra-el-arbol-anterior",
         "base-local-por-plantilla-y-no-por-db-push",
-        "antes-contra-los-blobs-del-destino"
+        "antes-contra-los-blobs-del-destino",
+        "arnes-desplegado-blanco-rango-y-modal-limpio"
       ]
     },
     {
@@ -521,9 +524,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.77.0",
+      "version": "2.78.0",
       "updated_at": "2026-11-26",
-      "sha256": "73d91f48ced6e98bd5e7e673253d070967fb53008a96483a3a9f40b9055fe9db",
+      "sha256": "7361541fb3a3869df9d403c1c69fe9e141e9190f63da606725341a69d49ad361",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -580,7 +583,8 @@
         "tema-adicional-es-el-cambio-exclusivo",
         "transporte-se-mide-contra-la-distancia-del-destino",
         "autorizacion-con-consecuencia-se-cierra-y-se-rinde",
-        "arbol-compartido-se-reporta-por-patas"
+        "arbol-compartido-se-reporta-por-patas",
+        "orden-de-despliegue-exige-pata-contra-el-ambiente-servido"
       ]
     }
   ],
