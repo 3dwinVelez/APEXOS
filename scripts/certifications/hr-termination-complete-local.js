@@ -306,5 +306,6 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
     for(const id of priorPayments)assert.equal((await call(benefitRoute+'/documentos/'+id,token,'DELETE')).status,200);
   });
   if (process.env.HR_WORKSPACE_MOCKUP_CERT === '1') await require('./hr-workspace-mockup-browser-local')({origin,token,foreignToken,deniedToken,call,own,period,check});
+  if (process.env.HR_EXTERNAL_ORDINARY_CERT === '1') await require('./hr-external-ordinary-browser-local')({db,origin,token,foreignToken,deniedToken,call,own,period,check});
   result.status='passed';
 } catch(error) {result.status='failed';result.error=error.message;console.error(error.stack);process.exitCode=1;} finally {result.finished_at=new Date().toISOString();if(output)fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));if(app)await app.close();await db.$disconnect();}})();
