@@ -90,7 +90,7 @@
   "despues_del_empuje": {
     "medido_en": "2026-11-26T18:02:00Z",
     "instrumento": "sonda-produccion-post-push.js (tres GET al API, un GET al portal y los 10 chunks que /login referencia; cero escrituras)",
-    "evidencia": "post-push-produccion.json",
+    "evidencia": "post-push-produccion-railway.json (host de Railway) y post-push-produccion-dominio.json (www.apexos.com.co)",
     "health_commit": "e3c2ad171946",
     "GET /api/v1/public/platform/mobile-app": 404,
     "censo_del_portal": {
@@ -113,6 +113,23 @@
       "GET /api/v1/public/platform/mobile-app debe responder 200 con el respaldo quemado mientras el dueno no escriba el valor",
       "censo de los chunks de /login: \"Abrir la app\" presente, \"Copiar enlace\" 0, \"navigator.clipboard\" 0",
       "re-leer el ledger: la fila 20261125183000_platform_settings debe pasar de pendiente a terminada con applied_steps_count=1"
-    ]
+    ],
+    "censo_en_el_dominio_real": {
+      "base": "https://www.apexos.com.co",
+      "estado_login": 200,
+      "html_bytes": 18569,
+      "chunks": 10,
+      "Abrir la app": 0,
+      "Copiar enlace": 0,
+      "navigator.clipboard": 0,
+      "idéntico_al_host_railway": true
+    },
+    "dominio_de_produccion_medido": {
+      "app.apexos.com.co": "NXDOMAIN en dns.google y en cloudflare-dns (DNS sobre HTTPS), el nombre no existe",
+      "www.apexos.com.co": "CNAME a n98svybe.up.railway.app (153.52.255.25), sirve el portal con 200",
+      "apexos.com.co": "aparcado en GoDaddy (3.33.130.190 / 15.197.148.33), NS ns59/ns60.domaincontrol.com, serial 2026112401",
+      "api.apexos.com.co": "NXDOMAIN: la API de Produccion no tiene dominio propio, el portal llama al host de Railway",
+      "consecuencia": "El documento decia que Produccion vivia en app.apexos.com.co. Era un nombre inventado; el real es www.apexos.com.co. Corregido en docs/project/app-movil.md y re-medida la sonda contra el nombre cierto: el resultado no cambia (0 de 10 chunks con el boton)."
+    }
   }
 }

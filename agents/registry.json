@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.110.0",
+      "version": "2.111.0",
       "updated_at": "2026-11-26",
-      "sha256": "6f5304a7d039b1ec181077445a5329959b50c4c12df03de90008253b7524c991",
+      "sha256": "9546337b4b984da6e54271525ddb9058e04f6af766f3085ae6dea71358967eb5",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -177,7 +177,8 @@
         "contabilidad-de-porton-viaja-despues",
         "pendiente-retirado-se-reescribe",
         "alcance-que-retoma-el-dueno-con-accion-exacta",
-        "inventario-generado-se-contrainta-contra-el-diff"
+        "inventario-generado-se-contrainta-contra-el-diff",
+        "host-de-ambiente-heredado-del-canon"
       ]
     },
     {
@@ -347,9 +348,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.133.0",
+      "version": "2.134.0",
       "updated_at": "2026-11-26",
-      "sha256": "06e1001b83e906137f188a4ac646c212a3d967b49fb1f0b55c45590917e7397d",
+      "sha256": "80f5ab9e9963b1c17c4bc1f862cb77d0c48b7a9b2235a54cbb17337dd03700b1",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -448,7 +449,8 @@
         "porton-puntual-nace-en-origen",
         "ambiente-despliega-por-servicios",
         "aserto-contra-la-salida-completa",
-        "ledger-del-destino-en-solo-lectura"
+        "ledger-del-destino-en-solo-lectura",
+        "direccion-de-ambiente-resuelta-por-resolvedor-publico"
       ]
     },
     {
