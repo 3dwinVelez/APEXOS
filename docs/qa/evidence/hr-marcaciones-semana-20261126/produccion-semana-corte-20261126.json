@@ -1,0 +1,2914 @@
+{
+  "medicion": {
+    "archivo_ambiente": "config\\production.env",
+    "ambiente": "production",
+    "host": "(pooler de Supabase: el nombre de host no se versiona en evidencia)",
+    "dia": "2026-11-26",
+    "ventana_utc": [
+      "2026-11-20T05:00:00.000Z",
+      "2026-11-27T05:00:00.000Z"
+    ],
+    "leido_en": "2026-11-26T14:13:57.640Z",
+    "escrituras": 0,
+    "sin_nombres": true
+  },
+  "total_rechazos": 1731,
+  "nivel_fuente": [
+    {
+      "clave": "error/frontend",
+      "ocurrencias": 1558,
+      "usuarios": 23
+    },
+    {
+      "clave": "warning/backend",
+      "ocurrencias": 159,
+      "usuarios": 23
+    },
+    {
+      "clave": "warning/api",
+      "ocurrencias": 12,
+      "usuarios": 6
+    },
+    {
+      "clave": "info/backend",
+      "ocurrencias": 2,
+      "usuarios": 1
+    }
+  ],
+  "rechazos_por_codigo": [
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/time-punches | Backend no disponible desde frontend",
+      "ocurrencias": 319,
+      "usuarios": 19
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/attendance | Backend no disponible desde frontend",
+      "ocurrencias": 228,
+      "usuarios": 20
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/routes | Backend no disponible desde frontend",
+      "ocurrencias": 226,
+      "usuarios": 19
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/work-session | Backend no disponible desde frontend",
+      "ocurrencias": 154,
+      "usuarios": 17
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/activity-types | Backend no disponible desde frontend",
+      "ocurrencias": 134,
+      "usuarios": 16
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/preop/active | Backend no disponible desde frontend",
+      "ocurrencias": 128,
+      "usuarios": 16
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/gps/ping | Backend no disponible desde frontend",
+      "ocurrencias": 86,
+      "usuarios": 17
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self | Backend no disponible desde frontend",
+      "ocurrencias": 68,
+      "usuarios": 13
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/routes/event-summaries | Backend no disponible desde frontend",
+      "ocurrencias": 40,
+      "usuarios": 5
+    },
+    {
+      "clave": "409 (sin codigo) | /api/v1/hr/self/time-punches | Solicitud frontend fallida",
+      "ocurrencias": 34,
+      "usuarios": 11
+    },
+    {
+      "clave": "400 (sin codigo) | /api/v1/hr/self/time-punches | Solicitud frontend fallida",
+      "ocurrencias": 32,
+      "usuarios": 1
+    },
+    {
+      "clave": "400 SELFIE_INVALIDA | /api/v1/hr/self/time-punches | El contenido del archivo no coincide con el formato declarado.",
+      "ocurrencias": 24,
+      "usuarios": 3
+    },
+    {
+      "clave": "400 KILOMETRAJE_REQUERIDO | /api/v1/hr/time-punches | El kilometraje del dia es obligatorio.",
+      "ocurrencias": 23,
+      "usuarios": 2
+    },
+    {
+      "clave": "400 (sin codigo) | /api/v1/hr/self/time-punches | El contenido del archivo no coincide con el formato declarado.",
+      "ocurrencias": 17,
+      "usuarios": 1
+    },
+    {
+      "clave": "409 MARCACION_DIFERIDA_EXPIRADA | /api/v1/hr/self/time-punches | La marcacion diferida supero las 24 horas permitidas y debe corregirla un administrador.",
+      "ocurrencias": 17,
+      "usuarios": 4
+    },
+    {
+      "clave": "409 MARCACION_FUERA_DE_SECUENCIA | /api/v1/hr/self/time-punches | La siguiente marcacion permitida es inicio_almuerzo.",
+      "ocurrencias": 15,
+      "usuarios": 6
+    },
+    {
+      "clave": "409 MARCACION_FUERA_DE_SECUENCIA | /api/v1/hr/time-punches | La siguiente marcacion permitida es inicio_almuerzo.",
+      "ocurrencias": 13,
+      "usuarios": 3
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/work-session?route_id=356 | Backend no disponible desde frontend",
+      "ocurrencias": 8,
+      "usuarios": 2
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/work-session?route_id=407 | Backend no disponible desde frontend",
+      "ocurrencias": 7,
+      "usuarios": 1
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/work-session?route_id=372 | Backend no disponible desde frontend",
+      "ocurrencias": 7,
+      "usuarios": 3
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/work-session?route_id=364 | Backend no disponible desde frontend",
+      "ocurrencias": 7,
+      "usuarios": 2
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/self/work-session?route_id=354 | Backend no disponible desde frontend",
+      "ocurrencias": 7,
+      "usuarios": 2
+    },
+    {
+      "clave": "409 MARCACION_FUERA_DE_SECUENCIA | /api/v1/hr/self/time-punches | La siguiente marcacion permitida es entrada.",
+      "ocurrencias": 6,
+      "usuarios": 3
+    },
+    {
+      "clave": "null (sin codigo) | /api/v1/hr/routes?limit=500 | Backend no disponible desde frontend",
+      "ocurrencias": 6,
+      "usuarios": 3
+    },
+    {
+      "clave": "409 MARCACION_FUERA_DE_SECUENCIA | /api/v1/hr/self/time-punches | La siguiente marcacion permitida es salida.",
+      "ocurrencias": 6,
+      "usuarios": 5
+    }
+  ],
+  "rechazos_por_detalle": [
+    {
+      "clave": "400 | /api/v1/hr/self/time-punches | (sin codigo) | El contenido del archivo no coincide con el formato declarado.",
+      "ocurrencias": 32,
+      "usuarios": 1
+    },
+    {
+      "clave": "409 | /api/v1/hr/self/time-punches | MARCACION_FUERA_DE_SECUENCIA | (sin detalle)",
+      "ocurrencias": 25,
+      "usuarios": 10
+    },
+    {
+      "clave": "400 | /api/v1/hr/self/time-punches | SELFIE_INVALIDA | (sin detalle)",
+      "ocurrencias": 24,
+      "usuarios": 3
+    },
+    {
+      "clave": "400 | /api/v1/hr/time-punches | KILOMETRAJE_REQUERIDO | (sin detalle)",
+      "ocurrencias": 23,
+      "usuarios": 2
+    },
+    {
+      "clave": "409 | /api/v1/hr/time-punches | MARCACION_FUERA_DE_SECUENCIA | (sin detalle)",
+      "ocurrencias": 18,
+      "usuarios": 1
+    },
+    {
+      "clave": "400 | /api/v1/hr/self/time-punches | (sin codigo) | (sin detalle)",
+      "ocurrencias": 17,
+      "usuarios": 1
+    },
+    {
+      "clave": "409 | /api/v1/hr/self/time-punches | MARCACION_DIFERIDA_EXPIRADA | (sin detalle)",
+      "ocurrencias": 11,
+      "usuarios": 3
+    },
+    {
+      "clave": "409 | /api/v1/hr/self/time-punches | (sin codigo) | La marcacion diferida supero las 24 horas permitidas y debe corregirla un administrador.",
+      "ocurrencias": 8,
+      "usuarios": 4
+    },
+    {
+      "clave": "404 | /api/v1/hr/time-punches | EMPLEADO_NO_ENCONTRADO | (sin detalle)",
+      "ocurrencias": 8,
+      "usuarios": 3
+    },
+    {
+      "clave": "409 | /api/v1/hr/self/time-punches | (sin codigo) | La siguiente marcacion permitida es inicio_almuerzo.",
+      "ocurrencias": 7,
+      "usuarios": 4
+    },
+    {
+      "clave": "409 | /api/v1/hr/self/time-punches | (sin codigo) | La siguiente marcacion permitida es salida.",
+      "ocurrencias": 7,
+      "usuarios": 5
+    },
+    {
+      "clave": "409 | /api/v1/hr/self/time-punches | MARCACION_DIFERIDA_EXPIRADA | max_age_hours=24",
+      "ocurrencias": 6,
+      "usuarios": 2
+    },
+    {
+      "clave": "409 | /api/v1/hr/self/time-punches | IDEMPOTENCY_KEY_CONFLICT | (sin detalle)",
+      "ocurrencias": 5,
+      "usuarios": 2
+    },
+    {
+      "clave": "409 | /api/v1/hr/self/time-punches | (sin codigo) | La siguiente marcacion permitida es fin_almuerzo.",
+      "ocurrencias": 5,
+      "usuarios": 3
+    },
+    {
+      "clave": "409 | /api/v1/hr/self/time-punches | (sin codigo) | La clave de idempotencia ya pertenece a otra marcacion.",
+      "ocurrencias": 4,
+      "usuarios": 2
+    },
+    {
+      "clave": "409 | /api/v1/hr/self/time-punches | MARCACION_FUERA_DE_SECUENCIA | expected_type=inicio_almuerzo punch_type=salida",
+      "ocurrencias": 4,
+      "usuarios": 2
+    },
+    {
+      "clave": "403 | /api/v1/hr/self/time-punches | HORARIO_AJENO_DENEGADO | (sin detalle)",
+      "ocurrencias": 3,
+      "usuarios": 1
+    },
+    {
+      "clave": "403 | /api/v1/services/orders | PERMISO_DENEGADO | (sin detalle)",
+      "ocurrencias": 3,
+      "usuarios": 1
+    },
+    {
+      "clave": "403 | /api/v1/hr/routes | PERMISO_DENEGADO | (sin detalle)",
+      "ocurrencias": 3,
+      "usuarios": 3
+    },
+    {
+      "clave": "409 | /api/v1/hr/self/time-punches | (sin codigo) | La siguiente marcacion permitida es entrada.",
+      "ocurrencias": 3,
+      "usuarios": 1
+    }
+  ],
+  "causa_cruda_transporte": [
+    {
+      "clave": "Load failed",
+      "ocurrencias": 754,
+      "usuarios": 9
+    },
+    {
+      "clave": "La plataforma no respondio a tiempo. Reintenta en unos segundos.",
+      "ocurrencias": 519,
+      "usuarios": 21
+    },
+    {
+      "clave": "Failed to fetch",
+      "ocurrencias": 215,
+      "usuarios": 14
+    }
+  ],
+  "frontera_de_dia": {
+    "marcaciones": 379,
+    "con_date_distinto_del_dia_colombia": 0,
+    "por_dia": []
+  },
+  "trabajadores_afectados": [
+    {
+      "user_id": null,
+      "empleado_id": null,
+      "tenant_id": "52db0658-a184-4fa1-a47b-c90b184914c3",
+      "rechazos": 353,
+      "codigos": [
+        null
+      ],
+      "dispositivos": [
+        "iOS / Safari 27",
+        "Android / Chrome 158",
+        "iOS / Safari 26",
+        "iOS / Safari 18",
+        "Android / Chrome 157"
+      ],
+      "ultimo_rechazo": "2026-11-26T13:56:58.368Z",
+      "intentos_de_marcacion": 40,
+      "rechazos_de_operario": 353,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 225,
+      "empleado_id": 479,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 315,
+      "codigos": [
+        null,
+        "MARCACION_DIFERIDA_EXPIRADA",
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "iOS / Safari 26"
+      ],
+      "ultimo_rechazo": "2026-11-26T11:58:36.832Z",
+      "intentos_de_marcacion": 75,
+      "rechazos_de_operario": 315,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T11:59:03.567Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 231,
+      "empleado_id": 503,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 135,
+      "codigos": [
+        null,
+        "SELFIE_INVALIDA",
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "Android / Chrome 158",
+        "Android / Chrome 157"
+      ],
+      "ultimo_rechazo": "2026-11-26T13:53:40.988Z",
+      "intentos_de_marcacion": 84,
+      "rechazos_de_operario": 135,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 223,
+      "empleado_id": 471,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 129,
+      "codigos": [
+        null
+      ],
+      "dispositivos": [
+        "iOS / Safari 26"
+      ],
+      "ultimo_rechazo": "2026-11-24T21:27:45.478Z",
+      "intentos_de_marcacion": 14,
+      "rechazos_de_operario": 129,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T12:03:07.640Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 227,
+      "empleado_id": 487,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 109,
+      "codigos": [
+        null,
+        "HORARIO_AJENO_DENEGADO",
+        "HORARIO_FUERA_DEL_DIA",
+        "IDEMPOTENCY_KEY_CONFLICT",
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "Android / Chrome 158",
+        "Android / Chrome 157",
+        "Android / Chrome 148"
+      ],
+      "ultimo_rechazo": "2026-11-26T13:48:46.585Z",
+      "intentos_de_marcacion": 42,
+      "rechazos_de_operario": 109,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T13:50:06.831Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 242,
+      "empleado_id": 547,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 96,
+      "codigos": [
+        null,
+        "MARCACION_DIFERIDA_EXPIRADA",
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "Android / Chrome 157"
+      ],
+      "ultimo_rechazo": "2026-11-26T01:14:06.051Z",
+      "intentos_de_marcacion": 44,
+      "rechazos_de_operario": 96,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T11:03:27.020Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 236,
+      "empleado_id": 523,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 83,
+      "codigos": [
+        null,
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "iOS / Safari 27"
+      ],
+      "ultimo_rechazo": "2026-11-26T13:10:38.643Z",
+      "intentos_de_marcacion": 27,
+      "rechazos_de_operario": 83,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T13:03:13.182Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 226,
+      "empleado_id": 483,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 52,
+      "codigos": [
+        null
+      ],
+      "dispositivos": [
+        "iOS / Safari 18"
+      ],
+      "ultimo_rechazo": "2026-11-26T04:54:06.372Z",
+      "intentos_de_marcacion": 20,
+      "rechazos_de_operario": 52,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 229,
+      "empleado_id": 495,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 44,
+      "codigos": [
+        null
+      ],
+      "dispositivos": [
+        "Android / Chrome 158"
+      ],
+      "ultimo_rechazo": "2026-11-25T20:24:35.664Z",
+      "intentos_de_marcacion": 7,
+      "rechazos_de_operario": 44,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T12:06:30.561Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 240,
+      "empleado_id": 539,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 43,
+      "codigos": [
+        null,
+        "IDEMPOTENCY_KEY_CONFLICT",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "MARCACION_DIFERIDA_EXPIRADA"
+      ],
+      "dispositivos": [
+        "Android / Chrome 158",
+        "Android / Chrome 157"
+      ],
+      "ultimo_rechazo": "2026-11-26T13:50:35.688Z",
+      "intentos_de_marcacion": 27,
+      "rechazos_de_operario": 43,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T13:51:28.984Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 234,
+      "empleado_id": 515,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 40,
+      "codigos": [
+        null
+      ],
+      "dispositivos": [
+        "Android / Chrome 158",
+        "Android / Chrome 157"
+      ],
+      "ultimo_rechazo": "2026-11-26T12:21:36.356Z",
+      "intentos_de_marcacion": 12,
+      "rechazos_de_operario": 40,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T12:06:45.865Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 243,
+      "empleado_id": null,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 40,
+      "codigos": [
+        null,
+        "MODULO_NO_HABILITADO"
+      ],
+      "dispositivos": [
+        "Windows / Chrome 157"
+      ],
+      "ultimo_rechazo": "2026-11-24T15:26:09.071Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 40,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 245,
+      "empleado_id": 551,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 37,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "KILOMETRAJE_REQUERIDO",
+        "JUSTIFICACION_LLEGADA_TARDE_REQUERIDA"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T13:47:09.630Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 0,
+      "correcciones_administrativas_rechazadas": 37,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 238,
+      "empleado_id": 531,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 34,
+      "codigos": [
+        null,
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "Android / Chrome 157"
+      ],
+      "ultimo_rechazo": "2026-11-25T20:40:17.255Z",
+      "intentos_de_marcacion": 17,
+      "rechazos_de_operario": 34,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T11:03:26.280Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 235,
+      "empleado_id": 519,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 33,
+      "codigos": [
+        null,
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "Android / Chrome 158",
+        "Android / Chrome 157"
+      ],
+      "ultimo_rechazo": "2026-11-26T03:18:11.954Z",
+      "intentos_de_marcacion": 17,
+      "rechazos_de_operario": 33,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T12:08:17.589Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 228,
+      "empleado_id": 491,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 28,
+      "codigos": [
+        null,
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "MARCACION_DIFERIDA_EXPIRADA"
+      ],
+      "dispositivos": [
+        "iOS / Safari 26"
+      ],
+      "ultimo_rechazo": "2026-11-26T01:43:51.223Z",
+      "intentos_de_marcacion": 18,
+      "rechazos_de_operario": 28,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T11:40:52.337Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 237,
+      "empleado_id": 527,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 27,
+      "codigos": [
+        null,
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "iOS / Safari 27"
+      ],
+      "ultimo_rechazo": "2026-11-25T11:47:35.697Z",
+      "intentos_de_marcacion": 9,
+      "rechazos_de_operario": 27,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T12:01:05.935Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 232,
+      "empleado_id": 507,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 19,
+      "codigos": [
+        null,
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "iOS / Safari 27"
+      ],
+      "ultimo_rechazo": "2026-11-26T13:51:40.221Z",
+      "intentos_de_marcacion": 8,
+      "rechazos_de_operario": 19,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 222,
+      "empleado_id": 467,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 18,
+      "codigos": [
+        null
+      ],
+      "dispositivos": [
+        "Android / Chrome 158",
+        "Android / Chrome 157",
+        "Windows / Chrome 157"
+      ],
+      "ultimo_rechazo": "2026-11-25T18:31:14.358Z",
+      "intentos_de_marcacion": 7,
+      "rechazos_de_operario": 18,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T10:49:38.949Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 241,
+      "empleado_id": 543,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 16,
+      "codigos": [
+        null
+      ],
+      "dispositivos": [
+        "Android / Chrome 158"
+      ],
+      "ultimo_rechazo": "2026-11-26T14:11:51.898Z",
+      "intentos_de_marcacion": 4,
+      "rechazos_de_operario": 16,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T11:11:34.976Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 233,
+      "empleado_id": 511,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 16,
+      "codigos": [
+        null
+      ],
+      "dispositivos": [
+        "iOS / Safari 27"
+      ],
+      "ultimo_rechazo": "2026-11-22T17:51:47.352Z",
+      "intentos_de_marcacion": 2,
+      "rechazos_de_operario": 16,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": [
+        {
+          "type": "entrada",
+          "at": "2026-11-26T12:50:35.790Z",
+          "fuente": "apexos-mobile",
+          "identidad": "photo_only"
+        }
+      ]
+    },
+    {
+      "user_id": 267,
+      "empleado_id": 562,
+      "tenant_id": "6d91a0ac-1964-420f-b8e5-2eb0bfcc3fd7",
+      "rechazos": 8,
+      "codigos": [
+        null
+      ],
+      "dispositivos": [
+        "Windows / Chrome 155"
+      ],
+      "ultimo_rechazo": "2026-11-23T20:02:32.898Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 8,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 75,
+      "empleado_id": 127,
+      "tenant_id": "9a6ffc43-9aec-4b1b-8943-f098a4046b97",
+      "rechazos": 6,
+      "codigos": [
+        "PERMISO_DENEGADO",
+        "REQUEST_REJECTED"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-24T18:56:44.332Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 6,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 264,
+      "empleado_id": 560,
+      "tenant_id": "5bf3b61c-597f-4dfe-b605-54e24919dc0f",
+      "rechazos": 6,
+      "codigos": [
+        null
+      ],
+      "dispositivos": [
+        "Windows / Chrome 155"
+      ],
+      "ultimo_rechazo": "2026-11-23T19:59:17.995Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 6,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 256,
+      "empleado_id": null,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 6,
+      "codigos": [
+        "KILOMETRAJE_REQUERIDO"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T16:16:45.145Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 0,
+      "correcciones_administrativas_rechazadas": 6,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 255,
+      "empleado_id": null,
+      "tenant_id": "9a6ffc43-9aec-4b1b-8943-f098a4046b97",
+      "rechazos": 6,
+      "codigos": [
+        "EMPLEADO_NO_ENCONTRADO"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T16:15:06.610Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 0,
+      "correcciones_administrativas_rechazadas": 6,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 221,
+      "empleado_id": null,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 5,
+      "codigos": [
+        null
+      ],
+      "dispositivos": [
+        "Windows / Chrome 157"
+      ],
+      "ultimo_rechazo": "2026-11-23T13:32:26.044Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 5,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 273,
+      "empleado_id": 566,
+      "tenant_id": "9a6ffc43-9aec-4b1b-8943-f098a4046b97",
+      "rechazos": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-24T17:16:12.030Z",
+      "intentos_de_marcacion": 4,
+      "rechazos_de_operario": 4,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 271,
+      "empleado_id": 565,
+      "tenant_id": "9a6ffc43-9aec-4b1b-8943-f098a4046b97",
+      "rechazos": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-24T17:14:14.938Z",
+      "intentos_de_marcacion": 4,
+      "rechazos_de_operario": 4,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 257,
+      "empleado_id": null,
+      "tenant_id": "9a6ffc43-9aec-4b1b-8943-f098a4046b97",
+      "rechazos": 3,
+      "codigos": [
+        "JORNADA_COMPLETA",
+        "MOTIVO_CORRECCION_REQUERIDO",
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T16:24:45.318Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 0,
+      "correcciones_administrativas_rechazadas": 3,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 250,
+      "empleado_id": null,
+      "tenant_id": "9a6ffc43-9aec-4b1b-8943-f098a4046b97",
+      "rechazos": 3,
+      "codigos": [
+        "JORNADA_COMPLETA",
+        "MOTIVO_CORRECCION_REQUERIDO",
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T16:11:02.720Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 0,
+      "correcciones_administrativas_rechazadas": 3,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 269,
+      "empleado_id": null,
+      "tenant_id": "3144610c-4b68-4e82-ab0b-313847fc7053",
+      "rechazos": 2,
+      "codigos": [
+        "HORARIO_NO_ENCONTRADO",
+        "EMPLEADO_NO_ENCONTRADO"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T20:03:35.791Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 2,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 259,
+      "empleado_id": 557,
+      "tenant_id": "9a6ffc43-9aec-4b1b-8943-f098a4046b97",
+      "rechazos": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T16:25:09.104Z",
+      "intentos_de_marcacion": 2,
+      "rechazos_de_operario": 2,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 252,
+      "empleado_id": 555,
+      "tenant_id": "9a6ffc43-9aec-4b1b-8943-f098a4046b97",
+      "rechazos": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T16:11:26.159Z",
+      "intentos_de_marcacion": 2,
+      "rechazos_de_operario": 2,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 247,
+      "empleado_id": null,
+      "tenant_id": "9a6ffc43-9aec-4b1b-8943-f098a4046b97",
+      "rechazos": 2,
+      "codigos": [
+        "P2025"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-21T02:13:51.956Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 2,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 268,
+      "empleado_id": 563,
+      "tenant_id": "6d91a0ac-1964-420f-b8e5-2eb0bfcc3fd7",
+      "rechazos": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T20:01:29.529Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 1,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 265,
+      "empleado_id": 561,
+      "tenant_id": "5bf3b61c-597f-4dfe-b605-54e24919dc0f",
+      "rechazos": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T19:58:59.554Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 1,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 262,
+      "empleado_id": 559,
+      "tenant_id": "95f6a491-ab75-4863-b2cc-edb29a88880c",
+      "rechazos": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T19:55:19.691Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 1,
+      "correcciones_administrativas_rechazadas": 0,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 258,
+      "empleado_id": null,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 1,
+      "codigos": [
+        "EMPLEADO_NO_ENCONTRADO"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T16:24:47.635Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 0,
+      "correcciones_administrativas_rechazadas": 1,
+      "marcaciones_del_dia": []
+    },
+    {
+      "user_id": 251,
+      "empleado_id": null,
+      "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+      "rechazos": 1,
+      "codigos": [
+        "EMPLEADO_NO_ENCONTRADO"
+      ],
+      "dispositivos": [
+        "otro / otro"
+      ],
+      "ultimo_rechazo": "2026-11-23T16:11:05.484Z",
+      "intentos_de_marcacion": 0,
+      "rechazos_de_operario": 0,
+      "correcciones_administrativas_rechazadas": 1,
+      "marcaciones_del_dia": []
+    }
+  ],
+  "intentos_sin_usuario": {
+    "filas": 353,
+    "con_marca_de_dispositivo": 0,
+    "dispositivos": 0,
+    "adjudicables": 0,
+    "grupos": []
+  },
+  "trabajadores_que_marcaron_en_ventana": 25,
+  "jornadas_sin_registro": [
+    {
+      "empleado_id": 543,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 16,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 135,
+      "codigos": [
+        null,
+        "SELFIE_INVALIDA",
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 135,
+      "codigos": [
+        null,
+        "SELFIE_INVALIDA",
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 507,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 19,
+      "codigos": [
+        null,
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 539,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 43,
+      "codigos": [
+        null,
+        "IDEMPOTENCY_KEY_CONFLICT",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "MARCACION_DIFERIDA_EXPIRADA"
+      ]
+    },
+    {
+      "empleado_id": 487,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 109,
+      "codigos": [
+        null,
+        "HORARIO_AJENO_DENEGADO",
+        "HORARIO_FUERA_DEL_DIA",
+        "IDEMPOTENCY_KEY_CONFLICT",
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 523,
+      "dia": "2026-11-21",
+      "rechazos_registrados": 83,
+      "codigos": [
+        null,
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 523,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 83,
+      "codigos": [
+        null,
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 515,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 40,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-23",
+      "rechazos_registrados": 315,
+      "codigos": [
+        null,
+        "MARCACION_DIFERIDA_EXPIRADA",
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 483,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 52,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 519,
+      "dia": "2026-11-23",
+      "rechazos_registrados": 33,
+      "codigos": [
+        null,
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 495,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 44,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 467,
+      "dia": "2026-11-23",
+      "rechazos_registrados": 18,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 127,
+      "dia": "2026-11-20",
+      "rechazos_registrados": 6,
+      "codigos": [
+        "PERMISO_DENEGADO",
+        "REQUEST_REJECTED"
+      ]
+    },
+    {
+      "empleado_id": 127,
+      "dia": "2026-11-21",
+      "rechazos_registrados": 6,
+      "codigos": [
+        "PERMISO_DENEGADO",
+        "REQUEST_REJECTED"
+      ]
+    },
+    {
+      "empleado_id": 127,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 6,
+      "codigos": [
+        "PERMISO_DENEGADO",
+        "REQUEST_REJECTED"
+      ]
+    },
+    {
+      "empleado_id": 127,
+      "dia": "2026-11-23",
+      "rechazos_registrados": 6,
+      "codigos": [
+        "PERMISO_DENEGADO",
+        "REQUEST_REJECTED"
+      ]
+    },
+    {
+      "empleado_id": 127,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 6,
+      "codigos": [
+        "PERMISO_DENEGADO",
+        "REQUEST_REJECTED"
+      ]
+    },
+    {
+      "empleado_id": 127,
+      "dia": "2026-11-25",
+      "rechazos_registrados": 6,
+      "codigos": [
+        "PERMISO_DENEGADO",
+        "REQUEST_REJECTED"
+      ]
+    },
+    {
+      "empleado_id": 127,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 6,
+      "codigos": [
+        "PERMISO_DENEGADO",
+        "REQUEST_REJECTED"
+      ]
+    },
+    {
+      "empleado_id": 566,
+      "dia": "2026-11-20",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 566,
+      "dia": "2026-11-21",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 566,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 566,
+      "dia": "2026-11-23",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 566,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 566,
+      "dia": "2026-11-25",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 566,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 565,
+      "dia": "2026-11-20",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 565,
+      "dia": "2026-11-21",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 565,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 565,
+      "dia": "2026-11-23",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 565,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 565,
+      "dia": "2026-11-25",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 565,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 4,
+      "codigos": [
+        "SELFIE_REQUERIDA",
+        "MARCACION_FUERA_DE_SECUENCIA",
+        "SELFIE_INVALIDA"
+      ]
+    },
+    {
+      "empleado_id": 562,
+      "dia": "2026-11-20",
+      "rechazos_registrados": 8,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 562,
+      "dia": "2026-11-21",
+      "rechazos_registrados": 8,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 562,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 8,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 562,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 8,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 562,
+      "dia": "2026-11-25",
+      "rechazos_registrados": 8,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 562,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 8,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 563,
+      "dia": "2026-11-20",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 563,
+      "dia": "2026-11-21",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 563,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 563,
+      "dia": "2026-11-23",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 563,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 563,
+      "dia": "2026-11-25",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 563,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 560,
+      "dia": "2026-11-20",
+      "rechazos_registrados": 6,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 560,
+      "dia": "2026-11-21",
+      "rechazos_registrados": 6,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 560,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 6,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 560,
+      "dia": "2026-11-23",
+      "rechazos_registrados": 6,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 560,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 6,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 560,
+      "dia": "2026-11-25",
+      "rechazos_registrados": 6,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 560,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 6,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 561,
+      "dia": "2026-11-20",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 561,
+      "dia": "2026-11-21",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 561,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 561,
+      "dia": "2026-11-23",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 561,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 561,
+      "dia": "2026-11-25",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 561,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 559,
+      "dia": "2026-11-20",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 559,
+      "dia": "2026-11-21",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 559,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 559,
+      "dia": "2026-11-23",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 559,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 559,
+      "dia": "2026-11-25",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 559,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 1,
+      "codigos": [
+        "PERMISO_DENEGADO"
+      ]
+    },
+    {
+      "empleado_id": 557,
+      "dia": "2026-11-20",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 557,
+      "dia": "2026-11-21",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 557,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 557,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 557,
+      "dia": "2026-11-25",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 557,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 555,
+      "dia": "2026-11-20",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 555,
+      "dia": "2026-11-21",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 555,
+      "dia": "2026-11-22",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 555,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 555,
+      "dia": "2026-11-25",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 555,
+      "dia": "2026-11-26",
+      "rechazos_registrados": 2,
+      "codigos": [
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    },
+    {
+      "empleado_id": 511,
+      "dia": "2026-11-23",
+      "rechazos_registrados": 16,
+      "codigos": [
+        null
+      ]
+    },
+    {
+      "empleado_id": 511,
+      "dia": "2026-11-24",
+      "rechazos_registrados": 16,
+      "codigos": [
+        null
+      ]
+    }
+  ],
+  "jornadas_sin_cierre": [
+    {
+      "empleado_id": 539,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 487,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 523,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 511,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 519,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 515,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 495,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 471,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 527,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 491,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 543,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 547,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 531,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 467,
+      "dia": "2026-11-26",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 483,
+      "dia": "2026-11-25",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "faltan": [
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-25",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "faltan": [
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 523,
+      "dia": "2026-11-24",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 539,
+      "dia": "2026-11-24",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 547,
+      "dia": "2026-11-24",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "faltan": [
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 543,
+      "dia": "2026-11-24",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 515,
+      "dia": "2026-11-24",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "faltan": [
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 495,
+      "dia": "2026-11-24",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 487,
+      "dia": "2026-11-23",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "faltan": [
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-23",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 523,
+      "dia": "2026-11-23",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "faltan": [
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 543,
+      "dia": "2026-11-23",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo"
+      ],
+      "faltan": [
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 531,
+      "dia": "2026-11-23",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "faltan": [
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 515,
+      "dia": "2026-11-23",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 495,
+      "dia": "2026-11-23",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 547,
+      "dia": "2026-11-22",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-22",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 527,
+      "dia": "2026-11-22",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "faltan": [
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-22",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo"
+      ],
+      "faltan": [
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 507,
+      "dia": "2026-11-22",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "faltan": [
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-21",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 515,
+      "dia": "2026-11-21",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 495,
+      "dia": "2026-11-21",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo"
+      ],
+      "faltan": [
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-21",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo"
+      ],
+      "faltan": [
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 543,
+      "dia": "2026-11-20",
+      "tipos": [
+        "entrada"
+      ],
+      "faltan": [
+        "inicio_almuerzo",
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 503,
+      "dia": "2026-11-20",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "faltan": [
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 479,
+      "dia": "2026-11-20",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo"
+      ],
+      "faltan": [
+        "fin_almuerzo",
+        "salida"
+      ]
+    },
+    {
+      "empleado_id": 487,
+      "dia": "2026-11-20",
+      "tipos": [
+        "entrada",
+        "inicio_almuerzo",
+        "fin_almuerzo"
+      ],
+      "faltan": [
+        "salida"
+      ]
+    }
+  ],
+  "marcaciones_por_dia": [
+    {
+      "dia": "2026-11-26",
+      "total": 16,
+      "entradas": 16,
+      "trabajadores": 16
+    },
+    {
+      "dia": "2026-11-25",
+      "total": 74,
+      "entradas": 19,
+      "trabajadores": 19
+    },
+    {
+      "dia": "2026-11-24",
+      "total": 58,
+      "entradas": 18,
+      "trabajadores": 18
+    },
+    {
+      "dia": "2026-11-23",
+      "total": 58,
+      "entradas": 20,
+      "trabajadores": 20
+    },
+    {
+      "dia": "2026-11-22",
+      "total": 42,
+      "entradas": 13,
+      "trabajadores": 13
+    },
+    {
+      "dia": "2026-11-21",
+      "total": 62,
+      "entradas": 18,
+      "trabajadores": 18
+    },
+    {
+      "dia": "2026-11-20",
+      "total": 69,
+      "entradas": 19,
+      "trabajadores": 19
+    }
+  ],
+  "marcaciones_aceptadas_del_dia": [
+    {
+      "tipo": "entrada",
+      "total": 16
+    }
+  ],
+  "semana": {
+    "criterio": "dia calendario de Colombia para agrupar; el corte es el primer instante en que se LEYO el binario nuevo sirviendo (no la hora del commit). Las clases se deciden por la frase del servidor cuando el cliente no trae codigo.",
+    "corte_utc": "2026-11-24T21:55:07.000Z",
+    "ventana_utc": [
+      "2026-11-20T05:00:00.000Z",
+      "2026-11-27T05:00:00.000Z"
+    ],
+    "dias_de_ventana_leida": 7,
+    "escrituras": 0,
+    "denominador_marcaciones_aceptadas": {
+      "antes_del_corte": 267,
+      "despues_del_corte": 112
+    },
+    "rechazos_de_foto": {
+      "antes_del_corte": 38,
+      "despues_del_corte": 5,
+      "codigos_por_lado": {
+        "antes": {
+          "400 SELFIE_REQUERIDA | Toma la selfie de validacion para registrar esta marcacion.": 2,
+          "400 SELFIE_INVALIDA | El contenido del archivo no coincide con el formato declarado.": 24,
+          "400 (sin codigo) | El contenido del archivo no coincide con el formato declarado.": 12
+        },
+        "despues": {
+          "400 (sin codigo) | El contenido del archivo no coincide con el formato declarado.": 5
+        }
+      }
+    },
+    "por_dia": [
+      {
+        "dia": "2026-11-20",
+        "registros": 284,
+        "aceptadas": 69,
+        "trabajadores": 19,
+        "clases": [
+          {
+            "clase": "transporte-caido",
+            "total": 223,
+            "antes": 223,
+            "despues": 0,
+            "usuarios": 15
+          },
+          {
+            "clase": "secuencia",
+            "total": 22,
+            "antes": 22,
+            "despues": 0,
+            "usuarios": 7
+          },
+          {
+            "clase": "kilometraje",
+            "total": 16,
+            "antes": 16,
+            "despues": 0,
+            "usuarios": 1
+          },
+          {
+            "clase": "cliente-no-clasifica",
+            "total": 14,
+            "antes": 14,
+            "despues": 0,
+            "usuarios": 8
+          },
+          {
+            "clase": "foto-contenido",
+            "total": 3,
+            "antes": 3,
+            "despues": 0,
+            "usuarios": 1
+          },
+          {
+            "clase": "otro",
+            "total": 2,
+            "antes": 2,
+            "despues": 0,
+            "usuarios": 1
+          },
+          {
+            "clase": "justificacion-pendiente",
+            "total": 2,
+            "antes": 2,
+            "despues": 0,
+            "usuarios": 1
+          },
+          {
+            "clase": "diferida-24h",
+            "total": 2,
+            "antes": 2,
+            "despues": 0,
+            "usuarios": 1
+          }
+        ]
+      },
+      {
+        "dia": "2026-11-21",
+        "registros": 226,
+        "aceptadas": 62,
+        "trabajadores": 18,
+        "clases": [
+          {
+            "clase": "transporte-caido",
+            "total": 202,
+            "antes": 202,
+            "despues": 0,
+            "usuarios": 15
+          },
+          {
+            "clase": "cliente-no-clasifica",
+            "total": 11,
+            "antes": 11,
+            "despues": 0,
+            "usuarios": 7
+          },
+          {
+            "clase": "secuencia",
+            "total": 8,
+            "antes": 8,
+            "despues": 0,
+            "usuarios": 6
+          },
+          {
+            "clase": "foto-contenido",
+            "total": 4,
+            "antes": 4,
+            "despues": 0,
+            "usuarios": 1
+          },
+          {
+            "clase": "llave-repetida",
+            "total": 1,
+            "antes": 1,
+            "despues": 0,
+            "usuarios": 1
+          }
+        ]
+      },
+      {
+        "dia": "2026-11-22",
+        "registros": 216,
+        "aceptadas": 42,
+        "trabajadores": 13,
+        "clases": [
+          {
+            "clase": "transporte-caido",
+            "total": 195,
+            "antes": 195,
+            "despues": 0,
+            "usuarios": 12
+          },
+          {
+            "clase": "cliente-no-clasifica",
+            "total": 9,
+            "antes": 9,
+            "despues": 0,
+            "usuarios": 4
+          },
+          {
+            "clase": "secuencia",
+            "total": 6,
+            "antes": 6,
+            "despues": 0,
+            "usuarios": 4
+          },
+          {
+            "clase": "foto-contenido",
+            "total": 4,
+            "antes": 4,
+            "despues": 0,
+            "usuarios": 1
+          },
+          {
+            "clase": "diferida-24h",
+            "total": 2,
+            "antes": 2,
+            "despues": 0,
+            "usuarios": 1
+          }
+        ]
+      },
+      {
+        "dia": "2026-11-23",
+        "registros": 313,
+        "aceptadas": 58,
+        "trabajadores": 20,
+        "clases": [
+          {
+            "clase": "transporte-caido",
+            "total": 219,
+            "antes": 219,
+            "despues": 0,
+            "usuarios": 20
+          },
+          {
+            "clase": "cliente-no-clasifica",
+            "total": 27,
+            "antes": 27,
+            "despues": 0,
+            "usuarios": 6
+          },
+          {
+            "clase": "foto-contenido",
+            "total": 20,
+            "antes": 20,
+            "despues": 0,
+            "usuarios": 1
+          },
+          {
+            "clase": "secuencia",
+            "total": 14,
+            "antes": 14,
+            "despues": 0,
+            "usuarios": 7
+          },
+          {
+            "clase": "otro",
+            "total": 9,
+            "antes": 9,
+            "despues": 0,
+            "usuarios": 4
+          },
+          {
+            "clase": "diferida-24h",
+            "total": 9,
+            "antes": 9,
+            "despues": 0,
+            "usuarios": 3
+          },
+          {
+            "clase": "kilometraje",
+            "total": 7,
+            "antes": 7,
+            "despues": 0,
+            "usuarios": 2
+          },
+          {
+            "clase": "permiso-horario",
+            "total": 3,
+            "antes": 3,
+            "despues": 0,
+            "usuarios": 3
+          },
+          {
+            "clase": "jornada-completa",
+            "total": 2,
+            "antes": 2,
+            "despues": 0,
+            "usuarios": 2
+          },
+          {
+            "clase": "justificacion-pendiente",
+            "total": 2,
+            "antes": 2,
+            "despues": 0,
+            "usuarios": 2
+          },
+          {
+            "clase": "llave-repetida",
+            "total": 1,
+            "antes": 1,
+            "despues": 0,
+            "usuarios": 1
+          }
+        ]
+      },
+      {
+        "dia": "2026-11-24",
+        "registros": 291,
+        "aceptadas": 58,
+        "trabajadores": 18,
+        "clases": [
+          {
+            "clase": "transporte-caido",
+            "total": 261,
+            "antes": 185,
+            "despues": 76,
+            "usuarios": 15
+          },
+          {
+            "clase": "cliente-no-clasifica",
+            "total": 11,
+            "antes": 10,
+            "despues": 1,
+            "usuarios": 4
+          },
+          {
+            "clase": "foto-contenido",
+            "total": 6,
+            "antes": 5,
+            "despues": 1,
+            "usuarios": 3
+          },
+          {
+            "clase": "diferida-24h",
+            "total": 4,
+            "antes": 4,
+            "despues": 0,
+            "usuarios": 1
+          },
+          {
+            "clase": "permiso-horario",
+            "total": 3,
+            "antes": 3,
+            "despues": 0,
+            "usuarios": 1
+          },
+          {
+            "clase": "foto-faltante",
+            "total": 2,
+            "antes": 2,
+            "despues": 0,
+            "usuarios": 2
+          },
+          {
+            "clase": "secuencia",
+            "total": 2,
+            "antes": 2,
+            "despues": 0,
+            "usuarios": 2
+          },
+          {
+            "clase": "llave-repetida",
+            "total": 2,
+            "antes": 2,
+            "despues": 0,
+            "usuarios": 1
+          }
+        ]
+      },
+      {
+        "dia": "2026-11-25",
+        "registros": 323,
+        "aceptadas": 74,
+        "trabajadores": 19,
+        "clases": [
+          {
+            "clase": "transporte-caido",
+            "total": 318,
+            "antes": 0,
+            "despues": 318,
+            "usuarios": 15
+          },
+          {
+            "clase": "permiso-horario",
+            "total": 3,
+            "antes": 0,
+            "despues": 3,
+            "usuarios": 1
+          },
+          {
+            "clase": "foto-contenido",
+            "total": 1,
+            "antes": 0,
+            "despues": 1,
+            "usuarios": 1
+          },
+          {
+            "clase": "cliente-no-clasifica",
+            "total": 1,
+            "antes": 0,
+            "despues": 1,
+            "usuarios": 1
+          }
+        ]
+      },
+      {
+        "dia": "2026-11-26",
+        "registros": 78,
+        "aceptadas": 16,
+        "trabajadores": 16,
+        "clases": [
+          {
+            "clase": "transporte-caido",
+            "total": 70,
+            "antes": 0,
+            "despues": 70,
+            "usuarios": 8
+          },
+          {
+            "clase": "cliente-no-clasifica",
+            "total": 3,
+            "antes": 0,
+            "despues": 3,
+            "usuarios": 3
+          },
+          {
+            "clase": "foto-contenido",
+            "total": 3,
+            "antes": 0,
+            "despues": 3,
+            "usuarios": 1
+          },
+          {
+            "clase": "llave-repetida",
+            "total": 1,
+            "antes": 0,
+            "despues": 1,
+            "usuarios": 1
+          },
+          {
+            "clase": "permiso-horario",
+            "total": 1,
+            "antes": 0,
+            "despues": 1,
+            "usuarios": 1
+          }
+        ]
+      }
+    ],
+    "foto_despues_del_corte": [
+      {
+        "utc": "2026-11-26T13:53:39.301Z",
+        "hora_colombia": "2026-11-26 08:53",
+        "user_id": 231,
+        "empleado_id": 503,
+        "clase": "foto-contenido",
+        "status": 400,
+        "code": "(el cliente no trajo codigo)",
+        "ruta": "/api/v1/hr/self/time-punches",
+        "mensaje": "El contenido del archivo no coincide con el formato declarado.",
+        "detalle": null,
+        "dispositivo": "Android / Chrome 158",
+        "marcas_del_mismo_trabajador_en_la_hora_siguiente": 0,
+        "tipos_de_esas_marcas": []
+      },
+      {
+        "utc": "2026-11-26T13:53:23.920Z",
+        "hora_colombia": "2026-11-26 08:53",
+        "user_id": 231,
+        "empleado_id": 503,
+        "clase": "foto-contenido",
+        "status": 400,
+        "code": "(el cliente no trajo codigo)",
+        "ruta": "/api/v1/hr/self/time-punches",
+        "mensaje": "El contenido del archivo no coincide con el formato declarado.",
+        "detalle": null,
+        "dispositivo": "Android / Chrome 158",
+        "marcas_del_mismo_trabajador_en_la_hora_siguiente": 0,
+        "tipos_de_esas_marcas": []
+      },
+      {
+        "utc": "2026-11-26T13:52:59.405Z",
+        "hora_colombia": "2026-11-26 08:52",
+        "user_id": 231,
+        "empleado_id": 503,
+        "clase": "foto-contenido",
+        "status": 400,
+        "code": "(el cliente no trajo codigo)",
+        "ruta": "/api/v1/hr/self/time-punches",
+        "mensaje": "El contenido del archivo no coincide con el formato declarado.",
+        "detalle": null,
+        "dispositivo": "Android / Chrome 158",
+        "marcas_del_mismo_trabajador_en_la_hora_siguiente": 0,
+        "tipos_de_esas_marcas": []
+      },
+      {
+        "utc": "2026-11-26T01:21:11.547Z",
+        "hora_colombia": "2026-11-25 20:21",
+        "user_id": 231,
+        "empleado_id": 503,
+        "clase": "foto-contenido",
+        "status": 400,
+        "code": "(el cliente no trajo codigo)",
+        "ruta": "/api/v1/hr/self/time-punches",
+        "mensaje": "El contenido del archivo no coincide con el formato declarado.",
+        "detalle": null,
+        "dispositivo": "Android / Chrome 158",
+        "marcas_del_mismo_trabajador_en_la_hora_siguiente": 0,
+        "tipos_de_esas_marcas": []
+      },
+      {
+        "utc": "2026-11-25T01:32:10.933Z",
+        "hora_colombia": "2026-11-24 20:32",
+        "user_id": 231,
+        "empleado_id": 503,
+        "clase": "foto-contenido",
+        "status": 400,
+        "code": "(el cliente no trajo codigo)",
+        "ruta": "/api/v1/hr/self/time-punches",
+        "mensaje": "El contenido del archivo no coincide con el formato declarado.",
+        "detalle": null,
+        "dispositivo": "Android / Chrome 158",
+        "marcas_del_mismo_trabajador_en_la_hora_siguiente": 0,
+        "tipos_de_esas_marcas": []
+      }
+    ]
+  },
+  "conteo_claves_de_config": {
+    "archivo": "config/production.env",
+    "claves_leidas": 48,
+    "nota": "Se cuentan solo NOMBRES de variable para el registro; los valores no se copian aqui ni en ninguna evidencia (regla 58)."
+  },
+  "notas_de_cierre": {
+    "medido": "2026-11-26",
+    "rama_y_binario": "origin/main e3c2ad17, /health commit e3c2ad171946, cero commits nuevos desde el corte",
+    "escrituras": 0,
+    "lectura_de_secreto": "0 bytes de secreto en la salida",
+    "nombres_de_trabajadores": "retirados del arbol versionado: la corrida con --detalle imprime jornadas con nombre por consola (diseno del instrumento) y no se versiona",
+    "origen_del_corte": "docs/qa/evidence/web-photo-battery-20261124/contabilidad-post-push.json, lectura_1.hora_utc = 2026-11-24T21:55:07Z",
+    "ventana": "7 dias leidos con --days=7; el instrumento ahora bloquea --semana con ventana menor (validarVentanaDeSemana)"
+  }
+}

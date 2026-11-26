@@ -7,7 +7,15 @@
 //
 //   node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/production.env
 //   node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/qa.env --date=2026-11-18
+//   node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/production.env \
+//     --date=2026-11-26 --days=7 --semana=2026-11-24T21:55:07Z --sin-nombres --output=docs/qa/evidence/...
 //   node scripts/certifications/hr-marking-blocked-workers.js --selftest
+//
+// `--semana=<corte ISO UTC>` añade el dictamen de la semana: cada dia calendario de Colombia con
+// sus rechazos por clase y su antes/despues del corte, y la lista de rechazos de foto posteriores
+// al corte con la marca del trabajador en la hora siguiente (0 = la jornada perdio esa pierna).
+// Exige `--days=7` o mas: la ventana la fija `--days`, no este flag, y con la ventana por defecto
+// el ANTES se queda en dos dias. El instrumento se bloquea antes de publicar ese numero corto.
 //
 // La ventana es la jornada colombiana (UTC-5): 05:00Z del dia hasta 05:00Z del
 // siguiente. Las marcaciones se filtran por la columna `date`, que ya guarda el
@@ -48,7 +56,7 @@ function parseArgs(argv = process.argv.slice(2)) {
 function parseFailures(argv) {
   const failures = [];
   const parsed = parseArgs(argv);
-  for (const key of ["env-file", "date", "days", "output", "manifest"]) {
+  for (const key of ["env-file", "date", "days", "output", "manifest", "semana"]) {
     if (parsed[key] === true) failures.push(`--${key} quedo sin valor`);
   }
   return failures;
@@ -97,6 +105,83 @@ function isoDay(value) {
 
 function messageKey(message = "") {
   return String(message).replace(/req-[0-9a-z-]+/gi, "req-*").slice(0, 160);
+}
+
+// ---- Semana (`--semana=<corte ISO UTC>`) --------------------------------------------------------
+// Un corte por dia calendario de Colombia y por CLASE de rechazo, con su antes/despues de un
+// instante dado. La clase se decide por lo que el registro dice, nunca por lo que el codigo trae:
+// en campo el cliente manda el 400 sin codigo y lo unico que sobrevive es la frase del servidor.
+// El mismo mapa lo usan la medicion y el selftest: si la clasificacion se cambia a mano en un
+// solo lugar, el control se pone rojo.
+function claseDeRechazo(value = {}) {
+  const msg = String(value.message || "");
+  const code = String(value.code || "");
+  if (code === "SELFIE_REQUERIDA" || /Toma la selfie/.test(msg)) return "foto-faltante";
+  if (code === "SELFIE_INVALIDA" || code.startsWith("EVIDENCIA_") || code.startsWith("EVIDENCE_")
+    || /formato declarado|no pudo decodificarse|no es una .+ permitida|tipo declarado no puede aceptarse|demasiado pequeno para ser un archivo/.test(msg)) return "foto-contenido";
+  if (/supera el (tamano|limite)|EVIDENCIA_SUPERA_LIMITE/.test(msg) || code === "SELFIE_SUPERA_LIMITE") return "foto-tamano";
+  if (code === "MARCACION_FUERA_DE_SECUENCIA" || /siguiente marcacion permitida/.test(msg)) return "secuencia";
+  if (code === "MARCACION_DIFERIDA_EXPIRADA" || /24 horas/.test(msg)) return "diferida-24h";
+  if (code === "KILOMETRAJE_REQUERIDO" || /kilometraje/.test(msg)) return "kilometraje";
+  if (code === "IDEMPOTENCY_KEY_CONFLICT" || /idempotencia/.test(msg)) return "llave-repetida";
+  if (code === "PERMISO_DENEGADO" || code === "HORARIO_AJENO_DENEGADO" || code === "HORARIO_FUERA_DEL_DIA" || /horario asignado/.test(msg)) return "permiso-horario";
+  if (code === "JORNADA_COMPLETA") return "jornada-completa";
+  if (code === "MOTIVO_CORRECCION_REQUERIDO" || /Justifica por que/.test(msg)) return "justificacion-pendiente";
+  if (/Backend no disponible desde frontend/.test(msg)) return "transporte-caido";
+  // La frase genérica del cliente NO es transporte: es un 4xx que el navegador recibio y no supo
+  // clasificar. Mezclarla con "Backend no disponible" infla la caida y esconde el rechazo real.
+  if (/Solicitud frontend fallida|Solicitud rechazada por validacion/.test(msg)) return "cliente-no-clasifica";
+  if (msg) return "otro";
+  return "sin-mensaje";
+}
+
+// El codigo que acompana al rechazo de foto distingue la puerta que lo emito: la compuerta de
+// identidad nueva siempre manda SELFIE_INVALIDA o un EVIDENCIA_* con su detalle; la validacion
+// antigua de la foto de justificacion lanza un Error pelado (400 sin codigo y sin detalle) con la
+// MISMA frase. Contar solo la frase juntaria las dos puertas en un mismo numero.
+function bucketDeCodigosFoto(filas) {
+  const out = {};
+  for (const fila of filas) {
+    if (!claseDeRechazo(fila).startsWith("foto-")) continue;
+    const clave = `${fila.status || "-"} ${fila.code || "(sin codigo)"} | ${fila.message || "(sin mensaje)"}`;
+    out[clave] = (out[clave] || 0) + 1;
+  }
+  return out;
+}
+
+// El dia CALENDARIO de Colombia de un instante UTC. `isoDay` mira la porcion UTC y para las
+// columnas `date` de la marcacion es correcto; para agrupar rechazos no, porque una marcacion de
+// las 20:32 CO de un martes cae en el miercoles UTC y el corte de media semana mentiría.
+function diaColombia(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  return new Date(date.getTime() - COLOMBIA_OFFSET_HOURS * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+// El corte es el instante en que se PROBO el binario nuevo sirviendo (no la hora del commit): la
+// fila que cae exactamente en el corte cuenta como despues, porque ese minuto ya es del mundo nuevo.
+function partirPorCorte(filas, corte) {
+  const desde = new Date(String(corte));
+  if (!Number.isFinite(desde.getTime())) throw new Error(`--semana espera un corte ISO UTC valido y recibio: ${corte}`);
+  const partes = { corte_utc: desde.toISOString(), antes: [], despues: [] };
+  for (const fila of filas) (new Date(fila.timestamp) < desde ? partes.antes : partes.despues).push(fila);
+  return partes;
+}
+
+// `--semana` promete una semana, pero lo que se lee depende de `--days`: con la ventana por defecto
+// el ANTES se queda en dos dias y el dictamen sale corto sin avisar. Medido el 2026-11-26: la misma
+// corrida sin `--days=7` devolvio 7 rechazos de foto antes del corte en vez de 38 y un denominador
+// de 36 en vez de 267, y el artefacto habria quedado publicado con esa cifra. Se bloquea, no se advierte.
+function validarVentanaDeSemana(ventana, diasMinimos = 7) {
+  const desde = new Date(ventana.from);
+  const hasta = new Date(ventana.to);
+  if (!Number.isFinite(desde.getTime()) || !Number.isFinite(hasta.getTime())) {
+    throw new Error(`--semana necesita una ventana UTC valida y recibio: ${JSON.stringify(ventana)}`);
+  }
+  const dias = (hasta - desde) / (24 * 3600 * 1000);
+  if (!(dias >= diasMinimos)) {
+    throw new Error(`--semana promete ${diasMinimos} dias de diagnostico pero la ventana leida cubre ${dias.toFixed(2)}; corra con --days=${diasMinimos} o mas`);
+  }
+  return dias;
 }
 
 // El nombre completo de un trabajador es registro laboral, no diagnóstico: para actuar alcanza con
@@ -580,6 +665,76 @@ async function main() {
     const aislamientoOk = cruzados.length === 2 && grupoT2 && grupoT2.empleado_codigo === null && grupoT2.user_id === 999
       && grupoT2.estado === "USUARIO_SIN_EMPLEADO" && cruzados.find((g) => g.tenant_id === "t1").empleado_codigo === "OP-535";
     informa(`${aislamientoOk ? "ok  " : "FALLO"} la misma marca en otro tenant no hereda la ficha del primero (la marca es por tenant): ${JSON.stringify(cruzados.map((g) => [g.tenant_id, g.estado, g.empleado_codigo]))}`);
+
+    // Controles del modo `--semana`: la clase se decide por la frase del servidor (en campo el
+    // cliente manda el 400 sin codigo), el corte no puede tragar filas ni afirmar un despues vacio,
+    // y el dia es el calendario de Colombia (05:00 UTC), no la porcion UTC del instante.
+    const fotoSinCodigo = claseDeRechazo({ message: "El contenido del archivo no coincide con el formato declarado.", code: "" });
+    informa(`${fotoSinCodigo === "foto-contenido" ? "ok  " : "FALLO"} un 400 de foto sin codigo se clasifica por la frase del servidor: ${fotoSinCodigo}`);
+    const caidaNoEsFoto = claseDeRechazo({ message: "Backend no disponible desde frontend (TypeError: Failed to fetch)" });
+    informa(`${caidaNoEsFoto === "transporte-caido" && !caidaNoEsFoto.startsWith("foto-") ? "ok  " : "FALLO"} un fallo de red no se cuenta como rechazo de foto: ${caidaNoEsFoto}`);
+    const genericaDelCliente = claseDeRechazo({ message: "Solicitud frontend fallida" });
+    // Rojo provocado: si la frase generica se clasifica como caida, el numero de intermitencia sube
+    // con rechazos ajenos a la red y el dictamen de disponibilidad deja de ser creible.
+    informa(`${genericaDelCliente === "cliente-no-clasifica" ? "ok  " : "FALLO"} la frase generica del cliente no infla la caida de red (rojo provocado): ${genericaDelCliente}`);
+    const faltaLaFoto = claseDeRechazo({ code: "SELFIE_REQUERIDA", message: "Toma la selfie para continuar." });
+    informa(`${faltaLaFoto === "foto-faltante" ? "ok  " : "FALLO"} la foto que nunca llego es clase propia, no contenido rechizado: ${faltaLaFoto}`);
+    const muyGrande = claseDeRechazo({ message: "El archivo supera el tamano maximo permitido. Limite: 6291456 bytes." });
+    informa(`${muyGrande === "foto-tamano" ? "ok  " : "FALLO"} el tope de tamano tiene su propia clase: ${muyGrande}`);
+    const fueraDeOrden = claseDeRechazo({ message: "La siguiente marcacion permitida es SALIDA." });
+    informa(`${fueraDeOrden === "secuencia" ? "ok  " : "FALLO"} un rechazo de secuencia no se disfraza de foto: ${fueraDeOrden}`);
+    const sinContenido = claseDeRechazo({ message: "" });
+    informa(`${sinContenido === "sin-mensaje" ? "ok  " : "FALLO"} un registro sin mensaje se cuenta aparte, no como rechazo de foto: ${sinContenido}`);
+    const puertasFoto = bucketDeCodigosFoto([
+      { status: 400, code: "SELFIE_INVALIDA", message: "El contenido del archivo no coincide con el formato declarado." },
+      { status: 400, code: "", message: "El contenido del archivo no coincide con el formato declarado." },
+      { status: 400, code: "EVIDENCIA_CLASE_RECHAZADA", message: "El contenido del archivo no es una imagen permitida." },
+      { status: 0, code: "", message: "Backend no disponible desde frontend (TypeError: Failed to fetch)" }
+    ]);
+    // Rojo provocado: si el contador se hace solo con la frase, las dos puertas dan un numero
+    // conjunto y el dictamen no puede decir cual de las dos sigue rechazando en campo.
+    const llavesPuertas = Object.keys(puertasFoto);
+    informa(`${llavesPuertas.length === 3 && puertasFoto["400 SELFIE_INVALIDA | El contenido del archivo no coincide con el formato declarado."] === 1 && puertasFoto["400 (sin codigo) | El contenido del archivo no coincide con el formato declarado."] === 1 ? "ok  " : "FALLO"} la compuerta nueva (SELFIE_INVALIDA) y la validacion antigua (sin codigo) se cuentan aparte aunque digan la misma frase, y una caida de red no entra: ${JSON.stringify(puertasFoto)}`);
+    const marcasDePrueba = ["2026-11-24T21:55:07.000Z", "2026-11-24T20:00:00.000Z", "2026-11-25T01:32:10.933Z"]
+      .map((timestamp) => ({ timestamp: new Date(timestamp) }));
+    const particion = partirPorCorte(marcasDePrueba, "2026-11-24T21:55:07.000Z");
+    informa(`${particion.antes.length === 1 && particion.despues.length === 2 && particion.antes.length + particion.despues.length === marcasDePrueba.length ? "ok  " : "FALLO"} la fila que cae justo en el corte cuenta como despues y ninguna se pierde: antes ${particion.antes.length} / despues ${particion.despues.length}`);
+    const corteFuturo = partirPorCorte(marcasDePrueba, "2027-01-01T00:00:00.000Z");
+    informa(`${corteFuturo.despues.length === 0 ? "ok  " : "FALLO"} un corte en el futuro no puede dar un DESPUES con filas (rojo provocado si el corte se compara al reves): antes ${corteFuturo.antes.length} / despues ${corteFuturo.despues.length}`);
+    let corteInvalido = "ACEPTO (FALLO)";
+    try {
+      partirPorCorte(marcasDePrueba, "ayer");
+    } catch (error) {
+      corteInvalido = error.message.includes("--semana") ? "BLOQUEADO" : corteInvalido;
+    }
+    informa(`${corteInvalido === "BLOQUEADO" ? "ok  " : "FALLO"} un --semana sin fecha ISO UTC valida se bloquea en vez de medir con fechas NaN: ${corteInvalido}`);
+    // La ventana que se lee depende de `--days`, no del flag `--semana`. Con la ventana por defecto
+    // el ANTES se encoge a dos dias y el dictamen sale corto sin ruido: medido el 2026-11-26, la
+    // misma corrida sin `--days=7` reporto 7 rechazos de foto antes del corte (38 reales) y un
+    // denominador de 36 marcaciones (267 reales). Se bloquea, no se consuela con una advertencia.
+    let ventanaCorta = "ACEPTO (FALLO)";
+    try {
+      validarVentanaDeSemana({ from: "2026-11-24T05:00:00.000Z", to: "2026-11-27T05:00:00.000Z" }, 7);
+    } catch (error) {
+      ventanaCorta = error.message.includes("--days=7") ? "BLOQUEADO" : ventanaCorta;
+    }
+    const ventanaDeSieteDias = validarVentanaDeSemana({ from: "2026-11-19T14:00:00.000Z", to: "2026-11-26T14:00:00.000Z" }, 7);
+    informa(`${ventanaCorta === "BLOQUEADO" && ventanaDeSieteDias === 7 ? "ok  " : "FALLO"} una ventana de menos de 7 dias bloquea el dictamen de semana en vez de reportar un ANTES corto: ${ventanaCorta} | ventana completa leida = ${ventanaDeSieteDias} dias`);
+    let ventanaSinFechas = "ACEPTO (FALLO)";
+    try {
+      validarVentanaDeSemana({ from: "ayer", to: "2026-11-26T14:00:00.000Z" }, 7);
+    } catch (error) {
+      ventanaSinFechas = error.message.includes("ventana UTC valida") ? "BLOQUEADO" : ventanaSinFechas;
+    }
+    informa(`${ventanaSinFechas === "BLOQUEADO" ? "ok  " : "FALLO"} una ventana con fechas NaN se bloquea antes de partir por corte: ${ventanaSinFechas}`);
+    const antesDeLasCinco = diaColombia(new Date("2026-11-25T04:30:00.000Z"));
+    const enLasCinco = diaColombia("2026-11-25T05:00:00.000Z");
+    informa(`${antesDeLasCinco === "2026-11-24" && enLasCinco === "2026-11-25" ? "ok  " : "FALLO"} el dia de Colombia abre a las 05:00 UTC: 04:30Z -> ${antesDeLasCinco} | 05:00Z -> ${enLasCinco}`);
+    // Fila real de produccion: una marcacion de las 20:32 CO del martes llega al servidor a las
+    // 01:32 UTC del miercoles. Si el agrupador usa la porcion UTC, el rechazo se le atribuye a otro dia.
+    const nocheDeMartes = diaColombia(new Date("2026-11-25T01:32:10.933Z"));
+    informa(`${nocheDeMartes === "2026-11-24" ? "ok  " : "FALLO"} las 20:32 CO del 24 se cuentan el martes y no el miercoles UTC: ${nocheDeMartes}`);
+
     console.log(failed === 0 ? "SELFTEST PASADO" : `SELFTEST BLOQUEADO (${failed} fallo(s) impresos)`);
     process.exit(failed === 0 ? 0 : 1);
   }
@@ -920,14 +1075,21 @@ async function main() {
       const empleadoId = fila ? fila.id : null;
       const marcas = empleadoId == null ? [] : await prisma.timePunch.findMany({
         where: { employee_id: empleadoId, date: { gte: window.from, lt: window.to } },
-        select: { date: true, type: true, punched_at: true, route_id: true },
+        select: { date: true, type: true, punched_at: true, route_id: true, extra_minutes: true, extra_reason: true, extra_detail: true, extra_evidence: true },
         orderBy: { punched_at: "asc" },
         take: 500
       });
       console.log(`\nDETALLE user ${userId} (${fila ? `${fila.code} / ${fila.user ? fila.user.name : "sin nombre"}` : "sin ficha de empleado"})`);
       for (const row of marcas) {
         const horaCo = new Date(row.punched_at.getTime() - COLOMBIA_OFFSET_HOURS * 3600 * 1000).toISOString().replace("T", " ").slice(0, 16);
-        console.log(`  MARCO  date=${isoDay(row.date)}  ${String(row.type).padEnd(16)}  hora Colombia ${horaCo}  ruta ${row.route_id ?? "(sin ruta)"}`);
+        // La justificacion se muestra junto a la marca porque es lo unico que explica por que ese
+        // oprimido llevaba foto de soporte: la foto de la selfie y la de la justificacion se
+        // validan en dos compuertas distintas y solo una de las dos tolera el formato.
+        const soporte = row.extra_evidence && typeof row.extra_evidence === "object"
+          ? (String(row.extra_evidence.storage_path || "") ? "almacen" : (String(row.extra_evidence.base64_data || row.extra_evidence.base64 || "").length ? "inline" : "sin bytes"))
+          : "no";
+        const minutos = Number(row.extra_minutes || 0);
+        console.log(`  MARCO  date=${isoDay(row.date)}  ${String(row.type).padEnd(16)}  hora Colombia ${horaCo}  ruta ${row.route_id ?? "(sin ruta)"}${minutos ? `  JUSTIFICA ${minutos} min (${row.extra_reason || "sin motivo"})  foto_soporte=${soporte}` : ""}`);
       }
       const mios = rejected.filter((row) => Number(row.user_id) === userId);
       for (const row of mios.slice(0, 40)) {
@@ -1028,6 +1190,107 @@ async function main() {
           fs.writeFileSync(destino, `${JSON.stringify({ generado_en: new Date().toISOString(), ambiente: hostOf(String(process.env.DATABASE_URL || "")), ...reporte.rescate, filas }, null, 2)}\n`);
           console.log(`\nMANIFIESTO EJECUTABLE  ${destino}  (fuera del repositorio: lleva nombres)`);
         }
+      }
+    }
+
+    // --semana=<corte ISO UTC> responde la pregunta que queda despues de publicar un arreglo:
+    // cuantos rechazos de cada clase hubo por dia, cuantos cayeron antes y despues del corte, y
+    // si los rechazos de foto posteriores al corte le costaron la hora a alguien. Es SELECT puro:
+    // el instrumento nunca escribe, y en Produccion lo que se escribe se lee, no se provoca.
+    if (args.semana) {
+      const corte = new Date(String(args.semana));
+      const diasLeidos = validarVentanaDeSemana(window, 7);
+      const partes = partirPorCorte(rejected.map((row) => ({ ...row, timestamp: new Date(row.at) })), corte);
+      const porDiaSemana = new Map();
+      for (const lado of ["antes", "despues"]) {
+        for (const fila of partes[lado]) {
+          const dia = diaColombia(fila.timestamp);
+          if (!porDiaSemana.has(dia)) porDiaSemana.set(dia, { registros: 0, clases: new Map() });
+          const bucket = porDiaSemana.get(dia);
+          bucket.registros += 1;
+          const clase = claseDeRechazo(fila);
+          if (!bucket.clases.has(clase)) bucket.clases.set(clase, { total: 0, antes: 0, despues: 0, usuarios: new Set() });
+          const x = bucket.clases.get(clase);
+          x.total += 1;
+          x[lado] += 1;
+          x.usuarios.add(fila.user_id);
+        }
+      }
+      const aceptadasAntes = todas.filter((row) => row.punched_at < corte).length;
+      const aceptadasDespues = todas.filter((row) => row.punched_at >= corte).length;
+      // El codigo que acompana al rechazo de foto distingue la puerta: la compuerta de identidad
+      // nueva siempre manda SELFIE_INVALIDA o un EVIDENCIA_* y su detalle; la validacion antigua
+      // de la foto de justificacion lanza un Error pelado (400 sin codigo y sin detalle) con la
+      // MISMA frase. Contar solo la frase dejaria las dos puertas en el mismo numero.
+      const codigosDeFoto = { antes: bucketDeCodigosFoto(partes.antes), despues: bucketDeCodigosFoto(partes.despues) };
+      const horaColombia = (instante) => `${diaColombia(instante)} ${new Date(instante.getTime() - COLOMBIA_OFFSET_HOURS * 3600 * 1000).toISOString().slice(11, 16)}`;
+      const fotoDespues = partes.despues
+        .filter((fila) => claseDeRechazo(fila).startsWith("foto-"))
+        .map((fila) => {
+          const empleado = employeeByUser.get(`${fila.tenant_id}|${fila.user_id}`) || null;
+          // Si en la hora siguiente el mismo trabajador si logro marcar, la jornada no se perdio:
+          // hubo reintento aceptado. Con 0 marcas el rechazo le costo la salida del turno.
+          const siguientes = empleado
+            ? todas.filter((row) => row.employee_id === empleado.id && row.punched_at > fila.timestamp
+              && row.punched_at < new Date(fila.timestamp.getTime() + 3600 * 1000))
+            : [];
+          return {
+            utc: fila.timestamp.toISOString(),
+            hora_colombia: horaColombia(fila.timestamp),
+            user_id: fila.user_id ?? null,
+            empleado_id: empleado ? empleado.id : null,
+            clase: claseDeRechazo(fila),
+            status: fila.status,
+            code: fila.code || "(el cliente no trajo codigo)",
+            ruta: fila.route,
+            mensaje: fila.message,
+            detalle: fila.detail || null,
+            dispositivo: fila.device,
+            marcas_del_mismo_trabajador_en_la_hora_siguiente: siguientes.length,
+            tipos_de_esas_marcas: [...new Set(siguientes.map((row) => row.type))]
+          };
+        });
+      reporte.semana = {
+        criterio: "dia calendario de Colombia para agrupar; el corte es el primer instante en que se LEYO el binario nuevo sirviendo (no la hora del commit). Las clases se deciden por la frase del servidor cuando el cliente no trae codigo.",
+        corte_utc: corte.toISOString(),
+        ventana_utc: [window.from.toISOString(), window.to.toISOString()],
+        dias_de_ventana_leida: diasLeidos,
+        escrituras: 0,
+        denominador_marcaciones_aceptadas: { antes_del_corte: aceptadasAntes, despues_del_corte: aceptadasDespues },
+        rechazos_de_foto: {
+          antes_del_corte: partes.antes.filter((fila) => claseDeRechazo(fila).startsWith("foto-")).length,
+          despues_del_corte: fotoDespues.length,
+          // Cada fila con codigo (SELFIE_INVALIDA / EVIDENCIA_*) es la compuerta de identidad;
+          // cada fila "(sin codigo)" es la validacion antigua. Un numero global de "rechazos de
+          // foto" no puede separarlas y por eso se guarda el desglose por lado.
+          codigos_por_lado: codigosDeFoto
+        },
+        por_dia: [...porDiaSemana].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([dia, bucket]) => ({
+          dia,
+          registros: bucket.registros,
+          aceptadas: todas.filter((row) => diaColombia(row.punched_at) === dia).length,
+          trabajadores: new Set(todas.filter((row) => diaColombia(row.punched_at) === dia).map((row) => row.employee_id)).size,
+          clases: [...bucket.clases].map(([clase, x]) => ({ clase, total: x.total, antes: x.antes, despues: x.despues, usuarios: x.usuarios.size }))
+            .sort((a, b) => b.total - a.total)
+        })),
+        foto_despues_del_corte: fotoDespues
+      };
+
+      console.log(`\nSEMANA POR DIA (Colombia) | corte ${corte.toISOString()} | clases con su antes/despues:`);
+      for (const dia of reporte.semana.por_dia) {
+        console.log(`  ${dia.dia}  registros ${String(dia.registros).padStart(4)}  aceptadas ${String(dia.aceptadas).padStart(3)}  trabajadores ${String(dia.trabajadores).padStart(3)}`);
+        for (const clase of dia.clases.filter((row) => row.clase !== "sin-mensaje")) {
+          console.log(`      ${clase.clase.padEnd(22)} ${String(clase.total).padStart(4)}  (antes ${String(clase.antes).padStart(4)} / despues ${String(clase.despues).padStart(4)})  usuarios ${clase.usuarios}`);
+        }
+      }
+      console.log(`\nRECHAZOS DE FOTO  antes ${reporte.semana.rechazos_de_foto.antes_del_corte} / despues ${reporte.semana.rechazos_de_foto.despues_del_corte}  (denominador de marcaciones aceptadas: antes ${aceptadasAntes} / despues ${aceptadasDespues})`);
+      for (const lado of ["antes", "despues"]) {
+        const entradas = Object.entries(codigosDeFoto[lado]).sort((a, b) => b[1] - a[1]);
+        console.log(`  codigos de foto ${lado.toUpperCase().padEnd(7)}: ${entradas.length ? entradas.map(([clave, n]) => `${n} x ${clave}`).join("   |   ") : "ninguno"}`);
+      }
+      for (const foto of fotoDespues) {
+        console.log(`  ${foto.hora_colombia} CO  ${foto.utc}  user ${String(foto.user_id).padStart(5)}  emp ${String(foto.empleado_id ?? "-").padEnd(5)} ${foto.clase}  ${foto.status} ${foto.code}  ${foto.ruta}`);
+        console.log(`        "${foto.mensaje}"  [${foto.dispositivo}]  marcas del mismo trabajador en la hora siguiente: ${foto.marcas_del_mismo_trabajador_en_la_hora_siguiente}${foto.tipos_de_esas_marcas.length ? ` (${foto.tipos_de_esas_marcas.join(",")})` : " -> LA HORA NO VOLVIO A ENTRAR"}`);
       }
     }
 
