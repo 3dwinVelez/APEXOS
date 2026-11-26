@@ -27,14 +27,15 @@
 //     y la URL sigue siendo /login.
 //  C. el boton abre la guia: sin abrir, los marcadores de la guia NO estan en pantalla (control de
 //     contraste: si el arnes viera la guia siempre, todo lo de abajo seria verde por ceguera).
-//  D. movil: los cuatro pasos con su copy real, la salida de "ya instale", sin el aviso de escritorio,
-//     y el enlace a la app con href exacto, target _blank y rel noopener.
-//  E. escritorio: el aviso de exclusividad como contenido (role note, no ventanilla), cero enlaces a la
-//     app en el documento, boton de copiar y el enlace escrito en un parrafo seleccionable.
-//  F. escritorio: "Copiar enlace" dos patas. Con el portapapeles real del entorno headless (que suele
-//     rechazar) se exige honestidad: reporta una de las dos salidas y no abre ventanilla. Con un
-//     portapapeles grabador se afirma lo que el ambiente no deja afirmar: que la cadena copiada es LA
-//     URL DE LA APP y que el aviso de exito existe.
+//  D. la accion primaria de la guia es el enlace directo a la app, en celular Y en computador: href
+//     exacto, target _blank y rel noopener. No hay boton de copiar ni portapapeles en la pantalla.
+//     En celular ademas: los cuatro pasos con su copy real y la salida de "ya instale", sin aviso de
+//     escritorio.
+//  E. escritorio: el aviso de exclusividad como contenido (role note, no ventanilla), UN solo enlace a
+//     la app (el de la guia) y el enlace escrito en un parrafo seleccionable como respaldo a mano.
+//  F. escritorio: pulsar la accion ABRE UNA PESTANA NUEVA cuyo destino es la URL de la app. Se mide por
+//     el target que crea el navegador, no por el href: si el boton volviera a copiar en vez de llevar,
+//     no se crea pestana y el chequeo se cae. El acceso no viaja a la API ni cambia de pagina.
 //  G. Escape cierra la guia (contrato de ModalFrame).
 //  H. los cuatro cruces dispositivo x tema pintan la guia y quedan capturados; el color de calculo de
 //     la banda debe ser distinto entre claro y oscuro, si no "ambos temas" no afirma nada.
@@ -61,6 +62,13 @@ const BASE = `http://127.0.0.1:${PORT}`;
 const NAV_TIMEOUT = 90_000;
 const keepOpen = process.argv.slice(2).includes("--keep-open");
 
+// El directorio de evidencia sale de CERT_ARTIFACT y su default apunta al corte anterior. Sin este candado,
+// correr el arnés sin la variable le escribe encima la certificación a un portón ya publicado.
+if (!process.argv.slice(2).includes("--force") && fs.existsSync(path.join(OUT, "certification.json"))) {
+  console.error(`BLOQUEADO: ${path.join(OUT, "certification.json")} ya existe. Un verde previo no se pisa: corre con CERT_ARTIFACT=<corte> o pasa --force siendo consciente de qué árbol re-mides.`);
+  process.exit(1);
+}
+
 // El arnes no copia la URL ni el copy: los lee de la misma libreria que pinta la pantalla. Un cambio
 // de texto obliga a re-medir y no deja una certificacion verde afirmando un copy que ya no existe.
 const libSource = fs.readFileSync(path.join(WEB, "lib", "mobileAppInstall.ts"), "utf8");
@@ -76,11 +84,8 @@ const LABELS = {
   bandAction: libString("bandAction"),
   guideTitle: libString("guideTitle"),
   openApp: libString("openApp"),
-  copyLink: libString("copyLink"),
   installedHint: libString("installedHint"),
-  desktopNotice: libString("desktopNotice"),
-  copied: libString("copied"),
-  copyBlocked: libString("copyBlocked")
+  desktopNotice: libString("desktopNotice")
 };
 const STEP_LABELS = [...libSource.matchAll(/\blabel: "((?:[^"\\]|\\.)*)"/g)].map((found) => JSON.parse(`"${found[1]}"`));
 assert.ok(STEP_LABELS.length >= 4, `la libreria declara ${STEP_LABELS.length} pasos, se esperan los cuatro del flujo de Chrome`);
@@ -197,15 +202,11 @@ async function main() {
     page.setDefaultTimeout(NAV_TIMEOUT);
     await page.setBypassServiceWorker(true);
 
-    // El portapapeles solo se concede en origen seguro con permiso: 127.0.0.1 lo es. Si el grant no
-    // esta disponible, el chequeo E lo declara en el payload en vez de fingir un verde.
-    let clipboardGranted = false;
-    try {
-      await browser.defaultBrowserContext().overridePermissions(BASE, ["clipboard-read", "clipboard-write"]);
-      clipboardGranted = true;
-    } catch (error) {
-      RESUL.clipboard_permission_grant = `no disponible: ${error.message}`;
-    }
+    // La guia ya no usa el portapapeles: la accion es abrir. Se censusan las pestanas que el navegador
+    // crea de verdad, porque afirmar el destino por el href sin comprobar que se abre una pestana seria
+    // leer el atributo y no el comportamiento.
+    const popups = [];
+    browser.on("targetcreated", (target) => { if (target.type() === "page") popups.push(target); });
 
     await page.setRequestInterception(true);
     const CORS_HEADERS = {
@@ -369,8 +370,6 @@ async function main() {
         const dialog = document.querySelector('[role="dialog"]');
         const toApp = [...document.querySelectorAll("a")].filter((node) => (node.getAttribute("href") || "").startsWith(needles.appUrl));
         const dialogAnchor = dialog ? [...dialog.querySelectorAll("a")].find((node) => (node.getAttribute("href") || "").startsWith(needles.appUrl)) : null;
-        const copyButton = dialog ? [...dialog.querySelectorAll("button")].find((node) => (node.innerText || "").includes(needles.copyLink)) : null;
-        const live = dialog ? dialog.querySelector('[aria-live="polite"]') : null;
         const painted = (node) => {
           if (!node) return false;
           const rect = node.getBoundingClientRect();
@@ -384,12 +383,14 @@ async function main() {
           text: text.slice(0, 4000),
           stepCount: dialog ? dialog.querySelectorAll("ol > li").length : 0,
           anchorsToApp: toApp.length,
+          dialogAnchorsToApp: dialog ? [...dialog.querySelectorAll("a")].filter((node) => (node.getAttribute("href") || "").startsWith(needles.appUrl)).length : 0,
           anchorHref: dialogAnchor ? dialogAnchor.href : "",
           anchorTarget: dialogAnchor ? dialogAnchor.target : "",
           anchorRel: dialogAnchor ? dialogAnchor.rel : "",
-          hasCopyButton: Boolean(copyButton),
+          anchorLabel: dialogAnchor ? (dialogAnchor.innerText || "").trim() : "",
+          anchorPainted: painted(dialogAnchor),
+          botonesEnLaGuia: dialog ? dialog.querySelectorAll("button").length : 0,
           hasNote: Boolean(dialog?.querySelector('[role="note"]')),
-          feedback: live ? (live.innerText || "").trim() : "",
           bodyHasBand: (document.body.innerText || "").includes(needles.bandAction),
           bandBackground: (() => {
             const titulo = document.getElementById("app-install-title");
@@ -397,7 +398,7 @@ async function main() {
             return banda ? getComputedStyle(banda).backgroundColor : "";
           })()
         };
-      }, { appUrl: APP_URL, copyLink: LABELS.copyLink, bandAction: LABELS.bandAction });
+      }, { appUrl: APP_URL, bandAction: LABELS.bandAction });
     }
 
     async function clickByText(needle) {
@@ -512,13 +513,24 @@ async function main() {
       // no aparecio un token. Es el defecto que la montura pegada al pie del acceso invita a cometer.
       const despuesDelClic = await page.evaluate(() => ({ url: location.pathname, token: Boolean(localStorage.getItem("token")) }));
       softCheck(`${escenario.name}::el_clic_no_intentara_entrar`, despuesDelClic.url === "/login" && despuesDelClic.token === false && loginAttempts.length === 0, { url: despuesDelClic.url, token: despuesDelClic.token, envios: loginAttempts.length });
-      const surface = await readDialog();
+      // El enlace del pie solo existe cuando la lectura del destino resuelve; muestrear antes del todo
+      // daria "cero enlaces" y un rojo del arnés. Se espera acotado y se consigna la espera.
+      let surface = await readDialog();
+      const inicioEnlace = Date.now();
+      while (surface.dialogAnchorsToApp === 0 && Date.now() - inicioEnlace < 8000) {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        surface = await readDialog();
+      }
+      RESUL.escenarios[escenario.name].espera_enlace_ms = Date.now() - inicioEnlace;
       Object.assign(RESUL.escenarios[escenario.name], {
         painted: surface.painted,
         band_background: surface.bandBackground,
         stepCount: surface.stepCount,
         anchorsToApp: surface.anchorsToApp,
-        hasCopyButton: surface.hasCopyButton,
+        dialogAnchorsToApp: surface.dialogAnchorsToApp,
+        anchorLabel: surface.anchorLabel,
+        anchorPainted: surface.anchorPainted,
+        botonesEnLaGuia: surface.botonesEnLaGuia,
         hasNote: surface.hasNote,
         banda_detras_del_dialogo: surface.bodyHasBand,
         text: surface.text
@@ -529,62 +541,55 @@ async function main() {
       softCheck(`${escenario.name}::guia_nombra_los_tres_puntos`, /tres puntos/i.test(surface.text));
       softCheck(`${escenario.name}::guia_nombra_el_acceso_directo`, /acceso directo/i.test(surface.text));
 
+      // La accion directa es la misma en las dos pantallas: el dueno pidio un boton que lleve a la URL
+      // y no uno que la deje en un portapapeles que el navegador puede negarse a conceder.
+      softCheck(`${escenario.name}::la_guia_tiene_un_solo_enlace_directo`, surface.dialogAnchorsToApp === 1, { en_la_guia: surface.dialogAnchorsToApp, en_el_documento: surface.anchorsToApp });
+      softCheck(`${escenario.name}::enlace_exacto_a_la_app`, surface.anchorHref === `${APP_URL}/`, { href: surface.anchorHref });
+      softCheck(`${escenario.name}::enlace_abre_pestananueva`, surface.anchorTarget === "_blank", { target: surface.anchorTarget });
+      softCheck(`${escenario.name}::enlace_sin_exponer_la_ventana`, /(^|\s)noopener(\s|$)/.test(surface.anchorRel), { rel: surface.anchorRel });
+      softCheck(`${escenario.name}::la_accion_se_llama_abrir`, surface.anchorLabel === LABELS.openApp, { rotulo: surface.anchorLabel });
+      softCheck(`${escenario.name}::la_accion_esta_pintada_y_es_clickeable`, surface.anchorPainted === true);
+
       if (escenario.device === "movil") {
         softCheck(`${escenario.name}::sin_aviso_de_escritorio`, surface.text.includes(DESKITO_MARKER) === false, { aviso: surface.text.includes(DESKITO_MARKER) });
-        softCheck(`${escenario.name}::enlace_exacto_a_la_app`, surface.anchorHref === `${APP_URL}/`, { href: surface.anchorHref });
-        softCheck(`${escenario.name}::enlace_abre_pestananueva`, surface.anchorTarget === "_blank", { target: surface.anchorTarget });
-        softCheck(`${escenario.name}::enlace_sin_exponer_la_ventana`, /(^|\s)noopener(\s|$)/.test(surface.anchorRel), { rel: surface.anchorRel });
-        softCheck(`${escenario.name}::sin_boton_de_copiado`, surface.hasCopyButton === false, "en el celular la accion es abrir, no copiar");
         // La miniguia tiene que cerrar el circulo: despues de instalar se entra con el mismo correo.
         softCheck(`${escenario.name}::dice_como_entrar_despues_de_instalar`, surface.text.includes(LABELS.installedHint), { trozo: surface.text.slice(-160) });
       } else {
         softCheck(`${escenario.name}::aviso_de_exclusividad`, surface.text.includes(DESKITO_MARKER), { trozo: surface.text.slice(0, 160) });
-        softCheck(`${escenario.name}::cero_enlaces_a_la_app_en_el_documento`, surface.anchorsToApp === 0, { encontrados: surface.anchorsToApp });
-        softCheck(`${escenario.name}::boton_de_copiado_presente`, surface.hasCopyButton === true);
-        softCheck(`${escenario.name}::enlace_escrito_para_copiarlo_a_mano`, surface.text.includes(APP_URL), "si el portapapeles esta bloqueado el usuario necesita ver el enlace");
+        softCheck(`${escenario.name}::un_solo_enlace_a_la_app_en_el_documento`, surface.anchorsToApp === 1, { encontrados: surface.anchorsToApp });
+        softCheck(`${escenario.name}::enlace_escrito_como_respaldo_a_mano`, surface.text.includes(APP_URL), "el enlace escrito sigue ahi para seleccionarlo si la pestana no sirve");
         softCheck(`${escenario.name}::el_aviso_es_contenido_no_un_alerta`, surface.hasNote === true);
-        // El enlace se ofrece para seleccionarlo a mano si el portapapeles esta bloqueado: tiene que
-        // existir un parrafo con la URL exacta como unico texto, si no no hay nada que arrastrar.
+        // El enlace se ofrece escrito como respaldo: tiene que existir un parrafo con la URL exacta como
+        // unico texto, si no no hay nada que arrastrar cuando el usuario esta en un equipo prestado.
         const seleccionable = await page.evaluate((needle) => {
           const parrafos = [...document.querySelectorAll('[role="dialog"] p')].filter((node) => (node.innerText || "").trim() === needle);
           return { encontrados: parrafos.length, ancho: parrafos[0] ? Math.round(parrafos[0].getBoundingClientRect().width) : 0 };
         }, APP_URL);
         softCheck(`${escenario.name}::el_enlace_es_un_parrafo_seleccionable`, seleccionable.encontrados === 1, seleccionable);
         if (escenario.name === "acceso-escritorio-claro") {
-          // Pata 1, con el portapapeles que el entorno de verdad ofrece. En Chrome headless el
-          // writeText puede rechazar aun con el permiso concedido: aqui no se exige exito, se exige
-          // honestidad (el dialogo reporta una de las dos salidas reales y no abre ventanilla).
-          const dialogosAntes = dialogs.length;
-          const pressed = await clickByText(LABELS.copyLink);
-          softCheck("acceso-escritorio-claro::copiar_pulsado", pressed);
-          await new Promise((resolve) => setTimeout(resolve, 900));
-          const after = await readDialog();
-          RESUL.escenarios["acceso-escritorio-claro"].clipboard_permission_granted = clipboardGranted;
-          RESUL.escenarios["acceso-escritorio-claro"].copiado_en_ambiente_real = after.feedback;
-          softCheck("acceso-escritorio-claro::el_copiado_reporta_sin_mentir", [LABELS.copied, LABELS.copyBlocked].includes(after.feedback), { feedback: after.feedback, permiso: clipboardGranted });
-          softCheck("acceso-escritorio-claro::el_copiado_no_abre_ventanilla", dialogs.length === dialogosAntes, { nuevas: dialogs.slice(dialogosAntes) });
-          softCheck("acceso-escritorio-claro::el_dialogo_sigue_vivo_despues_del_copiado", after.present === true);
-
-          // Pata 2, con un portapapeles grabador. Es lo unico que permite afirmar, en una maquina sin
-          // portapapeles usable, QUE se copia la URL de la app (no otra cadena) y que el aviso de
-          // exito existe y se pinta cuando el navegador acepta. Si el componente copiara otro texto,
-          // este chequeo se cae: el assert no puede estar verde por ceguera.
-          const armado = await page.evaluate((needle) => {
-            window.__arnesCopiado = [];
-            Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (texto) => { window.__arnesCopiado.push(String(texto)); } } });
-            const boton = [...document.querySelectorAll('[role="dialog"] button')].find((node) => (node.innerText || "").includes(needle));
-            if (!boton) return false;
-            boton.click();
+          // Se mide el comportamiento, no el atributo: el navegador tiene que crear una pestana cuyo
+          // destino sea la URL de la app. Si la accion volviera a ser copiar, no se crea pestana y el
+          // chequeo se cae; si abriera otra direccion, el prefijo no coincide.
+          const pestanasAntes = popups.length;
+          const abrio = await page.evaluate((needle) => {
+            const enlace = [...document.querySelectorAll('[role="dialog"] a')].find((node) => (node.getAttribute("href") || "").startsWith(needle));
+            if (!enlace) return false;
+            enlace.click();
             return true;
-          }, LABELS.copyLink);
-          softCheck("acceso-escritorio-claro::portapapeles_grabador_armado", armado === true);
-          await new Promise((resolve) => setTimeout(resolve, 900));
-          const grabado = await page.evaluate(() => window.__arnesCopiado || []);
-          const exito = await readDialog();
-          RESUL.escenarios["acceso-escritorio-claro"].copiado_con_grabador = { grabado, feedback: exito.feedback };
-          softCheck("acceso-escritorio-claro::copia_exactamente_la_url_de_la_app", grabado.length === 1 && grabado[0] === APP_URL, { grabado });
-          softCheck("acceso-escritorio-claro::avisa_exito_cuando_el_navegador_acepta", exito.feedback === LABELS.copied, { feedback: exito.feedback });
-          await page.evaluate(() => { delete navigator.clipboard; delete window.__arnesCopiado; });
+          }, APP_URL);
+          softCheck("acceso-escritorio-claro::la_accion_es_un_enlace_real", abrio === true);
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          const nueva = popups.slice(pestanasAntes);
+          const destinos = nueva.map((target) => target.url()).filter(Boolean);
+          const despuesDelAbrir = await page.evaluate(() => ({ url: location.pathname, token: Boolean(localStorage.getItem("token")) }));
+          softCheck("acceso-escritorio-claro::abre_una_ventana_nueva", nueva.length === 1, { creadas: nueva.length, destinos });
+          softCheck("acceso-escritorio-claro::la_ventana_apunta_a_la_url_de_la_app", destinos.length === 1 && destinos[0].startsWith(APP_URL), { destinos });
+          softCheck("acceso-escritorio-claro::abrir_no_cierra_el_acceso", despuesDelAbrir.url === "/login" && despuesDelAbrir.token === false && loginAttempts.length === 0, { url: despuesDelAbrir.url, envios: loginAttempts.length });
+          RESUL.escenarios["acceso-escritorio-claro"].pestana_abierta = { creadas: nueva.length, destinos };
+          for (const target of nueva) {
+            const opened = await target.page().catch(() => null);
+            if (opened) await opened.close().catch(() => undefined);
+          }
         }
       }
 
@@ -658,8 +663,7 @@ async function main() {
       canceled_sample: canceled.slice(0, 6),
       console_resource_messages: enlacesRotos.length,
       exempt_http_failures: EXEMPT_HTTP_FAILURES,
-      native_dialogs: realDialogs().slice(0, 10),
-      clipboard_permission_granted: clipboardGranted
+      native_dialogs: realDialogs().slice(0, 10)
     };
     RESUL.como_reproducir = `npm --workspace apps/web run build && npm run certify:app-install:local`;
     try { RESUL.git_head = String(execFileSync("git", ["-C", ROOT, "rev-parse", "HEAD"], { encoding: "utf8" })).trim(); } catch { RESUL.git_head = "no disponible"; }

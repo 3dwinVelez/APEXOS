@@ -1,0 +1,227 @@
+{
+  "instrumento": "mobile-app-url-admin-qa",
+  "ejecutado_en": "2026-11-25T22:37:12.889Z",
+  "ambiente": "QA (despliegue de develop)",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "env_file": "config/qa.env",
+  "commit_esperado": "2943da63",
+  "checks": [
+    {
+      "nombre": "binario_servido_es_el_commit_promocionado",
+      "ok": true,
+      "detalle": {
+        "health_commit": "2943da63f623",
+        "esperado": "2943da63",
+        "modulos": 19
+      }
+    },
+    {
+      "nombre": "migracion_aplicada_en_la_base_de_qa",
+      "ok": true,
+      "detalle": {
+        "columnas": 6,
+        "filas_iniciales": 0
+      }
+    },
+    {
+      "nombre": "dos_cuentas_efimeras_sembradas",
+      "ok": true,
+      "detalle": {
+        "tenant": "fd3e2802-16d9-40ad-8813-c52696f05f5f",
+        "rol_super": "APEX_ADMIN",
+        "rol_empresa": "Administrador de empresa"
+      }
+    },
+    {
+      "nombre": "login_remoto_contra_el_api_desplegado",
+      "ok": true,
+      "detalle": {
+        "autenticadas": 2
+      }
+    },
+    {
+      "nombre": "lectura_publica_sin_sesion",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "url": "https://appapexos-production.up.railway.app",
+        "claves": [
+          "url"
+        ],
+        "cache_control": "no-store",
+        "limite": "60"
+      }
+    },
+    {
+      "nombre": "administracion_sin_sesion_rechaza",
+      "ok": true,
+      "detalle": {
+        "status": 401
+      }
+    },
+    {
+      "nombre": "escritura_sin_sesion_rechaza",
+      "ok": true,
+      "detalle": {
+        "status": 401
+      }
+    },
+    {
+      "nombre": "administrador_de_empresa_no_escribe",
+      "ok": true,
+      "detalle": {
+        "status": 403,
+        "code": "PLATAFORMA_SOLO_SUPERADMIN",
+        "filas_antes": 0,
+        "filas_despues": 0
+      }
+    },
+    {
+      "nombre": "el_servidor_declara_el_ambiente_qa",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "environment": "qa",
+        "source": "respaldo",
+        "fallback_url": "https://appapexos-production.up.railway.app",
+        "updated_by": null
+      }
+    },
+    {
+      "nombre": "cinco_rechazos_con_nombre_propio_y_cero_escritura",
+      "ok": true,
+      "detalle": {
+        "rechazos": [
+          {
+            "etiqueta": "vacia",
+            "status": 400,
+            "code": "URL_APP_MOVIL_VACIA",
+            "ok": true
+          },
+          {
+            "etiqueta": "sin_esquema",
+            "status": 400,
+            "code": "URL_APP_MOVIL_INVALIDA",
+            "ok": true
+          },
+          {
+            "etiqueta": "sin_dominio",
+            "status": 400,
+            "code": "URL_APP_MOVIL_SIN_DOMINIO",
+            "ok": true
+          },
+          {
+            "etiqueta": "con_credenciales",
+            "status": 400,
+            "code": "URL_APP_MOVIL_CON_CREDENCIALES",
+            "ok": true
+          },
+          {
+            "etiqueta": "con_fragmento",
+            "status": 400,
+            "code": "URL_APP_MOVIL_CON_FRAGMENTO",
+            "ok": true
+          }
+        ],
+        "filas": 0
+      }
+    },
+    {
+      "nombre": "superadmin_guarda_el_enlace_de_qa",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "url": "https://apexos-web-qa-production.up.railway.app",
+        "environment": "qa",
+        "restaurada": false
+      }
+    },
+    {
+      "nombre": "la_autoria_es_el_correo_no_un_numero",
+      "ok": true,
+      "detalle": {
+        "updated_by": "qa.plat.sup.202611252237@apexos.invalid",
+        "source": "base"
+      }
+    },
+    {
+      "nombre": "el_acceso_publico_refleja_lo_guardado",
+      "ok": true,
+      "detalle": {
+        "tardo_ms": 80,
+        "url_publica": "https://apexos-web-qa-production.up.railway.app"
+      }
+    },
+    {
+      "nombre": "el_cambio_dejo_auditoria",
+      "ok": true,
+      "detalle": {
+        "action": "platform.mobile_app.url.updated",
+        "anterior": "{\"url\":\"https://appapexos-production.up.railway.app\",\"source\":\"respaldo\"}",
+        "nuevo": "{\"url\":\"https://apexos-web-qa-production.up.railway.app\"}"
+      }
+    },
+    {
+      "nombre": "restaurar_devuelve_el_respaldo",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "restaurada": true
+      }
+    },
+    {
+      "nombre": "el_acceso_vuelve_al_respaldo",
+      "ok": true,
+      "detalle": {
+        "tardo_ms": 175,
+        "url": "https://appapexos-production.up.railway.app"
+      }
+    },
+    {
+      "nombre": "las_cuentas_efimeras_quedan_retiradas",
+      "ok": true,
+      "detalle": {
+        "status_tras_retiro": 401,
+        "limpieza": [
+          {
+            "empresa": {
+              "status": 200,
+              "cuerpo": "{\"id\":915,\"name\":\"QA ENLACE empresa 202611252237\",\"nombre\":\"QA ENLACE empresa 202611252237\",\"email\":\"qa.plat.emp.2026112"
+            }
+          },
+          {
+            "superadmin": {
+              "status": 200,
+              "cuerpo": "{\"id\":914,\"name\":\"QA ENLACE superadmin 202611252237\",\"nombre\":\"QA ENLACE superadmin 202611252237\",\"email\":\"qa.plat.sup.2"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "notas": [],
+  "estado_final": {
+    "url_publica": "https://appapexos-production.up.railway.app",
+    "filas": 1
+  },
+  "limpieza": [
+    {
+      "empresa": {
+        "status": 200,
+        "cuerpo": "{\"id\":915,\"name\":\"QA ENLACE empresa 202611252237\",\"nombre\":\"QA ENLACE empresa 202611252237\",\"email\":\"qa.plat.emp.2026112"
+      }
+    },
+    {
+      "superadmin": {
+        "status": 200,
+        "cuerpo": "{\"id\":914,\"name\":\"QA ENLACE superadmin 202611252237\",\"nombre\":\"QA ENLACE superadmin 202611252237\",\"email\":\"qa.plat.sup.2"
+      }
+    }
+  ],
+  "resumen": {
+    "total": 17,
+    "verdes": 17,
+    "rojos": 0
+  },
+  "veredicto": "QA SIRVE EL BINARIO PROMOCIONADO Y EL ENLACE SE ADMINISTRA EN ESE AMBIENTE"
+}
