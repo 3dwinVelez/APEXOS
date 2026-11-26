@@ -102,9 +102,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.107.0",
+      "version": "2.108.0",
       "updated_at": "2026-11-26",
-      "sha256": "a4ec0a219e1911d4ad999503ed1fff162f5dcb1d5f689cad48e43039c52ec2ae",
+      "sha256": "da3f6c22730f3aa07b661cf413437118308d81d53045658c553aae1965fe4b19",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -173,7 +173,8 @@
         "brief-de-contingencia-con-normas-mecanicas",
         "cifra-de-brief-con-artefacto-reproducible",
         "promocion-pendiente-con-veredicto-medido",
-        "cuenta-antes-despues-con-comando"
+        "cuenta-antes-despues-con-comando",
+        "contabilidad-de-porton-viaja-despues"
       ]
     },
     {
