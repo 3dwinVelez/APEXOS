@@ -1,5 +1,7 @@
 const { calculateTerminationBenefits } = require("./terminationBenefits");
 const { reviewDays } = require("./dayReview");
+const { adjustmentCalendarConcept } = require("./adjustmentCalendarConcept");
+const { accumulatedOrdinaryMinutes } = require("./accumulatedOrdinaryTime");
 const { assertPayrollPeriod } = require("./payrollPeriod");
 const { settleTerminationBenefits, reverseTerminationBenefits } = require("./terminationBenefitPayments");
 const { terminationDeductions } = require("./terminationDeductions");
@@ -5908,11 +5910,13 @@ function isExternalWorkday(adjustment = {}) {
   return String(adjustment.adjustment_type || "").trim().toLowerCase() === "jornada_externa";
 }
 
-function adjustmentPayrollMinutes(adjustment = {}) {
+function adjustmentPayrollMinutes(adjustment = {}, monthlyOrdinaryHours) {
   const minutes = Number(adjustment.minutes || 0);
   if (minutes > 0) return minutes;
   const days = Number(adjustment.metadata?.days || adjustment.metadata?.dias || 0);
-  if (days > 0 && normalizeLaborCode(adjustment.concept_code || "") === "JORNADA_ORDINARIA") return days * 480;
+  if (days > 0 && normalizeLaborCode(adjustment.concept_code || "") === "JORNADA_ORDINARIA") {
+    return accumulatedOrdinaryMinutes(adjustment, monthlyOrdinaryHours) ?? days * 480;
+  }
   return 0;
 }
 
@@ -6392,7 +6396,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}, options = {}) {
       .filter(Boolean));
     const externalOrdinaryAdjustments = employeeAdjustments.filter((adjustment) => isExternalWorkday(adjustment) && normalizeLaborCode(adjustment.concept_code || "") === "JORNADA_ORDINARIA");
     const externalWorkedDays = externalOrdinaryAdjustments.reduce((sum, adjustment) => sum + adjustmentDays(adjustment), 0);
-    const correctedOrdinaryMinutes = employeeAdjustments.filter(isWorkdayCorrection).reduce((sum, adjustment) => sum + adjustmentPayrollMinutes(adjustment), 0);
+    const correctedOrdinaryMinutes = employeeAdjustments.filter(isWorkdayCorrection).reduce((sum, adjustment) => sum + adjustmentPayrollMinutes(adjustment, monthlyOrdinaryHours), 0);
     const workReviewDates = new Set(employeeAdjustments.filter(row => row.adjustment_type === "revision_dia" && ["trabajado_sin_marcacion", "induccion"].includes(row.metadata?.classification)).map(row => row.metadata?.work_date).filter(date => date && !correctionDates.has(date) && !days.some(day => new Date(day.date).toISOString().slice(0,10) === date) && !externalOrdinaryAdjustments.some(row => row.metadata?.work_date === date)));
     const daysWorked = days.length + correctionDates.size + externalWorkedDays + workReviewDates.size;
     const calendarRestDays = days
@@ -6515,14 +6519,13 @@ async function buildPayrollLiquidationRows(tenantId, input = {}, options = {}) {
       if (!adjustment) continue;
       const adjustmentDate = adjustment.metadata?.work_date || adjustment.metadata?.date_start || adjustment.date_start;
       const adjustmentCalendarType = adjustmentDate ? calendarDayTypeForDate(adjustmentDate, calendarDays) : "ordinario";
-      const calendarConceptCode = adjustment.concept_code === "JORNADA_ORDINARIA" && ["festivo", "dominical", "no_laboral"].includes(adjustmentCalendarType)
-        ? "DOM_FEST_DIURNO"
-        : adjustment.concept_code;
+      const calendarClassification = adjustmentCalendarConcept(adjustment, adjustmentCalendarType);
+      const calendarConceptCode = calendarClassification.code;
       if (options.termination && !payrollConcepts[calendarConceptCode] && !["JORNADA_ORDINARIA", "HED", "HEN", "HEDD", "HEND", "RECARGO_NOCTURNO", "DOM_FEST_DIURNO", "DOM_FEST_NOCTURNO", "BONIFICACION_SALARIAL", "BONIFICACION_NO_SALARIAL", "COMISION", "VACACIONES", "VACACIONES_DISFRUTADAS", "VACACIONES_COMPENSADAS", "LICENCIA_REMUNERADA", "LICENCIA_NO_REMUNERADA", "SLN"].includes(calendarConceptCode)) {
         throw validationError(`Configura el concepto manual ${calendarConceptCode} y su clasificacion salarial antes de liquidar.`, 409, "CONCEPTO_MANUAL_NO_CONFIGURADO");
       }
       const concept = payrollConcepts[calendarConceptCode] || payrollConceptFallback(calendarConceptCode);
-      const payrollMinutes = adjustmentPayrollMinutes(adjustment);
+      const payrollMinutes = adjustmentPayrollMinutes(adjustment, monthlyOrdinaryHours);
       const segmentedType = segmentedAdjustmentType(adjustment);
       // Aplica el mismo multiplicador (segun value_type) que la ruta de marcaciones, para que una
       // hora extra diurna o un recargo nocturno importados por jornada externa se liquiden igual.
@@ -6557,7 +6560,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}, options = {}) {
       const displayConcept = isOrdinaryWorkedDay ? (payrollConcepts.SALARIO_BASICO || concept) : concept;
       lines.push({
         ...payrollLine(displayCode, displayName, quantity, unitRate, signedAmount, source, displayConcept),
-        metadata: { ...(displayConcept.metadata || {}), calendar_day_type: adjustmentCalendarType, original_concept_code: adjustment.concept_code }
+        metadata: { ...(displayConcept.metadata || {}), calendar_day_type: calendarClassification.accumulated ? "periodo_acumulado" : adjustmentCalendarType, ...(calendarClassification.accumulated ? { calendar_reference_day_type: adjustmentCalendarType } : {}), original_concept_code: adjustment.concept_code }
       });
     }
     for (const libranza of libranzasByEmployee.get(employee.id) || []) {
