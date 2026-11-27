@@ -1,11 +1,11 @@
 {
   "instrumento": "promotion-migration-check",
-  "ejecutado_en": "2026-11-27T19:51:03.516Z",
+  "ejecutado_en": "2026-11-27T20:01:31.323Z",
   "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\.tmp\\wt-hr-cand2-develop-20261127",
   "spec": "C:/Users/mq1/Documents/Proyectos/APEXOS/docs/qa/evidence/hr-alineacion-20261127/candidato-develop/spec-mutacion.json",
   "base_ref": "origin/develop",
   "origin_ref": "origin/desarrollo",
-  "contra": "commit b6d72775",
+  "contra": "commit 58ae1591",
   "label": "invariantes del replay",
   "passed": false,
   "total": 79,
@@ -78,8 +78,8 @@
     {
       "tipo": "carry",
       "file": "docs/briefs/2026-11-27-hr-retrointegracion-ramas.md",
-      "esperado": "cf5755f07bc7c63a7e4b9ddd31ad023e99f514c7",
-      "actual": "cf5755f07bc7c63a7e4b9ddd31ad023e99f514c7",
+      "esperado": "9dc32a191a5002558b98b1f0bafe0699ddfbd213",
+      "actual": "9dc32a191a5002558b98b1f0bafe0699ddfbd213",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -102,8 +102,8 @@
     {
       "tipo": "carry",
       "file": "docs/qa/certifications/hr-retrointegracion-20261127.md",
-      "esperado": "4ec6450c86b66e1ccbe57a4a5ee823b6e987ffda",
-      "actual": "4ec6450c86b66e1ccbe57a4a5ee823b6e987ffda",
+      "esperado": "f010039a1abb04a04394d023d9f6602421b13d02",
+      "actual": "f010039a1abb04a04394d023d9f6602421b13d02",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -334,16 +334,16 @@
     {
       "tipo": "carry",
       "file": ".qoder/skills/apexos-git-guardian/SKILL.md",
-      "esperado": "24df46f45e13b83a533e32d0e43aff0e2477fdf3",
-      "actual": "24df46f45e13b83a533e32d0e43aff0e2477fdf3",
+      "esperado": "c012b0708a61042e07da56483caec738e72c9c65",
+      "actual": "c012b0708a61042e07da56483caec738e72c9c65",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
     {
       "tipo": "carry",
       "file": ".qoder/skills/apexos-qa/SKILL.md",
-      "esperado": "88900a8974bda131c31947164d0063e967301dba",
-      "actual": "88900a8974bda131c31947164d0063e967301dba",
+      "esperado": "73eda1e2cb3a069f940da8ec3c14892c623b71e9",
+      "actual": "73eda1e2cb3a069f940da8ec3c14892c623b71e9",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -358,16 +358,16 @@
     {
       "tipo": "carry",
       "file": ".qoder/skills/equipo-apexos/SKILL.md",
-      "esperado": "e52f63510d2133cea7f92465b8a7c78d0a0d27c4",
-      "actual": "e52f63510d2133cea7f92465b8a7c78d0a0d27c4",
+      "esperado": "3ff87957a28d0e9bd1f9bea4dd75a54cec4765cd",
+      "actual": "3ff87957a28d0e9bd1f9bea4dd75a54cec4765cd",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
     {
       "tipo": "carry",
       "file": "agents/CHANGELOG.md",
-      "esperado": "875ed6c6b27e7e97c254500306b2460b3daeda08",
-      "actual": "875ed6c6b27e7e97c254500306b2460b3daeda08",
+      "esperado": "85fa5604c5e56e75ca5bf5599523c1d024c82c64",
+      "actual": "85fa5604c5e56e75ca5bf5599523c1d024c82c64",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -406,16 +406,16 @@
     {
       "tipo": "carry",
       "file": "agents/apexos-git-guardian/SKILL.md",
-      "esperado": "24df46f45e13b83a533e32d0e43aff0e2477fdf3",
-      "actual": "24df46f45e13b83a533e32d0e43aff0e2477fdf3",
+      "esperado": "c012b0708a61042e07da56483caec738e72c9c65",
+      "actual": "c012b0708a61042e07da56483caec738e72c9c65",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
     {
       "tipo": "carry",
       "file": "agents/apexos-qa/SKILL.md",
-      "esperado": "88900a8974bda131c31947164d0063e967301dba",
-      "actual": "88900a8974bda131c31947164d0063e967301dba",
+      "esperado": "73eda1e2cb3a069f940da8ec3c14892c623b71e9",
+      "actual": "73eda1e2cb3a069f940da8ec3c14892c623b71e9",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
@@ -430,16 +430,16 @@
     {
       "tipo": "carry",
       "file": "agents/equipo-apexos/SKILL.md",
-      "esperado": "e52f63510d2133cea7f92465b8a7c78d0a0d27c4",
-      "actual": "e52f63510d2133cea7f92465b8a7c78d0a0d27c4",
+      "esperado": "3ff87957a28d0e9bd1f9bea4dd75a54cec4765cd",
+      "actual": "3ff87957a28d0e9bd1f9bea4dd75a54cec4765cd",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },
     {
       "tipo": "carry",
       "file": "agents/registry.json",
-      "esperado": "25c704491024dcf9f7554956ef79f9185ee7f6cc",
-      "actual": "25c704491024dcf9f7554956ef79f9185ee7f6cc",
+      "esperado": "91c93178662328a2008883fa3f37cd3491a7a4b6",
+      "actual": "91c93178662328a2008883fa3f37cd3491a7a4b6",
       "ok": true,
       "detalle": "byte a byte con la rama de origen"
     },

@@ -1,9 +1,9 @@
 {
   "instrumento": "paridad de blobs entre el arbol donde corrio la certificacion de navegador y el arbol del candidato",
-  "ejecutado_en": "2026-11-27T19:55:20.913Z",
+  "ejecutado_en": "2026-11-27T20:07:10.485Z",
   "commit_certificado": "542027c73a3e59901f224bcb8c7fd6e5ccfa51a4",
   "commit_candidato": "b6d727756bd1ad2831a22090f89421f66a069d8f",
-  "gb_libres_al_medir": 1.07,
+  "gb_libres_al_medir": 0.89,
   "rutas_de_producto_que_viajan": 29,
   "identidad_total": true,
   "arnes_de_certificacion": [

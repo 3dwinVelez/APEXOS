@@ -1,8 +1,8 @@
 {
   "base_ref": "origin/develop",
   "origin_ref": "origin/desarrollo",
-  "candidato": "b6d727756bd1ad2831a22090f89421f66a069d8f",
-  "porte": "las 79 rutas del frente viajan byte a byte desde origin/desarrollo 14ad758c: 43 modificadas y 36 nuevas. Cero rutas de otro frente, cero hunks editados a mano, cero excepciones de origen.",
+  "candidato": "58ae15917cc7cdde23b5f2139993ff86ad122a8d",
+  "porte": "las 79 rutas del frente viajan byte a byte desde origin/desarrollo f3169185: 43 modificadas y 36 nuevas, 0 borrados, 0 excepciones de origen.",
   "carry": [
     {
       "file": "apps/web/components/hr/ConfirmWindow.tsx"

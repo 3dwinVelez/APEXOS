@@ -1,8 +1,13 @@
 {
   "base_ref": "origin/develop",
   "origin_ref": "origin/desarrollo",
-  "candidato": "b6d727756bd1ad2831a22090f89421f66a069d8f",
-  "porte": "CONTROL DE MUTACION real: una ruta M se declara carry desde origin/develop, el blob del destino, no el del origen. El porton debe ponerse rojo.",
+  "candidato": "58ae15917cc7cdde23b5f2139993ff86ad122a8d",
+  "porte": "CONTROL DE MUTACION: se rompe una ruta M declarandola carry desde origin/develop (el blob del destino, no el de origen). El porton debe ponerse rojo.",
+  "mutado": {
+    "file": ".qoder/skills/apexos-backend/SKILL.md",
+    "from_ref": "origin/develop",
+    "razon": "el destino tiene la version anterior del SKILL bumpeteado en esta ronda, asi que el blob esperado y el medido difieren"
+  },
   "carry": [
     {
       "file": "apps/web/components/hr/ConfirmWindow.tsx"
@@ -244,9 +249,5 @@
     }
   ],
   "edit": [],
-  "delete": [],
-  "mutado_ante": {
-    "file": ".qoder/skills/apexos-backend/SKILL.md",
-    "from_ref": "origin/develop"
-  }
+  "delete": []
 }
