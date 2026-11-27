@@ -8,16 +8,16 @@
   "base_commits": {
     "develop": "a440560d7f04781166b05ac85b130c74d2bf9b43"
   },
-  "certified_commit": "2eb26b09759c6f6658d473ad54c259f656641ae5",
+  "certified_commit": "8e753df2617315250d6f8bf7b394452a623c4d98",
   "candidate_tip": "el tip del candidato es el commit de los dos manifiestos; las 89 rutas del commit certificado no cambian despues de el (git diff --quiet certificado..candidato -- <rutas> vacio)",
   "candidate_source": {
     "branch": "desarrollo",
-    "commit": "2eb26b09759c6f6658d473ad54c259f656641ae5",
+    "commit": "8e753df2617315250d6f8bf7b394452a623c4d98",
     "replay_sobre": "origin/develop a440560d7f04781166b05ac85b130c74d2bf9b43",
-    "origen_del_contenido": "cada una de las 89 rutas es el blob que esa ruta tiene en origin/desarrollo (punta 1ee9d9e0): 43 M + 46 A, 0 borrados, medido con scripts/certifications/promotion-migration-check.js",
+    "origen_del_contenido": "cada una de las 89 rutas es el blob que esa ruta tiene en origin/desarrollo (punta fc9622a7): 43 M + 46 A, 0 borrados, medido con scripts/certifications/promotion-migration-check.js",
     "metodo": "replay puntual por archivo sobre el destino, declarado con transporte por ascendencia porque el contrato de CI del destino exige que el commit certificado sea ancestro del candidato y los dos manifiestos viajen dentro de el",
     "arbol_donde_se_midio": "58ae15917cc7cdde23b5f2139993ff86ad122a8d (tag backup/hr-cand-58ae1591): el mismo commit de replay sin los 10 artefactos de candidato-develop ni el papeleo posterior",
-    "delta_entre_medido_y_certificado": "58ae1591..2eb26b09: 20 rutas (papeleo de agentes y evidencia candidato-develop). 0 rutas bajo apps/ cambiaron: git diff --quiet medido..certificado -- apps/ sale limpio, el arbol de producto medido es el que sube"
+    "delta_entre_medido_y_certificado": "58ae1591..8e753df2: 20 rutas (papeleo de agentes y evidencia candidato-develop). 0 rutas bajo apps/ cambiaron: git diff --quiet medido..certificado -- apps/ sale limpio, el arbol de producto medido es el que sube"
   },
   "change_intent": {
     "summary": "Talento Humano queda alineado: el frente que vivia solo en develop (horarios y mallas sobre eje de dieciseis horas, sincronizacion de jornada entre dispositivos, motores de nomina y liquidacion, bancos, hubs, empleados y retiro) se retrotrajo a desarrollo, se certifico alli y ahora baja a develop como replay blob por blob. La marcacion por la web no se retira: viaja con su selfie en los cuatro tipos y su guarda de origen.",

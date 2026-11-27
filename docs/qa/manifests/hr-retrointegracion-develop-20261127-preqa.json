@@ -5,7 +5,7 @@
   "target_branch": "develop",
   "qa_status": "pending",
   "promotion_branch": "codex/qa-hr-retrointegracion-develop-20261127",
-  "commit": "2eb26b09759c6f6658d473ad54c259f656641ae5",
+  "commit": "8e753df2617315250d6f8bf7b394452a623c4d98",
   "target_head": "a440560d7f04781166b05ac85b130c74d2bf9b43",
   "certification": {
     "status": "passed",
@@ -83,7 +83,7 @@
     }
   },
   "validation_summary": {
-    "certified_application_commit": "2eb26b09759c6f6658d473ad54c259f656641ae5",
+    "certified_application_commit": "8e753df2617315250d6f8bf7b394452a623c4d98",
     "arbol_medido": "58ae15917cc7cdde23b5f2139993ff86ad122a8d",
     "baseline_preserved": "a440560d7f04781166b05ac85b130c74d2bf9b43",
     "inventario_certificado": "89 rutas (43 M + 46 A), 0 borrados, 0 excepciones de origen",
