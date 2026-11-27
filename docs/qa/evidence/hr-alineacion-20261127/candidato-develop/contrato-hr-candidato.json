@@ -1,0 +1,205 @@
+{
+  "medicion": "contrato-hr-candidato",
+  "arbol": "wt-hr-cand-develop-20261127",
+  "commit": "652316ffdc4ac5542cabfb797aa4fff3435f306e",
+  "medido_en": "2026-11-27T19:30:48.846Z",
+  "archivos": 32,
+  "tests": 236,
+  "pass": 236,
+  "fail": 0,
+  "rojos": [],
+  "por_archivo": [
+    {
+      "file": "hr-attendance-state.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-confirm-window.test.mjs",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0
+    },
+    {
+      "file": "hr-contention-write-feedback.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-davivienda-bank-file-ui.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "hr-employee-biometric-reset.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-face-enrollments-page.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "hr-landing-information-architecture.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "hr-map-no-inline-evidence.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-marking-correction.test.mjs",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0
+    },
+    {
+      "file": "hr-marking-cross-device.test.mjs",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0
+    },
+    {
+      "file": "hr-marking-lateness-selfie.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "file": "hr-marking-only-access.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "hr-marking-unassigned-gate.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-monitor-identity-selfie.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-monitor-modal-per-user.test.mjs",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0
+    },
+    {
+      "file": "hr-monitor-refresh.test.mjs",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "file": "hr-monitor-stale-read.test.mjs",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "file": "hr-offline-marking.test.mjs",
+      "tests": 38,
+      "pass": 38,
+      "fail": 0
+    },
+    {
+      "file": "hr-punch-mobile-evidence.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "hr-report-punch-alerts.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-report-punch-selfie.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-reports-xlsx.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "hr-route-write-fallback.test.mjs",
+      "tests": 10,
+      "pass": 10,
+      "fail": 0
+    },
+    {
+      "file": "hr-route-write-feedback.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "file": "hr-schedule-employee-source.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "hr-schedule-monitor.test.mjs",
+      "tests": 14,
+      "pass": 14,
+      "fail": 0
+    },
+    {
+      "file": "hr-schedule-timeline-view.test.mjs",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0
+    },
+    {
+      "file": "hr-shared-devices-page.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "hr-time-report.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "hr-unified-schedules.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "hr-workday-novelties-ui.test.mjs",
+      "tests": 14,
+      "pass": 14,
+      "fail": 0
+    },
+    {
+      "file": "installation-identity.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    }
+  ]
+}

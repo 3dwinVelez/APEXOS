@@ -114,3 +114,36 @@ Medición tras absorber: suite del portal **956/953/3** (los mismos **3** rojos 
 
 Consecuencia para las manifiestos: `transport: "replay_puntual"`, `origin_waivers: []`, `replay_baseline: d667276f2f95a0abe27abd5d37cd883e35f2ad02`.
 
+## 13. Secuela 3 (mismo día): la pantalla de marcación también estaba más adelante en `develop`
+
+El censo del §12 se quedó en dos rutas porque comparaba **archivos del instrumentador**, no las pantallas. Repetido el censo por blob sobre **1 027** rutas de las áreas del módulo (**101** iguales, **749** solo en `desarrollo`, **86** distintas, **91** solo en `develop`; bajo `apps/`: **26** `M` y **0** borrados), una tercera ruta `M` llevaba contenido ajeno: `apps/web/app/dashboard/talento-humano/marcacion/page.tsx`.
+
+`develop` trae allí el frente `6fd7c5a2` de sincronización entre dispositivos: la pantalla une los grupos de un mismo empleado con `attendancePunches`, revalida contra el servidor antes de escribir y mantiene **una** petición en vuelo. `desarrollo` tenía la librería (`apps/web/lib/hrAttendanceState.ts`, blob idéntico `70135b5b` en las dos ramas) **sin llamador**: la lectura de decisión tomaba un solo grupo y las marcaciones que el celular del camión ya había subido desaparecían de la web. No era un detalle de presentación: el operario marcaba dos veces la misma pierna.
+
+Decisión: absorber en `desarrollo` (commit `542027c7`), no fusionar dentro del candidato. El candado de `scripts/validate-promotion-scope.js:113-161` con `replay_puntual` no admite excepciones de origen, así que cualquier costura hecha en el candidato lo deja rojo; y llevar el blob de `desarrollo` sin absorber habria revertido el frente de espacio de trabajo, que la orden del dueño prohíbe.
+
+Criterios de aceptación que se añadieron por esta secuela:
+
+- Contrato **que puede fallar**: `apps/web/test/hr-marking-cross-device.test.mjs`, **8** pruebas, **8/8 rojas** contra el blob previo a la fusión y **8/8 verdes** después. Sin control ANTES rojo el contrato no vale como evidencia.
+- La revalidación cuesta **2** lecturas por marcaje, no **6**: el piso medido del pooler es ~**660 ms** por viaje y cada toque de marcación lo paga.
+- El candidato **no introduce ningún rojo** respecto del árbol puro del destino: base `origin/develop a440560d` **915/898/17** contra candidato **964/948/16**, diferencia **0** rojos nuevos y **1** rojo apagado. Medido con el mismo corredor en los dos árboles y motivos normalizados (sin rutas absolutas del puesto).
+- Contrato HR dentro del árbol del candidato: **236/236** en **32** archivos.
+- Verificación estática del candidato (el worktree no trae `node_modules`, no hay `tsc`): **29** archivos de código, **63** especificaciones de import, **0** rotas; **8** módulos compartidos reemplazados pierden **0** exportaciones.
+- Certificación de navegador en base descartable: **10/10** patas selladas con `542027c7`.
+
+Inventario del candidato (72 rutas, **29** `A` + **43** `M`, **0** `D`): 22 de producto web HR, 11 de contratos de prueba, 7 instrumentos de certificación, 15 de documentación y 18 de canon del equipo (los dos espejos y `registry.json`, para que el registro no mienta contra los `SKILL.md` que sí suben). Cero rutas bajo `apps/api/`, `packages/`, `infra/` o `apps/control-tower/`.
+
+Exclusiones deliberadas, cada una con su razón (un `M` de otro frente dentro de este replay sería un cambio encubierto de módulo):
+
+| Ruta | Por qué no viaja |
+|---|---|
+| `apps/web/lib/moduleFunctions.ts` | su blob en `desarrollo` añade la entrada de paleta de **Facturas electrónicas**, cuya pantalla no existe en `develop`: el atajo quedaría roto en QA |
+| `apps/web/lib/modules.ts`, `apps/web/lib/moduleAccess.ts`, `apps/web/test/module-portfolio.test.mjs` | frente apex-control / portafolio, no Talento Humano |
+| `apps/web/next.config.ts` | su diferencia viene de `a401646c` (contabilidad de facturas recibidas), no de este frente; y el `frame-src` que abre el mapa es un token global → brief propio |
+| `apps/web/test/command-palette-module-functions.test.mjs`, `technical-alert-silence.test.mjs` | contratos del atajo de paleta y del enmudecimiento, que viajan con sus propios frentes |
+| `apps/api/**`, `apps/control-tower/**` | el API HR de `desarrollo` está más adelante pero no está certificado contra este candidato; la torre no se promociona |
+
+Pendientes que esta sección no cierra: corrida de Chromium contra QA desplegado (tarea 15), promoción a `main` con aprobación funcional (tarea 16) y el `iframe` del GPS bloqueado por CSP, que requiere su propio brief por tocar un token global.
+
+Detalle y artefactos en `docs/qa/certifications/hr-retrointegracion-20261127.md` §9 y `docs/qa/evidence/hr-alineacion-20261127/{absorcion-sincronia,candidato-develop}/`.
+

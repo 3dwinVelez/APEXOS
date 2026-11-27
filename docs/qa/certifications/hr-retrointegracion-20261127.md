@@ -123,3 +123,44 @@ Corrida del arnés absorbido, en `desarrollo` y en base descartable (`docs/qa/ev
 
 
 Lo que **no** certifica esta seccion: sigue sin haber corrida de Chromium contra un ambiente desplegado (eso pertenece al pre-QA de la promocion), y el barrido cubre Talento Humano, no el resto del portal: fuera de esa carpeta quedan ventanillas en contabilidad (`accounting-reversal-budget-import`), que son de otro frente y sus pruebas las exigen a proposito.
+
+## 9. Secuela 3 del mismo dia: la marcacion web vuelve a leer las jornadas de otros dispositivos
+
+El censo del punto 8 se hizo por **hash de blob**, no por ascendencia, y su inventario completo esta en `docs/qa/evidence/hr-alineacion-20261127/absorcion-develop.json`. Sobre **1 027** rutas tocadas en las areas del modulo: **101** identicas, **749** solo en `desarrollo`, **86** distintas en las dos ramas y **91** solo en `develop`. Bajo `apps/` hay **26** rutas `M` y **0** borrados. La fusion del arnes dejo **40 + 2** rutas pero no cubrio una tercera, que aparecio al leer el `M` de `apps/web/app/dashboard/talento-humano/marcacion/page.tsx` linea por linea: ahi `develop` tambien estaba mas adelante.
+
+Que tenia `develop` y no tenia `desarrollo` (commit `6fd7c5a2`, frente de sincronizacion entre dispositivos):
+
+- La pantalla unia los grupos de un mismo empleado llamando a `attendancePunches`. En `desarrollo` esa libreria **ya existia y era el mismo blob** en las dos ramas (`apps/web/lib/hrAttendanceState.ts`, `70135b5b`), pero **ninguna pantalla la llamaba**: el frente vivia como archivo muerto y la toma de decision leia un solo grupo. Como `/self/attendance` llega agrupado por identidad, un operario con grupo por codigo, por nombre y por alias perdia en la web las marcaciones que el celular del camion ya habia subido.
+- Un revalidar contra el servidor **antes** de escribir la marcacion: si el horario cambio, si la jornada avanzo desde otro dispositivo o si ya se cerro, la pantalla lo dice y no escribe.
+- Una sola peticion en vuelo (`refreshOperationalState`) con `cache: "no-store"` y `silentFailureAlert`, y la foto recargada solo cuando cambia la firma de la jornada.
+
+Por que no se podia resolver en el candidato: `scripts/validate-promotion-scope.js:113-161`, declarado `transport: replay_puntual`, **prohibe** `origin_waivers` y exige que cada ruta del diff sea el blob de `origin/desarrollo`. Llevar la pantalla tal como estaba en `desarrollo` habria revertido el frente ajeno; fusionarla a mano dentro del candidato habria roto el candado de origen. La unica direccion legal era absorber primero en `desarrollo`.
+
+Como quedo la absorcion:
+
+- Se reuso la libreria compartida (reside en `apps/web/lib/hrAttendanceState.ts`, no se duplico en la pantalla) y se respeto la superficie de estado de `desarrollo`: no entraron `remoteSyncError`, `lastRemoteSync` ni `preparingPunch`, retirados ahi por el frente de enmudecimiento.
+- La revalidacion cuesta **2** lecturas (`/self/attendance` + `/self/routes`), no **6**. La primera version enganchaba `refreshOperationalState` a `load()`, que paga seis viajes por marcaje; con el piso medido en **~660 ms** por viaje al pooler, eso eran ~**2,6 s** anadidos a cada toque. Se reviro y se porto la version fiel de `develop`.
+- Contrato nuevo `apps/web/test/hr-marking-cross-device.test.mjs`: **8** pruebas (union por libreria, residencia, un solo vuelo con `no-store`, foto por firma, los **3** mensajes de revalidacion, que una caida de red **no** niegue la marcacion, que la cola pendiente cuenta como pierna propia y cero dialogos nativos). Control **ANTES** contra el blob previo a la fusion: **8 de 8 rojas**. Control **DESPUES**: **8 de 8 verdes**. El contrato puede fallar, que es lo que lo convierte en evidencia.
+
+Mediciones del candidato `652316ff` (arbol nacido en `origin/develop a440560d`, replay de **72** rutas: **29** `A` + **43** `M`, **0** borrados, **0** rutas bajo `apps/api/`, `packages/`, `infra/` o `apps/control-tower/`):
+
+| Control | Resultado | Artefacto |
+|---|---|---|
+| Suite del portal en el arbol **puro** de `origin/develop` | **915** pruebas, **898** verdes, **17** rojas | `candidato-develop/suite-base-origin-develop.json` |
+| Suite del portal en el **candidato** | **964** pruebas, **948** verdes, **16** rojas | `candidato-develop/suite-candidato.json` |
+| Rojos **nuevos** introducidos por el replay | **0** | `candidato-develop/comparacion-antes-despues.json` |
+| Rojos que el candidato **apaga** | **1**: `hr-offline-marking.test.mjs` pata `D` (las escrituras self-service de HR no caen al respaldo Supabase) | el mismo |
+| Contrato HR dentro del candidato | **236** pruebas, **236** verdes, **0** rojas en **32** archivos | `candidato-develop/contrato-hr-candidato.json` |
+| Imports de los **29** archivos de codigo del diff | **63** especificaciones, **0** rotas | `candidato-develop/verificacion-estatica.json` |
+| Modulos compartidos reemplazados | **8**, pierden **0** exportaciones | el mismo |
+| Certificacion de navegador en base descartable | **10** patas **10** verdes, `commit` sellado `542027c7`, base `apexos_cert_hr_assoc_1795805950668`, `source_database_modified: false`, `unexpected_5xx` **0** | `absorcion-sincronia/` |
+
+Atribucion de los **16** rojos del candidato, cada uno ya rojo en el destino: **10** son arneses `certify-*-local` que piden un portal vivo en `127.0.0.1:3001` y mueren con `net::ERR_CONNECTION_REFUSED` (estan disenados para correr contra servidor levantado, no en la suite de contratos); **4** `ibc-nomina-ui.test.mjs`, **1** `transport-print-theme.test.mjs` y **1** `transport-pyg-account-config.component.test.mjs`, los tres frentes ajenos a este diff. Ninguno lee la pantalla de marcacion.
+
+Trampa de comparacion, versionada porque casi publica lo contrario: la primera pasada del comparador de rojos dio **10** rojos "nuevos" y **10** "apagados". Eran los mismos arneses: el texto del fallo trae la **ruta absoluta** del arbol donde corro, asi que el motivo de `wt-hr-base-...` nunca iguala al de `wt-hr-cand-...`. Normalizado el motivo a nombre de archivo, la diferencia real es **una** pata. Un diff de conjuntos sobre cadenas que llevan rutas del puesto tiene que normalizarse antes de afirmar "el candidato introduce rojos".
+
+Hallazgo nuevo que **no** entra en esta promocion: `develop` fija `default-src 'self'` sin `frame-src`, y las dos ramas dibujan un `<iframe>` de OpenStreetMap en la pantalla de marcacion para la vista previa del GPS. Con esa directiva el navegador bloquea el iframe **en todos los ambientes**, y arreglarlo exige tocar un token global (`next.config.ts`) que consumen otros modulos. Por la regla 22 del orquestador, un token global no se repinta de contrabando dentro de la pasada de un modulo: va en su propio brief con su certificacion de navegador.
+
+Error propio declarado en esta secuela: las dos primeras corridas del candidato (suite completo y contrato HR) salieron escritas **desde el arbol base**, porque reutilice el directorio de trabajo de la medicion anterior sin cambiarlo. Los artefactos decian `candidato` y traian `a440560d`. Se volvieron a correr desde el worktree del candidato y hoy `suite-candidato.json` y `contrato-hr-candidato.json` estan sellados con `652316ff`; la tabla de arriba usa las cifras re-medidas.
+
+Lo que **no** certifica esta seccion: sigue sin haber corrida contra un ambiente **desplegado** (eso es el pre-QA posterior al push), `apps/api/**` no viaja en este candidato y la comparacion de suites es de contratos de codigo, no del arbol de despliegue.
