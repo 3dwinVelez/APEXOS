@@ -12,8 +12,13 @@ test("el maestro de rostros lista desde la API operativa sin cache", () => {
   assert.match(page, /api<FaceEnrollment\[\]>\("\/api\/v1\/hr\/face-enrollments", \{ cache: "no-store" \}\)/);
 });
 
-test("restablecer pide confirmacion y usa DELETE del empleado", () => {
-  assert.match(page, /window\.confirm\(/);
+test("restablecer se pregunta en la ventana de la pantalla y usa DELETE del empleado", () => {
+  assert.doesNotMatch(page, /window\.confirm\(/, "la ventanilla nativa tapaba la tabla y no explicaba la perdida");
+  assert.match(page, /const \[pendingReset, setPendingReset\] = useState<FaceEnrollment \| null>\(null\);/, "la fila elegida se guarda como estado propio");
+  assert.match(page, /onClick=\{\(\) => setPendingReset\(row\)\}/, "el primer boton arma la ventana, no ejecuta");
+  assert.match(page, /\{pendingReset \? \(/, "la ventana solo existe mientras hay una fila senalada");
+  assert.match(page, /onConfirm=\{\(\) => void reset\(pendingReset\)\}/, "el segundo clic es el que restablece");
+  assert.match(page, /setPendingReset\(null\);/, "al restablecer se cierra la ventana");
   assert.match(page, /\/api\/v1\/hr\/employees\/\$\{encodeURIComponent\(String\(row\.employee_id\)\)\}\/face-enrollment`, \{ method: "DELETE"/);
 });
 

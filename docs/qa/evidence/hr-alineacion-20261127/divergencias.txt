@@ -1,0 +1,11 @@
+apps/web/app/dashboard/talento-humano/empleados/page.tsx|1|15/904
+apps/web/app/dashboard/talento-humano/mapa/page.tsx|2|1/687
+apps/web/app/dashboard/talento-humano/marcacion/page.tsx|3|124/1427
+apps/web/app/dashboard/talento-humano/page.tsx|4|0/36
+apps/web/app/dashboard/talento-humano/reportes/page.tsx|5|4/1087
+apps/web/lib/hrOfflineEvidence.ts|6|0/77
+apps/web/lib/hrOfflineMarking.ts|7|0/238
+apps/web/test/hr-employee-biometric-reset.test.mjs|8|2/23
+apps/web/test/hr-landing-information-architecture.test.mjs|9|2/41
+apps/web/test/hr-marking-lateness-selfie.test.mjs|10|5/75
+apps/web/test/hr-offline-marking.test.mjs|11|1/416

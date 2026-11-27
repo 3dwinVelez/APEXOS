@@ -5,6 +5,7 @@ import { hrStyles, HrKpis } from "@/components/hr/HrWorkspace";
 import { ArrowLeft, Calculator, FileText, Play, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { ConfirmWindow } from "@/components/hr/ConfirmWindow";
 import { api } from "../../../../lib/api";
 
 type ContributionDocument = {
@@ -105,6 +106,7 @@ export default function SocialContributionsPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [activeView, setActiveView] = useState("documentos");
+  const [pendingDelete, setPendingDelete] = useState<ContributionDocument | null>(null);
 
   const periodKey = `${periodType}:${startDate}:${endDate}`;
   const rows = preview ? [preview, ...documents] : documents;
@@ -218,7 +220,7 @@ export default function SocialContributionsPage() {
   }
 
   async function deleteDocument(id?: number) {
-    if (!id || !confirm("Esto borra el documento de aportes sociales del periodo. Continuar?")) return;
+    if (!id) return;
     setBusy(true);
     try {
       await api(`/api/v1/talento-humano/aportes-sociales/documentos/${id}`, { method: "DELETE" });
@@ -226,6 +228,7 @@ export default function SocialContributionsPage() {
       setLines([]);
       await load();
       setMessage("Documento de aportes borrado.");
+      setPendingDelete(null);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "No se pudo borrar");
     } finally {
@@ -274,7 +277,7 @@ export default function SocialContributionsPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[880px] text-sm">
             <thead><tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500"><th className="px-3 py-2">Periodo</th><th className="px-3 py-2">IBC</th><th className="px-3 py-2">Empleado</th><th className="px-3 py-2">Empleador</th><th className="px-3 py-2">Total</th><th className="px-3 py-2">Alertas</th><th className="px-3 py-2 text-right">Acciones</th></tr></thead>
-            <tbody>{rows.map((row, index) => <tr className="border-b border-line/70" key={`${row.id || "preview"}-${index}`}><td className="px-3 py-2 font-medium">{row.period_key}{!row.id ? <p className="text-xs text-amber-600">Prueba sin guardar</p> : null}</td><td className="px-3 py-2">{money(row.total_ibc)}</td><td className="px-3 py-2">{money(row.total_employee)}</td><td className="px-3 py-2">{money(row.total_employer)}</td><td className="px-3 py-2 font-semibold">{money(row.total_payable)}</td><td className="px-3 py-2">{row.source_summary?.missing_affiliations || 0} afiliaciones faltantes</td><td className="px-3 py-2 text-right"><button className="mr-2 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3" onClick={() => openDocument(row)} type="button"><FileText size={15} /> Ver</button><button className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-rose-700 disabled:opacity-50" disabled={!row.id} onClick={() => deleteDocument(row.id)} type="button"><Trash2 size={15} /> Borrar</button></td></tr>)}</tbody>
+            <tbody>{rows.map((row, index) => <tr className="border-b border-line/70" key={`${row.id || "preview"}-${index}`}><td className="px-3 py-2 font-medium">{row.period_key}{!row.id ? <p className="text-xs text-amber-600">Prueba sin guardar</p> : null}</td><td className="px-3 py-2">{money(row.total_ibc)}</td><td className="px-3 py-2">{money(row.total_employee)}</td><td className="px-3 py-2">{money(row.total_employer)}</td><td className="px-3 py-2 font-semibold">{money(row.total_payable)}</td><td className="px-3 py-2">{row.source_summary?.missing_affiliations || 0} afiliaciones faltantes</td><td className="px-3 py-2 text-right"><button className="mr-2 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3" onClick={() => openDocument(row)} type="button"><FileText size={15} /> Ver</button><button className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-rose-700 disabled:opacity-50" disabled={!row.id} onClick={() => { if (row.id) setPendingDelete(row); }} type="button"><Trash2 size={15} /> Borrar</button></td></tr>)}</tbody>
           </table>
         </div>
       </section>
@@ -371,6 +374,18 @@ export default function SocialContributionsPage() {
         <p className={hrStyles.hint}>Los importes corresponden al documento seleccionado. La planilla PILA puede aplicar redondeos.</p>
       </aside>
       </div>
+
+      {pendingDelete ? (
+        <ConfirmWindow
+          busy={busy}
+          confirmLabel="Borrar documento"
+          description={`Esto borra el documento de aportes sociales del periodo ${pendingDelete.period_key}.`}
+          detail={`Total a pagar ${money(pendingDelete.total_payable)}. Puedes volver a crearlo desde esta misma pantalla; las lineas borradas se recalculan desde las marcaciones.`}
+          onClose={() => setPendingDelete(null)}
+          onConfirm={() => void deleteDocument(pendingDelete.id)}
+          title="Borrar el documento de aportes"
+        />
+      ) : null}
 
     </div>
   );

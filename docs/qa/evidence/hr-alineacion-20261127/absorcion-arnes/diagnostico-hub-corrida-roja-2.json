@@ -1,0 +1,14 @@
+{
+  "url": "http://127.0.0.1:3317/dashboard/talento-humano",
+  "titulo": "APEX OS",
+  "claves_locales": [
+    "apex_navigation_trace_v1",
+    "token",
+    "apex_onboarding_v1:anonymous",
+    "apex_last_activity",
+    "apex_collaboration_signal",
+    "apex_theme"
+  ],
+  "texto": "Saltar al contenido principal\nPágina cargada: talento humano\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nAP\n\nSesión no identificada\n\nUsuario conectado\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Talento humano. Si necesitas acceso, solicita ajuste de rol a un administrador.\n\nVolver al tablero",
+  "error": "Waiting for selector `section[aria-label=\"Herramientas activas de talento humano\"] a[href$=\"/rutas\"]` failed"
+}

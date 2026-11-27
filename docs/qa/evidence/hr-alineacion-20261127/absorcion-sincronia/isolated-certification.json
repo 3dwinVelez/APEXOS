@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "environment": "LOCAL",
+  "database": "apexos_cert_hr_assoc_1795805950668",
+  "source_database_modified": false,
+  "fixture_schema_hunks": [],
+  "exit_code": 0,
+  "unexpected_5xx": [],
+  "checked_at": "2026-11-27T19:04:13.655Z"
+}

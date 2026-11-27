@@ -74,6 +74,13 @@ powershell -File scripts/git/promote-develop-to-main.ps1 -DryRun -RunTests -QaVe
 - Aprobacion funcional para despliegue en `main`.
 - Plan de rollback documentado.
 
+## Residentes que nunca se promueven
+
+Algunos bloques se ejecutan desde `desarrollo` y no forman parte de los artefactos desplegados en `develop` o `main`. Su rama de residencia se declara aqui y en su propio README; un agente no puede proponer su promocion sin una autorizacion expresa nueva.
+
+- `apps/control-tower/**` (APEX Control Tower): panel de lectura solo-lectura que se ejecuta en la maquina del equipo desde `desarrollo`. No se despliega, no se promueve a `develop` ni a `main`, y sus certificaciones (`npm run certify:control-tower:*`) certifican la herramienta en `desarrollo`, nunca sirven de evidencia de promocion. Sus secretos viven en `apps/control-tower/.env.local` (gitignored) y no entran en ningun manifiesto de alcance.
+- El modulo `apps/api/src/modules/apex-control/**` y la telemetria de `/health` si pertenecen al flujo `desarrollo -> develop -> main`: son la otra mitad de la conexion. Que la torre repose en `desarrollo` no elimina la necesidad de promover y desplegar el API para que la torre lea QA y PROD.
+
 ## Reglas
 
 - No trabajar directamente en `main`.

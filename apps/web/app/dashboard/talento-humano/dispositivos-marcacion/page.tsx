@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, RefreshCw, Search, ShieldOff } from "lucide-react";
+import { ConfirmWindow } from "@/components/hr/ConfirmWindow";
 import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 
@@ -44,6 +45,7 @@ export default function DispositivosMarcacionPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [pendingRevoke, setPendingRevoke] = useState<SharedDevice | null>(null);
 
   useEffect(() => {
     setAccess({
@@ -78,8 +80,9 @@ export default function DispositivosMarcacionPage() {
 
   const activeCount = rows.filter((row) => row.active).length;
 
+  // Revocar cierra el celular para marcar pero conserva su historial: la pregunta se lee en la
+  // ventana de la pantalla, con la placa y el ultimo uso, no en el cuadro nativo del sistema.
   async function revoke(row: SharedDevice) {
-    if (!window.confirm(`El celular del vehiculo ${row.vehicle_plate} dejara de poder marcar. Para volver a usarlo hay que registrarlo de nuevo desde el celular. ¿Revocar?`)) return;
     setBusyId(row.id);
     setMessage("");
     try {
@@ -88,6 +91,7 @@ export default function DispositivosMarcacionPage() {
       setRows((current) => current.map((item) => (item.id === saved.id ? saved : item)));
       setMessage(`Celular del vehiculo ${row.vehicle_plate} revocado. Su historial de marcaciones se conserva.`);
       setError("");
+      setPendingRevoke(null);
     } catch (caught) {
       setError(describeError(caught, "No fue posible revocar el celular."));
     } finally {
@@ -177,7 +181,7 @@ export default function DispositivosMarcacionPage() {
                     {access.canWrite ? (
                       <td className="p-3 pr-3 text-right">
                         {row.active ? (
-                          <button className="btn-secondary" disabled={busyId === row.id} onClick={() => void revoke(row)} type="button">
+                          <button className="btn-secondary" disabled={busyId === row.id} onClick={() => setPendingRevoke(row)} type="button">
                             <ShieldOff size={16} /> {busyId === row.id ? "Revocando..." : "Revocar"}
                           </button>
                         ) : null}
@@ -199,6 +203,18 @@ export default function DispositivosMarcacionPage() {
           </div>
         )}
       </section>
+
+      {pendingRevoke ? (
+        <ConfirmWindow
+          busy={busyId === pendingRevoke.id}
+          confirmLabel="Revocar el celular"
+          description={`El celular del vehiculo ${pendingRevoke.vehicle_plate} dejara de poder marcar. Para volver a usarlo hay que registrarlo de nuevo desde el celular.`}
+          detail={`${pendingRevoke.label || pendingRevoke.device_model || "Celular compartido"} · ultimo uso ${dateTime(pendingRevoke.last_used_at)}. El historial de marcaciones ya registradas se conserva.`}
+          onClose={() => setPendingRevoke(null)}
+          onConfirm={() => void revoke(pendingRevoke)}
+          title="Revocar el celular de marcacion"
+        />
+      ) : null}
     </div>
   );
 }

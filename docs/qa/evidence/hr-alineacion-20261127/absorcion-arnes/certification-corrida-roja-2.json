@@ -1,0 +1,12 @@
+{
+  "environment": "LOCAL",
+  "commit": "773d0cbd345d0ffc06983f05dadf88dd9d0fc510",
+  "started_at": "2026-11-27T18:17:28.145Z",
+  "checks": [
+    "summary exposes photo availability and counters without image bytes",
+    "single and batch use TimePunch identity photos, retain extra support and ActivityEvidence"
+  ],
+  "status": "failed",
+  "error": "Waiting for selector `section[aria-label=\"Herramientas activas de talento humano\"] a[href$=\"/rutas\"]` failed",
+  "finished_at": "2026-11-27T18:22:34.210Z"
+}

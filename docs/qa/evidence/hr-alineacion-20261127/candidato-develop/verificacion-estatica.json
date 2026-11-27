@@ -1,0 +1,64 @@
+{
+  "medido_en": "2026-11-27T20:06:43.562Z",
+  "candidato": "58ae15917cc7cdde23b5f2139993ff86ad122a8d",
+  "imports": {
+    "archivos_de_codigo": 29,
+    "especificaciones_resueltas": 63,
+    "rotos": []
+  },
+  "modulos_compartidos": {
+    "nota": "un replay que reemplaza un modulo compartido puede quitarle al arbol de destino una exportacion que este si usa. El worktree del candidato no trae node_modules, asi que no corre tsc: se compara el conjunto de exportaciones blob contra blob.",
+    "archivos": 8,
+    "detalle": [
+      {
+        "file": "apps/web/components/hr/ConfirmWindow.tsx",
+        "en_desarrollo": 0,
+        "en_candidato": 1,
+        "pierde": []
+      },
+      {
+        "file": "apps/web/components/operations/PhotoCapture.tsx",
+        "en_desarrollo": 2,
+        "en_candidato": 9,
+        "pierde": []
+      },
+      {
+        "file": "apps/web/components/shell/MobileNav.tsx",
+        "en_desarrollo": 1,
+        "en_candidato": 1,
+        "pierde": []
+      },
+      {
+        "file": "apps/web/lib/api.ts",
+        "en_desarrollo": 43,
+        "en_candidato": 45,
+        "pierde": []
+      },
+      {
+        "file": "apps/web/lib/hrMarkingCorrection.ts",
+        "en_desarrollo": 0,
+        "en_candidato": 14,
+        "pierde": []
+      },
+      {
+        "file": "apps/web/lib/hrOfflineEvidence.ts",
+        "en_desarrollo": 6,
+        "en_candidato": 10,
+        "pierde": []
+      },
+      {
+        "file": "apps/web/lib/hrOfflineMarking.ts",
+        "en_desarrollo": 29,
+        "en_candidato": 78,
+        "pierde": []
+      },
+      {
+        "file": "apps/web/lib/installationIdentity.ts",
+        "en_desarrollo": 0,
+        "en_candidato": 3,
+        "pierde": []
+      }
+    ],
+    "con_perdida": []
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-24",
+  "generated_at": "2026-11-27",
   "canonical_root": ".qoder/skills",
   "mirror_root": "agents",
   "semver_policy": {
@@ -57,9 +57,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.31.0",
-      "updated_at": "2026-11-24",
-      "sha256": "92ee0f51b9faa8cb3821336b46844cf9b53b14f2a36b8729677ac87ef7c867e9",
+      "version": "2.33.0",
+      "updated_at": "2026-11-27",
+      "sha256": "3d58b483ed72d1e6efe0e19f130b1e214cf6d69e56963595366c5de858e67eb8",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -96,15 +96,17 @@
         "clave-publica-en-esquema-con-forma",
         "lenguaje-cercano-al-dueno",
         "camino-sesion-una-sentencia-por-lectura",
-        "una-sola-regla-de-selfie-por-canal"
+        "una-sola-regla-de-selfie-por-canal",
+        "censo-de-identificadores-en-dos-direcciones",
+        "modulo-portado-declara-ambiente-sin-tablas"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.98.0",
-      "updated_at": "2026-11-24",
-      "sha256": "c63c867e0244df5d25c8cfc2c6dfe327282b46324c518bba777901c12d9f1c57",
+      "version": "2.120.0",
+      "updated_at": "2026-11-27",
+      "sha256": "63d57d6d3d47a3dc85eb970437c0ef9adeae4d0525412d16cf5c988392f2e732",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -172,15 +174,25 @@
         "instrumento-nuevo-entra-al-inventario",
         "brief-de-contingencia-con-normas-mecanicas",
         "cifra-de-brief-con-artefacto-reproducible",
-        "promocion-pendiente-con-veredicto-medido"
+        "promocion-pendiente-con-veredicto-medido",
+        "cuenta-antes-despues-con-comando",
+        "contabilidad-de-porton-viaja-despues",
+        "pendiente-retirado-se-reescribe",
+        "alcance-que-retoma-el-dueno-con-accion-exacta",
+        "inventario-generado-se-contrainta-contra-el-diff",
+        "host-de-ambiente-heredado-del-canon",
+        "consecuencia-de-ambiente-se-cita-con-su-medicion",
+        "brief-se-reconcilia-contra-el-arbol-ejecutado",
+        "brief-exige-el-antes-del-destino",
+        "criterio-de-ambiente-se-prueba-por-artefacto-y-veredicto"
       ]
     },
     {
       "name": "apexos-db-nube",
       "role": "experto-base-datos-nube",
-      "version": "2.10.0",
-      "updated_at": "2026-11-24",
-      "sha256": "aee233774a0743d802d99a453210d8c30ab17c929c81875c15dd3df42ed2294b",
+      "version": "2.15.0",
+      "updated_at": "2026-11-27",
+      "sha256": "952e0870322a7001ab2978231907c4958fcff0d57055455d07f0c1eead19ba95",
       "source": ".qoder/skills/apexos-db-nube/SKILL.md",
       "mirror": "agents/apexos-db-nube/SKILL.md",
       "controls": [
@@ -200,15 +212,17 @@
         "rename-vista-compatibilidad-y-filas-posteriores",
         "sincronizacion-multi-ambiente",
         "rescate-jsonb-indice-ligero-sha256",
-        "lenguaje-cercano-al-dueno"
+        "lenguaje-cercano-al-dueno",
+        "pre-deploy-se-mide-en-el-ambiente",
+        "checksum-de-migracion-contra-el-blob"
       ]
     },
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.46.0",
-      "updated_at": "2026-11-24",
-      "sha256": "63eee45738269e3203383d54a1033243fe1c06ceba71f897cb6e24e3cd0baaf2",
+      "version": "2.56.0",
+      "updated_at": "2026-11-27",
+      "sha256": "527ce473a4dd4ba6500340d9631690e313631a545d23e4455cd6f387e0b45942",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -254,15 +268,21 @@
         "route-api-mismo-contrato-de-pantalla",
         "marca-durable-sobrevive-al-cierre",
         "lenguaje-cercano-al-dueno",
-        "paridad-de-requisito-contra-el-servidor"
+        "paridad-de-requisito-contra-el-servidor",
+        "enlace-directo-sin-portapapeles",
+        "matematica-de-eje-ejecutable-en-el-contrato",
+        "tema-y-telefono-medidos-en-navegador",
+        "registro-fuera-del-rango-visible-se-declara",
+        "linaje-superconjunto-restaurado-e-injerto-tenso",
+        "puerto-aditivo-con-anclajes-de-perdida"
       ]
     },
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.39.0",
-      "updated_at": "2026-11-25",
-      "sha256": "2c4b570bfcf0658fe1622c02cdb307f4881dd478cdfd3fe99df10d9b2e894c88",
+      "version": "2.50.0",
+      "updated_at": "2026-11-27",
+      "sha256": "cc15d7ce10b5880d2e644b101b38b6f64167e2f3a2aa55f8a94440b2dac18e5a",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -297,7 +317,11 @@
         "evidencia-de-corrida-sin-identidad-con-firma-del-manifiesto",
         "lenguaje-cercano-al-dueno",
         "porton-de-origen-por-blob",
-        "residual-mismo-blob-mismo-manifiesto"
+        "residual-mismo-blob-mismo-manifiesto",
+        "clasificacion-de-rutas-por-destino",
+        "scratch-del-porton-fuera-del-candidato",
+        "restauracion-post-build-verificada-por-hash",
+        "corrida-roja-se-versiona-y-buena-se-respalda"
       ]
     },
     {
@@ -339,9 +363,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.119.0",
-      "updated_at": "2026-11-24",
-      "sha256": "01316305802423b43df9404e588c6f803fa79ef71293cdbc8a67f2d1fd278bcc",
+      "version": "2.146.0",
+      "updated_at": "2026-11-27",
+      "sha256": "4a3a9f9ca56719b87384582668539681846576951ed176577796654dad979f16",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -434,15 +458,30 @@
         "antes-y-despues-de-la-corrida-de-escritura",
         "lenguaje-cercano-al-dueno",
         "rojo-del-arnes-se-atribuye-y-se-cura",
-        "certificador-hermetico-con-control-de-mutacion"
+        "certificador-hermetico-con-control-de-mutacion",
+        "espera-acotada-en-lectura-async",
+        "evidencia-publica-no-se-pisa",
+        "porton-puntual-nace-en-origen",
+        "ambiente-despliega-por-servicios",
+        "aserto-contra-la-salida-completa",
+        "ledger-del-destino-en-solo-lectura",
+        "direccion-de-ambiente-resuelta-por-resolvedor-publico",
+        "desplegado-servido-y-migrado-se-miden-aparte",
+        "instrumento-desde-su-arbol-y-se-lee-que-escribio",
+        "arnes-nuevo-se-prueba-contra-el-arbol-anterior",
+        "base-local-por-plantilla-y-no-por-db-push",
+        "antes-contra-los-blobs-del-destino",
+        "arnes-desplegado-blanco-rango-y-modal-limpio",
+        "paridad-por-blob-y-rojo-atribuido-en-baseline",
+        "certificado-declara-lo-que-no-certifica"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.43.0",
-      "updated_at": "2026-11-24",
-      "sha256": "729a51e472120e1634f393dfb5975bc71dac87de9778bed1e1a565411cf4aa54",
+      "version": "2.45.0",
+      "updated_at": "2026-11-27",
+      "sha256": "1eb9754a6b70d9ad1b5c9efd68e241e43dac918dd5e17772bffd0c9543e24a44",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -485,15 +524,17 @@
         "lenguaje-cercano-al-dueno",
         "login-no-es-oraculo-de-correos",
         "cuatro-marcaciones-sin-firma-necesitan-cara",
-        "contrato-con-prueba-de-servidor-real"
+        "contrato-con-prueba-de-servidor-real",
+        "control-rojo-heredado-se-re-tensa",
+        "porton-de-escrituras-con-asercion-positiva"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.66.0",
-      "updated_at": "2026-11-24",
-      "sha256": "f06cca7ab495dfd72ce6a71d07a5b8c83243c15ca1b2f1de21c356f430c5ef39",
+      "version": "2.83.0",
+      "updated_at": "2026-11-27",
+      "sha256": "dbd69b99431bd6e8d6ba85978e59d68e565c26493aded8c92dfe6563baba0ae8",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -546,7 +587,14 @@
         "residuo-de-despliegue-cuantificado-en-campo",
         "lenguaje-cercano-al-dueno",
         "residuo-declarado-se-cierra-en-el-mismo-paquete",
-        "contingencia-se-cierra-con-mecanismo-y-retiro"
+        "contingencia-se-cierra-con-mecanismo-y-retiro",
+        "tema-adicional-es-el-cambio-exclusivo",
+        "transporte-se-mide-contra-la-distancia-del-destino",
+        "autorizacion-con-consecuencia-se-cierra-y-se-rinde",
+        "arbol-compartido-se-reporta-por-patas",
+        "orden-de-despliegue-exige-pata-contra-el-ambiente-servido",
+        "paridad-entre-ramas-por-blob-y-linea-sin-replica",
+        "retrointegracion-por-canastas-no-por-merge"
       ]
     }
   ],
@@ -578,14 +626,14 @@
     {
       "name": "Convenciones de base de datos",
       "path": "docs/DATABASE_CONVENTIONS.md",
-      "updated_at": "2026-11-03",
-      "sha256": "97f31a0d067e66cad373f5d6d06a67dfd89f65532d613f0e771c430147168ab1"
+      "updated_at": "2026-11-25",
+      "sha256": "7707671ed8676dcdfb1209c0bca8c93a3786d99efe0f4e1cd925e5f4444cc969"
     },
     {
       "name": "Catálogo de componentes UI",
       "path": "docs/design/APEXOS_COMPONENT_CATALOG.md",
-      "updated_at": "2026-11-12",
-      "sha256": "92d0ab41e265079527f1a93a2c2106a68dd6aad38f13f4008c8f5fdc6846fe66"
+      "updated_at": "2026-11-26",
+      "sha256": "83f5f606415f18e49cd5ee47f726bab2c542aef8d8066a9b6db09589ea745540"
     },
     {
       "name": "Aislamiento multi-tenant",

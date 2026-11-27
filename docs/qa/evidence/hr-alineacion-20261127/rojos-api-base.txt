@@ -1,0 +1,4 @@
+sin ambiente declarado no hay corrida, y el modo por defecto es dry
+--keep-inline solo existe sobre una escritura declarada
+el tenant y la rama se validan antes de leer configuracion
+humo: el modelo real (Human wasm) distingue a la misma persona de otra

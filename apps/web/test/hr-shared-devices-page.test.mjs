@@ -11,8 +11,13 @@ test("el maestro de celulares lista desde la API operativa sin cache", () => {
   assert.match(page, /api<SharedDevice\[\]>\("\/api\/v1\/hr\/shared-devices", \{ cache: "no-store" \}\)/);
 });
 
-test("revocar pide confirmacion y usa POST sin cuerpo", () => {
-  assert.match(page, /window\.confirm\(/);
+test("revocar se pregunta en la ventana de la pantalla y usa POST sin cuerpo", () => {
+  assert.doesNotMatch(page, /window\.confirm\(/, "la ventanilla nativa no decia que el celular quedaba fuera de servicio");
+  assert.match(page, /const \[pendingRevoke, setPendingRevoke\] = useState<SharedDevice \| null>\(null\);/, "la fila elegida se guarda como estado propio");
+  assert.match(page, /onClick=\{\(\) => setPendingRevoke\(row\)\}/, "el primer boton arma la ventana, no revoca");
+  assert.match(page, /\{pendingRevoke \? \(/, "la ventana solo existe mientras hay un celular senalado");
+  assert.match(page, /onConfirm=\{\(\) => void revoke\(pendingRevoke\)\}/, "el segundo clic es el que revoca");
+  assert.match(page, /setPendingRevoke\(null\);/, "al revocar se cierra la ventana");
   assert.match(page, /\/api\/v1\/hr\/shared-devices\/\$\{row\.id\}\/revoke`, \{ method: "POST" \}/);
 });
 

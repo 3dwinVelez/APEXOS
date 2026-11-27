@@ -690,7 +690,6 @@ export default function LiveGpsMapPage() {
                 <p className="rounded-md bg-paper p-3">Vehiculo: <span className="font-semibold">{selectedMark.vehicle_plate || "--"}</span> - Horario {selectedMark.route_id || "--"}</p>
                 <p className="rounded-md bg-paper p-3">GPS: {selectedMark.latitude.toFixed(6)}, {selectedMark.longitude.toFixed(6)} · {Math.round(selectedMark.accuracy_meters || 0)}m</p>
                 {selectedMark.metadata?.observation ? <p className="rounded-md bg-emerald-50 p-3 text-emerald-900">Observacion: {String(selectedMark.metadata.observation)}</p> : null}
-                {Array.isArray(selectedMark.metadata?.evidence) && selectedMark.metadata.evidence[0]?.base64_data ? <Image alt="Evidencia operativa" className="max-h-48 rounded-md object-cover" height={480} src={String(selectedMark.metadata.evidence[0].base64_data)} unoptimized width={640} /> : null}
                 {selectedMark.extra_minutes ? <p className="rounded-md bg-amber-50 p-3 text-amber-900">Extra: {selectedMark.extra_minutes} min · {selectedMark.extra_reason || "extension"}{selectedMark.extra_detail ? ` · ${selectedMark.extra_detail}` : ""}</p> : null}
                 <HrTimelineEvidence evidence={[selectedMark.extra_evidence, selectedMark.identity_evidence].filter(scheduleMonitorHasEvidenceFile)} />
               </div>

@@ -1,13 +1,14 @@
 "use client";
 
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
-import { Home, MapPinned, Wrench } from "lucide-react";
+import { Clock3, Home, MapPinned, Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
   { href: "/dashboard", label: "Inicio", icon: Home },
   { href: "/dashboard/servicios", label: "Servicios", icon: Wrench },
+  { href: "/dashboard/talento-humano/marcacion", label: "Marcar", icon: Clock3 },
   { href: "/dashboard/talento-humano/mapa", label: "Mapa", icon: MapPinned }
 ];
 
@@ -22,7 +23,7 @@ export function MobileNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-2 md:hidden" aria-label="Navegacion movil">
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
+      <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
         {items.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));

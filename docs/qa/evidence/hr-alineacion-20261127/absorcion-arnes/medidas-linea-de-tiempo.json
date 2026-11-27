@@ -1,0 +1,29 @@
+{
+  "escritorio_claro": {
+    "tinta": "rgb(23, 33, 43)",
+    "fondo": "rgb(214 225 247)",
+    "pista": "rgb(245 247 249)",
+    "pagina": "rgb(245, 247, 249)",
+    "tactil_px": 30,
+    "contraste": 12.39
+  },
+  "escritorio_oscuro": {
+    "tinta": "rgb(242, 245, 247)",
+    "fondo": "rgb(18 34 62)",
+    "pista": "rgb(15 23 32)",
+    "pagina": "rgb(15, 23, 32)",
+    "tactil_px": 30,
+    "contraste": 14.49
+  },
+  "telefono": {
+    "ancho_vw": 390,
+    "scroll_horizontal": true,
+    "columnas_de_indicadores": 2,
+    "tactil_px": 46
+  },
+  "ventana_movil": {
+    "ancho_px": 390,
+    "viewport_px": 390
+  },
+  "medido_en": "navegador real headless sobre el servidor de desarrollo que levanta el propio certificador (1500x1100 y 390x844)"
+}
