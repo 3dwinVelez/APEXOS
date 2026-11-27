@@ -1,0 +1,912 @@
+{
+  "medicion": "candidato-final-58ae1591",
+  "arbol": "wt-hr-cand2-develop-20261127",
+  "commit": "58ae15917cc7cdde23b5f2139993ff86ad122a8d",
+  "medido_en": "2026-11-27T20:06:23.155Z",
+  "archivos": 139,
+  "tests": 964,
+  "pass": 948,
+  "fail": 16,
+  "rojos": [
+    {
+      "file": "certify-company-modal-floating-local.mjs",
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-company-modal-floating-local.mjs"
+    },
+    {
+      "file": "certify-supplier-create-button-visible-local.mjs",
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-supplier-create-button-visible-local.mjs"
+    },
+    {
+      "file": "certify-ui-ux-phase-one-local.mjs",
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-one-local.mjs"
+    },
+    {
+      "file": "certify-ui-ux-phase-three-accessibility-local.mjs",
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-accessibility-local.mjs"
+    },
+    {
+      "file": "certify-ui-ux-phase-three-collaboration-local.mjs",
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-collaboration-local.mjs"
+    },
+    {
+      "file": "certify-ui-ux-phase-three-foundation-local.mjs",
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-foundation-local.mjs"
+    },
+    {
+      "file": "certify-ui-ux-phase-three-personalization-local.mjs",
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-personalization-local.mjs"
+    },
+    {
+      "file": "certify-ui-ux-phase-three-toolkit-local.mjs",
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-toolkit-local.mjs"
+    },
+    {
+      "file": "certify-ui-ux-phase-three-totp-local.mjs",
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-totp-local.mjs"
+    },
+    {
+      "file": "certify-ui-ux-phase-two-local.mjs",
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-two-local.mjs"
+    },
+    {
+      "file": "ibc-nomina-ui.test.mjs",
+      "motivo": "nomina UI distingue novedades IBC y exige referencia historica congelada"
+    },
+    {
+      "file": "ibc-nomina-ui.test.mjs",
+      "motivo": "aportes UI muestra trazabilidad por segmento y subsistema"
+    },
+    {
+      "file": "ibc-nomina-ui.test.mjs",
+      "motivo": "configuracion UI ofrece elegibilidad ET 114-1 explicita"
+    },
+    {
+      "file": "ibc-nomina-ui.test.mjs",
+      "motivo": "maestro de empleados permite configurar elegibilidad y régimen soportado"
+    },
+    {
+      "file": "transport-print-theme.test.mjs",
+      "motivo": "la impresión aísla el tema claro y restaura el tema previo al salir sin persistir cambios"
+    },
+    {
+      "file": "transport-pyg-account-config.component.test.mjs",
+      "motivo": "react y react-dom/server salen de la misma instalacion de node_modules"
+    }
+  ],
+  "por_archivo": [
+    {
+      "file": "accounting-pyg-budget-errors.component.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "accounting-pyg-interactive.test.mjs",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0
+    },
+    {
+      "file": "accounting-reversal-budget-import.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "file": "admin-company-modal-frame.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "admin-role-capabilities.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "admin-user-credential-sync.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "ambient-background.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "file": "apex-heart-ui.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "api-error-classification.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "api-proxy-company-context.test.mjs",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "file": "certify-company-modal-floating-local.mjs",
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    {
+      "file": "certify-supplier-create-button-visible-local.mjs",
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    {
+      "file": "certify-ui-ux-phase-one-local.mjs",
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    {
+      "file": "certify-ui-ux-phase-three-accessibility-local.mjs",
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    {
+      "file": "certify-ui-ux-phase-three-collaboration-local.mjs",
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    {
+      "file": "certify-ui-ux-phase-three-foundation-local.mjs",
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    {
+      "file": "certify-ui-ux-phase-three-personalization-local.mjs",
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    {
+      "file": "certify-ui-ux-phase-three-toolkit-local.mjs",
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    {
+      "file": "certify-ui-ux-phase-three-totp-local.mjs",
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    {
+      "file": "certify-ui-ux-phase-two-local.mjs",
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    {
+      "file": "comercio-reports-charts.test.mjs",
+      "tests": 10,
+      "pass": 10,
+      "fail": 0
+    },
+    {
+      "file": "comercio-storefront-resilience.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "comercio-storefront-theme.test.mjs",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0
+    },
+    {
+      "file": "comercio-ux-consistency.test.mjs",
+      "tests": 14,
+      "pass": 14,
+      "fail": 0
+    },
+    {
+      "file": "command-palette-module-functions.test.mjs",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0
+    },
+    {
+      "file": "commercial-calendar-experience.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "commercial-module-catalog.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "commercial-visit-selection.test.mjs",
+      "tests": 23,
+      "pass": 23,
+      "fail": 0
+    },
+    {
+      "file": "contabilidad-opening-balances.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "erp-visual-normalization.test.mjs",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "file": "gastos-menores-entry-ux.test.mjs",
+      "tests": 19,
+      "pass": 19,
+      "fail": 0
+    },
+    {
+      "file": "gastos-menores-masters.test.mjs",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0
+    },
+    {
+      "file": "gastos-menores-module-registration.test.mjs",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "file": "gastos-menores-operations.test.mjs",
+      "tests": 29,
+      "pass": 29,
+      "fail": 0
+    },
+    {
+      "file": "gastos-menores-reports.test.mjs",
+      "tests": 14,
+      "pass": 14,
+      "fail": 0
+    },
+    {
+      "file": "hr-attendance-state.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-confirm-window.test.mjs",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0
+    },
+    {
+      "file": "hr-contention-write-feedback.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-davivienda-bank-file-ui.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "hr-employee-biometric-reset.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-face-enrollments-page.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "hr-landing-information-architecture.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "hr-map-no-inline-evidence.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-marking-correction.test.mjs",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0
+    },
+    {
+      "file": "hr-marking-cross-device.test.mjs",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0
+    },
+    {
+      "file": "hr-marking-lateness-selfie.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "file": "hr-marking-only-access.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "hr-marking-unassigned-gate.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-monitor-identity-selfie.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-monitor-modal-per-user.test.mjs",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0
+    },
+    {
+      "file": "hr-monitor-refresh.test.mjs",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "file": "hr-monitor-stale-read.test.mjs",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "file": "hr-offline-marking.test.mjs",
+      "tests": 38,
+      "pass": 38,
+      "fail": 0
+    },
+    {
+      "file": "hr-punch-mobile-evidence.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "hr-report-punch-alerts.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-report-punch-selfie.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "hr-reports-xlsx.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "hr-route-write-fallback.test.mjs",
+      "tests": 10,
+      "pass": 10,
+      "fail": 0
+    },
+    {
+      "file": "hr-route-write-feedback.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "file": "hr-schedule-employee-source.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "hr-schedule-monitor.test.mjs",
+      "tests": 14,
+      "pass": 14,
+      "fail": 0
+    },
+    {
+      "file": "hr-schedule-timeline-view.test.mjs",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0
+    },
+    {
+      "file": "hr-shared-devices-page.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "hr-time-report.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "hr-unified-schedules.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "hr-workday-novelties-ui.test.mjs",
+      "tests": 14,
+      "pass": 14,
+      "fail": 0
+    },
+    {
+      "file": "ibc-nomina-ui.test.mjs",
+      "tests": 4,
+      "pass": 0,
+      "fail": 4
+    },
+    {
+      "file": "installation-identity.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "file": "inventory-improvements-roadmap.test.mjs",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "file": "latam.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "lobby-greeting.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "local-login-tenant-context.test.mjs",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "file": "login-error-contrast.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "login-phase-zero-ux.test.mjs",
+      "tests": 17,
+      "pass": 17,
+      "fail": 0
+    },
+    {
+      "file": "mobile-app-install.test.mjs",
+      "tests": 19,
+      "pass": 19,
+      "fail": 0
+    },
+    {
+      "file": "modal-focus-stability.test.mjs",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "file": "module-access-company-context.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "module-access-policy.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "module-access-role.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "module-portfolio.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "next-server-stub-loader.mjs",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "file": "nyvora-visual-route-gate.test.mjs",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "file": "offline-csp.test.mjs",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0
+    },
+    {
+      "file": "offline-operation-queue.test.mjs",
+      "tests": 18,
+      "pass": 18,
+      "fail": 0
+    },
+    {
+      "file": "offline-panel.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "offline-storage.test.mjs",
+      "tests": 22,
+      "pass": 22,
+      "fail": 0
+    },
+    {
+      "file": "operational-home-redesign.test.mjs",
+      "tests": 15,
+      "pass": 15,
+      "fail": 0
+    },
+    {
+      "file": "payroll-display.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "payroll-employee-entity-ui.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "phase-one-design-system.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "phase-three-analytics.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "phase-three-collaboration.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "phase-three-personalization.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "phase-three-world-class-foundation.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "phase-three-world-class-toolkit.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "phase-two-intelligent-experience.test.mjs",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0
+    },
+    {
+      "file": "plan-cuentas-tree.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "public-service-request-usability.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "public-service-requests-security.test.mjs",
+      "tests": 10,
+      "pass": 10,
+      "fail": 0
+    },
+    {
+      "file": "pyg-expanded-chrome.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "file": "pyg-expanded-link.test.mjs",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0
+    },
+    {
+      "file": "pyg-expanded-route.test.mjs",
+      "tests": 10,
+      "pass": 10,
+      "fail": 0
+    },
+    {
+      "file": "pyg-expanded-view.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "pyg-expanded.test.mjs",
+      "tests": 13,
+      "pass": 13,
+      "fail": 0
+    },
+    {
+      "file": "role-permissions-special-edit.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "sales-collection-contracts.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "sales-invoice-lines.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "search-select-contract.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "service-correction-form.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "service-monitor-live-refresh.test.mjs",
+      "tests": 12,
+      "pass": 12,
+      "fail": 0
+    },
+    {
+      "file": "service-order-detail-contract-normalization.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "file": "service-order-edit-modal-responsive.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "service-order-execution-flow.test.mjs",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "file": "service-order-special-edit.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "service-order-support-grouping.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "file": "service-reference-import.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "session-scope-403.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "standard-table-migration.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "supplier-create-button-visibility.test.mjs",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "file": "technical-alert-silence.test.mjs",
+      "tests": 12,
+      "pass": 12,
+      "fail": 0
+    },
+    {
+      "file": "technical-detail-not-leaked.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "transport-master-access.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "file": "transport-print-theme.test.mjs",
+      "tests": 2,
+      "pass": 1,
+      "fail": 1
+    },
+    {
+      "file": "transport-pyg-account-config.component.test.mjs",
+      "tests": 3,
+      "pass": 2,
+      "fail": 1
+    },
+    {
+      "file": "transport-pyg-account-config.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "file": "transport-pyg-centers-matrix.test.mjs",
+      "tests": 13,
+      "pass": 13,
+      "fail": 0
+    },
+    {
+      "file": "transport-pyg-vehicle-page.test.mjs",
+      "tests": 13,
+      "pass": 13,
+      "fail": 0
+    },
+    {
+      "file": "transport-rate-cost-interactions.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "transport-rate-cost-step.test.mjs",
+      "tests": 12,
+      "pass": 12,
+      "fail": 0
+    },
+    {
+      "file": "transport-rate-wizard-interactions.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "transport-search-select.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "transport-settlement-tariff-interactions.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "file": "transport-settlement-tower.test.mjs",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "file": "transport-settlement-ui.test.mjs",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "file": "transport-theme.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "transport-tms-ui.test.mjs",
+      "tests": 25,
+      "pass": 25,
+      "fail": 0
+    },
+    {
+      "file": "transport-vehicle-documents.test.mjs",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "file": "transport-vehicle-master-catalogs.test.mjs",
+      "tests": 13,
+      "pass": 13,
+      "fail": 0
+    },
+    {
+      "file": "visual-operation.test.mjs",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    }
+  ]
+}

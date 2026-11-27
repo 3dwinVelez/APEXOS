@@ -1,0 +1,20 @@
+{
+  "environment": "LOCAL",
+  "commit": "773d0cbd345d0ffc06983f05dadf88dd9d0fc510",
+  "started_at": "2026-11-27T18:25:55.661Z",
+  "checks": [
+    "summary exposes photo availability and counters without image bytes",
+    "single and batch use TimePunch identity photos, retain extra support and ActivityEvidence",
+    "one hub entry opens programming and existing links select the matching tab",
+    "the schedule opens its detail from the timeline bar, which is the default view",
+    "the table view opens the same detail from the row and hides its actions behind the menu",
+    "the redesign repaints through the app theme control and stays usable on a phone",
+    "programming creates, edits and clones schedules without duplicating them when tabs change",
+    "chronological team trace displays all mobile photos and opens lightbox",
+    "Reports journey trace renders the activity photograph and opens its enlargement",
+    "command palette finds bank master and expanded PYG and opens both real pages"
+  ],
+  "status": "passed",
+  "photo_source": "TimePunch.metadata.identity_photo, with legacy support",
+  "finished_at": "2026-11-27T18:29:42.040Z"
+}

@@ -33,9 +33,11 @@ test("la portada conserva los accesos de gestion, incluida nomina", () => {
   assert.doesNotMatch(source, /Disponible próximamente|cursor-not-allowed/, "ningun acceso funcional debe quedar bloqueado como proximamente");
 });
 
-test("mallas conserva planeacion, monitor y reportes sin acceso para marcar", () => {
+test("rutas fusiona horarios y mallas y el hub conserva la marcacion web", () => {
   for (const route of ["rutas", "mapa", "reportes"]) assert.match(source, new RegExp(`/dashboard/talento-humano/${route}`));
-  assert.doesNotMatch(source, /href: "\/dashboard\/talento-humano\/marcacion"/);
+  // La marcacion web queda visible por orden expresa del dueno (2026-11-27): Produccion la sirve
+  // y el retiro de la tarjeta solo puede darse con esa autorizacion, nunca como efecto de una fusion.
+  assert.match(source, /href: "\/dashboard\/talento-humano\/marcacion"/);
 });
 
 test("la portada no mezcla vehiculos ni depende de consultas operativas", () => {

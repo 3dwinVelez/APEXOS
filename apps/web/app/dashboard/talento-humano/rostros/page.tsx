@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, RefreshCw, RotateCcw, Search } from "lucide-react";
+import { ConfirmWindow } from "@/components/hr/ConfirmWindow";
 import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 
@@ -41,6 +42,7 @@ export default function RostrosRegistradosPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [pendingReset, setPendingReset] = useState<FaceEnrollment | null>(null);
 
   useEffect(() => {
     setAccess({
@@ -72,8 +74,9 @@ export default function RostrosRegistradosPage() {
     return rows.filter((row) => [row.employee_name, row.employee_code].some((value) => String(value || "").toLowerCase().includes(term)));
   }, [query, rows]);
 
+  // La victima es el rostro guardado: el empleado vuelve a marcar sin verificacion hasta que se
+  // registre de nuevo. La pregunta se lee en la ventana de la pantalla, no en el cuadro del sistema.
   async function reset(row: FaceEnrollment) {
-    if (!window.confirm(`${row.employee_name} tendra que registrar su rostro otra vez en APEXOS Web Movil antes de que sus marcaciones vuelvan a verificarse. ¿Restablecer?`)) return;
     setBusyId(row.id);
     setMessage("");
     try {
@@ -81,6 +84,7 @@ export default function RostrosRegistradosPage() {
       setRows((current) => current.filter((item) => item.id !== row.id));
       setMessage(`Rostro de ${row.employee_name} restablecido. Puede registrarlo de nuevo desde Marcar jornada.`);
       setError("");
+      setPendingReset(null);
     } catch (caught) {
       setError(describeError(caught, "No fue posible restablecer el rostro."));
     } finally {
@@ -157,7 +161,7 @@ export default function RostrosRegistradosPage() {
                     <td className="p-3 text-xs text-neutral-600">Version {row.consent_version}<br />{dateTime(row.consent_at)}</td>
                     {access.canWrite ? (
                       <td className="p-3 pr-3 text-right">
-                        <button className="btn-secondary" disabled={busyId === row.id} onClick={() => void reset(row)} type="button">
+                        <button className="btn-secondary" disabled={busyId === row.id} onClick={() => setPendingReset(row)} type="button">
                           <RotateCcw size={16} /> {busyId === row.id ? "Restableciendo..." : "Restablecer"}
                         </button>
                       </td>
@@ -176,6 +180,18 @@ export default function RostrosRegistradosPage() {
           </div>
         )}
       </section>
+
+      {pendingReset ? (
+        <ConfirmWindow
+          busy={busyId === pendingReset.id}
+          confirmLabel="Restablecer rostro"
+          description={`${pendingReset.employee_name} tendra que registrar su rostro otra vez en APEXOS Web Movil antes de que sus marcaciones vuelvan a verificarse.`}
+          detail={`Registro del ${dateTime(pendingReset.enrolled_at)} (version ${pendingReset.consent_version}). Al restablecer se pierde la foto de referencia guardada.`}
+          onClose={() => setPendingReset(null)}
+          onConfirm={() => void reset(pendingReset)}
+          title="Restablecer el rostro registrado"
+        />
+      ) : null}
     </div>
   );
 }

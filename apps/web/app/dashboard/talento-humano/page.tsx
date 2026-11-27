@@ -3,6 +3,7 @@ import { ActionCard } from "@/components/ui/ActionCard";
 
 const actions = [
   { href: "/dashboard/talento-humano/rutas", title: "Horarios y mallas", detail: "Programar jornadas y consultar sus marcaciones, actividades y evidencias.", icon: CalendarDays, primary: true },
+  { href: "/dashboard/talento-humano/marcacion", title: "Marcaciones", detail: "Registrar entradas, salidas y ubicación GPS del equipo.", icon: Smartphone },
   { href: "/dashboard/talento-humano/novedades", title: "Novedades de jornada", detail: "Revisar alertas, incapacidades, permisos, faltas y justificaciones.", icon: Clock3 },
   { href: "/dashboard/talento-humano/mapa", title: "Mapa operativo", detail: "Supervisar rutas, última ubicación y cumplimiento de la jornada.", icon: MapPinned },
   { href: "/dashboard/talento-humano/empleados", title: "Maestro de empleados", detail: "Mantener datos laborales y su asociación con usuarios APEX.", icon: UserRoundCheck },

@@ -1,0 +1,187 @@
+{
+  "comparacion_rojos": {
+    "base": "origin/develop a440560d",
+    "candidato": "58ae15917cc7cdde23b5f2139993ff86ad122a8d",
+    "base_tests": 915,
+    "base_pass": 898,
+    "base_fail": 17,
+    "candidato_tests": 964,
+    "candidato_pass": 948,
+    "candidato_fail": 16,
+    "rojos_nuevos_en_candidato": [],
+    "rojos_apagados_por_el_candidato": [
+      "hr-offline-marking.test.mjs :: D: las escrituras self-service de HR tampoco caen al respaldo Supabase"
+    ],
+    "lectura": "ningun rojo nuevo: cada rojo del candidato ya era rojo en el arbol puro de origin/develop (10 arneses certify-*-local exigen un portal vivo en 127.0.0.1:3001 y mueren con ERR_CONNECTION_REFUSED; ibc-nomina-ui 4, transport-print-theme 1 y transport-pyg-account-config 1 son de otros frentes y ya eran rojos). El candidato apaga uno: hr-offline-marking D."
+  },
+  "normalizacion": "el motivo se recorta a nombre de archivo y el texto de la prueba; las rutas absolutas del arbol donde corre cada suite crean rojos nuevos falsos",
+  "atribucion_rojos_comunes": "16 rojos comunes, todos ya rojos en a440560d y atribuidos por archivo en suites_por_archivo",
+  "suites_por_archivo": {
+    "base": [
+      {
+        "file": "certify-company-modal-floating-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-supplier-create-button-visible-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-one-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-accessibility-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-collaboration-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-foundation-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-personalization-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-toolkit-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-totp-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-two-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "hr-offline-marking.test.mjs",
+        "tests": 31,
+        "pass": 30,
+        "fail": 1
+      },
+      {
+        "file": "ibc-nomina-ui.test.mjs",
+        "tests": 4,
+        "pass": 0,
+        "fail": 4
+      },
+      {
+        "file": "transport-print-theme.test.mjs",
+        "tests": 2,
+        "pass": 1,
+        "fail": 1
+      },
+      {
+        "file": "transport-pyg-account-config.component.test.mjs",
+        "tests": 3,
+        "pass": 2,
+        "fail": 1
+      }
+    ],
+    "candidato": [
+      {
+        "file": "certify-company-modal-floating-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-supplier-create-button-visible-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-one-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-accessibility-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-collaboration-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-foundation-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-personalization-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-toolkit-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-three-totp-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "certify-ui-ux-phase-two-local.mjs",
+        "tests": 1,
+        "pass": 0,
+        "fail": 1
+      },
+      {
+        "file": "ibc-nomina-ui.test.mjs",
+        "tests": 4,
+        "pass": 0,
+        "fail": 4
+      },
+      {
+        "file": "transport-print-theme.test.mjs",
+        "tests": 2,
+        "pass": 1,
+        "fail": 1
+      },
+      {
+        "file": "transport-pyg-account-config.component.test.mjs",
+        "tests": 3,
+        "pass": 2,
+        "fail": 1
+      }
+    ]
+  }
+}

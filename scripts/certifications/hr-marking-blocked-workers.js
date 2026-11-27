@@ -7,7 +7,22 @@
 //
 //   node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/production.env
 //   node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/qa.env --date=2026-11-18
+//   node scripts/certifications/hr-marking-blocked-workers.js --env-file=config/production.env \
+//     --date=2026-11-26 --days=7 --semana=2026-11-24T21:55:07Z --sin-nombres --output=docs/qa/evidence/...
 //   node scripts/certifications/hr-marking-blocked-workers.js --selftest
+//
+// `--semana=<corte ISO UTC>` añade el dictamen de la semana: cada dia calendario de Colombia con
+// sus rechazos por clase y su antes/despues del corte, y la lista de rechazos de foto posteriores
+// al corte con la marca del trabajador en la hora siguiente (0 = la jornada perdio esa pierna).
+// Exige `--days=7` o mas: la ventana la fija `--days`, no este flag, y con la ventana por defecto
+// el ANTES se queda en dos dias. El instrumento se bloquea antes de publicar ese numero corto.
+//
+// `--canal` responde si la HERRAMIENTA es el inconveniente: de que canal declarado salen las
+// marcaciones que si entraron (la web que marca declara `apexos-mobile`), si llegaron en vivo o
+// desde la cola (`metadata.queued_at`), con que tipo de foto de justificacion, en que ruta y en que
+// dispositivo se acumulan los rechazos y los envios perdidos, y si los rechazos de una misma cuenta
+// llegan en rafaga (cola reenviando el mismo cuerpo) o separados (mano humana). Selects agregados:
+// ninguna lectura del censo proyecta el cuerpo base64 de una foto, y el selftest lo exige.
 //
 // La ventana es la jornada colombiana (UTC-5): 05:00Z del dia hasta 05:00Z del
 // siguiente. Las marcaciones se filtran por la columna `date`, que ya guarda el
@@ -48,7 +63,7 @@ function parseArgs(argv = process.argv.slice(2)) {
 function parseFailures(argv) {
   const failures = [];
   const parsed = parseArgs(argv);
-  for (const key of ["env-file", "date", "days", "output", "manifest"]) {
+  for (const key of ["env-file", "date", "days", "output", "manifest", "semana"]) {
     if (parsed[key] === true) failures.push(`--${key} quedo sin valor`);
   }
   return failures;
@@ -89,6 +104,16 @@ function hostOf(url) {
   }
 }
 
+// El host del pooler es parte de la credencial de Produccion: identifica la instancia y se filtra
+// igual que una cadena de conexion. La evidencia necesita afirmar A QUE ambiente se le pregunto
+// (eso lo da `ambiente` + `archivo_ambiente`), no el nombre de la maquina. Los hosts locales si se
+// versionan: 127.0.0.1 no es un secreto y es lo que permite distinguir una corrida de scratch.
+function hostParaEvidencia(url) {
+  const host = hostOf(url);
+  if (/supabase|pooler/i.test(host)) return "(pooler de Supabase: el nombre de host no se versiona en evidencia)";
+  return host;
+}
+
 function isoDay(value) {
   // `String(new Date())` devuelve "Wed Nov 18 2026 ..." y comparar eso contra un ISO da
   // siempre distinto: el dia calendario se extrae SIEMPRE del UTC de la fecha.
@@ -97,6 +122,274 @@ function isoDay(value) {
 
 function messageKey(message = "") {
   return String(message).replace(/req-[0-9a-z-]+/gi, "req-*").slice(0, 160);
+}
+
+// ---- Semana (`--semana=<corte ISO UTC>`) --------------------------------------------------------
+// Un corte por dia calendario de Colombia y por CLASE de rechazo, con su antes/despues de un
+// instante dado. La clase se decide por lo que el registro dice, nunca por lo que el codigo trae:
+// en campo el cliente manda el 400 sin codigo y lo unico que sobrevive es la frase del servidor.
+// El mismo mapa lo usan la medicion y el selftest: si la clasificacion se cambia a mano en un
+// solo lugar, el control se pone rojo.
+function claseDeRechazo(value = {}) {
+  const msg = String(value.message || "");
+  const code = String(value.code || "");
+  if (code === "SELFIE_REQUERIDA" || /Toma la selfie/.test(msg)) return "foto-faltante";
+  if (code === "SELFIE_INVALIDA" || code.startsWith("EVIDENCIA_") || code.startsWith("EVIDENCE_")
+    || /formato declarado|no pudo decodificarse|no es una .+ permitida|tipo declarado no puede aceptarse|demasiado pequeno para ser un archivo/.test(msg)) return "foto-contenido";
+  if (/supera el (tamano|limite)|EVIDENCIA_SUPERA_LIMITE/.test(msg) || code === "SELFIE_SUPERA_LIMITE") return "foto-tamano";
+  if (code === "MARCACION_FUERA_DE_SECUENCIA" || /siguiente marcacion permitida/.test(msg)) return "secuencia";
+  if (code === "MARCACION_DIFERIDA_EXPIRADA" || /24 horas/.test(msg)) return "diferida-24h";
+  if (code === "KILOMETRAJE_REQUERIDO" || /kilometraje/.test(msg)) return "kilometraje";
+  if (code === "IDEMPOTENCY_KEY_CONFLICT" || /idempotencia/.test(msg)) return "llave-repetida";
+  if (code === "PERMISO_DENEGADO" || code === "HORARIO_AJENO_DENEGADO" || code === "HORARIO_FUERA_DEL_DIA" || /horario asignado/.test(msg)) return "permiso-horario";
+  if (code === "JORNADA_COMPLETA") return "jornada-completa";
+  if (code === "MOTIVO_CORRECCION_REQUERIDO" || /Justifica por que/.test(msg)) return "justificacion-pendiente";
+  if (/Backend no disponible desde frontend/.test(msg)) return "transporte-caido";
+  // La frase genérica del cliente NO es transporte: es un 4xx que el navegador recibio y no supo
+  // clasificar. Mezclarla con "Backend no disponible" infla la caida y esconde el rechazo real.
+  if (/Solicitud frontend fallida|Solicitud rechazada por validacion/.test(msg)) return "cliente-no-clasifica";
+  if (msg) return "otro";
+  return "sin-mensaje";
+}
+
+// El codigo que acompana al rechazo de foto distingue la puerta que lo emito: la compuerta de
+// identidad nueva siempre manda SELFIE_INVALIDA o un EVIDENCIA_* con su detalle; la validacion
+// antigua de la foto de justificacion lanza un Error pelado (400 sin codigo y sin detalle) con la
+// MISMA frase. Contar solo la frase juntaria las dos puertas en un mismo numero.
+function bucketDeCodigosFoto(filas) {
+  const out = {};
+  for (const fila of filas) {
+    if (!claseDeRechazo(fila).startsWith("foto-")) continue;
+    const clave = `${fila.status || "-"} ${fila.code || "(sin codigo)"} | ${fila.message || "(sin mensaje)"}`;
+    out[clave] = (out[clave] || 0) + 1;
+  }
+  return out;
+}
+
+// El dia CALENDARIO de Colombia de un instante UTC. `isoDay` mira la porcion UTC y para las
+// columnas `date` de la marcacion es correcto; para agrupar rechazos no, porque una marcacion de
+// las 20:32 CO de un martes cae en el miercoles UTC y el corte de media semana mentiría.
+function diaColombia(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  return new Date(date.getTime() - COLOMBIA_OFFSET_HOURS * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+// El corte es el instante en que se PROBO el binario nuevo sirviendo (no la hora del commit): la
+// fila que cae exactamente en el corte cuenta como despues, porque ese minuto ya es del mundo nuevo.
+function partirPorCorte(filas, corte) {
+  const desde = new Date(String(corte));
+  if (!Number.isFinite(desde.getTime())) throw new Error(`--semana espera un corte ISO UTC valido y recibio: ${corte}`);
+  const partes = { corte_utc: desde.toISOString(), antes: [], despues: [] };
+  for (const fila of filas) (new Date(fila.timestamp) < desde ? partes.antes : partes.despues).push(fila);
+  return partes;
+}
+
+// `--semana` promete una semana, pero lo que se lee depende de `--days`: con la ventana por defecto
+// el ANTES se queda en dos dias y el dictamen sale corto sin avisar. Medido el 2026-11-26: la misma
+// corrida sin `--days=7` devolvio 7 rechazos de foto antes del corte en vez de 38 y un denominador
+// de 36 en vez de 267, y el artefacto habria quedado publicado con esa cifra. Se bloquea, no se advierte.
+function validarVentanaDeSemana(ventana, diasMinimos = 7) {
+  const desde = new Date(ventana.from);
+  const hasta = new Date(ventana.to);
+  if (!Number.isFinite(desde.getTime()) || !Number.isFinite(hasta.getTime())) {
+    throw new Error(`--semana necesita una ventana UTC valida y recibio: ${JSON.stringify(ventana)}`);
+  }
+  const dias = (hasta - desde) / (24 * 3600 * 1000);
+  if (!(dias >= diasMinimos)) {
+    throw new Error(`--semana promete ${diasMinimos} dias de diagnostico pero la ventana leida cubre ${dias.toFixed(2)}; corra con --days=${diasMinimos} o mas`);
+  }
+  return dias;
+}
+
+// ---- Censo de canales (`--canal`) ---------------------------------------------------------------
+// El dueño volcó la operación a la web para tener UNA fuente de captura. Cuando algo no entra hay
+// que poder decir si la herramienta es la responsable (todos los teléfonos fallan igual y en canales
+// que ya no deberían existir) o un cliente concreto (un solo teléfono repitiendo). Eso se mide:
+// canal declarado por el servidor, tipo de foto declarado, dispositivo y si los rechazos de una
+// misma cuenta llegan en ráfaga —firma de una cola que reenvía— o separados —firma de mano humana—.
+// Las dos lecturas son SELECT agregados: NINGUNA proyecta el cuerpo de la foto. Leer
+// `extra_evidence->>'base64_data'` detoasta megas por fila y convierte la medición en el problema
+// que mide (plan de disco 2026-11-18); por eso el censo pregunta por la EXISTENCIA de la clave.
+function sqlCensoDeCanales() {
+  return `
+SELECT "tenant_id" AS tenant,
+       COALESCE("metadata"->>'source', '(sin source)') AS canal,
+       CASE WHEN COALESCE("metadata"->>'offline', '(sin declaracion)') = 'true' THEN 'abierto_sin_senal'
+            WHEN COALESCE("metadata"->>'queued_at', '') <> '' THEN 'reintento_de_cola'
+            ELSE 'en_vivo' END AS envio,
+       CASE WHEN COALESCE("extra_evidence"->>'type', '') = '' THEN '(sin evidencia adjunta)'
+            ELSE "extra_evidence"->>'type' END AS tipo_declarado,
+       CASE WHEN "extra_evidence" ? 'base64_data' THEN 'con_foto_inline' ELSE 'sin_foto_inline' END AS cuerpo,
+       CASE WHEN COALESCE("extra_evidence"->>'storage_path', '') = '' THEN 'sin_ruta_almacen'
+            ELSE 'con_ruta_almacen' END AS respaldo,
+       COUNT(*)::int AS marcaciones,
+       COUNT(DISTINCT "employee_id")::int AS trabajadores,
+       COALESCE(SUM(CASE WHEN jsonb_typeof("extra_evidence"->'size') = 'number'
+                         THEN ("extra_evidence"->>'size')::int ELSE 0 END), 0)::bigint AS bytes_declarados
+FROM "TimePunch"
+WHERE "date" >= $1::timestamptz AND "date" < $2::timestamptz
+GROUP BY 1, 2, 3, 4, 5, 6
+ORDER BY marcaciones DESC, tenant, canal
+`;
+}
+
+// Quiénes lograron adjuntar la foto de justificación y con qué tipo declarado, partido por el corte.
+// Sin esta lectura no se puede afirmar que "la herramienta funciona para los demás": el único
+// denominador honesto es cuántos aceptados con evidencia hay del otro lado de la puerta.
+function sqlCensoDeEvidencia() {
+  return `
+SELECT "employee_id" AS empleado,
+       CASE WHEN COALESCE("extra_evidence"->>'type', '') = '' THEN '(sin tipo declarado)'
+            ELSE "extra_evidence"->>'type' END AS tipo_declarado,
+       CASE WHEN "extra_evidence" ? 'base64_data' THEN 'con_foto_inline' ELSE 'sin_foto_inline' END AS cuerpo,
+       COUNT(*) FILTER (WHERE "punched_at" < $3::timestamptz)::int AS antes_del_corte,
+       COUNT(*) FILTER (WHERE "punched_at" >= $3::timestamptz)::int AS despues_del_corte
+FROM "TimePunch"
+WHERE "date" >= $1::timestamptz AND "date" < $2::timestamptz
+  AND jsonb_typeof("extra_evidence") = 'object'
+  AND COALESCE("extra_evidence"->>'type', '') <> ''
+GROUP BY 1, 2, 3
+ORDER BY empleado, tipo_declarado
+`;
+}
+
+// Las marcaciones que no traen estampa de canal hay que nombrarlas, no contarlas en bloque: esta
+// lectura devuelve SOLO nombres de clave del jsonb `metadata` (jamais su valor, jamas un cuerpo),
+// para poder decir si son correcciones administrativas, rescates del propio triage o capturas que
+// llegaron sin estampa.
+function sqlCensoDeEstampas() {
+  return `
+SELECT k AS clave_de_metadata,
+       COUNT(*)::int AS marcaciones,
+       COUNT(DISTINCT "employee_id")::int AS trabajadores
+FROM "TimePunch", jsonb_object_keys("metadata") AS k
+WHERE "date" >= $1::timestamptz AND "date" < $2::timestamptz
+  AND COALESCE("metadata"->>'source', '') = ''
+GROUP BY 1
+ORDER BY marcaciones DESC, clave_de_metadata
+LIMIT 25
+`;
+}
+
+function afirmarQueElCensoNombraClavesDelMetadata(sql, nombre) {
+  if (!/jsonb_object_keys\(\s*"metadata"\s*\)/.test(sql)) {
+    throw new Error(`${nombre} dejo de enumerar los NOMBRES de clave del metadata: las marcaciones sin canal quedan en un bloque inatribuible y el dueno vuelve a preguntar "entonces quien las hizo"`);
+  }
+  return { nombra_claves_del_metadata: true };
+}
+
+function afirmarQueElCensoNoArrastraCuerpos(sql, nombre, { exigePresencia = true } = {}) {
+  const lecturasDeCuerpo = (sql.match(/->>\s*'base64_data'/g) || []).length;
+  if (lecturasDeCuerpo > 0) {
+    throw new Error(`${nombre} proyecta el cuerpo de la foto (${lecturasDeCuerpo} lectura(s) de base64_data): eso detoasta megas por fila en Produccion y viola la regla 58`);
+  }
+  const presenciasDeClave = (sql.match(/\?\s*'base64_data'/g) || []).length;
+  if (exigePresencia && presenciasDeClave === 0) {
+    throw new Error(`${nombre} dejó de preguntar por la existencia de la clave base64_data: sin ese criterio no se separa el respaldo del cuerpo y el censo miente sobre la evidencia`);
+  }
+  return { lecturas_de_cuerpo: 0, presencias_de_clave: presenciasDeClave };
+}
+
+// La pregunta del dueño tiene forma de número: si la operación quedó homologada en la web, TODAS
+// las marcaciones aceptadas deberían traer el canal que declara ese cliente. Todo lo que caiga
+// fuera de ese canal es otra fuente viva, y hay que nombrarla con su conteo, no dejarla en "se ve
+// parecido". El `envio` (en vivo / cola reintentada / abierto sin señal) es el que dice si el
+// cuerpo de la foto que llega es de este minuto o de un guardado anterior.
+const CANAL_WEB_QUE_MARCA = "apexos-mobile";
+
+function agruparCensoDeCanales(filas = [], { canalEsperado = CANAL_WEB_QUE_MARCA } = {}) {
+  const acumular = (mapa, clave, fila) => {
+    const actual = mapa.get(clave) || { clave, marcaciones: 0, trabajadores: 0, tipos: new Set(), inline: 0, respaldo: 0, bytes_declarados: 0 };
+    actual.marcaciones += Number(fila.marcaciones || 0);
+    actual.trabajadores += Number(fila.trabajadores || 0);
+    actual.tipos.add(fila.tipo_declarado);
+    if (fila.cuerpo === "con_foto_inline") actual.inline += Number(fila.marcaciones || 0);
+    if (fila.respaldo === "con_ruta_almacen") actual.respaldo += Number(fila.marcaciones || 0);
+    actual.bytes_declarados += Number(fila.bytes_declarados || 0);
+    mapa.set(clave, actual);
+  };
+  const porCanal = new Map();
+  const porTipo = new Map();
+  const porEnvio = new Map();
+  const porTenant = new Map();
+  for (const fila of filas) {
+    if (!Number.isFinite(Number(fila.marcaciones))) {
+      throw new Error(`el censo de canales devolvio una fila sin conteo numerico: ${JSON.stringify(fila)}`);
+    }
+    acumular(porCanal, fila.canal, fila);
+    acumular(porTipo, fila.tipo_declarado, fila);
+    acumular(porEnvio, fila.envio, fila);
+    // El censo se corre con SQL crudo y el aislamiento de tenant lo sostiene el middleware, no la
+    // base: si la lectura cruza empresas hay que verlo escrito, no confiar en que no cruzo.
+    acumular(porTenant, fila.tenant || "(sin tenant)", fila);
+  }
+  const sellar = (mapa) => [...mapa.values()]
+    .map((x) => ({
+      clave: x.clave,
+      marcaciones: x.marcaciones,
+      trabajadores: x.trabajadores,
+      con_foto_inline: x.inline,
+      con_ruta_de_almacen: x.respaldo,
+      megas_declarados: Math.round((x.bytes_declarados / 1048576) * 10) / 10,
+      tipos: [...x.tipos].sort()
+    }))
+    .sort((a, b) => b.marcaciones - a.marcaciones);
+  const total = [...porCanal.values()].reduce((suma, x) => suma + x.marcaciones, 0);
+  const enElCanal = (porCanal.get(canalEsperado) || { marcaciones: 0, trabajadores: 0 }).marcaciones;
+  return {
+    canal_que_declara_la_web: canalEsperado,
+    total_marcaciones: total,
+    canales_distintos: porCanal.size,
+    tipos_distintos: porTipo.size,
+    tenants_observados: porTenant.size,
+    marcaciones_en_el_canal_de_la_web: enElCanal,
+    marcaciones_fuera_del_canal_de_la_web: total - enElCanal,
+    porcentaje_en_el_canal_de_la_web: total > 0 ? Math.round((enElCanal / total) * 1000) / 10 : null,
+    por_canal: sellar(porCanal),
+    por_tipo_declarado: sellar(porTipo),
+    por_envio: sellar(porEnvio),
+    por_tenant: sellar(porTenant)
+  };
+}
+
+// Ráfaga = el mismo operario reintentando en segundos. Es la firma de una cola que reenvía el
+// mismo cuerpo (IndexedDB conserva la foto con el tipo declarado en el momento del click), y
+// distingue eso de un trabajador que vuelve a oprimir el botón media hora después.
+function rafagaDeReintentos(filas = [], umbralSegundos = 180) {
+  const instantes = filas.map((fila) => new Date(fila).getTime()).filter((ms) => Number.isFinite(ms)).sort((a, b) => a - b);
+  const brechas = [];
+  for (let i = 1; i < instantes.length; i += 1) brechas.push(Math.round((instantes[i] - instantes[i - 1]) / 1000));
+  const breves = brechas.filter((segundos) => segundos <= umbralSegundos).length;
+  const separados = brechas.length - breves;
+  let senal = "unica";
+  if (brechas.length > 0) senal = breves > separados ? "rafaga" : "disperso";
+  return { intentos: instantes.length, brechas_segundos: brechas, senal, umbral_segundos: umbralSegundos };
+}
+
+// El porcentaje de concentración solo se afirma con denominador mayor que cero: un 0 % inventado
+// sobre una ventana sin rechazos leería "no es la herramienta" sin haber medido nada. El recorte "top 5"
+// satura al 100 % cuando hay menos claves que el recorte, así que se reporta aparte el peso de la
+// PRIMERA clave: es el número que dice si un solo teléfono acumula la caída.
+function concentracionPorClave(filas = [], claveDe, top = 5) {
+  const conteos = new Map();
+  for (const fila of filas) {
+    const clave = String(claveDe(fila));
+    conteos.set(clave, (conteos.get(clave) || 0) + 1);
+  }
+  const ordenadas = [...conteos].sort((a, b) => b[1] - a[1]);
+  const total = filas.length;
+  const enTop = ordenadas.slice(0, top).reduce((suma, pareja) => suma + pareja[1], 0);
+  const porcentaje = (parte) => (total > 0 ? Math.round((parte / total) * 1000) / 10 : null);
+  return {
+    total,
+    claves_distintas: conteos.size,
+    en_el_top: enTop,
+    porcentaje_en_el_top: porcentaje(enTop),
+    primera_clave: ordenadas.length ? ordenadas[0][0] : null,
+    ocurrencias_en_la_primera_clave: ordenadas.length ? ordenadas[0][1] : 0,
+    porcentaje_en_la_primera_clave: porcentaje(ordenadas.length ? ordenadas[0][1] : 0),
+    top: ordenadas.slice(0, top).map(([clave, ocurrencias]) => ({ clave, ocurrencias }))
+  };
 }
 
 // El nombre completo de un trabajador es registro laboral, no diagnóstico: para actuar alcanza con
@@ -580,6 +873,157 @@ async function main() {
     const aislamientoOk = cruzados.length === 2 && grupoT2 && grupoT2.empleado_codigo === null && grupoT2.user_id === 999
       && grupoT2.estado === "USUARIO_SIN_EMPLEADO" && cruzados.find((g) => g.tenant_id === "t1").empleado_codigo === "OP-535";
     informa(`${aislamientoOk ? "ok  " : "FALLO"} la misma marca en otro tenant no hereda la ficha del primero (la marca es por tenant): ${JSON.stringify(cruzados.map((g) => [g.tenant_id, g.estado, g.empleado_codigo]))}`);
+
+    // Controles del modo `--semana`: la clase se decide por la frase del servidor (en campo el
+    // cliente manda el 400 sin codigo), el corte no puede tragar filas ni afirmar un despues vacio,
+    // y el dia es el calendario de Colombia (05:00 UTC), no la porcion UTC del instante.
+    const fotoSinCodigo = claseDeRechazo({ message: "El contenido del archivo no coincide con el formato declarado.", code: "" });
+    informa(`${fotoSinCodigo === "foto-contenido" ? "ok  " : "FALLO"} un 400 de foto sin codigo se clasifica por la frase del servidor: ${fotoSinCodigo}`);
+    const caidaNoEsFoto = claseDeRechazo({ message: "Backend no disponible desde frontend (TypeError: Failed to fetch)" });
+    informa(`${caidaNoEsFoto === "transporte-caido" && !caidaNoEsFoto.startsWith("foto-") ? "ok  " : "FALLO"} un fallo de red no se cuenta como rechazo de foto: ${caidaNoEsFoto}`);
+    const genericaDelCliente = claseDeRechazo({ message: "Solicitud frontend fallida" });
+    // Rojo provocado: si la frase generica se clasifica como caida, el numero de intermitencia sube
+    // con rechazos ajenos a la red y el dictamen de disponibilidad deja de ser creible.
+    informa(`${genericaDelCliente === "cliente-no-clasifica" ? "ok  " : "FALLO"} la frase generica del cliente no infla la caida de red (rojo provocado): ${genericaDelCliente}`);
+    const faltaLaFoto = claseDeRechazo({ code: "SELFIE_REQUERIDA", message: "Toma la selfie para continuar." });
+    informa(`${faltaLaFoto === "foto-faltante" ? "ok  " : "FALLO"} la foto que nunca llego es clase propia, no contenido rechizado: ${faltaLaFoto}`);
+    const muyGrande = claseDeRechazo({ message: "El archivo supera el tamano maximo permitido. Limite: 6291456 bytes." });
+    informa(`${muyGrande === "foto-tamano" ? "ok  " : "FALLO"} el tope de tamano tiene su propia clase: ${muyGrande}`);
+    const fueraDeOrden = claseDeRechazo({ message: "La siguiente marcacion permitida es SALIDA." });
+    informa(`${fueraDeOrden === "secuencia" ? "ok  " : "FALLO"} un rechazo de secuencia no se disfraza de foto: ${fueraDeOrden}`);
+    const sinContenido = claseDeRechazo({ message: "" });
+    informa(`${sinContenido === "sin-mensaje" ? "ok  " : "FALLO"} un registro sin mensaje se cuenta aparte, no como rechazo de foto: ${sinContenido}`);
+    const puertasFoto = bucketDeCodigosFoto([
+      { status: 400, code: "SELFIE_INVALIDA", message: "El contenido del archivo no coincide con el formato declarado." },
+      { status: 400, code: "", message: "El contenido del archivo no coincide con el formato declarado." },
+      { status: 400, code: "EVIDENCIA_CLASE_RECHAZADA", message: "El contenido del archivo no es una imagen permitida." },
+      { status: 0, code: "", message: "Backend no disponible desde frontend (TypeError: Failed to fetch)" }
+    ]);
+    // Rojo provocado: si el contador se hace solo con la frase, las dos puertas dan un numero
+    // conjunto y el dictamen no puede decir cual de las dos sigue rechazando en campo.
+    const llavesPuertas = Object.keys(puertasFoto);
+    informa(`${llavesPuertas.length === 3 && puertasFoto["400 SELFIE_INVALIDA | El contenido del archivo no coincide con el formato declarado."] === 1 && puertasFoto["400 (sin codigo) | El contenido del archivo no coincide con el formato declarado."] === 1 ? "ok  " : "FALLO"} la compuerta nueva (SELFIE_INVALIDA) y la validacion antigua (sin codigo) se cuentan aparte aunque digan la misma frase, y una caida de red no entra: ${JSON.stringify(puertasFoto)}`);
+    const marcasDePrueba = ["2026-11-24T21:55:07.000Z", "2026-11-24T20:00:00.000Z", "2026-11-25T01:32:10.933Z"]
+      .map((timestamp) => ({ timestamp: new Date(timestamp) }));
+    const particion = partirPorCorte(marcasDePrueba, "2026-11-24T21:55:07.000Z");
+    informa(`${particion.antes.length === 1 && particion.despues.length === 2 && particion.antes.length + particion.despues.length === marcasDePrueba.length ? "ok  " : "FALLO"} la fila que cae justo en el corte cuenta como despues y ninguna se pierde: antes ${particion.antes.length} / despues ${particion.despues.length}`);
+    const corteFuturo = partirPorCorte(marcasDePrueba, "2027-01-01T00:00:00.000Z");
+    informa(`${corteFuturo.despues.length === 0 ? "ok  " : "FALLO"} un corte en el futuro no puede dar un DESPUES con filas (rojo provocado si el corte se compara al reves): antes ${corteFuturo.antes.length} / despues ${corteFuturo.despues.length}`);
+    let corteInvalido = "ACEPTO (FALLO)";
+    try {
+      partirPorCorte(marcasDePrueba, "ayer");
+    } catch (error) {
+      corteInvalido = error.message.includes("--semana") ? "BLOQUEADO" : corteInvalido;
+    }
+    informa(`${corteInvalido === "BLOQUEADO" ? "ok  " : "FALLO"} un --semana sin fecha ISO UTC valida se bloquea en vez de medir con fechas NaN: ${corteInvalido}`);
+    // La ventana que se lee depende de `--days`, no del flag `--semana`. Con la ventana por defecto
+    // el ANTES se encoge a dos dias y el dictamen sale corto sin ruido: medido el 2026-11-26, la
+    // misma corrida sin `--days=7` reporto 7 rechazos de foto antes del corte (38 reales) y un
+    // denominador de 36 marcaciones (267 reales). Se bloquea, no se consuela con una advertencia.
+    let ventanaCorta = "ACEPTO (FALLO)";
+    try {
+      validarVentanaDeSemana({ from: "2026-11-24T05:00:00.000Z", to: "2026-11-27T05:00:00.000Z" }, 7);
+    } catch (error) {
+      ventanaCorta = error.message.includes("--days=7") ? "BLOQUEADO" : ventanaCorta;
+    }
+    const ventanaDeSieteDias = validarVentanaDeSemana({ from: "2026-11-19T14:00:00.000Z", to: "2026-11-26T14:00:00.000Z" }, 7);
+    informa(`${ventanaCorta === "BLOQUEADO" && ventanaDeSieteDias === 7 ? "ok  " : "FALLO"} una ventana de menos de 7 dias bloquea el dictamen de semana en vez de reportar un ANTES corto: ${ventanaCorta} | ventana completa leida = ${ventanaDeSieteDias} dias`);
+    let ventanaSinFechas = "ACEPTO (FALLO)";
+    try {
+      validarVentanaDeSemana({ from: "ayer", to: "2026-11-26T14:00:00.000Z" }, 7);
+    } catch (error) {
+      ventanaSinFechas = error.message.includes("ventana UTC valida") ? "BLOQUEADO" : ventanaSinFechas;
+    }
+    informa(`${ventanaSinFechas === "BLOQUEADO" ? "ok  " : "FALLO"} una ventana con fechas NaN se bloquea antes de partir por corte: ${ventanaSinFechas}`);
+    const antesDeLasCinco = diaColombia(new Date("2026-11-25T04:30:00.000Z"));
+    const enLasCinco = diaColombia("2026-11-25T05:00:00.000Z");
+    informa(`${antesDeLasCinco === "2026-11-24" && enLasCinco === "2026-11-25" ? "ok  " : "FALLO"} el dia de Colombia abre a las 05:00 UTC: 04:30Z -> ${antesDeLasCinco} | 05:00Z -> ${enLasCinco}`);
+    // Fila real de produccion: una marcacion de las 20:32 CO del martes llega al servidor a las
+    // 01:32 UTC del miercoles. Si el agrupador usa la porcion UTC, el rechazo se le atribuye a otro dia.
+    const nocheDeMartes = diaColombia(new Date("2026-11-25T01:32:10.933Z"));
+    informa(`${nocheDeMartes === "2026-11-24" ? "ok  " : "FALLO"} las 20:32 CO del 24 se cuentan el martes y no el miercoles UTC: ${nocheDeMartes}`);
+
+    // Controles del modo `--canal`: la pregunta es si la HERRAMIENTA es el inconveniente o es un
+    // cliente concreto, y eso no se responde con una impresion. Un canal inesperado tiene que verse
+    // (no diluirse en un total), la rafaga tiene que distinguirse del reintento separado, la
+    // concentracion no puede afirmarse sin denominador y la lectura jamas puede arrastrar el cuerpo
+    // de una foto: eso detoasta megas por fila y convierte la medicion en el problema que mide.
+    {
+      const filasFalsas = [
+        { tenant: "t1", canal: "apexos-mobile", envio: "en_vivo", tipo_declarado: "image/jpeg", cuerpo: "con_foto_inline", respaldo: "con_ruta_almacen", marcaciones: 300, trabajadores: 18, bytes_declarados: 5 * 1048576 },
+        { tenant: "t1", canal: "apexos-mobile", envio: "reintento_de_cola", tipo_declarado: "(sin evidencia adjunta)", cuerpo: "sin_foto_inline", respaldo: "sin_ruta_almacen", marcaciones: 70, trabajadores: 12, bytes_declarados: 0 },
+        { tenant: "t1", canal: "app_legada", envio: "en_vivo", tipo_declarado: "image/jpeg", cuerpo: "con_foto_inline", respaldo: "con_ruta_almacen", marcaciones: 9, trabajadores: 3, bytes_declarados: 1048576 }
+      ];
+      const censoFalso = agruparCensoDeCanales(filasFalsas);
+      const sumaPorCanal = censoFalso.por_canal.reduce((s, x) => s + x.marcaciones, 0);
+      const sumaPorEnvio = censoFalso.por_envio.reduce((s, x) => s + x.marcaciones, 0);
+      const canalInesperado = censoFalso.por_canal.find((x) => x.clave === "app_legada");
+      informa(`${sumaPorCanal === 379 && sumaPorEnvio === 379 && censoFalso.tenants_observados === 1 && censoFalso.marcaciones_en_el_canal_de_la_web === 370 && censoFalso.marcaciones_fuera_del_canal_de_la_web === 9 && canalInesperado && Math.round(censoFalso.porcentaje_en_el_canal_de_la_web) === 98 ? "ok  " : "FALLO"} el censo no disuelve un canal inesperado y las sumas cuadran: total ${censoFalso.total_marcaciones} | en la web ${censoFalso.marcaciones_en_el_canal_de_la_web} (${censoFalso.porcentaje_en_el_canal_de_la_web} %) | fuera ${censoFalso.marcaciones_fuera_del_canal_de_la_web} | suma por canal ${sumaPorCanal} | suma por envio ${sumaPorEnvio} | tenants observados ${censoFalso.tenants_observados}`);
+
+      // El mismo numero de rechazos dice dos cosas distintas segun como llegan: tres en un minuto es
+      // una cola que reenvia el mismo cuerpo; tres en tres dias es un operario que lo intento a mano.
+      const rafagaFalsa = rafagaDeReintentos([
+        new Date("2026-11-26T13:52:10Z"), new Date("2026-11-26T13:53:05Z"), new Date("2026-11-26T13:53:40Z")
+      ]);
+      const dispersoFalso = rafagaDeReintentos([
+        new Date("2026-11-24T01:32:00Z"), new Date("2026-11-25T01:21:00Z"), new Date("2026-11-26T13:52:00Z")
+      ]);
+      const unicoFalso = rafagaDeReintentos([new Date("2026-11-26T13:52:00Z")]);
+      informa(`${rafagaFalsa.senal === "rafaga" && dispersoFalso.senal === "disperso" && unicoFalso.senal === "unica" && rafagaFalsa.intentos === 3 && rafagaFalsa.brechas_segundos[0] === 55 ? "ok  " : "FALLO"} tres rechazos en un minuto son rafaga de cola y tres en tres dias son disperso (rojo provocado si se invierte la comparacion breves/separados): ${rafagaFalsa.senal}/${dispersoFalso.senal}/${unicoFalso.senal} brechas ${rafagaFalsa.brechas_segundos.join("/")}`);
+
+      const perdidasFalsas = [
+        ...Array.from({ length: 11 }, () => ({ device: "Android / Chrome 158" })),
+        { device: "iPhone / Safari 18" }
+      ];
+      const concentrada = concentracionPorClave(perdidasFalsas, (fila) => fila.device);
+      const vacia = concentracionPorClave([], (fila) => fila.device);
+      informa(`${concentrada.total === 12 && concentrada.claves_distintas === 2 && concentrada.primera_clave === "Android / Chrome 158" && concentrada.porcentaje_en_la_primera_clave === 91.7 && concentrada.porcentaje_en_el_top === 100 && vacia.total === 0 && vacia.primera_clave === null && vacia.porcentaje_en_el_top === null && vacia.porcentaje_en_la_primera_clave === null ? "ok  " : "FALLO"} la concentracion nombra la clave que acumula y no se afirma con denominador cero (rojo provocado si se reporta el top como si fuera la primera clave): ${concentrada.primera_clave} ${concentrada.ocurrencias_en_la_primera_clave}/${concentrada.total} = ${concentrada.porcentaje_en_la_primera_clave} % | top 5 ${concentrada.porcentaje_en_el_top} % con solo ${concentrada.claves_distintas} claves | ventana sin perdidas = ${vacia.porcentaje_en_la_primera_clave}`);
+
+      const lecturaSanaCanales = afirmarQueElCensoNoArrastraCuerpos(sqlCensoDeCanales(), "sqlCensoDeCanales");
+      const lecturaSanaEvidencia = afirmarQueElCensoNoArrastraCuerpos(sqlCensoDeEvidencia(), "sqlCensoDeEvidencia");
+      let guardaConCuerpo = "NO_BLOQUEO (FALLO)";
+      try {
+        afirmarQueElCensoNoArrastraCuerpos(`SELECT "extra_evidence"->>'base64_data' AS foto FROM "TimePunch" WHERE "extra_evidence" ? 'base64_data'`, "sqlMutado");
+      } catch (error) {
+        guardaConCuerpo = error.message.includes("base64_data") ? "BLOQUEADO" : `MENSAJE INESPERADO (${error.message.slice(0, 40)})`;
+      }
+      let guardaSinClave = "NO_BLOQUEO (FALLO)";
+      try {
+        afirmarQueElCensoNoArrastraCuerpos(`SELECT count(*) FROM "TimePunch"`, "sqlSinPresencia");
+      } catch (error) {
+        guardaSinClave = error.message.includes("base64_data") ? "BLOQUEADO" : `MENSAJE INESPERADO (${error.message.slice(0, 40)})`;
+      }
+      informa(`${guardaConCuerpo === "BLOQUEADO" && guardaSinClave === "BLOQUEADO" && lecturaSanaCanales.lecturas_de_cuerpo === 0 && lecturaSanaEvidencia.presencias_de_clave >= 1 ? "ok  " : "FALLO"} la lectura del censo no puede arrastrar el cuerpo de la foto ni dejar de preguntar por la clave: sanas ${lecturaSanaCanales.presencias_de_clave}/${lecturaSanaEvidencia.presencias_de_clave} presencia(s), 0 cuerpo(s) | SQL con cuerpo = ${guardaConCuerpo} | SQL sin la clave = ${guardaSinClave}`);
+
+      const sqlEstampasReal = sqlCensoDeEstampas();
+      let estampasDejanDeNombrar = "NO_BLOQUEO (FALLO)";
+      try {
+        afirmarQueElCensoNombraClavesDelMetadata(sqlEstampasReal.replace(/jsonb_object_keys\("metadata"\)/, "metadata"), "sqlCensoDeEstampas mutado");
+      } catch (error) {
+        estampasDejanDeNombrar = error.message.includes("NOMBRES de clave") ? "BLOQUEADO" : `MENSAJE INESPERADO (${error.message.slice(0, 40)})`;
+      }
+      let estampasArrastranCuerpo = "NO_BLOQUEO (FALLO)";
+      try {
+        afirmarQueElCensoNoArrastraCuerpos(sqlEstampasReal.replace("jsonb_object_keys(\"metadata\") AS k", "jsonb_object_keys(\"metadata\") AS k, \"metadata\"->>'base64_data' AS cuerpo"), "sqlCensoDeEstampas mutado", { exigePresencia: false });
+      } catch (error) {
+        estampasArrastranCuerpo = error.message.includes("base64_data") ? "BLOQUEADO" : `MENSAJE INESPERADO (${error.message.slice(0, 40)})`;
+      }
+      informa(`${estampasDejanDeNombrar === "BLOQUEADO" && estampasArrastranCuerpo === "BLOQUEADO" ? "ok  " : "FALLO"} el censo de stampas nombra las marcaciones sin canal por CLAVE de metadata y nunca por valor: SQL que deja de enumerar = ${estampasDejanDeNombrar} | SQL que proyecta la foto = ${estampasArrastranCuerpo}`);
+
+      // Host sintético: la prueba es que CUALQUIER pooler de Supabase se redacte, no el de la casa.
+      const hostNube = hostParaEvidencia("postgresql://usuario:contrasena@aws-0-ejemplo-0000.pooler.supabase.com:6543/postgres");
+      const hostLocal = hostParaEvidencia("postgresql://user:pass@127.0.0.1:55432/postgres");
+      informa(`${/no se versiona/.test(hostNube) && hostLocal === "127.0.0.1" ? "ok  " : "FALLO"} la evidencia nombra el ambiente sin versionar el host de la nube: pooler -> "${hostNube}" | local -> ${hostLocal}`);
+
+      let conteoMalo = "NO_BLOQUEO (FALLO)";
+      try {
+        agruparCensoDeCanales([{ canal: "apexos-mobile", envio: "en_vivo", tipo_declarado: "image/jpeg", cuerpo: "sin_foto_inline", respaldo: "sin_ruta_almacen" }]);
+      } catch (error) {
+        conteoMalo = error.message.includes("conteo numerico") ? "BLOQUEADO" : `MENSAJE INESPERADO (${error.message.slice(0, 40)})`;
+      }
+      informa(`${conteoMalo === "BLOQUEADO" ? "ok  " : "FALLO"} una fila del censo sin conteo numerico se bloquea en vez de sumar como NaN (rojo provocado si se tolera el NaN): ${conteoMalo}`);
+    }
+
     console.log(failed === 0 ? "SELFTEST PASADO" : `SELFTEST BLOQUEADO (${failed} fallo(s) impresos)`);
     process.exit(failed === 0 ? 0 : 1);
   }
@@ -782,7 +1226,7 @@ async function main() {
     const porCausaCruda = histograma(fallasFrontend, (row) => row.detail || "(sin detalle)", 12);
 
     const reporte = {
-      medicion: { archivo_ambiente: path.relative(ROOT, envFile), ambiente: declared, host: hostOf(databaseUrl), dia: dateText, ventana_utc: [window.from.toISOString(), window.to.toISOString()], leido_en: new Date().toISOString(), escrituras: 0, sin_nombres: args["sin-nombres"] === true },
+      medicion: { archivo_ambiente: path.relative(ROOT, envFile), ambiente: declared, host: hostParaEvidencia(databaseUrl), dia: dateText, ventana_utc: [window.from.toISOString(), window.to.toISOString()], leido_en: new Date().toISOString(), escrituras: 0, sin_nombres: args["sin-nombres"] === true },
       total_rechazos: rejected.length,
       nivel_fuente: porNivel,
       rechazos_por_codigo: porCodigo,
@@ -920,14 +1364,21 @@ async function main() {
       const empleadoId = fila ? fila.id : null;
       const marcas = empleadoId == null ? [] : await prisma.timePunch.findMany({
         where: { employee_id: empleadoId, date: { gte: window.from, lt: window.to } },
-        select: { date: true, type: true, punched_at: true, route_id: true },
+        select: { date: true, type: true, punched_at: true, route_id: true, extra_minutes: true, extra_reason: true, extra_detail: true, extra_evidence: true },
         orderBy: { punched_at: "asc" },
         take: 500
       });
       console.log(`\nDETALLE user ${userId} (${fila ? `${fila.code} / ${fila.user ? fila.user.name : "sin nombre"}` : "sin ficha de empleado"})`);
       for (const row of marcas) {
         const horaCo = new Date(row.punched_at.getTime() - COLOMBIA_OFFSET_HOURS * 3600 * 1000).toISOString().replace("T", " ").slice(0, 16);
-        console.log(`  MARCO  date=${isoDay(row.date)}  ${String(row.type).padEnd(16)}  hora Colombia ${horaCo}  ruta ${row.route_id ?? "(sin ruta)"}`);
+        // La justificacion se muestra junto a la marca porque es lo unico que explica por que ese
+        // oprimido llevaba foto de soporte: la foto de la selfie y la de la justificacion se
+        // validan en dos compuertas distintas y solo una de las dos tolera el formato.
+        const soporte = row.extra_evidence && typeof row.extra_evidence === "object"
+          ? (String(row.extra_evidence.storage_path || "") ? "almacen" : (String(row.extra_evidence.base64_data || row.extra_evidence.base64 || "").length ? "inline" : "sin bytes"))
+          : "no";
+        const minutos = Number(row.extra_minutes || 0);
+        console.log(`  MARCO  date=${isoDay(row.date)}  ${String(row.type).padEnd(16)}  hora Colombia ${horaCo}  ruta ${row.route_id ?? "(sin ruta)"}${minutos ? `  JUSTIFICA ${minutos} min (${row.extra_reason || "sin motivo"})  foto_soporte=${soporte}` : ""}`);
       }
       const mios = rejected.filter((row) => Number(row.user_id) === userId);
       for (const row of mios.slice(0, 40)) {
@@ -1028,6 +1479,220 @@ async function main() {
           fs.writeFileSync(destino, `${JSON.stringify({ generado_en: new Date().toISOString(), ambiente: hostOf(String(process.env.DATABASE_URL || "")), ...reporte.rescate, filas }, null, 2)}\n`);
           console.log(`\nMANIFIESTO EJECUTABLE  ${destino}  (fuera del repositorio: lleva nombres)`);
         }
+      }
+    }
+
+    // --semana=<corte ISO UTC> responde la pregunta que queda despues de publicar un arreglo:
+    // cuantos rechazos de cada clase hubo por dia, cuantos cayeron antes y despues del corte, y
+    // si los rechazos de foto posteriores al corte le costaron la hora a alguien. Es SELECT puro:
+    // el instrumento nunca escribe, y en Produccion lo que se escribe se lee, no se provoca.
+    if (args.semana) {
+      const corte = new Date(String(args.semana));
+      const diasLeidos = validarVentanaDeSemana(window, 7);
+      const partes = partirPorCorte(rejected.map((row) => ({ ...row, timestamp: new Date(row.at) })), corte);
+      const porDiaSemana = new Map();
+      for (const lado of ["antes", "despues"]) {
+        for (const fila of partes[lado]) {
+          const dia = diaColombia(fila.timestamp);
+          if (!porDiaSemana.has(dia)) porDiaSemana.set(dia, { registros: 0, clases: new Map() });
+          const bucket = porDiaSemana.get(dia);
+          bucket.registros += 1;
+          const clase = claseDeRechazo(fila);
+          if (!bucket.clases.has(clase)) bucket.clases.set(clase, { total: 0, antes: 0, despues: 0, usuarios: new Set() });
+          const x = bucket.clases.get(clase);
+          x.total += 1;
+          x[lado] += 1;
+          x.usuarios.add(fila.user_id);
+        }
+      }
+      const aceptadasAntes = todas.filter((row) => row.punched_at < corte).length;
+      const aceptadasDespues = todas.filter((row) => row.punched_at >= corte).length;
+      // El codigo que acompana al rechazo de foto distingue la puerta: la compuerta de identidad
+      // nueva siempre manda SELFIE_INVALIDA o un EVIDENCIA_* y su detalle; la validacion antigua
+      // de la foto de justificacion lanza un Error pelado (400 sin codigo y sin detalle) con la
+      // MISMA frase. Contar solo la frase dejaria las dos puertas en el mismo numero.
+      const codigosDeFoto = { antes: bucketDeCodigosFoto(partes.antes), despues: bucketDeCodigosFoto(partes.despues) };
+      const horaColombia = (instante) => `${diaColombia(instante)} ${new Date(instante.getTime() - COLOMBIA_OFFSET_HOURS * 3600 * 1000).toISOString().slice(11, 16)}`;
+      const fotoDespues = partes.despues
+        .filter((fila) => claseDeRechazo(fila).startsWith("foto-"))
+        .map((fila) => {
+          const empleado = employeeByUser.get(`${fila.tenant_id}|${fila.user_id}`) || null;
+          // Si en la hora siguiente el mismo trabajador si logro marcar, la jornada no se perdio:
+          // hubo reintento aceptado. Con 0 marcas el rechazo le costo la salida del turno.
+          const siguientes = empleado
+            ? todas.filter((row) => row.employee_id === empleado.id && row.punched_at > fila.timestamp
+              && row.punched_at < new Date(fila.timestamp.getTime() + 3600 * 1000))
+            : [];
+          return {
+            utc: fila.timestamp.toISOString(),
+            hora_colombia: horaColombia(fila.timestamp),
+            user_id: fila.user_id ?? null,
+            empleado_id: empleado ? empleado.id : null,
+            clase: claseDeRechazo(fila),
+            status: fila.status,
+            code: fila.code || "(el cliente no trajo codigo)",
+            ruta: fila.route,
+            mensaje: fila.message,
+            detalle: fila.detail || null,
+            dispositivo: fila.device,
+            marcas_del_mismo_trabajador_en_la_hora_siguiente: siguientes.length,
+            tipos_de_esas_marcas: [...new Set(siguientes.map((row) => row.type))]
+          };
+        });
+      reporte.semana = {
+        criterio: "dia calendario de Colombia para agrupar; el corte es el primer instante en que se LEYO el binario nuevo sirviendo (no la hora del commit). Las clases se deciden por la frase del servidor cuando el cliente no trae codigo.",
+        corte_utc: corte.toISOString(),
+        ventana_utc: [window.from.toISOString(), window.to.toISOString()],
+        dias_de_ventana_leida: diasLeidos,
+        escrituras: 0,
+        denominador_marcaciones_aceptadas: { antes_del_corte: aceptadasAntes, despues_del_corte: aceptadasDespues },
+        rechazos_de_foto: {
+          antes_del_corte: partes.antes.filter((fila) => claseDeRechazo(fila).startsWith("foto-")).length,
+          despues_del_corte: fotoDespues.length,
+          // Cada fila con codigo (SELFIE_INVALIDA / EVIDENCIA_*) es la compuerta de identidad;
+          // cada fila "(sin codigo)" es la validacion antigua. Un numero global de "rechazos de
+          // foto" no puede separarlas y por eso se guarda el desglose por lado.
+          codigos_por_lado: codigosDeFoto
+        },
+        por_dia: [...porDiaSemana].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([dia, bucket]) => ({
+          dia,
+          registros: bucket.registros,
+          aceptadas: todas.filter((row) => diaColombia(row.punched_at) === dia).length,
+          trabajadores: new Set(todas.filter((row) => diaColombia(row.punched_at) === dia).map((row) => row.employee_id)).size,
+          clases: [...bucket.clases].map(([clase, x]) => ({ clase, total: x.total, antes: x.antes, despues: x.despues, usuarios: x.usuarios.size }))
+            .sort((a, b) => b.total - a.total)
+        })),
+        foto_despues_del_corte: fotoDespues
+      };
+
+      console.log(`\nSEMANA POR DIA (Colombia) | corte ${corte.toISOString()} | clases con su antes/despues:`);
+      for (const dia of reporte.semana.por_dia) {
+        console.log(`  ${dia.dia}  registros ${String(dia.registros).padStart(4)}  aceptadas ${String(dia.aceptadas).padStart(3)}  trabajadores ${String(dia.trabajadores).padStart(3)}`);
+        for (const clase of dia.clases.filter((row) => row.clase !== "sin-mensaje")) {
+          console.log(`      ${clase.clase.padEnd(22)} ${String(clase.total).padStart(4)}  (antes ${String(clase.antes).padStart(4)} / despues ${String(clase.despues).padStart(4)})  usuarios ${clase.usuarios}`);
+        }
+      }
+      console.log(`\nRECHAZOS DE FOTO  antes ${reporte.semana.rechazos_de_foto.antes_del_corte} / despues ${reporte.semana.rechazos_de_foto.despues_del_corte}  (denominador de marcaciones aceptadas: antes ${aceptadasAntes} / despues ${aceptadasDespues})`);
+      for (const lado of ["antes", "despues"]) {
+        const entradas = Object.entries(codigosDeFoto[lado]).sort((a, b) => b[1] - a[1]);
+        console.log(`  codigos de foto ${lado.toUpperCase().padEnd(7)}: ${entradas.length ? entradas.map(([clave, n]) => `${n} x ${clave}`).join("   |   ") : "ninguno"}`);
+      }
+      for (const foto of fotoDespues) {
+        console.log(`  ${foto.hora_colombia} CO  ${foto.utc}  user ${String(foto.user_id).padStart(5)}  emp ${String(foto.empleado_id ?? "-").padEnd(5)} ${foto.clase}  ${foto.status} ${foto.code}  ${foto.ruta}`);
+        console.log(`        "${foto.mensaje}"  [${foto.dispositivo}]  marcas del mismo trabajador en la hora siguiente: ${foto.marcas_del_mismo_trabajador_en_la_hora_siguiente}${foto.tipos_de_esas_marcas.length ? ` (${foto.tipos_de_esas_marcas.join(",")})` : " -> LA HORA NO VOLVIO A ENTRAR"}`);
+      }
+    }
+
+    // --canal responde si la HERRAMIENTA es el inconveniente: de donde salen las marcaciones que si
+    // entraron (canal declarado por el cliente, en vivo o desde la cola), con que tipo de foto las
+    // acompaan, donde se concentran los rechazos y los envios perdidos, y si las rechazos de una
+    // misma cuenta llegan en rafaga. Todo SELECT agregado: ninguna lectura arrastra un cuerpo.
+    if (args.canal) {
+      const guardas = {
+        censo_de_canales: afirmarQueElCensoNoArrastraCuerpos(sqlCensoDeCanales(), "sqlCensoDeCanales"),
+        censo_de_evidencia: afirmarQueElCensoNoArrastraCuerpos(sqlCensoDeEvidencia(), "sqlCensoDeEvidencia")
+      };
+      const filasCrudas = await prisma.$queryRawUnsafe(sqlCensoDeCanales(), window.from, window.to);
+      const censo = agruparCensoDeCanales(filasCrudas);
+      const corteCanal = args.semana ? new Date(String(args.semana)) : new Date(window.from.getTime() + Math.floor((window.to - window.from) / 2));
+      if (!Number.isFinite(corteCanal.getTime())) throw new Error(`--canal no puede partir la evidencia con un corte invalido: ${args.semana}`);
+      const filasEvidencia = await prisma.$queryRawUnsafe(sqlCensoDeEvidencia(), window.from, window.to, corteCanal);
+      const sqlEstampas = sqlCensoDeEstampas();
+      afirmarQueElCensoNombraClavesDelMetadata(sqlEstampas, "sqlCensoDeEstampas");
+      guardas.censo_de_estampas = afirmarQueElCensoNoArrastraCuerpos(sqlEstampas, "sqlCensoDeEstampas", { exigePresencia: false });
+      const filasEstampas = await prisma.$queryRawUnsafe(sqlEstampas, window.from, window.to);
+      const evidenciaPorEmpleado = new Map();
+      for (const fila of filasEvidencia) {
+        const clave = String(fila.empleado);
+        const actual = evidenciaPorEmpleado.get(clave) || { empleado: Number(fila.empleado), tipos: new Set(), antes: 0, despues: 0 };
+        actual.tipos.add(fila.tipo_declarado);
+        actual.antes += Number(fila.antes_del_corte || 0);
+        actual.despues += Number(fila.despues_del_corte || 0);
+        evidenciaPorEmpleado.set(clave, actual);
+      }
+
+      const rechazosDeFoto = rejected.filter((fila) => claseDeRechazo(fila).startsWith("foto-"));
+      const fotoDespuesDeCorte = args.semana ? rechazosDeFoto.filter((fila) => new Date(fila.at) >= corteCanal) : rechazosDeFoto;
+      const transporte = rejected.filter((fila) => claseDeRechazo(fila) === "transporte-caido");
+
+      const porCuenta = new Map();
+      for (const fila of fotoDespuesDeCorte) {
+        const clave = `${fila.tenant_id}|${fila.user_id}`;
+        if (!porCuenta.has(clave)) porCuenta.set(clave, []);
+        porCuenta.get(clave).push(fila.at);
+      }
+      const cuentas = [...porCuenta].map(([clave, instantes]) => {
+        const [tenantId, userId] = clave.split("|");
+        const empleado = userId === "null" ? null : (employeeByUser.get(`${tenantId}|${userId}`) || null);
+        const rafaga = rafagaDeReintentos(instantes);
+        const suEvidencia = empleado ? (evidenciaPorEmpleado.get(String(empleado.id)) || null) : null;
+        return {
+          user_id: userId === "null" ? null : Number(userId),
+          empleado_id: empleado ? empleado.id : null,
+          rechazos_de_foto_despues_del_corte: instantes.length,
+          dispositivos: [...new Set(fotoDespuesDeCorte.filter((fila) => `${fila.tenant_id}|${fila.user_id}` === clave).map((fila) => fila.device))],
+          senal_de_reintento: rafaga.senal,
+          brechas_segundos: rafaga.brechas_segundos,
+          fotos_de_justificacion_aceptadas_antes_del_corte: suEvidencia ? suEvidencia.antes : 0,
+          fotos_de_justificacion_aceptadas_despues_del_corte: suEvidencia ? suEvidencia.despues : 0,
+          tipos_que_si_entraron: suEvidencia ? [...suEvidencia.tipos].sort() : []
+        };
+      }).sort((a, b) => b.rechazos_de_foto_despues_del_corte - a.rechazos_de_foto_despues_del_corte);
+
+      const trabajadoresConFotoAceptada = [...evidenciaPorEmpleado.values()];
+      reporte.canal = {
+        criterio: `el canal se lee de metadata->>'source' (la web que marca declara "${CANAL_WEB_QUE_MARCA}"); el envio distingue en vivo, cola reintentada (metadata.queued_at) y abierto sin senal (metadata.offline). Las lecturas son agregados de jsonb y NINGUNA proyecta el cuerpo de la foto.`,
+        escrituras: 0,
+        ventana_utc: [window.from.toISOString(), window.to.toISOString()],
+        corte_utc: corteCanal.toISOString(),
+        guardas_de_lectura: guardas,
+        censo,
+        estampas_de_marcaciones_sin_canal: filasEstampas.map((fila) => ({
+          clave_de_metadata: String(fila.clave_de_metadata),
+          marcaciones: Number(fila.marcaciones || 0),
+          trabajadores: Number(fila.trabajadores || 0)
+        })),
+        evidencia_aceptada: {
+          trabajadores_que_adjuntaron_foto_en_la_ventana: trabajadoresConFotoAceptada.length,
+          los_mesmos_despues_del_corte: trabajadoresConFotoAceptada.filter((x) => x.despues > 0).length,
+          tipos_declarados_aceptados: [...new Set(trabajadoresConFotoAceptada.flatMap((x) => [...x.tipos]))].sort()
+        },
+        rechazos: {
+          por_ruta: histograma(rejected, (fila) => fila.route || "(sin ruta)", 12),
+          por_dispositivo: histograma(rejected, (fila) => fila.device || "(sin user agent)", 12),
+          foto_por_dispositivo: histograma(rechazosDeFoto, (fila) => `${fila.device} | ${fila.code || "(sin codigo)"}`, 12),
+          concentracion_de_envios_perdidos_por_dispositivo: concentracionPorClave(transporte, (fila) => fila.device || "(sin user agent)"),
+          concentracion_de_envios_perdidos_por_cuenta: concentracionPorClave(transporte, (fila) => fila.user_id ?? "(sin sesion)")
+        },
+        cuentas_con_rechazos_de_foto: cuentas
+      };
+
+      console.log(`\nCENSO DE CANALES (marcaciones aceptadas, ventana leida, 0 escrituras):`);
+      console.log(`  total ${censo.total_marcaciones} | canales distintos ${censo.canales_distintos} | en el canal de la web (${CANAL_WEB_QUE_MARCA}) ${censo.marcaciones_en_el_canal_de_la_web} (${censo.porcentaje_en_el_canal_de_la_web ?? "-"} %) | fuera ${censo.marcaciones_fuera_del_canal_de_la_web}`);
+      for (const fila of censo.por_canal) {
+        console.log(`  canal ${String(fila.clave).padEnd(26)} ${String(fila.marcaciones).padStart(5)} marcaciones  trabajadores ${String(fila.trabajadores).padStart(4)}  foto inline ${String(fila.con_foto_inline).padStart(4)}  ruta de almacen ${String(fila.con_ruta_de_almacen).padStart(4)}  ${fila.megas_declarados} MB declarados  tipos ${fila.tipos.join(",")}`);
+      }
+      for (const fila of censo.por_tenant) console.log(`  tenant ${fila.clave}  ${fila.marcaciones} marcaciones`);
+      console.log(`\n  stampas del metadata en las marcaciones que no declaran canal (solo NOMBRES de clave, nunca el cuerpo):`);
+      for (const fila of reporte.canal.estampas_de_marcaciones_sin_canal) {
+        console.log(`    ${String(fila.marcaciones).padStart(5)}  ${String(fila.clave_de_metadata).padEnd(24)} trabajadores ${fila.trabajadores}`);
+      }
+      for (const fila of censo.por_envio) {
+        console.log(`  envio ${String(fila.clave).padEnd(20)} ${String(fila.marcaciones).padStart(5)}`);
+      }
+      console.log(`\n  foto de justificacion: ${reporte.canal.evidencia_aceptada.trabajadores_que_adjuntaron_foto_en_la_ventana} trabajadores la adjuntaron en la ventana (${reporte.canal.evidencia_aceptada.los_mesmos_despues_del_corte} de ellos despues del corte); tipos que si entraron: ${reporte.canal.evidencia_aceptada.tipos_declarados_aceptados.join(", ") || "ninguno"}`);
+      console.log(`\nRECHAZOS POR RUTA (todo lo que reboto en la ventana, incluido lo que no es marcacion):`);
+      for (const fila of reporte.canal.rechazos.por_ruta) console.log(`  ${String(fila.ocurrencias).padStart(5)}  ${fila.clave}  cuentas ${fila.usuarios}`);
+      console.log(`\nRECHAZOS DE FOTO POR DISPOSITIVO Y PUERTA:`);
+      for (const fila of reporte.canal.rechazos.foto_por_dispositivo) console.log(`  ${String(fila.ocurrencias).padStart(5)}  ${fila.clave}  cuentas ${fila.usuarios}`);
+      for (const llave of ["concentracion_de_envios_perdidos_por_dispositivo", "concentracion_de_envios_perdidos_por_cuenta"]) {
+        const c = reporte.canal.rechazos[llave];
+        console.log(`\nENVOS PERDIDOS ${llave.includes("cuenta") ? "por cuenta" : "por dispositivo"}: total ${c.total} en ${c.claves_distintas} claves | la primera (${c.primera_clave}) acumula ${c.ocurrencias_en_la_primera_clave} (${c.porcentaje_en_la_primera_clave ?? "-"} %) | top 5 ${c.en_el_top} (${c.porcentaje_en_el_top ?? "-"} %)`);
+        for (const fila of c.top) console.log(`  ${String(fila.ocurrencias).padStart(5)}  ${fila.clave}`);
+      }
+      console.log(`\nRAFAGAS DE REINTENTO en las cuentas con rechazos de foto${args.semana ? " despues del corte" : " (sin --semana: toda la ventana)"}:`);
+      for (const cuenta of cuentas) {
+        console.log(`  user ${String(cuenta.user_id).padStart(5)}  emp ${String(cuenta.empleado_id ?? "-").padEnd(5)}  ${cuenta.rechazos_de_foto_despues_del_corte} rechazo(s)  ${cuenta.senal_de_reintento}  brechas ${cuenta.brechas_segundos.join("/")}s  fotos aceptadas antes ${cuenta.fotos_de_justificacion_aceptadas_antes_del_corte} / despues ${cuenta.fotos_de_justificacion_aceptadas_despues_del_corte}  tipos ${cuenta.tipos_que_si_entraron.join(",") || "-"}`);
       }
     }
 

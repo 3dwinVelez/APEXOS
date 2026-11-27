@@ -1,0 +1,21 @@
+{
+  "certificacion": "hr-retrointegracion-20261127",
+  "fecha": "2026-11-27",
+  "rama_fuente": "origin/develop",
+  "baseline_destino": "536c72bb (= origin/desarrollo)",
+  "candidato": "arbol integrado en .tmp/wt-hr-alineacion-20261127",
+  "inventario_vs_baseline": { "rutas": 106, "altas": 74, "modificadas": 32, "inserciones": 5613, "supresiones": 728 },
+  "paridad_por_blob": { "rutas_comparadas": 169, "identicas": 158, "divergentes": 11 },
+  "suites": {
+    "portal": { "tests": 948, "pasan": 943, "fallan": 5, "rojos_preexistentes_en_baseline": 5, "rojos_nuevos": 0 },
+    "api_hr": { "tests": 413, "pasan": 409, "fallan": 4, "baseline_tests": 361, "baseline_fallan": 4, "rojos_nuevos": 0 },
+    "typecheck_portal": "exit 0"
+  },
+  "controles_de_mutacion": {
+    "selfie_por_paso": "rojo al quitar 'selfieType !== type' de la compuerta (8/9), verde restaurado (9/9)",
+    "compuerta_escrituras_hr": "rojo al quitar 'confirm'/'hrSharedDeviceWrite' del contrato, verde con el set completo",
+    "enlace_de_marcacion_en_el_hub": "el hub conserva /marcacion: el control de arquitectura falla si se retira el enlace (comprobado poniendolo rojo)"
+  },
+  "divergencias_justificadas": "ver divergencias.txt (ruta|indice|lineas_de_develop_sin_replica)",
+  "ventanillas_nativas_pendientes": { "bare_confirm_en_HR": 7, "archivos": ["nomina", "rostros", "liquidacion-trabajador", "dispositivos-marcacion", "aportes-sociales"], "estado": "preexistente en desarrollo y en develop, no introducido por esta intervencion" }
+}

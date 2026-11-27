@@ -3,11 +3,23 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-// Reglas de captura de la marcacion web: llegada tarde sustentada, selfie en
-// entrada, almuerzo, retorno y cierre, y kilometraje al abrir la jornada con vehiculo.
+// Reglas de captura de la marcacion web: llegada tarde sustentada, selfie en las
+// cuatro marcaciones y kilometraje al abrir la jornada con vehiculo.
 const root = path.resolve(import.meta.dirname, "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
 const marking = read("app/dashboard/talento-humano/marcacion/page.tsx");
+// La lista de requisitos vive en dos lados y tienen que decir lo mismo: el navegador
+// pregunta y el API exige. Cuando divergen aparece el rechazo que costo jornadas.
+const mobileIdentity = fs.readFileSync(
+  path.resolve(root, "../api/src/modules/hr/mobile-identity.js"),
+  "utf8"
+);
+
+function setLiteral(source, declaration) {
+  const match = source.match(new RegExp(`${declaration} = new Set\\(\\[([^\\]]+)\\]\\)`));
+  assert.ok(match, `no se encontro la declaracion ${declaration}`);
+  return match[1].split(",").map((item) => item.trim().replace(/^"|"$/g, "")).sort();
+}
 
 function markBody() {
   const start = marking.indexOf("async function mark(type: string)");
@@ -35,13 +47,39 @@ test("la tolerancia del horario es la que decide si hay que justificar", () => {
   assert.match(marking, /tolerance_minutes\?: number \| null/);
 });
 
-test("las cuatro marcaciones web requieren una selfie propia de ese paso", () => {
-  assert.match(marking, /Las cuatro marcaciones requieren una foto del rostro: entrada, almuerzo, retorno y salida/);
+test("las cuatro marcaciones web exigen selfie y el navegador y el API piden las mismas", () => {
+  const cuatro = ["entrada", "fin_almuerzo", "inicio_almuerzo", "salida"];
+  assert.deepEqual(setLiteral(marking, "selfieRequiredPunches"), cuatro);
+  assert.deepEqual(setLiteral(mobileIdentity, "WEB_SELFIE_REQUIRED_TYPES"), cuatro);
+  // El canal firmado NO cambia con esto: las apps instaladas firman el almuerzo sin
+  // foto, y exigirselas se convierte en firma invalida, no en un pedido de selfie.
+  assert.deepEqual(setLiteral(mobileIdentity, "SELFIE_REQUIRED_TYPES"), ["entrada", "salida"]);
+
   assert.match(marking, /facing="user"/);
+  // La etiqueta nombra la marcacion que se esta tomando: con cuatro tipos ya no sirve
+  // el viejo "entrada / cierre".
+  assert.match(marking, /label=\{`Selfie de \$\{punchLabels\[nextType/);
+  assert.doesNotMatch(marking, /Selfie de validacion de entrada/);
+  assert.match(marking, /degradedPhoto && degradedPhoto\.step === type/);
+  assert.match(marking, /Las cuatro marcaciones piden foto/);
+  assert.doesNotMatch(marking, /El almuerzo y el retorno no piden foto/);
+
   const body = markBody();
-  assert.match(body, /!identitySelfie \|\| selfieType !== type/);
+  assert.match(body, /selfieRequiredPunches\.has\(type\) && !identitySelfie && !degradedFor\(type\)/);
+  // El envio degradado solo cuenta en el paso donde la camara fallo.
+  assert.match(body, /degradedFor\(type\) && selfieRequiredPunches\.has\(type\)/);
   assert.match(body, /payload\.identity_photo = \{ base64: identitySelfie\.base64/);
+  // El blob: del navegador no sirve en el servidor ni sobrevive a la cola.
   assert.doesNotMatch(body, /payload\.identity_photo = identitySelfie;/);
+});
+
+test("la selfie queda ligada al paso que se esta marcando", () => {
+  assert.match(marking, /const \[selfieType, setSelfieType\] = useState\(""\)/);
+  assert.match(marking, /onChange=\{\(photo\) => \{ setIdentitySelfie\(photo\); setSelfieType\(nextType \?\? ""\); \}\}/);
+  assert.match(marking, /value=\{selfieType === nextType \? identitySelfie : null\}/);
+  assert.match(marking, /key=\{nextType\}/, "la camara se reinicia en cada paso");
+  assert.match(markBody(), /identitySelfie && selfieType !== type && !degradedFor\(type\)/);
+  assert.match(markBody(), /setSelfieType\(""\);/, "marcar suelta la foto: si no, el paso siguiente heredaria la del anterior");
 });
 
 test("la camara frontal es lo que hace que la selfie sea selfie", () => {

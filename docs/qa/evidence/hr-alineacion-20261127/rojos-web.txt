@@ -1,0 +1,5 @@
+el editor de presupuesto valida permisos, usa maestros reales y es operable por teclado
+la falta de HR no bloquea la consulta de flota
+la impresión aísla el tema claro y restaura el tema previo al salir sin persistir cambios
+react y react-dom/server salen de la misma instalacion de node_modules
+la ficha enlaza sucursal y crea el centro de costo en la estructura contable

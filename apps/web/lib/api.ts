@@ -5,6 +5,7 @@ import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 import { API_BASE_URL } from "./apiBaseUrl";
 import { scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleTrackingMode, scheduleMonitorUsesOperationalSource } from "./hrScheduleMonitor";
 import { validateServiceReferenceImport } from "./serviceReferenceImport";
+import { readInstallationId } from "./installationIdentity";
 
 const API_URL = API_BASE_URL;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
@@ -234,23 +235,63 @@ function platformModuleFromPath(path: string) {
 const CLIENT_LOG_ENDPOINT = "/api/v1/admin/platform-logs/client";
 const CLIENT_LOG_PUBLIC_ENDPOINT = "/api/v1/public/telemetry/client-logs";
 
-function reportClientFailure(path: string, status: number | null, detail: string, method = "GET") {
+// Medido en produccion sobre 8 dias (evidencia
+// `docs/qa/evidence/hr-marca-evidence-resilience-20261119/bloqueados-produccion-20261119.json`):
+// 974 eventos de 21 usuarios decian todos "Backend no disponible desde frontend",
+// cuando la causa real ya estaba escrita en el propio `detail` y eran tres cosas
+// distintas. 478x "La plataforma no respondio a tiempo..." era NUESTRO timeout de
+// 20 s (`API_TIMEOUT_MS`), 317x "Load failed" era la red de iOS Safari y 179x
+// "Failed to fetch" era Chrome/CORS/DNS. Un mensaje para tres causas es la razon
+// por la que el triage tenia que adivinar. La clase sale del detalle que YA viaja:
+// no se inventa ninguna medicion nueva.
+export type ClientFailureCause = "timeout" | "offline" | "request_rejected" | "unknown";
+
+export function classifyClientFailureCause(status: number | null, detail: string): ClientFailureCause {
+  const text = String(detail || "");
+  // El servidor contesto: la peticion llego y fue rechazada. No es caida ni timeout.
+  if (typeof status === "number" && status > 0) return "request_rejected";
+  if (/no respondio a tiempo|tardo demasiado|timed?.?out|abort/i.test(text)) return "timeout";
+  if (/failed to fetch|load failed|networkerror|net::|err_network|econn|err_/i.test(text)) return "offline";
+  return "unknown";
+}
+
+// La frase para el operario sigue siendo espanol plano y NO depende de la clase:
+// lo que cambia es el registro, no lo que lee quien esta en una ruta.
+const CLIENT_FAILURE_MESSAGES: Record<ClientFailureCause, string> = {
+  timeout: "La plataforma tardo demasiado en responder desde el navegador",
+  offline: "El navegador no pudo conectar con la plataforma",
+  request_rejected: "Solicitud frontend fallida",
+  unknown: "Backend no disponible desde frontend"
+};
+
+function reportClientFailure(path: string, status: number | null, detail: string, method = "GET", code = "") {
   if (typeof window === "undefined" || isPlatformLogsPath(path)) return;
   if (!HAS_CONFIGURED_API_URL) return;
   const token = localStorage.getItem("token");
+  const cause = classifyClientFailureCause(status, detail);
   const technical = {
     module: platformModuleFromPath(path),
     route: path,
     method,
     status_code: status,
-    message: status === null ? "Backend no disponible desde frontend" : "Solicitud frontend fallida",
+    // El codigo de negocio del rechazo es lo unico que distingue en el registro un 409 de escalera
+    // de un 400 de foto. Sin el, los 4xx reportados por el navegador llegaban todos con `code`
+    // vacio y el triage tenia que adivinar por la ruta (medido el 2026-11-19: 42x409 y 17x400 sin
+    // causa). El servidor ya lo acepta (`/admin/platform-logs/client` y el buzon publico).
+    code: String(code || "").slice(0, 60),
+    message: status === null ? CLIENT_FAILURE_MESSAGES[cause] : CLIENT_FAILURE_MESSAGES.request_rejected,
     detail: String(detail || "").slice(0, 1600)
   };
   // Sin sesion no hay tenant que atribuir y el correo del navegador tampoco es evidencia: el
-  // reporte anonimo lleva solo la ruta tecnica. La autenticada conserva su forma certificada.
+  // reporte anonimo lleva solo la ruta tecnica, mas el id del navegador. Ese id es lo unico que
+  // permite juntar, dias despues, un intento sin sesion con el empleado que luego marco
+  // autenticado desde el mismo telefono. Se omite cuando el navegador no lo deja persistir
+  // (modo privado, cotas): el esquema del buzon publico solo admite UUID canonico, nunca vacio.
+  const deviceId = readInstallationId();
+  const identidadDispositivo = deviceId ? { device_id: deviceId } : {};
   const anonymousPayload = {
     ...technical,
-    metadata: { href: window.location.pathname, provider: localStorage.getItem("auth_provider") || "local" }
+    metadata: { href: window.location.pathname, provider: localStorage.getItem("auth_provider") || "local", failure_cause: cause, ...identidadDispositivo }
   };
   const post = (endpoint: string, payload: unknown, withSession: boolean) => fetch(`${API_URL}${endpoint}`, {
     method: "POST",
@@ -270,7 +311,11 @@ function reportClientFailure(path: string, status: number | null, detail: string
     metadata: {
       href: window.location.href,
       user_email: localStorage.getItem("user_email") || "",
-      provider: localStorage.getItem("auth_provider") || "local"
+      provider: localStorage.getItem("auth_provider") || "local",
+      failure_cause: cause,
+      // La misma marca del lado autenticado: sin esta fila no hay nada con que cruzar el id, y el
+      // intento anonimo seguiria siendo un telefono sin dueno.
+      ...identidadDispositivo
     }
   };
   post(CLIENT_LOG_ENDPOINT, authenticatedPayload, true)
@@ -279,6 +324,7 @@ function reportClientFailure(path: string, status: number | null, detail: string
 }
 
 function shouldPreferOperationalApi(path: string) {
+  if (path === "/api/v1/hr/employees" || path.startsWith("/api/v1/hr/employees?")) return false;
   return path.startsWith("/api/v1/transport") || path.startsWith("/api/v1/hr");
 }
 
@@ -399,7 +445,7 @@ export async function authorizedJson<T>(input: string, options: ApiRequestOption
       const failure = readFailurePayload(await response.text().catch(() => ""));
       const message = friendlyFailure(response.status, method, failure);
       if (!silenced) alertRequestFailure(input, response.status, failure.detail);
-      reportClientFailure(input, response.status, failure.detail, method);
+      reportClientFailure(input, response.status, failure.detail, method, failure.code);
       const failureError = Object.assign(new Error(message), { status: response.status, retryable: true });
       Object.assign(failureError, { code: failure.code, request_id: failure.requestId });
       throw failureError;
@@ -408,7 +454,7 @@ export async function authorizedJson<T>(input: string, options: ApiRequestOption
     const detail = body.error || body.message || response.statusText;
     const message = friendlyFailure(response.status, method, failureFromJsonBody(body));
     if (!silenced) alertRequestFailure(input, response.status, detail);
-    reportClientFailure(input, response.status, detail, method);
+    reportClientFailure(input, response.status, detail, method, typeof body.code === "string" ? body.code : "");
     throw Object.assign(new Error(message), {
       status: response.status,
       code: typeof body.code === "string" ? body.code : "",
@@ -4712,7 +4758,7 @@ async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, ret
       const failure = readFailurePayload(await response.text().catch(() => ""));
       const message = friendlyFailure(response.status, method, failure);
       if (!silenced) alertRequestFailure(path, response.status, failure.detail);
-      reportClientFailure(path, response.status, failure.detail, method);
+      reportClientFailure(path, response.status, failure.detail, method, failure.code);
       const failureError = Object.assign(new Error(message), { status: response.status, retryable: true });
       Object.assign(failureError, { code: failure.code, request_id: failure.requestId });
       throw failureError;
@@ -4722,7 +4768,7 @@ async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, ret
     const detail = body.error || body.message || response.statusText;
     const message = friendlyFailure(response.status, method, failureFromJsonBody(body));
     if (!silenced) alertRequestFailure(path, response.status, detail);
-    reportClientFailure(path, response.status, detail, String(options.method || "GET"));
+    reportClientFailure(path, response.status, detail, String(options.method || "GET"), typeof body.code === "string" ? body.code : "");
     throw Object.assign(new Error(message), {
       status: response.status,
       code: typeof body.code === "string" ? body.code : "",

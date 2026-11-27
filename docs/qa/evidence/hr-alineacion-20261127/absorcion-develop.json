@@ -1,0 +1,122 @@
+{
+  "intervencion": "hr-retrointegracion-20261127",
+  "paso": "absorcion en desarrollo de las dos rutas cuyo blob estaba mas adelante en origin/develop",
+  "medido_en": "2026-11-27T18:58:43-05:00",
+  "arbol": {
+    "rama": "desarrollo",
+    "punta_antes_de_absorber": "773d0cbd345d0ffc06983f05dadf88dd9d0fc510",
+    "origin_develop": "a440560d7f04781166b05ac85b130c74d2bf9b43",
+    "origin_desarrollo": "773d0cbd345d0ffc06983f05dadf88dd9d0fc510",
+    "merge_base_desarrollo_develop": "d667276f2f95a0abe27abd5d37cd883e35f2ad02"
+  },
+  "regla_que_obliga": "scripts/validate-promotion-scope.js validateReplayTransport: transport replay_puntual no admite origin_waivers y exige que cada ruta del diff sea el blob de origin/desarrollo. Las rutas bilaterales donde el destino estaba mas adelante solo se pueden llevar por excepcion de origen, y una promocion con excepciones es mas debil que absorber primero en desarrollo.",
+  "censo_previo": {
+    "archivo": "docs/qa/evidence/hr-alineacion-20261127/divergencias.txt",
+    "rutas_divergentes": 42,
+    "rutas_absorbidas_por_reemplazo_local": 40,
+    "rutas_realmente_adelantadas_en_develop": 2
+  },
+  "rutas": [
+    {
+      "file": "scripts/certifications/hr-punch-mobile-evidence-local.js",
+      "decision": "sube el blob de origin/develop sin retoque",
+      "lineas_antes": 152,
+      "lineas_despues": 246,
+      "diff_stat": "104 inserciones / 10 borrados",
+      "sha256_like_git_blob": "f49d9561eb368e63516c70ac64e58a745ab0762a",
+      "identico_a_origin_develop": true,
+      "node_check": "salida 0",
+      "marcadores": {
+        "scheduleNav": 6,
+        "browserErrors_o_hub": 2,
+        "Abrir detalle del horario": 4,
+        "medidas-linea-de-tiempo": 1,
+        "has_base64_data": 2,
+        "punch_points": 2,
+        ";base64,": 4,
+        "monitor-evidence/route": 1,
+        "splitIdentity": "presente: la pata de evidencia lee identity o punch segun exista el endpoint partido",
+        "rbac_del_lote": "for (const [access,expected] of [[null,401],[otherToken,404],[deniedToken,403]]) — 3 aserciones que desarrollo no tenia"
+      },
+      "lo_que_no_se_pierde": "el encabezado del artefacto de desarrollo era mas pobre (sin url, titulo, claves de localStorage ni snapshot); el blob de develop lo trae enriquecido, que es justamente el control que pidio la corrida del hub"
+    },
+    {
+      "file": "apps/web/test/command-palette-module-functions.test.mjs",
+      "decision": "fusion a mano: entran las patas de develop, no entra la que exigia ocultar la marcacion web",
+      "entra": [
+        "assert.equal(byLabel.get(\"Gestionar bancos de empleados\")?.href, \"/dashboard/talento-humano/bancos\")",
+        "const expanded = functionEntries.find((entry) => entry.href === \"/dashboard/contabilidad/pyg/ampliado\")",
+        "assert.equal(expanded?.module, \"contabilidad\")",
+        "assert.equal(expanded?.label, \"Ver PYG ampliado\")"
+      ],
+      "no_entra": [
+        "assert.equal(byLabel.has(\"Registrar marcaciones\"), false) — contradice la orden del dueno del 2026-11-27 de dejar la aplicacion de marcacion web en produccion"
+      ],
+      "queda": [
+        "assert.equal(byLabel.get(\"Registrar marcaciones\")?.href, \"/dashboard/talento-humano/marcacion\")",
+        "assert.equal(byLabel.get(\"Horarios y mallas\")?.href, \"/dashboard/talento-humano/rutas\")"
+      ],
+      "prueba": "node --test test/command-palette-module-functions.test.mjs",
+      "resultado": "10 pruebas / 10 pasan / 0 fallan"
+    }
+  ],
+  "suites_tras_absorber": {
+    "portal": {
+      "comando": "node .tmp/hr-align-20261127/run-web-suite.js (bucle archivo por archivo sobre apps/web/test/*.mjs)",
+      "archivos": 139,
+      "tests": 956,
+      "pass": 953,
+      "fail": 3,
+      "rojos": [
+        "el editor de presupuesto valida permisos, usa maestros reales y es operable por teclado",
+        "la falta de HR no bloquea la consulta de flota",
+        "la ficha enlaza sucursal y crea el centro de costo en la estructura contable"
+      ],
+      "atribucion": "los tres leen rutas de contabilidad/, transporte/, administracion/ y lib/api.ts, ninguna dentro del diff de Talento Humano; son los mismos tres rojos que ya traia el arbol antes de la absorcion",
+      "referencia": "docs/qa/evidence/hr-alineacion-20261127/rojos-web.txt"
+    },
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit en apps/web: salida 0"
+  },
+  "consecuencia_para_la_promocion": "El candidato desarrollo -> develop se declara transport: replay_puntual con origin_waivers: [] y replay_baseline = d667276f2f95a0abe27abd5d37cd883e35f2ad02.",
+  "corrida_del_arnes_absorbido": {
+    "comando": "node scripts/certifications/hr-employee-user-association-isolated-local.js --certificate=hr-punch-mobile-evidence-local.js",
+    "arbol": "desarrollo en 773d0cbd con las dos piezas absorbidas",
+    "estado": "passed",
+    "patas": 10,
+    "pasan": 10,
+    "fallan": 0,
+    "base_descartable": "apexos_cert_hr_assoc_1795803938790",
+    "source_database_modified": false,
+    "unexpected_5xx": 0,
+    "exit_code": 0,
+    "duracion": "4 min 17 s (18:25:55Z a 18:29:42Z)",
+    "nombres": [
+      "summary exposes photo availability and counters without image bytes",
+      "single and batch use TimePunch identity photos, retain extra support and ActivityEvidence",
+      "one hub entry opens programming and existing links select the matching tab",
+      "the schedule opens its detail from the timeline bar, which is the default view",
+      "the table view opens the same detail from the row and hides its actions behind the menu",
+      "the redesign repaints through the app theme control and stays usable on a phone",
+      "programming creates, edits and clones schedules without duplicating them when tabs change",
+      "chronological team trace displays all mobile photos and opens lightbox",
+      "Reports journey trace renders the activity photograph and opens its enlargement",
+      "command palette finds bank master and expanded PYG and opens both real pages"
+    ],
+    "rojas_previas_versionadas": [
+      {
+        "archivo": "absorcion-arnes/certification-corrida-roja-2.json",
+        "murio_en": "la pata del hub, tras 2 patas verdes",
+        "causa": "el portal mostro 'Acceso no autorizado' con 'Sesion no identificada' y el log del API tiene un P1001 en GET /api/v1/talento-humano/bancos: el navegador llego al hub sin sesion porque el API perdio la base un instante",
+        "prueba_de_atribucion": "absorcion-arnes/diagnostico-hub-corrida-roja-2.json (url, titulo, claves de localStorage y texto servido) y la tercera corrida 10/10 sobre el mismo arbol sin tocar nada",
+        "condicion_del_puesto": "disco al 89% y 0,8 GB libres de 8,3 durante la corrida roja"
+      },
+      {
+        "archivo": "(sin artefacto: el runner murio antes de escribir)",
+        "murio_en": "Isolated database preparation failed con stderr vacio",
+        "causa": "pg_dump respondio vacio en ese intento",
+        "prueba_de_atribucion": "reproducido suelto, el mismo volcado (506.967 bytes) aplico en la base descartable con status 0"
+      }
+    ],
+    "respaldo": ".local/BUENA-20261126/ guarda la corrida local del 2026-11-26 (6 patas, arnes de 152 lineas) antes de pisarla"
+  }
+}

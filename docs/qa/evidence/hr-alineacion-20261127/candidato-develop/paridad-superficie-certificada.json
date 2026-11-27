@@ -1,0 +1,229 @@
+{
+  "instrumento": "paridad de blobs entre el arbol donde corrio la certificacion de navegador y el arbol del candidato",
+  "ejecutado_en": "2026-11-27T20:07:10.485Z",
+  "commit_certificado": "542027c73a3e59901f224bcb8c7fd6e5ccfa51a4",
+  "commit_candidato": "b6d727756bd1ad2831a22090f89421f66a069d8f",
+  "gb_libres_al_medir": 0.89,
+  "rutas_de_producto_que_viajan": 29,
+  "identidad_total": true,
+  "arnes_de_certificacion": [
+    {
+      "file": "scripts/certifications/hr-punch-mobile-evidence-local.js",
+      "blob_certificado": "f49d9561eb368e63516c70ac64e58a745ab0762a",
+      "blob_candidato": "f49d9561eb368e63516c70ac64e58a745ab0762a",
+      "identico": true
+    },
+    {
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js",
+      "blob_certificado": "782d95f730d7d45670334437c4b63f3677113694",
+      "blob_candidato": "782d95f730d7d45670334437c4b63f3677113694",
+      "identico": true
+    }
+  ],
+  "superficie": [
+    {
+      "file": "apps/web/components/hr/ConfirmWindow.tsx",
+      "status": "A",
+      "blob_certificado": "a7a5f0eee83f2b61fe9ee2613b5a36448b4cde2f",
+      "blob_candidato": "a7a5f0eee83f2b61fe9ee2613b5a36448b4cde2f",
+      "identico": true
+    },
+    {
+      "file": "apps/web/lib/hrMarkingCorrection.ts",
+      "status": "A",
+      "blob_certificado": "b5c9ce0c852b1fdf7ff4325f821ee1cb0e9818df",
+      "blob_candidato": "b5c9ce0c852b1fdf7ff4325f821ee1cb0e9818df",
+      "identico": true
+    },
+    {
+      "file": "apps/web/lib/installationIdentity.ts",
+      "status": "A",
+      "blob_certificado": "e96fd6eddd7909bfea1f7a8a2c5fccc88f1d4c27",
+      "blob_candidato": "e96fd6eddd7909bfea1f7a8a2c5fccc88f1d4c27",
+      "identico": true
+    },
+    {
+      "file": "apps/web/test/hr-confirm-window.test.mjs",
+      "status": "A",
+      "blob_certificado": "ba668fb4fdb1c7c3d127ae878a2414f5b3ea1920",
+      "blob_candidato": "ba668fb4fdb1c7c3d127ae878a2414f5b3ea1920",
+      "identico": true
+    },
+    {
+      "file": "apps/web/test/hr-map-no-inline-evidence.test.mjs",
+      "status": "A",
+      "blob_certificado": "0a15bc0585e069a34d424f9ba064e8fe6305435e",
+      "blob_candidato": "0a15bc0585e069a34d424f9ba064e8fe6305435e",
+      "identico": true
+    },
+    {
+      "file": "apps/web/test/hr-marking-correction.test.mjs",
+      "status": "A",
+      "blob_certificado": "0083635a7d3fdeaf43cc3c3e5daf1e6242e5b610",
+      "blob_candidato": "0083635a7d3fdeaf43cc3c3e5daf1e6242e5b610",
+      "identico": true
+    },
+    {
+      "file": "apps/web/test/hr-marking-cross-device.test.mjs",
+      "status": "A",
+      "blob_certificado": "a9ae1683b75c3a331a6f8f1032c34c7b7273aa5e",
+      "blob_candidato": "a9ae1683b75c3a331a6f8f1032c34c7b7273aa5e",
+      "identico": true
+    },
+    {
+      "file": "apps/web/test/installation-identity.test.mjs",
+      "status": "A",
+      "blob_certificado": "93eb93ede733ee539c95fd9059dea1a21b87c42b",
+      "blob_candidato": "93eb93ede733ee539c95fd9059dea1a21b87c42b",
+      "identico": true
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+      "status": "M",
+      "blob_certificado": "78365807126e5eb0d739b3aed9f2b133ca47de11",
+      "blob_candidato": "78365807126e5eb0d739b3aed9f2b133ca47de11",
+      "identico": true
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
+      "status": "M",
+      "blob_certificado": "2b11138919b14e8a2a24eac1aa74333c712eacbc",
+      "blob_candidato": "2b11138919b14e8a2a24eac1aa74333c712eacbc",
+      "identico": true
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+      "status": "M",
+      "blob_certificado": "3c85aa537a84a2f7b793614f83c8c957328e1ed5",
+      "blob_candidato": "3c85aa537a84a2f7b793614f83c8c957328e1ed5",
+      "identico": true
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+      "status": "M",
+      "blob_certificado": "1689fa4aeb54a1b928b29d72e3846fcfdfc8d83c",
+      "blob_candidato": "1689fa4aeb54a1b928b29d72e3846fcfdfc8d83c",
+      "identico": true
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+      "status": "M",
+      "blob_certificado": "796ddee85057cb8d3c357f195d60f5e45c3db706",
+      "blob_candidato": "796ddee85057cb8d3c357f195d60f5e45c3db706",
+      "identico": true
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+      "status": "M",
+      "blob_certificado": "8ea980321afe758c025f8a42df50a458b44d5af1",
+      "blob_candidato": "8ea980321afe758c025f8a42df50a458b44d5af1",
+      "identico": true
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+      "status": "M",
+      "blob_certificado": "bb9e2be1667178f15ab36d154ce6405f36197c8d",
+      "blob_candidato": "bb9e2be1667178f15ab36d154ce6405f36197c8d",
+      "identico": true
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx",
+      "status": "M",
+      "blob_certificado": "00068c3d84d90cd8a2bda13315bf53dbd5a48774",
+      "blob_candidato": "00068c3d84d90cd8a2bda13315bf53dbd5a48774",
+      "identico": true
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+      "status": "M",
+      "blob_certificado": "ae1ffb0235e0cb1108da96b813097ded20143125",
+      "blob_candidato": "ae1ffb0235e0cb1108da96b813097ded20143125",
+      "identico": true
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
+      "status": "M",
+      "blob_certificado": "684a9a3de98d30da4e4e4d993fe61a14536bcce4",
+      "blob_candidato": "684a9a3de98d30da4e4e4d993fe61a14536bcce4",
+      "identico": true
+    },
+    {
+      "file": "apps/web/components/operations/PhotoCapture.tsx",
+      "status": "M",
+      "blob_certificado": "9ebc79217831669b30b54ad3c1db6c1f99543c62",
+      "blob_candidato": "9ebc79217831669b30b54ad3c1db6c1f99543c62",
+      "identico": true
+    },
+    {
+      "file": "apps/web/components/shell/MobileNav.tsx",
+      "status": "M",
+      "blob_certificado": "442ad08142db35b76fe9d4e3c84a3063f92f44bd",
+      "blob_candidato": "442ad08142db35b76fe9d4e3c84a3063f92f44bd",
+      "identico": true
+    },
+    {
+      "file": "apps/web/lib/api.ts",
+      "status": "M",
+      "blob_certificado": "32942190b4e70bf7598c7dfd4d0d5d60232b4d86",
+      "blob_candidato": "32942190b4e70bf7598c7dfd4d0d5d60232b4d86",
+      "identico": true
+    },
+    {
+      "file": "apps/web/lib/hrOfflineEvidence.ts",
+      "status": "M",
+      "blob_certificado": "23b9ff886c8fc8341ba3bcd73dba777332f07f48",
+      "blob_candidato": "23b9ff886c8fc8341ba3bcd73dba777332f07f48",
+      "identico": true
+    },
+    {
+      "file": "apps/web/lib/hrOfflineMarking.ts",
+      "status": "M",
+      "blob_certificado": "7f36e53dec5a02c29ab9a9b3ffca02c758ab5a69",
+      "blob_candidato": "7f36e53dec5a02c29ab9a9b3ffca02c758ab5a69",
+      "identico": true
+    },
+    {
+      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs",
+      "status": "M",
+      "blob_certificado": "7adc6871d1b82e301530f9a88786a47fdb029150",
+      "blob_candidato": "7adc6871d1b82e301530f9a88786a47fdb029150",
+      "identico": true
+    },
+    {
+      "file": "apps/web/test/hr-face-enrollments-page.test.mjs",
+      "status": "M",
+      "blob_certificado": "ccb3f4cd794c8a59bf0cebb0d4762f8a049f10cd",
+      "blob_candidato": "ccb3f4cd794c8a59bf0cebb0d4762f8a049f10cd",
+      "identico": true
+    },
+    {
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs",
+      "status": "M",
+      "blob_certificado": "f3a5a25f32a48c8626c1d0c155db511917381432",
+      "blob_candidato": "f3a5a25f32a48c8626c1d0c155db511917381432",
+      "identico": true
+    },
+    {
+      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+      "status": "M",
+      "blob_certificado": "010d968afd3971f87ea22e6a4c8e69732b40eddd",
+      "blob_candidato": "010d968afd3971f87ea22e6a4c8e69732b40eddd",
+      "identico": true
+    },
+    {
+      "file": "apps/web/test/hr-offline-marking.test.mjs",
+      "status": "M",
+      "blob_certificado": "267bbf25215af7a413285f5c897564f20d6f3b5d",
+      "blob_candidato": "267bbf25215af7a413285f5c897564f20d6f3b5d",
+      "identico": true
+    },
+    {
+      "file": "apps/web/test/hr-shared-devices-page.test.mjs",
+      "status": "M",
+      "blob_certificado": "ba3207e1ae74f6c34155cdfcc00b6af480da9de2",
+      "blob_candidato": "ba3207e1ae74f6c34155cdfcc00b6af480da9de2",
+      "identico": true
+    }
+  ],
+  "nota": "La certification.json de la absorcion esta sellada en 542027c7 porque la corrida ocurrio ahi. Este archivo mide que el codigo que esa corrida toco es byte a byte el mismo que viaja en b6d72775: la pantalla de marcacion, las rutas de producto que suben y los dos scripts del arnes no cambiaron entre las dos puntas. Con la memoria libre que hay en el puesto la corrida pesada del arbol integrado no se re-corrio aqui; la cobertura funcional del arbol integrado se toma contra QA desplegado, que es el mismo binario promocionado."
+}
