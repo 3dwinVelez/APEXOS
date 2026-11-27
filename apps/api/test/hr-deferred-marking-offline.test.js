@@ -112,6 +112,9 @@ function prismaFor(current, routes, tx, capture) {
     },
     workSession: { findFirst: async () => null },
     timePunch: { findFirst: async () => null },
+    // Huella propia y maestro de rostros: sin registros (la marcacion queda "sin_registro").
+    hrWebauthnCredential: { findMany: async () => [], update: async () => ({}) },
+    hrFaceEnrollment: { findFirst: async () => null },
     $transaction: async (callback) => callback(tx),
     $executeRaw: async (strings, ...values) => { capture.raw.push({ sql: strings.join("?"), values }); },
     $queryRaw: async (strings) => (String(strings?.join ? strings.join("") : strings).includes("pg_try_advisory_xact_lock") ? [{ acquired: true }] : [])

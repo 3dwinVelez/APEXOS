@@ -1,5 +1,7 @@
 "use client";
 
+import { hrStyles, HrSteps, HrNet } from "@/components/hr/HrWorkspace";
+
 import { ArrowLeft, Calculator, Download, FileText, Play, Search, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -8,7 +10,7 @@ import { API_BASE_URL } from "../../../../lib/apiBaseUrl";
 import TerminationManualAdjustments from "../../../../components/hr/TerminationManualAdjustments";
 import TerminationDayReviews, { SalaryReviewTotals, type SalaryReviewSummary, type ReviewDay } from "../../../../components/hr/TerminationDayReviews";
 
-type Employee = { id: number; code?: string; name?: string; contract_type?: string; metadata?: { name?: string; document?: string; document_type?: string } };
+type Employee = { id: number; salary_base?: number; hire_date?: string; position?: string; code?: string; name?: string; contract_type?: string; metadata?: { name?: string; document?: string; document_type?: string } };
 type Line = { code: string; name: string; quantity: number; rate: number; amount: number; source?: string; salary_constitutive?: boolean; metadata?: { date_start?: string; date_end?: string; base?: number }; accrued_amount?: number; paid_amount?: number; balance_amount?: number };
 type TerminationDocument = {
   id?: number;
@@ -195,7 +197,7 @@ export default function EmployeeTerminationLiquidationPage() {
   const rows = preview ? [preview, ...documents] : documents;
 
   return (
-    <div className="space-y-5">
+    <div className={`${hrStyles.workspace} space-y-5`}>
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link className="inline-flex items-center gap-2 text-sm font-semibold text-apex" href="/dashboard/talento-humano"><ArrowLeft size={16} /> Talento Humano</Link>
@@ -206,9 +208,14 @@ export default function EmployeeTerminationLiquidationPage() {
 
       {message ? <p className="rounded-md border border-line bg-white p-3 text-sm text-neutral-700">{message}</p> : null}
 
+      <HrSteps labels={["Datos del retiro", "Conceptos manuales", "Revisión y documento"]} />
+      <div className={hrStyles.columns}>
+      <div className={hrStyles.main}>
       <section className="rounded-md border border-line bg-white p-4">
+        <h2 className="mb-4 font-semibold"><span className={hrStyles.number}>1</span> Datos del retiro</h2>
+        {selectedEmployee ? <div className={hrStyles.identity}><span className={hrStyles.avatar}>{employeeLabel(selectedEmployee).slice(0,2).toUpperCase()}</span><div><strong>{employeeLabel(selectedEmployee)}</strong><small>{selectedEmployee.metadata?.document_type} {selectedEmployee.metadata?.document}{selectedEmployee.position ? ` · ${selectedEmployee.position}` : ""}</small><small className="mt-1 block">Ingreso {selectedEmployee.hire_date?.slice(0,10) || "—"} · Salario base {selectedEmployee.salary_base != null ? money(selectedEmployee.salary_base) : "—"}</small></div></div> : null}
         <fieldset disabled={busy || manualBusy || reviewBusy}>
-        <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-3 md:grid-cols-2">
           <div className="relative text-sm">
             <label htmlFor="termination-employee-document">Empleado</label>
             <div className="relative mt-1">
@@ -281,15 +288,28 @@ export default function EmployeeTerminationLiquidationPage() {
         </fieldset> : null}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <label className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm"><input checked={form.recalculate} type="checkbox" onChange={(event) => setForm((current) => ({ ...current, recalculate: event.target.checked }))} /> Recalcular si existe</label>
-          <label className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm"><input checked={form.mark_inactive} type="checkbox" onChange={(event) => setForm((current) => ({ ...current, mark_inactive: event.target.checked }))} /> Inactivar empleado</label>
-          <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-60" disabled={busy || !canRun} onClick={previewLiquidation} type="button"><Calculator size={16} /> Liquidacion de prueba</button>
-          <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-60" disabled={busy || !canRun || pendingDays !== 0} onClick={runLiquidation} type="button"><Play size={16} /> Crear documento</button>
+          <label className="inline-flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"><input checked={form.mark_inactive} type="checkbox" onChange={(event) => setForm((current) => ({ ...current, mark_inactive: event.target.checked }))} /> Inactivar empleado</label>
+
         </div>
         </fieldset>
       </section>
 
       <TerminationDayReviews employeeId={Number(form.employee_id) || null} terminationDate={form.termination_date} pendingStart={form.pending_start} refresh={reviewRefresh} disabled={busy || manualBusy} onBusy={setReviewBusy} onPendingChange={setPendingDays} onChanged={() => { setPreview(null); setSelected(null); }} />
       <TerminationManualAdjustments employeeId={Number(form.employee_id) || null} terminationDate={form.termination_date} pendingStart={form.pending_start} disabled={busy || reviewBusy} onBusy={setManualBusy} onChanged={() => { setPreview(null); setSelected(null); setPendingDays(null); setReviewRefresh(value => value + 1); }} />
+
+      </div>
+      <aside className={hrStyles.panel} aria-label="Desglose de liquidación">
+        <h2>Desglose</h2>
+        {preview ? <>
+          <dl><div><dt>Devengado</dt><dd>{money(preview.gross)}</dd></div><div><dt>Deducciones</dt><dd>{money(preview.deductions)}</dd></div></dl>
+          <div className={hrStyles.breakdown}>{preview.lines.map((line,index)=><div key={`${line.code}-${index}`}><span>{line.name}</span><b>{money(line.amount)}</b></div>)}</div>
+          <HrNet value={money(preview.net)} />
+        </> : <><p>Selecciona el empleado, revisa los días y calcula una liquidación de prueba para consultar los conceptos.</p><HrNet value="—" /></>}
+        <div className={hrStyles.stack}>          <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-60" disabled={busy || !canRun} onClick={previewLiquidation} type="button"><Calculator size={16} /> Liquidacion de prueba</button>
+          <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-60" disabled={busy || !canRun || pendingDays !== 0} onClick={runLiquidation} type="button"><Play size={16} /> Crear documento</button></div>
+        <p className={hrStyles.hint}>La prueba no guarda un documento. Revisa los conceptos antes de crear la liquidación.</p>
+      </aside>
+      </div>
 
       <section>
         <div className="rounded-md border border-line bg-white">

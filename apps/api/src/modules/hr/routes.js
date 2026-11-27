@@ -41,6 +41,7 @@ async function requireHrModuleEnabled(request, reply) {
 async function hrRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
   fastify.addHook("preHandler", tenancy);
+  fastify.get("/hr/time-report", { preHandler: requirePermission("hr", "read") }, request => service.timeReportSummary(request.user.tenant_id, request.query));
 
   fastify.get("/talento-humano/usuarios-vinculables", {
     preHandler: requirePermission("hr", "write"),
@@ -158,6 +159,7 @@ async function hrRoutes(fastify) {
   fastify.post("/talento-humano/empleados", { schema: schemas.employeeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createEmployee(request.user?.tenant_id, request.body));
   fastify.patch("/talento-humano/empleados/:id", { schema: schemas.employeePatchSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateEmployee(request.user?.tenant_id, request.params.id, request.body));
   fastify.get("/talento-humano/empleados/:id/contratos", { preHandler: requirePermission("hr", "read") }, (request) => service.listEmployeeContracts(request.user?.tenant_id, request.params.id, request.query));
+  fastify.post("/talento-humano/empleados/:id/contratos/corregir-fecha-inicial", { schema: schemas.employeeContractRepairSchema, preHandler: requirePermission("hr", "write") }, request => service.repairEmployeeContractFoundation(request.user?.tenant_id, request.params.id, request.body, request.user));
   fastify.post("/talento-humano/empleados/:id/contratos/otrosi", { schema: schemas.employeeContractAddendumSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createEmployeeContractAddendum(request.user?.tenant_id, request.params.id, request.body, request.user));
   fastify.post("/talento-humano/empleados/:id/recontratar", { schema: schemas.employeeRehireSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createEmployeeRehire(request.user?.tenant_id, request.params.id, request.body, request.user));
   fastify.get("/talento-humano/empleados/:id/salarios", { preHandler: requirePermission("hr", "read") }, (request) => service.listEmployeeSalaryHistory(request.user?.tenant_id, request.params.id, request.query));
@@ -216,6 +218,15 @@ async function hrRoutes(fastify) {
   fastify.get("/hr/payroll/liquidations", { preHandler: requirePermission("payroll", "read") }, (request) => service.listPayrollDocuments(request.user?.tenant_id, request.query));
   fastify.post("/hr/payroll/liquidations", { schema: schemas.payrollLiquidationSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.runPayrollLiquidation(request.user?.tenant_id, request.body || {}, request.user));
   fastify.delete("/hr/payroll/liquidations", { schema: schemas.payrollLiquidationDeleteSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.deletePayrollLiquidation(request.user?.tenant_id, request.body || {}));
+  const sendDaviviendaFile = async (request, reply) => {
+    const file = await service.buildPayrollBankFile(request.user?.tenant_id, request.query || {});
+    return reply
+      .header("Content-Type", "text/plain; charset=us-ascii")
+      .header("Content-Disposition", `attachment; filename="${file.fileName}"`)
+      .send(file.content);
+  };
+  fastify.get("/hr/payroll/liquidations/bank-file/davivienda", { preHandler: requirePermission("payroll", "read") }, sendDaviviendaFile);
+  fastify.get("/talento-humano/nomina/liquidaciones/plano-davivienda", { preHandler: requirePermission("payroll", "read") }, sendDaviviendaFile);
   fastify.get("/hr/payroll/liquidations/:id/pdf", { preHandler: requirePermission("payroll", "read") }, sendPayrollPdf);
   fastify.get("/hr/payroll/adjustments", { preHandler: requirePermission("payroll", "read") }, (request) => service.listPayrollAdjustments(request.user?.tenant_id, request.query));
   fastify.post("/hr/payroll/adjustments", { schema: schemas.payrollAdjustmentSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.createPayrollAdjustment(request.user?.tenant_id, request.body || {}, request.user));
@@ -293,6 +304,7 @@ async function hrRoutes(fastify) {
   fastify.post("/talento-humano/nomina/cierres/cerrar", { schema: schemas.payrollPeriodClosureSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.closePayrollPeriod(request.user?.tenant_id, request.body || {}, request.user));
   fastify.post("/talento-humano/nomina/cierres/reabrir", { schema: schemas.payrollPeriodReopenSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.reopenPayrollPeriod(request.user?.tenant_id, request.body || {}, request.user));
   fastify.post("/talento-humano/nomina/cierres/recalcular", { schema: schemas.payrollPeriodClosureSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.recalculatePayrollPeriodClosure(request.user?.tenant_id, request.body || {}, request.user));
+  fastify.get("/talento-humano/provisiones/prestaciones-sociales/saldos", { preHandler: requirePermission("payroll", "read") }, (request) => service.annualSocialBenefitProvisionBalances(request.user?.tenant_id, request.query));
   fastify.post("/talento-humano/provisiones/prestaciones-sociales/preview", { schema: schemas.socialBenefitProvisionSchema, preHandler: requirePermission("payroll", "read") }, (request) => service.previewSocialBenefitProvisions(request.user?.tenant_id, request.body || {}));
   fastify.post("/talento-humano/provisiones/prestaciones-sociales/documentos", { schema: schemas.socialBenefitProvisionSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.runSocialBenefitProvisions(request.user?.tenant_id, request.body || {}, request.user));
   fastify.post("/talento-humano/prestaciones/pagos/preview", { schema: schemas.socialBenefitPaymentSchema, preHandler: requirePermission("payroll", "read") }, (request) => service.previewSocialBenefitPayments(request.user?.tenant_id, request.body || {}));

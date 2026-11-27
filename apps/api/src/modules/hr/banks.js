@@ -41,17 +41,19 @@ function bankService(prisma) {
     }));
   }
   async function employeeMetadata(db, tenantId, input, current = {}) {
-    if (input.bank_code === undefined && input.bank_account_code === undefined) return Object.fromEntries(['bank_code', 'bank_entity_name', 'bank_account_code'].filter(key => current[key] !== undefined).map(key => [key, current[key]]));
+    if (input.bank_code === undefined && input.bank_account_code === undefined && input.bank_account_type === undefined) return Object.fromEntries(['bank_code', 'bank_entity_name', 'bank_account_code', 'bank_account_type'].filter(key => current[key] !== undefined).map(key => [key, current[key]]));
     const code = input.bank_code === undefined ? (current.bank_code || '') : String(input.bank_code || '').trim();
     const rawAccount = input.bank_account_code === undefined ? (current.bank_account_code || '') : input.bank_account_code;
     if (typeof rawAccount !== 'string') throw fail('La cuenta bancaria debe enviarse como texto.');
     const account = rawAccount.trim();
     if (account.length > 100 || /[\u0000-\u001f\u007f]/.test(account)) throw fail('La cuenta bancaria admite hasta 100 caracteres sin saltos de linea.');
     if (Boolean(code) !== Boolean(account)) throw fail('Selecciona el banco y escribe la cuenta bancaria, o deja ambos campos vacios.');
-    if (!code) return { bank_code: '', bank_entity_name: '', bank_account_code: '' };
+    const rawType = String(input.bank_account_type === undefined ? (current.bank_account_type || 'ahorros') : (input.bank_account_type || 'ahorros')).trim().toLowerCase();
+    if (!['ahorros', 'corriente'].includes(rawType)) throw fail('El tipo de cuenta debe ser ahorros o corriente.');
+    if (!code) return { bank_code: '', bank_entity_name: '', bank_account_code: '', bank_account_type: '' };
     const bank = (await list(tenantId, db)).find(row => row.code === code);
     if (!bank || (!bank.active && code !== current.bank_code)) throw fail('Selecciona un banco activo del maestro de esta empresa.');
-    return { bank_code: bank.code, bank_entity_name: bank.name, bank_account_code: account };
+    return { bank_code: bank.code, bank_entity_name: bank.name, bank_account_code: account, bank_account_type: rawType };
   }
   return { list: tenantId => prisma.runWithTenant(tenantId, () => list(tenantId)), save, employeeMetadata };
 }

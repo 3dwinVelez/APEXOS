@@ -7,7 +7,7 @@ import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleMo
 import type { ScheduleTruncationSignal } from "@/lib/hrScheduleMonitor";
 import { subscribeHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
 import { punctualityAlert, type PunctualityTone } from "@/lib/punchPunctuality";
-import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckCircle2, CheckSquare2, ChevronLeft, ChevronRight, Clock, Copy, Edit3, Filter, HelpCircle, ImageOff, LogIn, LogOut, MapPin, Navigation, PlayCircle, Plus, RefreshCw, RotateCcw, Save, Search, ShieldAlert, ShieldCheck, Square, Timer, Trash2, Truck, UserPlus, Utensils, UtensilsCrossed, X, ZoomIn } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckCircle2, CheckSquare2, ChevronLeft, ChevronRight, Clock, Copy, Edit3, Filter, HelpCircle, ImageOff, LogIn, LogOut, MapPin, MoreHorizontal, Navigation, PlayCircle, Plus, RefreshCw, RotateCcw, Save, Search, ShieldAlert, ShieldCheck, Square, Table, Timer, Trash2, Truck, UserPlus, Utensils, UtensilsCrossed, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -253,6 +253,72 @@ function routeDisplayState(route: RouteMonitor | TimeRoute) {
   return { status, label: "Sin eventos", className: "bg-warning/10 text-content-strong" };
 }
 
+// La linea de tiempo fija la ventana operativa del dia (06:00 a 22:00, dieciseis horas) y toda
+// barra se dibuja con la misma razon: left = (inicio - 6) / 16, width = duracion / 16. Una jornada
+// que arranca antes o termina despues del eje no se miente: se recorta y se le marca el recorte.
+const TIMELINE_START_HOUR = 6;
+const TIMELINE_END_HOUR = 22;
+const TIMELINE_SPAN_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR;
+const TIMELINE_TICK_HOURS = [6, 8, 10, 12, 14, 16, 18, 20, 22];
+const TIMELINE_MAX_ROWS = 60;
+
+function hourOfDay(value?: string | null) {
+  if (!value) return null;
+  const clock = /^(\d{1,2}):(\d{2})/.exec(value);
+  if (clock) return Number(clock[1]) + Number(clock[2]) / 60;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.getHours() + date.getMinutes() / 60;
+}
+
+function timelineBar(start?: string | null, end?: string | null) {
+  const from = hourOfDay(start);
+  let to = hourOfDay(end);
+  if (from === null || to === null) return null;
+  // Una jornada que cierra despues de medianoche (22:00-06:00) no es un rango vacio: el reloj
+  // sigue caminando y la barra se dibuja con la hora suma.
+  if (to <= from) to += 24;
+  const left = Math.min(Math.max((from - TIMELINE_START_HOUR) / TIMELINE_SPAN_HOURS, 0), 1);
+  const right = Math.min(Math.max((to - TIMELINE_START_HOUR) / TIMELINE_SPAN_HOURS, 0), 1);
+  // Fuera del eje del dia la barra no desaparece: queda el recorte en el borde que corresponde
+  // y el titulo dice las horas reales. Omitirla seria afirmar que esa jornada no existe.
+  if (right <= left) return { left: `${(Math.max(left - 0.015, 0) * 100).toFixed(2)}%`, width: "1.50%", trimmed: true };
+  return {
+    left: `${(left * 100).toFixed(2)}%`,
+    width: `${(Math.max(right - left, 0.015) * 100).toFixed(2)}%`,
+    trimmed: from < TIMELINE_START_HOUR || to > TIMELINE_END_HOUR
+  };
+}
+
+// El punto de color es el estado; el texto lo nombra. Se pinta con tokens del sistema, no con
+// los hexagonos del prototipo, para que los dos temas y el contraste AA salgan del mismo canon.
+function routeStateDotClass(route: RouteMonitor | TimeRoute) {
+  const { label } = routeDisplayState(route);
+  if (label === "En seguimiento") return "bg-apex";
+  if (label === "Sin eventos") return "bg-warning";
+  if (label === "Cerrado") return "bg-info";
+  if (label === "Cancelado") return "bg-error";
+  return "bg-content-subtle";
+}
+
+function routeBarToneClass(route: RouteMonitor | TimeRoute) {
+  const { label } = routeDisplayState(route);
+  if (label === "En seguimiento") return "border-apex bg-apex/25 text-content-strong";
+  if (label === "Sin eventos") return "border-warning bg-warning/20 text-content-strong";
+  if (label === "Cerrado") return "border-info bg-info/15 text-content-strong";
+  if (label === "Cancelado") return "border-error bg-error/15 text-content-strong";
+  return "border-line bg-surface-muted text-content-muted";
+}
+
+function timelineHourLabel(route: RouteMonitor | TimeRoute) {
+  return `${formatHour(route.start_time)} - ${formatHour(route.end_time)}`;
+}
+
+function timelineRowLabel(route: RouteMonitor | TimeRoute) {
+  const id = route.display_id || route.code || route.id;
+  const plate = route.vehicle_plate || (route as RouteMonitor).placa || administrativeSiteFromNotes(route.notes || "") || "Jornada administrativa";
+  return `${id} · ${plate}`;
+}
+
 function employeeSearchText(employee: Employee) {
   return [
     employeeName(employee),
@@ -438,12 +504,12 @@ function FieldHelp({ label, help, children }: { label: string; help: string; chi
 }
 
 function KpiTile({ hint, label, tone = "default", value }: { hint?: string; label: string; tone?: "default" | "info" | "success" | "warning"; value: string | number }) {
-  const toneClassName = tone === "success" ? "text-emerald-600" : tone === "warning" ? "text-amber-600" : tone === "info" ? "text-apex" : "text-content-strong";
+  const toneClassName = tone === "success" ? "text-success-ink" : tone === "warning" ? "text-warning-ink" : tone === "info" ? "text-apex" : "text-content-strong";
   return (
-    <div className="rounded-md border border-line bg-surface p-3">
+    <div className="rounded-card border border-line bg-surface px-3 py-2">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-content-muted">{label}</p>
-      <p className={`mt-1 text-xl font-semibold leading-6 ${toneClassName}`}>{value}</p>
-      {hint ? <p className="mt-0.5 truncate text-xs text-content-muted">{hint}</p> : null}
+      <p className={`mt-0.5 text-lg font-semibold leading-6 ${toneClassName}`}>{value}</p>
+      {hint ? <p className="truncate text-[11px] text-content-subtle">{hint}</p> : null}
     </div>
   );
 }
@@ -490,6 +556,10 @@ export default function RoutesPlanningPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [monitorPerson, setMonitorPerson] = useState("");
   const [monitorKind, setMonitorKind] = useState<"all" | "marca" | "actividad">("all");
+  // El listado tiene dos lecturas del mismo dia: la linea de tiempo (por defecto, es la que
+  // responde a "quien trabaja en este tramo") y la tabla (la que se usa para ordenar y comparar).
+  const [scheduleView, setScheduleView] = useState<"timeline" | "table">("timeline");
+  const [rowMenuId, setRowMenuId] = useState("");
   const [mounted, setMounted] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<RouteMonitor | null>(null);
   const [deleteImpact, setDeleteImpact] = useState<RouteDeletionImpact | null>(null);
@@ -1112,6 +1182,20 @@ export default function RoutesPlanningPage() {
       .sort((a, b) => inputDate(b.date).localeCompare(inputDate(a.date)) || String(a.start_time || "").localeCompare(String(b.start_time || "")));
   }, [dateFilter, kindFilter, monitorRoutes, query, statusFilter]);
   const activeFilters = [query.trim(), kindFilter, statusFilter, dateFilter].filter(Boolean).length;
+  // La linea de tiempo ordena por hora de arranque, que es lo que se lee en el eje; la tabla
+  // conserva el orden por fecha descendente. Sin hora definida la jornada sigue apareciendo, al
+  // final y dicha, porque omitirla seria mentir con el grafico.
+  const timelineRows = useMemo(() => {
+    const sorted = [...filteredRoutes].sort((a, b) => {
+      const from = hourOfDay(a.start_time);
+      const to = hourOfDay(b.start_time);
+      if (from === null && to === null) return String(a.id).localeCompare(String(b.id));
+      if (from === null) return 1;
+      if (to === null) return -1;
+      return from - to || String(a.id).localeCompare(String(b.id));
+    });
+    return { visible: sorted.slice(0, TIMELINE_MAX_ROWS), hidden: sorted.length - TIMELINE_MAX_ROWS };
+  }, [filteredRoutes]);
 
   function clearFilters() {
     setQuery("");
@@ -1159,7 +1243,7 @@ export default function RoutesPlanningPage() {
               <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => { loadRoutes(); loadEventSummaries(); loadReferenceData(); if (selectedRouteId) loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+          <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
             <KpiTile hint="En el listado actual" label="Horarios" value={monitorRoutes.length} />
             <KpiTile hint="Sin cerrar ni cancelar" label="Activos" tone="success" value={activeRoutes.length} />
             <KpiTile hint="Asignadas en total" label="Personas" value={totalAssigned} />
@@ -1167,11 +1251,15 @@ export default function RoutesPlanningPage() {
             <KpiTile hint="Horarios con eventos" label="Seguimiento" tone={routeCoverage >= 70 ? "success" : routeCoverage > 0 ? "warning" : "default"} value={`${routeCoverage}%`} />
             <KpiTile hint={routesWithoutPeople ? "Requieren asignacion" : "Todas con equipo"} label="Sin personas" tone={routesWithoutPeople ? "warning" : "default"} value={routesWithoutPeople} />
           </div>
-          <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_180px_180px_170px]">
+          <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(220px,1fr)_160px_160px_160px_auto]">
             <label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-subtle" size={16} /><input className="h-10 w-full rounded-md border border-line bg-paper pl-9 pr-3 text-sm" placeholder="Buscar persona, sede, placa o estado" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-            <select className="h-10 rounded-md border border-line bg-paper px-3 text-sm" value={kindFilter} onChange={(event) => setKindFilter(event.target.value)}><option value="">Todos los tipos</option><option value="administrative">Administrativos</option><option value="operational">Operativos</option></select>
-            <select className="h-10 rounded-md border border-line bg-paper px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="">Todos los estados</option><option value="active">Activos</option><option value="closed">Cerrados</option><option value="cancelled">Cancelados</option></select>
+            <select aria-label="Filtrar por tipo de jornada" className="h-10 rounded-md border border-line bg-paper px-3 text-sm" value={kindFilter} onChange={(event) => setKindFilter(event.target.value)}><option value="">Todos los tipos</option><option value="administrative">Administrativos</option><option value="operational">Operativos</option></select>
+            <select aria-label="Filtrar por estado" className="h-10 rounded-md border border-line bg-paper px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="">Todos los estados</option><option value="active">Activos</option><option value="closed">Cerrados</option><option value="cancelled">Cancelados</option></select>
             <input aria-label="Filtrar por fecha" className="h-10 rounded-md border border-line bg-paper px-3 text-sm" type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} />
+            <div aria-label="Modo de vista del listado" className="flex items-center gap-1 self-start rounded-md border border-line bg-paper p-1 lg:self-stretch" role="group">
+              <button aria-pressed={scheduleView === "timeline"} className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold ${scheduleView === "timeline" ? "border-apex bg-apex text-white" : "border-line bg-surface text-content-body hover:bg-surface-muted"}`} onClick={() => { setRowMenuId(""); setScheduleView("timeline"); }} type="button"><CalendarDays size={14} /> Línea de tiempo</button>
+              <button aria-pressed={scheduleView === "table"} className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold ${scheduleView === "table" ? "border-apex bg-apex text-white" : "border-line bg-surface text-content-body hover:bg-surface-muted"}`} onClick={() => { setRowMenuId(""); setScheduleView("table"); }} type="button"><Table size={14} /> Tabla</button>
+            </div>
           </div>
           {activeFilters ? <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-content-body hover:bg-paper" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button> : null}
           {monitorNotices.length ? (
@@ -1192,6 +1280,63 @@ export default function RoutesPlanningPage() {
           ) : null}
         </div>
 
+        {scheduleView === "timeline" && filteredRoutes.length ? (
+          <div className="p-3" data-schedule-view="timeline">
+            <p className="text-xs text-content-muted">Haz clic sobre un horario para ver su detalle. La franja cubre de {String(TIMELINE_START_HOUR).padStart(2, "0")}:00 a {TIMELINE_END_HOUR}:00 y el punto de color es el estado del dia.</p>
+            <div className="mt-3 overflow-x-auto">
+              <div className="min-w-[620px]">
+                <div className="flex">
+                  <div className="w-28 shrink-0 pr-3 text-[11px] font-semibold uppercase tracking-wide text-content-muted">Jornada</div>
+                  <div aria-hidden="true" className="relative h-4 flex-1">
+                    {TIMELINE_TICK_HOURS.map((hour) => <span className={`absolute top-0 whitespace-nowrap text-[11px] font-semibold text-content-muted ${hour === TIMELINE_START_HOUR ? "" : hour === TIMELINE_END_HOUR ? "-translate-x-full" : "-translate-x-1/2"}`} key={hour} style={{ left: `${((hour - TIMELINE_START_HOUR) / TIMELINE_SPAN_HOURS) * 100}%` }}>{String(hour).padStart(2, "0")}:00</span>)}
+                  </div>
+                </div>
+                <div className="relative mt-2">
+                  <div aria-hidden="true" className="absolute inset-y-0 left-28 right-0">
+                    {TIMELINE_TICK_HOURS.map((hour) => <span className="absolute inset-y-0 w-px bg-line" key={hour} style={{ left: `${((hour - TIMELINE_START_HOUR) / TIMELINE_SPAN_HOURS) * 100}%` }} />)}
+                  </div>
+                  <ol className="relative space-y-1.5">
+                    {timelineRows.visible.map((route) => {
+                      const bar = timelineBar(route.start_time, route.end_time);
+                      const displayState = routeDisplayState(route);
+                      const open = String(route.id) === selectedRouteId;
+                      const people = routeEmployeeNames(route);
+                      const label = timelineRowLabel(route);
+                      const detailAriaLabel = `Abrir detalle del horario ${label}`;
+                      return (
+                        <li className="flex items-center" key={String(route.id)} data-route-id={String(route.id)}>
+                          <div className="w-28 min-w-0 shrink-0 pr-3">
+                            <button aria-label={detailAriaLabel} className="block w-full text-left" onClick={() => openRouteMonitor(route)} type="button">
+                              <span className={`flex items-center gap-1.5 text-xs font-semibold text-content-strong ${open ? "text-apex" : "hover:text-apex"}`}><span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${routeStateDotClass(route)}`} />{label}</span>
+                            </button>
+                            <p className="mt-0.5 truncate text-[11px] text-content-muted" title={people.join(", ")}>{people.join(", ") || "Sin personas"}</p>
+                          </div>
+                          <div className="relative h-14 flex-1 rounded-md border border-line bg-paper lg:h-10">
+                            {bar ? (
+                              <button
+                                aria-label={detailAriaLabel}
+                                className={`absolute inset-y-1 flex items-center overflow-hidden rounded-md border px-2 text-[11px] font-semibold ${routeBarToneClass(route)} ${open ? "ring-2 ring-apex" : "hover:opacity-90"}`}
+                                onClick={() => openRouteMonitor(route)}
+                                style={{ left: bar.left, width: bar.width }}
+                                title={`${timelineHourLabel(route)} · ${displayState.label}${bar.trimmed ? " · la jornada se sale de la franja visible" : ""}`}
+                                type="button"
+                              >
+                                <span className="truncate">{timelineHourLabel(route)}{people.length ? ` · ${people[0]}${people.length > 1 ? ` +${people.length - 1}` : ""}` : ""}</span>
+                              </button>
+                            ) : <span className="absolute inset-y-0 left-2 flex items-center text-[11px] font-semibold text-content-subtle">{displayState.label.toLowerCase()} · sin horario definido</span>}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              </div>
+            </div>
+            {timelineRows.hidden ? <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">La linea de tiempo dibuja las primeras {TIMELINE_MAX_ROWS} jornadas de este filtro: quedan {timelineRows.hidden} por mostrar. Fija una fecha o limpia el filtro para ver el dia completo.</p> : null}
+          </div>
+        ) : null}
+
+        {scheduleView === "table" && filteredRoutes.length ? <>
         <div className="grid gap-3 p-3 md:hidden">
           {filteredRoutes.map((route) => {
             const events = routeEventCount(route);
@@ -1231,18 +1376,19 @@ export default function RoutesPlanningPage() {
                 const events = routeEventCount(route);
                 const operational = Boolean(route.vehicle_plate || route.placa);
                 const displayState = routeDisplayState(route);
-                return <tr className="hover:bg-paper/70" key={String(route.id)} data-route-id={String(route.id)}>
+                return <tr className="cursor-pointer hover:bg-paper/70" key={String(route.id)} data-route-id={String(route.id)} onClick={() => openRouteMonitor(route)}>
                   <td className="px-4 py-3"><p className="font-semibold text-apex">{route.display_id || route.code || route.id}</p><p className="mt-1 text-xs text-content-muted">Horario</p></td>
                   <td className="px-4 py-3"><p className="font-semibold">{inputDate(route.date)}</p><p className="mt-1 text-xs text-content-muted">{formatHour(route.start_time)} - {formatHour(route.end_time)} · {route.tolerance_minutes ?? 15} min tolerancia · {scheduleGpsRequired(route) ? "GPS" : "sin GPS"}</p></td>
                   <td className="px-4 py-3"><p className="flex items-center gap-2 font-semibold">{operational ? <Truck className="text-apex" size={15} /> : <Building2 className="text-apex" size={15} />}{operational ? "Operativa" : "Administrativa"}</p><p className="mt-1 text-xs text-content-muted">{operational ? routeLabel(route) : administrativeSiteFromNotes(route.notes || "") || "Sin sede definida"}</p></td>
                   <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</p><p className="mt-1 max-w-72 truncate text-xs text-content-muted">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p></td>
-                  <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${displayState.className}`}>{displayState.label}</span><p className="mt-1 text-xs capitalize text-content-muted">{displayState.status} · {counterText(events, "evento(s)")}</p></td>
-                  <td className="px-4 py-3"><div className="flex justify-end gap-2"><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => openRouteMonitor(route)} type="button">Abrir</button>{!onMallasPath ? <><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => openEditModal(route)} type="button">Editar</button><button className="h-9 rounded-md border border-apex px-3 text-xs font-semibold text-apex hover:bg-paper" onClick={() => openCreateModal(route)} type="button">Clonar</button></> : null}</div></td>
+                  <td className="px-4 py-3"><span className="inline-flex items-center gap-2 text-xs font-semibold text-content-body"><span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${routeStateDotClass(route)}`} />{displayState.label}</span><p className="mt-1 text-xs capitalize text-content-muted">{displayState.status} · {counterText(events, "evento(s)")}</p></td>
+                  <td className="px-4 py-3"><div className="flex flex-wrap items-center justify-end gap-2" onClick={(event) => event.stopPropagation()}><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => openRouteMonitor(route)} type="button">Abrir</button>{!onMallasPath ? <><button aria-expanded={rowMenuId === String(route.id)} aria-label={`Mas acciones del horario ${route.display_id || route.code || route.id}`} className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-paper hover:bg-surface-muted" onClick={() => setRowMenuId(rowMenuId === String(route.id) ? "" : String(route.id))} type="button"><MoreHorizontal size={15} /></button>{rowMenuId === String(route.id) ? <span className="flex items-center gap-2 rounded-md border border-line bg-surface p-1 shadow-card" role="group"><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => { setRowMenuId(""); openEditModal(route); }} type="button"><Edit3 size={14} /> Editar</button><button className="h-9 rounded-md bg-apex px-3 text-xs font-semibold text-white" onClick={() => { setRowMenuId(""); openCreateModal(route); }} type="button"><Copy size={14} /> Clonar</button></span> : null}</> : null}</div></td>
                 </tr>;
               })}
             </tbody>
           </table>
         </div>
+        </> : null}
         {!filteredRoutes.length ? <div className="p-10 text-center"><Filter className="mx-auto text-content-subtle" size={28} /><p className="mt-3 text-sm font-semibold">No hay horarios con estos filtros</p><p className="mt-1 text-sm text-content-muted">{dateFilter ? `La pantalla esta fijada al ${dateFilter}. Elige otra fecha o quita el filtro para ver todo el historial.` : onMallasPath ? "Revisa los filtros o crea una jornada en Programación." : "Limpia los filtros o crea una nueva asignacion."}</p></div> : null}
       </section>
 
@@ -1390,7 +1536,7 @@ export default function RoutesPlanningPage() {
 
       {selectedRoute ? createPortal(
         <div
-          className="fixed inset-0 z-[70] flex items-end bg-neutral-950/55 p-0 md:items-center md:justify-center md:p-6"
+          className="fixed inset-0 z-[70] flex items-end bg-neutral-950/70 p-0 backdrop-blur-sm md:items-center md:justify-center md:p-6"
           onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedRouteId(""); }}
         >
           <section
@@ -1431,11 +1577,13 @@ export default function RoutesPlanningPage() {
                   <button aria-label="Cerrar monitor" className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-line bg-paper hover:bg-surface-muted" onClick={() => setSelectedRouteId("")} type="button"><X size={17} /></button>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Badge className="gap-1.5" tone="neutral"><Clock size={12} /> {monitorMarcaCount} marcaciones</Badge>
-                <Badge className="gap-1.5" tone="info"><PlayCircle size={12} /> {monitorActivityCount} actividades</Badge>
-                <Badge className="gap-1.5" tone="success"><Camera size={12} /> {evidenceCount} evidencias</Badge>
-                <Badge className="gap-1.5" tone={selectedPeople.some((person) => person.online) ? "success" : "neutral"}><Navigation size={12} /> {selectedPeople.filter((person) => person.online).length}/{selectedPeople.length} en vivo</Badge>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="rounded-md border border-line bg-paper px-3 py-2"><p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-content-muted"><Clock size={12} /> Marcaciones</p><p className="mt-0.5 text-base font-semibold text-content-strong">{monitorMarcaCount}</p></div>
+                <div className="rounded-md border border-line bg-paper px-3 py-2"><p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-content-muted"><PlayCircle size={12} /> Actividades</p><p className="mt-0.5 text-base font-semibold text-content-strong">{monitorActivityCount}</p></div>
+                <div className="rounded-md border border-line bg-paper px-3 py-2"><p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-content-muted"><Camera size={12} /> Evidencias</p><p className="mt-0.5 text-base font-semibold text-content-strong">{evidenceCount}</p></div>
+                <div className="rounded-md border border-line bg-paper px-3 py-2"><p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-content-muted"><Navigation size={12} /> En vivo</p><p className="mt-0.5 text-base font-semibold text-content-strong">{selectedPeople.filter((person) => person.online).length}/{selectedPeople.length}</p></div>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 {monitorFilterActive ? (
                   <button className="inline-flex items-center gap-1.5 rounded-md border border-apex/40 bg-apex/10 px-2 py-1 text-xs font-semibold text-apex hover:bg-apex/20" onClick={resetMonitorFilters} title="Quitar los filtros del monitor" type="button">
                     <Filter size={12} />
@@ -1479,15 +1627,19 @@ export default function RoutesPlanningPage() {
                             <p className="mt-0.5 text-xs text-content-muted">
                               {person.last_punch_type && person.last_punch_type !== "sin_marcar" ? `Ultima marca: ${punchShortNames[person.last_punch_type] || person.last_punch_type}${person.last_punch_time ? ` · ${person.last_punch_time}` : ""}` : "Sin marca registrada"}
                             </p>
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {punchSequence.map((type) => {
-                                const mark = marks.get(type);
-                                return (
-                                  <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${mark ? "bg-success/10 text-content-strong" : "bg-surface-muted text-content-subtle"}`} key={type} title={mark ? `Marcada a las ${formatHour(mark.time)}` : "Pendiente"}>
-                                    {mark ? <CheckCircle2 size={10} /> : null}{punchShortNames[type]}
-                                  </span>
-                                );
-                              })}
+                            <div className="mt-2">
+                              <div className="flex items-center">
+                                {punchSequence.map((type, step) => {
+                                  const mark = marks.get(type);
+                                  return (
+                                    <span className={`flex items-center gap-1 ${step < punchSequence.length - 1 ? "flex-1" : ""}`} key={type}>
+                                      <span aria-hidden="true" className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${mark ? "bg-apex text-white" : "bg-surface-muted text-content-subtle"}`} title={`${punchShortNames[type]}: ${mark ? `marcada a las ${formatHour(mark.time)}` : "pendiente"}`}>{mark ? <CheckCircle2 size={12} /> : step + 1}</span>
+                                      {step < punchSequence.length - 1 ? <span aria-hidden="true" className={`h-px flex-1 ${mark ? "bg-apex" : "bg-line"}`} /> : null}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-content-muted">{Array.from(marks.keys()).length} de {punchSequence.length} pasos · {punchSequence.map((type) => punchShortNames[type]).join(" › ")}</p>
                             </div>
                             {person.last_activity_type ? <p className="mt-2 text-xs text-content-muted">{person.last_activity_type} - {person.last_activity_time || "--"}</p> : null}
                             {person.latitude != null && person.longitude != null ? (

@@ -1,12 +1,17 @@
 const { calculateTerminationBenefits } = require("./terminationBenefits");
 const { reviewDays } = require("./dayReview");
+const { adjustmentCalendarConcept } = require("./adjustmentCalendarConcept");
+const { accumulatedOrdinaryMinutes } = require("./accumulatedOrdinaryTime");
 const { assertPayrollPeriod } = require("./payrollPeriod");
 const { settleTerminationBenefits, reverseTerminationBenefits } = require("./terminationBenefitPayments");
 const { terminationDeductions } = require("./terminationDeductions");
 const { punchPhotoItems, punchMonitorMetadata } = require("./punchEvidence");
 const { findUserForEmployee } = require("./employeeUserLink");
 const prisma = require("../../core/prisma");
+const { contractCalendarKey } = require("./contractCalendarDate");
+const repairEmployeeContractFoundation = require("./contractFoundationRepair").foundationRepairService(prisma);
 const banks = require("./banks").bankService(prisma);
+const { buildDaviviendaPayrollFile } = require("./davivienda-file");
 const { Prisma } = require("@prisma/client");
 const { randomUUID } = require("crypto");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
@@ -678,6 +683,7 @@ async function savePayrollConfig(tenantId, input) {
       concepts: Array.isArray(input?.concepts) ? input.concepts : current.concepts
     });
     await prisma.tenant.update({ where: { id: tenantId }, data: { config: { ...config, payroll: next } } });
+    await invalidateTenantCache(tenantId);
     return next;
   });
 }
@@ -1146,7 +1152,7 @@ async function syncEmployeeSalaryHistory(tx, tenantId, employeeId, input = {}, a
   if (input.salary_base === undefined) return;
   const salary = Number(input.salary_base || 0);
   if (!(salary > 0)) return;
-  const validFrom = input.hire_date ? new Date(input.hire_date) : new Date();
+  const validFrom = input.hire_date ? new Date(contractCalendarKey(input.hire_date)) : startOfDay();
   const reason = input.salary_reason || "Actualizacion maestro empleado";
   await tx.$executeRaw`
     UPDATE th_empleado_salarios
@@ -1180,10 +1186,12 @@ async function syncEmployeeSalaryHistory(tx, tenantId, employeeId, input = {}, a
 function employeeContractPayload(input = {}, employee = {}) {
   const metadata = employee.metadata && typeof employee.metadata === "object" ? employee.metadata : {};
   const accounting = metadata.accounting && typeof metadata.accounting === "object" ? metadata.accounting : {};
+  const initialDate = input.valid_from || input.hire_date || employee.hire_date;
+  const finalDate = input.end_date || input.valid_to;
   return {
     contract_type: normalizeContractType(input.contract_type || employee.contract_type),
-    valid_from: dateOnly(input.valid_from || input.hire_date || employee.hire_date || new Date()),
-    valid_to: input.end_date || input.valid_to ? dateOnly(input.end_date || input.valid_to) : null,
+    valid_from: dateOnly(initialDate ? contractCalendarKey(initialDate) : new Date()),
+    valid_to: finalDate ? dateOnly(contractCalendarKey(finalDate)) : null,
     salary_base: Number(input.salary_base ?? employee.salary_base ?? 0),
     cost_center: input.cost_center ?? metadata.cost_center ?? "",
     society_code: input.society_code ?? accounting.society_code ?? metadata.society_code ?? null,
@@ -1228,7 +1236,7 @@ async function ensureEmployeeContractFoundation(tx, tenantId, employee, user = {
     LIMIT 1
   `;
   if (existing[0]) return existing[0];
-  const payload = employeeContractPayload({}, employee);
+  const payload = employeeContractPayload({ end_date: employee.end_date }, employee);
   const continuityGroupId = randomUUID();
   const rows = await tx.$queryRaw`
     INSERT INTO th_empleado_contratos (
@@ -1413,7 +1421,7 @@ async function createEmployee(tenantId, input) {
         department: input.department || input.area || "Operacion",
         salary_base: Number(input.salary_base || 0),
         salary_type: input.salary_type || "monthly",
-        hire_date: input.hire_date ? new Date(input.hire_date) : new Date(),
+        hire_date: input.hire_date ? new Date(input.hire_date) : startOfDay(),
         end_date: input.end_date ? new Date(input.end_date) : null,
         contract_type: normalizeContractType(input.contract_type),
         metadata: {
@@ -3842,6 +3850,28 @@ function resolvePunchLadder({ ownScope, expectedType, type, input }) {
   return { motivo: motivo.slice(0, 300), salto };
 }
 
+// Read-only: use the same raw-punch projection, schedules and calendar as payroll.
+async function timeReportSummary(tenantId, query = {}) {
+  const range = boundedReportRange(query);
+  return prisma.runWithTenant(tenantId, async () => {
+    const [employees, config, calendarDays] = await Promise.all([
+      prisma.employee.findMany({ where: { tenant_id: tenantId, __includeInactive: true }, select: { id: true, code: true, metadata: true, user: { select: { name: true, email: true } } } }),
+      getPayrollConfig(tenantId),
+      activeCalendarDaysByDate(tenantId, range.start, new Date(range.end.getTime() - 86400000), query.country || "CO")
+    ]);
+    const days = await loadPayrollWorkdays({ db: prisma, tenantId, employees, start: range.start, endExclusive: range.end, parameters: { ...DEFAULT_PARAMS, ...config.parameters }, calendarDays });
+    const fields = ["ordinary_day_minutes", "ordinary_night_minutes", "ordinary_sunday_holiday_day_minutes", "ordinary_sunday_holiday_night_minutes", "overtime_day_minutes", "overtime_night_minutes", "overtime_sunday_holiday_day_minutes", "overtime_sunday_holiday_night_minutes"];
+    return days.map(day => ({
+      employee_id: day.employee_id,
+      date: new Date(day.date).toISOString().slice(0, 10),
+      ...Object.fromEntries(fields.map(field => [field, Number(day[field] || 0)])),
+      worked_minutes: fields.reduce((sum, field) => sum + Number(day[field] || 0), 0),
+      overtime_minutes: fields.filter(field => field.startsWith("overtime_")).reduce((sum, field) => sum + Number(day[field] || 0), 0),
+      alerts: day.alerts || []
+    }));
+  });
+}
+
 async function listAttendance(tenantId, query = {}) {
   const range = boundedReportRange(query);
   return prisma.runWithTenant(tenantId, async () => {
@@ -5415,11 +5445,13 @@ function isExternalWorkday(adjustment = {}) {
   return String(adjustment.adjustment_type || "").trim().toLowerCase() === "jornada_externa";
 }
 
-function adjustmentPayrollMinutes(adjustment = {}) {
+function adjustmentPayrollMinutes(adjustment = {}, monthlyOrdinaryHours) {
   const minutes = Number(adjustment.minutes || 0);
   if (minutes > 0) return minutes;
   const days = Number(adjustment.metadata?.days || adjustment.metadata?.dias || 0);
-  if (days > 0 && normalizeLaborCode(adjustment.concept_code || "") === "JORNADA_ORDINARIA") return days * 480;
+  if (days > 0 && normalizeLaborCode(adjustment.concept_code || "") === "JORNADA_ORDINARIA") {
+    return accumulatedOrdinaryMinutes(adjustment, monthlyOrdinaryHours) ?? days * 480;
+  }
   return 0;
 }
 
@@ -5899,7 +5931,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}, options = {}) {
       .filter(Boolean));
     const externalOrdinaryAdjustments = employeeAdjustments.filter((adjustment) => isExternalWorkday(adjustment) && normalizeLaborCode(adjustment.concept_code || "") === "JORNADA_ORDINARIA");
     const externalWorkedDays = externalOrdinaryAdjustments.reduce((sum, adjustment) => sum + adjustmentDays(adjustment), 0);
-    const correctedOrdinaryMinutes = employeeAdjustments.filter(isWorkdayCorrection).reduce((sum, adjustment) => sum + adjustmentPayrollMinutes(adjustment), 0);
+    const correctedOrdinaryMinutes = employeeAdjustments.filter(isWorkdayCorrection).reduce((sum, adjustment) => sum + adjustmentPayrollMinutes(adjustment, monthlyOrdinaryHours), 0);
     const workReviewDates = new Set(employeeAdjustments.filter(row => row.adjustment_type === "revision_dia" && ["trabajado_sin_marcacion", "induccion"].includes(row.metadata?.classification)).map(row => row.metadata?.work_date).filter(date => date && !correctionDates.has(date) && !days.some(day => new Date(day.date).toISOString().slice(0,10) === date) && !externalOrdinaryAdjustments.some(row => row.metadata?.work_date === date)));
     const daysWorked = days.length + correctionDates.size + externalWorkedDays + workReviewDates.size;
     const calendarRestDays = days
@@ -6022,14 +6054,13 @@ async function buildPayrollLiquidationRows(tenantId, input = {}, options = {}) {
       if (!adjustment) continue;
       const adjustmentDate = adjustment.metadata?.work_date || adjustment.metadata?.date_start || adjustment.date_start;
       const adjustmentCalendarType = adjustmentDate ? calendarDayTypeForDate(adjustmentDate, calendarDays) : "ordinario";
-      const calendarConceptCode = adjustment.concept_code === "JORNADA_ORDINARIA" && ["festivo", "dominical", "no_laboral"].includes(adjustmentCalendarType)
-        ? "DOM_FEST_DIURNO"
-        : adjustment.concept_code;
+      const calendarClassification = adjustmentCalendarConcept(adjustment, adjustmentCalendarType);
+      const calendarConceptCode = calendarClassification.code;
       if (options.termination && !payrollConcepts[calendarConceptCode] && !["JORNADA_ORDINARIA", "HED", "HEN", "HEDD", "HEND", "RECARGO_NOCTURNO", "DOM_FEST_DIURNO", "DOM_FEST_NOCTURNO", "BONIFICACION_SALARIAL", "BONIFICACION_NO_SALARIAL", "COMISION", "VACACIONES", "VACACIONES_DISFRUTADAS", "VACACIONES_COMPENSADAS", "LICENCIA_REMUNERADA", "LICENCIA_NO_REMUNERADA", "SLN"].includes(calendarConceptCode)) {
         throw validationError(`Configura el concepto manual ${calendarConceptCode} y su clasificacion salarial antes de liquidar.`, 409, "CONCEPTO_MANUAL_NO_CONFIGURADO");
       }
       const concept = payrollConcepts[calendarConceptCode] || payrollConceptFallback(calendarConceptCode);
-      const payrollMinutes = adjustmentPayrollMinutes(adjustment);
+      const payrollMinutes = adjustmentPayrollMinutes(adjustment, monthlyOrdinaryHours);
       const segmentedType = segmentedAdjustmentType(adjustment);
       // Aplica el mismo multiplicador (segun value_type) que la ruta de marcaciones, para que una
       // hora extra diurna o un recargo nocturno importados por jornada externa se liquiden igual.
@@ -6064,7 +6095,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}, options = {}) {
       const displayConcept = isOrdinaryWorkedDay ? (payrollConcepts.SALARIO_BASICO || concept) : concept;
       lines.push({
         ...payrollLine(displayCode, displayName, quantity, unitRate, signedAmount, source, displayConcept),
-        metadata: { ...(displayConcept.metadata || {}), calendar_day_type: adjustmentCalendarType, original_concept_code: adjustment.concept_code }
+        metadata: { ...(displayConcept.metadata || {}), calendar_day_type: calendarClassification.accumulated ? "periodo_acumulado" : adjustmentCalendarType, ...(calendarClassification.accumulated ? { calendar_reference_day_type: adjustmentCalendarType } : {}), original_concept_code: adjustment.concept_code }
       });
     }
     for (const libranza of libranzasByEmployee.get(employee.id) || []) {
@@ -6686,6 +6717,47 @@ async function listPayrollDocuments(tenantId, query = {}) {
   });
 }
 
+const BANK_FILE_EXCLUDED_STATUSES = ["anulado", "anulada", "cancelado", "cancelada", "cancelled", "canceled", "void", "voided"];
+
+async function buildPayrollBankFile(tenantId, query = {}) {
+  const periodKey = String(query.period_key || "").trim();
+  if (!periodKey) throw validationError("period_key es obligatorio.", 400, "PERIODO_NOMINA_REQUERIDO");
+  const todayBogota = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
+  const applicationDate = String(query.application_date || todayBogota).slice(0, 10);
+  const config = await getPayrollConfig(tenantId);
+  const rows = await prisma.runWithTenant(tenantId, () => prisma.$queryRaw`
+    SELECT d.employee_id, d.net, e.metadata AS employee_metadata
+    FROM th_nomina_documentos d
+    LEFT JOIN "Employee" e ON e.id = d.employee_id AND e.tenant_id = d.tenant_id
+    WHERE d.tenant_id = ${tenantId}
+      AND d.period_key = ${periodKey}
+      AND d.net > 0
+      AND lower(COALESCE(d.status, '')) <> ALL(${BANK_FILE_EXCLUDED_STATUSES}::text[])
+    ORDER BY d.employee_id
+  `);
+  if (!rows.length) throw validationError("No hay nomina liquidada con valor a pagar para ese periodo.", 422, "PLANO_SIN_PAGOS");
+  const missing = [];
+  const mapped = [];
+  for (const row of rows) {
+    const meta = row.employee_metadata || {};
+    const label = `${meta.name || "Empleado " + row.employee_id} (${meta.document || "sin documento"})`;
+    if (!meta.bank_account_code || !meta.bank_code) { missing.push(label); continue; }
+    mapped.push({ label, document: meta.document, documentType: meta.document_type, accountNumber: meta.bank_account_code, accountType: meta.bank_account_type === "corriente" ? "CC" : "CA", bankCode: meta.bank_code, amount: Number(row.net) });
+  }
+  if (missing.length) {
+    const error = validationError(`Empleados sin banco o cuenta bancaria registrada: ${missing.join("; ")}.`, 422, "PLANO_EMPLEADOS_SIN_CUENTA");
+    error.details = missing;
+    throw error;
+  }
+  const bank = config.bank_file || {};
+  return buildDaviviendaPayrollFile({
+    company: { nit: bank.company_nit, dv: bank.company_dv, debitAccount: bank.debit_account, debitAccountType: bank.debit_account_type },
+    applicationDate,
+    periodKey,
+    rows: mapped
+  });
+}
+
 async function createPayrollAdjustment(tenantId, input = {}, user = {}) {
   if (String(input.adjustment_type || '').trim().toLowerCase() === 'revision_dia' || normalizeLaborCode(input.concept_code || '') === 'REVISION_DIA') throw validationError("Registra la justificacion desde la revision de dias del retiro.", 422, "REVISION_DIA_REQUIERE_FLUJO");
   const employeeId = numericId(input.employee_id);
@@ -7191,6 +7263,29 @@ async function listEmployeeTerminationLiquidations(tenantId, query = {}) {
     ORDER BY d.created_at DESC
     LIMIT ${Math.min(Number(query.limit || 200), 500)}
   `);
+}
+
+// Read the actual provision ledger, including posted payments and reversals.
+// The benefit report has separate reporting semantics and is not a payment balance.
+async function annualSocialBenefitProvisionBalances(tenantId, query = {}) {
+  const year = String(query.year || "");
+  if (!/^\d{4}$/.test(year) || Number(year) < 1) {
+    throw validationError("Indica un año válido de cuatro dígitos.", 400, "PROVISION_ANIO_INVALIDO");
+  }
+  return prisma.runWithTenant(tenantId, async () => {
+    const rows = await prisma.$queryRaw`
+      SELECT concept_code, COALESCE(SUM(accrued_amount), 0) AS accrued_amount,
+             COALESCE(SUM(paid_amount), 0) AS paid_amount,
+             COALESCE(SUM(balance_amount), 0) AS balance_amount
+      FROM th_prestaciones_saldos
+      WHERE tenant_id = ${tenantId} AND source_document_type = 'provision'
+        AND date_start >= ${year + "-01-01"}::date AND date_start <= ${year + "-12-31"}::date
+      GROUP BY concept_code ORDER BY concept_code
+    `;
+    return { year, concepts: Object.fromEntries(rows.map(row => [row.concept_code, {
+      causado: money(row.accrued_amount), pagado: money(row.paid_amount), saldo: money(row.balance_amount)
+    }])) };
+  });
 }
 
 async function listEmployeeBenefitBalances(tenantId, query = {}) {
@@ -8295,6 +8390,7 @@ const terminationManualAdjustments = require("./terminationManualAdjustments")({
 const terminationDayReviews = require("./terminationDayReviews")({ db: prisma, context: terminationManualAdjustments.context, build: buildEmployeeTerminationLiquidation, error: validationError });
 
 module.exports = {
+  repairEmployeeContractFoundation,
   listTerminationManualAdjustments: terminationManualAdjustments.list,
   listTerminationDayReviews: terminationDayReviews.list,
   saveTerminationDayReview: terminationDayReviews.save,
@@ -8371,6 +8467,7 @@ module.exports = {
   listActiveGps,
   listGpsHistory,
   listAttendance,
+  timeReportSummary,
   listOwnAttendance,
   processDay,
   listWorkdays,
@@ -8391,6 +8488,7 @@ module.exports = {
   previewPayrollLiquidation,
   runPayrollLiquidation,
   deletePayrollLiquidation,
+  buildPayrollBankFile,
   payrollConceptReport,
   benefitBalanceReport,
   payrollAuxiliaryReport,
@@ -8412,6 +8510,7 @@ module.exports = {
   runEmployeeTerminationLiquidation,
   listEmployeeTerminationLiquidations,
   listEmployeeBenefitBalances,
+  annualSocialBenefitProvisionBalances,
   deleteEmployeeTerminationLiquidation,
   getEmployeeTerminationLiquidationPdf,
   previewSocialContributions,

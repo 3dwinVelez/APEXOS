@@ -23,6 +23,7 @@ type Employee = {
     bank_code?: string;
     bank_entity_name?: string;
     bank_account_code?: string;
+    bank_account_type?: string;
     name?: string;
     // Telefono registrado para marcar con huella desde la app.
     mobile_biometric?: { device_id?: string; device_model?: string | null; platform?: string | null; enrolled_at?: string | null };
@@ -60,6 +61,7 @@ type EmployeeContract = { id: number; contract_type: string; status: string; rea
 type EmployeeForm = {
   bank_code: string;
   bank_account_code: string;
+  bank_account_type: string;
   first_name: string;
   middle_name: string;
   last_name: string;
@@ -180,7 +182,7 @@ export default function EmployeesMasterPage() {
   const [salaryForm, setSalaryForm] = useState({ monthly_salary: "", valid_from: today(), reason: "Cambio salarial" });
   const [contractForm, setContractForm] = useState({ valid_from: today(), new_hire_date: today(), contract_type: "indefinite", end_date: "", salary_base: "", cost_center: "", reason: "Otrosi contractual", notes: "" });
   const [form, setForm] = useState<EmployeeForm>({
-    bank_code: "", bank_account_code: "",
+    bank_code: "", bank_account_code: "", bank_account_type: "ahorros",
     first_name: "",
     middle_name: "",
     last_name: "",
@@ -217,7 +219,7 @@ export default function EmployeesMasterPage() {
 
   function baseForm(): EmployeeForm {
     return {
-      bank_code: "", bank_account_code: "",
+      bank_code: "", bank_account_code: "", bank_account_type: "ahorros",
       first_name: "",
       middle_name: "",
       last_name: "",
@@ -345,6 +347,7 @@ export default function EmployeesMasterPage() {
     setForm({
       bank_code: employee.metadata?.bank_code || "",
       bank_account_code: employee.metadata?.bank_account_code || "",
+      bank_account_type: employee.metadata?.bank_account_type || "ahorros",
       first_name: first,
       middle_name: middle,
       last_name: last,
@@ -437,7 +440,7 @@ export default function EmployeesMasterPage() {
     setModalMessage("");
     try {
       const payload = {
-        ...(!bankError ? { bank_code: form.bank_code, bank_account_code: form.bank_account_code } : {}),
+        ...(!bankError ? { bank_code: form.bank_code, bank_account_code: form.bank_account_code, bank_account_type: form.bank_account_type } : {}),
         ...(userId ? { user_id: Number(userId) } : {}),
         first_name: form.first_name,
         middle_name: form.middle_name,
@@ -688,6 +691,7 @@ export default function EmployeesMasterPage() {
                   {bankError ? <p role="alert" className="mb-2 text-sm text-rose-700">{bankError}</p> : null}
                   <div className="grid gap-3 md:grid-cols-2">
                     <label className="text-sm">Banco<select aria-label="Banco del empleado" disabled={mode === "view" || Boolean(bankError)} className="mt-1 h-10 w-full rounded-md border border-line px-3" value={form.bank_code} onChange={event => setForm(current => ({ ...current, bank_code: event.target.value }))}><option value="">Sin banco</option>{banks.filter(bank => bank.active || bank.code === form.bank_code).map(bank => <option key={bank.code} value={bank.code}>{bank.code} · {bank.name}{bank.active ? "" : " (inactivo)"}</option>)}{form.bank_code && !banks.some(bank => bank.code === form.bank_code) ? <option value={form.bank_code}>{form.bank_code} · {selected?.metadata?.bank_entity_name || "Banco registrado"}</option> : null}</select></label>
+                    <label className="text-sm">Tipo de cuenta<select aria-label="Tipo de cuenta bancaria" disabled={mode === "view" || Boolean(bankError)} className="mt-1 h-10 w-full rounded-md border border-line px-3" value={form.bank_account_type} onChange={event => setForm(current => ({ ...current, bank_account_type: event.target.value }))}><option value="ahorros">Ahorros</option><option value="corriente">Corriente</option></select></label>
                     <label className="text-sm">Cuenta bancaria<input aria-label="Cuenta bancaria del empleado" type="text" maxLength={100} readOnly={mode === "view" || Boolean(bankError)} className="mt-1 h-10 w-full rounded-md border border-line px-3" value={form.bank_account_code} onChange={event => setForm(current => ({ ...current, bank_account_code: event.target.value }))} /></label>
                   </div>
                 </section>

@@ -292,6 +292,20 @@ const employeePatchSchema = {
   }
 };
 
+const employeeContractRepairSchema = {
+  params: { type: "object", required: ["id"], properties: { id: { type: "integer", minimum: 1 } } },
+  body: {
+    type: "object", additionalProperties: false,
+    required: ["contract_id", "expected_start", "expected_hire_date"],
+    properties: {
+      contract_id: { type: "integer", minimum: 1 },
+      expected_start: { type: "string", format: "date" },
+      expected_hire_date: { type: "string", format: "date" },
+      apply: { type: "boolean", default: false }
+    }
+  }
+};
+
 const employeeContractAddendumSchema = {
   body: {
     type: "object",
@@ -829,6 +843,7 @@ const terminationManualAdjustmentSchema = {
 };
 
 module.exports = {
+  employeeContractRepairSchema,
   terminationManualAdjustmentSchema,
   scheduleSchema,
   punchSchema,

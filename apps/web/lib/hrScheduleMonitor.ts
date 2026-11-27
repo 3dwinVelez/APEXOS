@@ -5,7 +5,7 @@ export function scheduleMonitorUsesOperationalSource(path: string, method = "GET
   const pathname = path.split("?")[0];
   return pathname.startsWith("/api/v1/hr/monitor-evidence/") || pathname === "/api/v1/hr/operations-map"
     || pathname === "/api/v1/hr/routes" || pathname === "/api/v1/hr/routes/event-summaries"
-    || pathname === "/api/v1/hr/employees" || pathname === "/api/v1/talento-humano/empleados";
+    || pathname === "/api/v1/hr/employees" || pathname === "/api/v1/talento-humano/empleados" || pathname === "/api/v1/hr/time-report";
 }
 
 export function localCalendarDate(value = new Date()) {

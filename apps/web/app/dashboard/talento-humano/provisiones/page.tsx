@@ -1,6 +1,9 @@
 "use client";
 
+import { hrStyles, HrKpis, HrSteps } from "@/components/hr/HrWorkspace";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Calculator, Play } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -43,6 +46,7 @@ type PayrollDocumentRow = {
 };
 
 type EmployeeProvisionRow = {
+  base: number;
   employee_id: number;
   employee_name?: string;
   payroll_document_id?: number;
@@ -79,6 +83,9 @@ function periodFromKey(key: string) {
 }
 
 export default function SocialBenefitProvisionsPage() {
+  const [employeeQuery, setEmployeeQuery] = useState("");
+  const [annual, setAnnual] = useState<{year:string;concepts:Record<string,{causado:number;pagado:number;saldo:number}>}|null>(null);
+  const [annualError, setAnnualError] = useState("");
   const [periodType, setPeriodType] = useState("mes");
   const [startDate, setStartDate] = useState(currentMonthStart);
   const [endDate, setEndDate] = useState(currentMonthEnd);
@@ -89,6 +96,12 @@ export default function SocialBenefitProvisionsPage() {
   const [liquidatedPeriods, setLiquidatedPeriods] = useState<LiquidatedPeriod[]>([]);
   const currentPeriodKey = useMemo(() => periodKey(periodType, startDate, endDate), [periodType, startDate, endDate]);
 
+  const balanceYear = startDate.slice(0,4);
+  const loadAnnual = useCallback(async () => {
+    const result=await api<{year:string;concepts:Record<string,{causado:number;pagado:number;saldo:number}>}>(`/api/v1/talento-humano/provisiones/prestaciones-sociales/saldos?year=${balanceYear}`, {cache:"no-store"});
+    setAnnual({year:balanceYear,concepts:result.concepts});setAnnualError("");
+  },[balanceYear]);
+  useEffect(()=>{loadAnnual().catch(()=>{setAnnual(null);setAnnualError("No se pudo consultar el saldo anual.");});},[loadAnnual]);
   const loadLiquidatedPeriods = useCallback(async () => {
     const rows = await api<PayrollDocumentRow[]>("/api/v1/talento-humano/nomina/liquidaciones?limit=500", { cache: "no-store" }).catch(() => []);
     const periodMap = new Map<string, LiquidatedPeriod>();
@@ -122,7 +135,7 @@ export default function SocialBenefitProvisionsPage() {
     setStartDate(selected.date_start || parsed.start || startDate);
     setEndDate(selected.date_end || parsed.end || endDate);
   }
-  const rows = preview?.lines || [];
+  const rows = useMemo(() => preview?.lines || [], [preview]);
   const conceptTotals = useMemo(() => {
     const totals = new Map<string, number>();
     for (const line of rows) totals.set(line.code, (totals.get(line.code) || 0) + Number(line.amount || 0));
@@ -137,6 +150,7 @@ export default function SocialBenefitProvisionsPage() {
           employee_id: line.employee_id,
           employee_name: line.employee_name,
           payroll_document_id: line.payroll_document_id,
+          base: 0,
           concepts: {},
           total: 0
         };
@@ -144,6 +158,7 @@ export default function SocialBenefitProvisionsPage() {
       }
       if (!row.employee_name && line.employee_name) row.employee_name = line.employee_name;
       if (!row.payroll_document_id && line.payroll_document_id) row.payroll_document_id = line.payroll_document_id;
+      row.base = Math.max(row.base, Number(line.base || 0));
       row.concepts[line.code] = (row.concepts[line.code] || 0) + Number(line.amount || 0);
       row.total += Number(line.amount || 0);
     }
@@ -189,6 +204,7 @@ export default function SocialBenefitProvisionsPage() {
         ? `Provision exitosa para ${currentPeriodKey}: ${provisioned} linea(s), ${result.payroll_documents} documento(s) base, total ${money(result.total_provisions)}.`
         : `El proceso termino sin errores, pero no genero lineas para ${currentPeriodKey}. Revisa que la nomina del periodo tenga base de prestaciones y dias liquidados.`);
       await loadLiquidatedPeriods();
+      await loadAnnual().catch(()=>setAnnualError("No se pudo actualizar el saldo anual."));
     } catch (error) {
       setMessageType("error");
       setMessage(error instanceof Error ? error.message : "No se pudo provisionar prestaciones.");
@@ -198,7 +214,7 @@ export default function SocialBenefitProvisionsPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className={`${hrStyles.workspace} space-y-5`}>
       <header>
         <p className="text-sm font-medium text-apex">Talento Humano - Nomina</p>
         <h1 className="text-3xl font-semibold">Provisionar prestaciones sociales</h1>
@@ -216,6 +232,7 @@ export default function SocialBenefitProvisionsPage() {
         </p>
       ) : null}
 
+      <HrSteps labels={["Periodo", "Previsualizar", "Provisionar"]} />
       <section className="rounded-md border border-line bg-white p-4">
         <label className="mb-3 block text-sm">Periodo liquidado
           <select
@@ -255,39 +272,47 @@ export default function SocialBenefitProvisionsPage() {
         </div>
       </section>
 
+      <HrKpis items={[...PROVISION_CONCEPTS.map(concept=>({label:concept.label,value:money(conceptTotals.find(([code])=>code===concept.code)?.[1]||0)})),{label:"Total a provisionar",value:money(preview?.total_provisions)}]} />
+      <div className={hrStyles.columns}>
       <section className="rounded-md border border-line bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
           <div>
             <h2 className="text-base font-semibold">Prestaciones a provisionar</h2>
             <p className="text-sm text-neutral-500">{preview ? `${preview.payroll_documents} documento(s) de nomina usados como base` : "Selecciona un periodo y previsualiza para ver la tabla."}</p>
           </div>
-          <div className="grid gap-2 text-right sm:grid-cols-2 lg:grid-cols-5">
-            {conceptTotals.map(([code, total]) => <div className="rounded-md border border-line bg-paper px-3 py-2" key={code}><p className="text-[11px] uppercase text-neutral-500">{code}</p><p className="text-sm font-semibold">{money(total)}</p></div>)}
-            <div className="rounded-md border border-apex/20 bg-apex/5 px-3 py-2"><p className="text-[11px] uppercase text-neutral-500">Total</p><p className="text-sm font-semibold">{money(preview?.total_provisions || 0)}</p></div>
-          </div>
+
         </div>
+        <div className="px-4"><input aria-label="Buscar empleado en provisiones" className={hrStyles.search} placeholder="Buscar empleado por nombre o código" value={employeeQuery} onChange={event=>setEmployeeQuery(event.target.value)} /></div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] text-sm">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500">
                 <th className="px-3 py-2">Empleado</th>
-                <th className="px-3 py-2">Doc. nomina</th>
+                <th className="px-3 py-2 text-right" title="Máxima base reportada por los conceptos de esta previsualización">Base de referencia (máx.)</th>
                 {PROVISION_CONCEPTS.map((concept) => <th className="px-3 py-2 text-right" key={concept.code}>{concept.label}</th>)}
                 <th className="px-3 py-2 text-right">Total provision</th>
               </tr>
             </thead>
-            <tbody>{employeeRows.map((row) => (
+            <tbody>{employeeRows.filter(row=>`${row.employee_name||""} ${row.employee_id}`.toLowerCase().includes(employeeQuery.trim().toLowerCase())).map((row) => (
               <tr className="border-b border-line/70" key={row.employee_id}>
                 <td className="px-3 py-2 font-medium">{row.employee_name || row.employee_id}</td>
-                <td className="px-3 py-2">{row.payroll_document_id || "--"}</td>
+                <td className="px-3 py-2 text-right">{money(row.base)}<p className="text-xs text-neutral-500">Doc. nomina {row.payroll_document_id || "—"}</p></td>
                 {PROVISION_CONCEPTS.map((concept) => <td className="px-3 py-2 text-right" key={concept.code}>{money(row.concepts[concept.code] || 0)}</td>)}
                 <td className="px-3 py-2 text-right font-semibold">{money(row.total)}</td>
               </tr>
             ))}</tbody>
+            {employeeRows.length ? <tfoot><tr><td className="p-3 font-semibold" colSpan={2}>Total del periodo</td>{PROVISION_CONCEPTS.map(concept=><td className="p-3 text-right font-semibold" key={concept.code}>{money(conceptTotals.find(([code])=>code===concept.code)?.[1]||0)}</td>)}<td className="p-3 text-right font-semibold">{money(preview?.total_provisions)}</td></tr></tfoot> : null}
           </table>
           {!employeeRows.length ? <p className="p-4 text-sm text-neutral-500">Selecciona un periodo con nomina liquidada y previsualiza la provision.</p> : null}
         </div>
       </section>
+      <aside className={hrStyles.panel} aria-label="Saldo anual de prestaciones"><h2>Saldo {balanceYear}</h2>
+        <p>Saldo actual de las provisiones del año</p>
+        {annualError ? <p role="status">{annualError}</p> : annual?.year===balanceYear ? PROVISION_CONCEPTS.map(concept=>{const value=annual.concepts[concept.code];return <div className="mt-5" key={concept.code}><strong className="text-sm">{concept.label}</strong><dl className="mt-3"><div><dt>Causado</dt><dd>{money(value?.causado)}</dd></div><div><dt>Pagado</dt><dd>{money(value?.pagado)}</dd></div><div><dt>Saldo</dt><dd>{money(value?.saldo)}</dd></div></dl></div>;}) : <p>Consultando saldos…</p>}
+        <Link className="mt-6 block text-sm font-semibold text-apex" href="/dashboard/talento-humano/prestaciones-pagos">Ir a pago de prestaciones →</Link>
+      </aside>
+      </div>
+
     </div>
   );
 }
