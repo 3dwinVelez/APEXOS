@@ -98,3 +98,19 @@ Dejar a `desarrollo` con el mismo Talento Humano que ya sirve `develop` (bancos,
 - Agentes dueños según `agents:preflight`: `equipo-apexos`, `apexos-backend`, `apexos-seguridad`, `apexos-frontend`, `apexos-qa`.
 - Control nuevo versionado: la paridad de un módulo entre ramas se demuestra **por blob y por línea sin réplica**, no por ancestría de commits; y una retrointegración que toma blobs de otra rama debe comparar identificadores exclusivos del destino antes de cerrar.
 - Publicación: `git push origin desarrollo` al cierre, con suites y evidencia en verde.
+
+## 12. Secuela 2 (2026-11-27): dos rutas se absorben en `desarrollo` para poder promocionar sin excepciones
+
+La orden de "no dejar pendientes" obliga a cerrar la promoción con la forma más fuerte del candado. `scripts/validate-promotion-scope.js` no admite excepciones de origen cuando el transporte se declara `replay_puntual`: cada ruta del diff tiene que ser el blob que esa ruta tiene en `origin/desarrollo`. El censo por blob del frente dio **42** rutas divergentes entre las dos puntas; **40** son versiones anteriores del mismo edit local (subirlas no revierte nada) y **2** estaban realmente más adelante en `develop`:
+
+| Ruta | Decisión | Prueba |
+|---|---|---|
+| `scripts/certifications/hr-punch-mobile-evidence-local.js` | sube el blob de `origin/develop` sin retoque (**152→246** líneas, `+104/−10`) | suma `f49d9561` idéntica en las dos ramas, `node --check` salida **0**; la pata de evidencia conserva `has_base64_data`/`punch_points` y gana la variante `splitIdentity` más **3** aserciones de permisos del lote (**401/404/403**) |
+| `apps/web/test/command-palette-module-functions.test.mjs` | fusión manual: entran las patas de bancos y PYG ampliado; **no** entra la que exigía que la marcación web siguiera oculta | **10/10** con `node --test test/command-palette-module-functions.test.mjs` |
+
+Por qué la paleta no puede tomar el blob del destino: asertar `byLabel.has("Registrar marcaciones") === false` (develop) y `=== "/dashboard/talento-humano/marcacion"` (desarrollo, orden del dueño del 2026-11-27) es la misma clave con la misma etiqueta; no hay fusión que deje vivas las dos.
+
+Medición tras absorber: suite del portal **956/953/3** (los mismos **3** rojos atribuidos por ruta leída, fuera de este diff), `tsc` salida **0**, y corrida aislada del arnés fusionado en `desarrollo` (`.local/hr-punch-mobile-evidence/`, respaldo de la corrida anterior en `.local/BUENA-20261126/`). Detalle en `docs/qa/certifications/hr-retrointegracion-20261127.md` §8 y `docs/qa/evidence/hr-alineacion-20261127/absorcion-develop.json`.
+
+Consecuencia para las manifiestos: `transport: "replay_puntual"`, `origin_waivers: []`, `replay_baseline: d667276f2f95a0abe27abd5d37cd883e35f2ad02`.
+

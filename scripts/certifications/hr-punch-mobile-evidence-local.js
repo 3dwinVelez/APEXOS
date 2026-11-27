@@ -3,12 +3,12 @@ require('../load-env')();
 if(!['127.0.0.1','localhost'].includes(new URL(process.env.DATABASE_URL).hostname))throw Error('Solo base local');
 Object.assign(process.env,{NODE_ENV:'test',REDIS_DISABLED:'true',DISABLE_REDIS:'true',JWT_SECRET:randomUUID()+randomUUID(),ALLOWED_ORIGINS:'http://127.0.0.1:'+(process.env.CERT_BROWSER_PORT||'3317')});
 const db=require('../../apps/api/src/core/prisma');const bcrypt=require('bcrypt');
-const result={environment:'LOCAL',started_at:new Date().toISOString(),checks:[],status:'running'};let app;
+const result={environment:'LOCAL',commit:require('node:child_process').execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim(),started_at:new Date().toISOString(),checks:[],status:'running'};let app;
 const output=process.argv.find(arg=>arg.startsWith('--output='))?.slice(9);
 async function check(name,fn){await fn();result.checks.push(name);console.log('PASS '+name);}
 (async()=>{try{
  const run=randomUUID();const day=new Date().toLocaleDateString('en-CA',{timeZone:'America/Bogota'});const date=new Date(day+'T05:00:00Z');
- const tenant=await db.tenant.create({data:{name:'QA fotos movil '+run,active_modules:['M-17','M-22']}});
+ const tenant=await db.tenant.create({data:{name:'QA fotos movil '+run,active_modules:['M-17','M-22','M-14','M-07']}});
  const other=await db.tenant.create({data:{name:'QA fotos aisladas '+run,active_modules:['M-17']}});
  const role=await db.role.create({data:{tenant_id:tenant.id,name:'QA Fotos admin',metadata:{role_type:'admin_empresa'},permissions:{create:[{module:'hr',action:'read'},{module:'hr',action:'write'},{module:'admin',action:'read'}]}}});
  const password='Qa!9'+randomUUID();const hash=await bcrypt.hash(password,10);
@@ -32,17 +32,44 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
  async function call(route,token,method='GET',payload){const r=await fetch(origin+'/api/v1'+route,{method,headers:{'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})},...(payload?{body:JSON.stringify(payload)}:{}),signal:AbortSignal.timeout(30000)});return {status:r.status,body:await r.json()};}
  async function login(account){const response=await call('/auth/login',null,'POST',{email:account.email,password});assert.equal(response.status,200);return response.body.token;}
  const token=await login(user);const otherToken=await login(foreign);const deniedToken=await login(denied);
+ let splitIdentity=false;
  await check('summary exposes photo availability and counters without image bytes',async()=>{
   const response=await call('/hr/operations-map?date='+day+'&footprint_days=0',token);assert.equal(response.status,200);const detail=response.body.routes.find(row=>row.id===route.id);
-  assert.equal(detail.punch_points.length,4);assert.ok(detail.punch_points.every(row=>row.identity_evidence.has_base64_data));assert.ok(!JSON.stringify(detail).includes(';base64,'));
+  splitIdentity=Boolean(detail.punch_points[0]?.identity_evidence);
+  assert.equal(detail.punch_points.length,4);assert.ok(detail.punch_points.every(row=>(row.identity_evidence||row.extra_evidence)?.has_base64_data));assert.ok(!JSON.stringify(detail).includes(';base64,'));
   const summaries=await call('/hr/routes/event-summaries',token);assert.equal(summaries.status,200);assert.equal(summaries.body.routes.find(row=>row.route_id===route.id).evidence_count,6);
  });
- await check('single carries the bytes and the batch is an index that counts the same evidence without them',async()=>{
-  for(const punch of punches){const single=await call('/hr/monitor-evidence/identity/'+punch.id,token);assert.equal(single.status,200);assert.equal(single.body.base64_data,photo);}
-  const batch=await call('/hr/monitor-evidence/route/'+route.id,token);assert.equal(batch.status,200);assert.equal(Object.keys(batch.body.identity_evidence).length,4);assert.equal(batch.body.counts.punch_evidence,1);assert.equal(batch.body.punch_evidence[punches[3].id].has_base64_data,true);assert.equal(batch.body.identity_evidence[punches[0].id].has_base64_data,true);assert.equal(batch.body.activity_evidence[activity.id][0].has_base64_data,true);assert.ok(!JSON.stringify(batch.body).includes(';base64,'),'el lote del monitor arrastra bytes de evidencia');
+ await check('single and batch use TimePunch identity photos, retain extra support and ActivityEvidence',async()=>{
+  for(const punch of punches){const single=await call('/hr/monitor-evidence/'+(splitIdentity?'identity':'punch')+'/'+punch.id,token);assert.equal(single.status,200);assert.equal(single.body.base64_data,photo);}
+  const batch=await call('/hr/monitor-evidence/route/'+route.id,token);assert.equal(batch.status,200);
+  if(splitIdentity){assert.equal(Object.keys(batch.body.identity_evidence).length,4);assert.equal(batch.body.counts.punch_evidence,1);assert.equal(batch.body.punch_evidence[punches[3].id].has_base64_data,true);assert.equal(batch.body.identity_evidence[punches[0].id].has_base64_data,true);assert.equal(batch.body.activity_evidence[activity.id][0].has_base64_data,true);assert.ok(!JSON.stringify(batch.body).includes(';base64,'),'el lote del monitor arrastra bytes de evidencia');const supportFile=await call('/hr/monitor-evidence/punch/'+punches[3].id,token);assert.equal(supportFile.status,200);assert.equal(supportFile.body.base64_data,support);const activityFile=await call('/hr/monitor-evidence/activity/'+activity.evidence[0].id,token);assert.equal(activityFile.status,200);assert.equal(activityFile.body.base64_data,support);}
+  else{assert.equal(batch.body.counts.punch_evidence,4);const items=batch.body.punch_evidence[punches[3].id].items;assert.ok(items.some(item=>item.base64_data===photo));assert.ok(items.some(item=>item.base64_data===support));}
+  if(!splitIdentity)assert.equal(batch.body.activity_evidence[activity.id][0].base64_data,support);
   for(const [access,expected]of [[null,401],[otherToken,404],[deniedToken,403]])assert.equal((await call('/hr/monitor-evidence/punch/'+punches[0].id,access)).status,expected);
  });
- await require('./hr-employee-user-association-browser-local')({origin,token,pagePath:'/dashboard/talento-humano/rutas',artifactName:'hr-punch-mobile-evidence',exercise:async(page,folder)=>{
+ await require('./hr-employee-user-association-browser-local')({origin,token,pagePath:'/dashboard/talento-humano',artifactName:'hr-punch-mobile-evidence',exercise:async(page,folder)=>{
+  const browserErrors=[];page.on('response',response=>{if(response.url().startsWith(origin)&&response.status()>=400)browserErrors.push({path:new URL(response.url()).pathname,status:response.status()});});
+  const scheduleNav='nav[aria-label="Vistas de horarios y mallas"]';
+  async function button(text,scope=''){await page.waitForFunction((text,scope)=>[...document.querySelectorAll(scope+' button')].some(el=>el.textContent.trim()===text&&!el.disabled),{},text,scope);await page.evaluate((text,scope)=>[...document.querySelectorAll(scope+' button')].find(el=>el.textContent.trim()===text&&!el.disabled).click(),text,scope);}
+  async function setInput(selector,value){await page.$eval(selector,(el,value)=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,value);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));},value);}
+  const future=offset=>{const date=new Date(day+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+offset);return date.toISOString().slice(0,10);};
+  // El listado tiene dos vistas y la por defecto es la linea de tiempo: las patas que necesitan la tabla
+  // la piden por su boton, y las que solo buscan la fila no dependen de como este pintada.
+  async function view(name){await page.waitForFunction(text=>[...document.querySelectorAll('button')].some(el=>el.textContent.trim()===text),{},name);await page.evaluate(text=>[...document.querySelectorAll('button')].find(el=>el.textContent.trim()===text).click(),name);}
+  async function rowMenu(id){await page.waitForSelector('tr[data-route-id="'+id+'"] button[aria-label^="Mas acciones"]');await page.evaluate(id=>document.querySelector('tr[data-route-id="'+id+'"] button[aria-label^="Mas acciones"]').click(),id);}
+  const rowSelector=id=>'[data-schedule-view="timeline"] [data-route-id="'+id+'"]';
+  // Un rojo del hub no explica nada si no se sabe donde termino el navegador: la caida se versiona.
+  async function diagnostico(nombre,fn){try{await fn();}catch(error){fs.writeFileSync(path.join(folder,'diagnostico-'+nombre+'.json'),JSON.stringify({url:page.url(),titulo:await page.title(),claves_locales:await page.evaluate(()=>Object.keys(localStorage)),texto:await page.evaluate(()=>(document.body.innerText||'').slice(0,600)),error:String(error && error.message||error)},null,2)+'\n');throw error;}}
+  await check('one hub entry opens programming and existing links select the matching tab',async()=>{
+   await diagnostico('hub',async()=>{
+    await page.waitForSelector('section[aria-label="Herramientas activas de talento humano"] a[href$="/rutas"]');
+    assert.equal(await page.$$eval('section[aria-label="Herramientas activas de talento humano"] a',links=>links.filter(link=>/\/(rutas|mallas)$/.test(link.pathname)).length),1);
+    await page.click('section[aria-label="Herramientas activas de talento humano"] a[href$="/rutas"]');
+    await page.waitForSelector(scheduleNav+' a[aria-current="page"][href$="/rutas"]');
+    await page.waitForSelector(rowSelector(route.id));
+    assert.equal(await page.$eval('h1',el=>el.textContent),'Horarios y mallas');
+   });
+  });
   await check('the schedule opens its detail from the timeline bar, which is the default view',async()=>{
    await page.waitForSelector('button[aria-label^="Abrir detalle del horario"]');
    assert.equal(await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Línea de tiempo')?.getAttribute('aria-pressed')),'true','la linea de tiempo es la vista por defecto');
@@ -73,11 +100,10 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
    await page.evaluate(()=>document.querySelector('tr[data-route-id] button[aria-label^="Mas acciones"]').click());
    await page.waitForFunction(()=>[...document.querySelectorAll('tr[data-route-id] button')].some(node=>node.textContent.trim()==='Editar'));
    await page.screenshot({path:path.join(folder,'table-row-menu.png')});
+   await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Línea de tiempo').click());
   });
   await check('the redesign repaints through the app theme control and stays usable on a phone',async()=>{
-   // Se vuelve a la vista por defecto y se mide el tablero antes de tocar el tema.
-   await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Línea de tiempo').click());
-   await page.waitForSelector('[data-schedule-view="timeline"] li[data-route-id] button');
+   await page.waitForSelector(rowSelector(route.id)+' > div:last-child > button');
    const probe=()=>{const track=document.querySelector('[data-schedule-view="timeline"] li[data-route-id] > div:last-child');const bar=track.querySelector('button');const barStyle=getComputedStyle(bar),trackStyle=getComputedStyle(track),bodyStyle=getComputedStyle(document.body);
     const blend=(front,back)=>{const f=front.match(/[\d.]+/g).map(Number),b=back.match(/[\d.]+/g).map(Number),a=f.length>3?f[3]:1;return 'rgb('+f.slice(0,3).map((value,index)=>Math.round(value*a+b[index]*(1-a))).join(' ')+')'};
     return {page:bodyStyle.backgroundColor,track:blend(trackStyle.backgroundColor,bodyStyle.backgroundColor),barBg:blend(barStyle.backgroundColor,trackStyle.backgroundColor),ink:getComputedStyle(bar.querySelector('span')).color,touch:bar.getBoundingClientRect().height};};
@@ -126,6 +152,63 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
    fs.writeFileSync(path.join(folder,'medidas-linea-de-tiempo.json'),JSON.stringify(medidas,null,2)+'\n');
    await page.setViewport({width:1500,height:1100});
   });
+  await check('programming creates, edits and clones schedules without duplicating them when tabs change',async()=>{
+   const initial=await db.timeRoute.count({where:{tenant_id:tenant.id}});
+   await button('Nuevo horario');await button('Operativo / recurso movil','[role="dialog"]');
+   await setInput('[role="dialog"] input[type="date"]',future(2));
+   await page.waitForFunction(name=>[...document.querySelectorAll('[role="dialog"] button')].some(el=>el.textContent.includes(name)),{},user.name);
+   await page.evaluate(name=>[...document.querySelectorAll('[role="dialog"] button')].find(el=>el.textContent.includes(name)).click(),user.name);
+   const createdResponse=page.waitForResponse(r=>r.url().endsWith('/hr/routes')&&r.request().method()==='POST');
+   await button('Asignar horario','[role="dialog"]');const created=await createdResponse;assert.equal(created.status(),200);const record=await created.json();
+   await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));
+   // El listado esta fijado a un dia y la jornada nueva nace dos dias despues: con la tabla abierta y el
+   // filtro en hoy la fila no debe existir. Eso es lo que la pata de develop asumia sin medirlo.
+   await view('Tabla');
+   assert.equal(await page.$$eval('tr[data-route-id="'+record.id+'"]',rows=>rows.length),0,'el filtro de fecha deja ver filas de otro dia');
+   await setInput('input[aria-label="Filtrar por fecha"]',String(record.date||'').slice(0,10)||future(2));
+   await page.waitForSelector('tr[data-route-id="'+record.id+'"]');
+   // Editar y Clonar ya no viven sueltos en la fila: se abren desde el menu de mas acciones de la tabla.
+   await rowMenu(record.id);
+   await button('Editar','tr[data-route-id="'+record.id+'"]');
+   await page.type('[role="dialog"] textarea','QA horario editado');
+   const editedResponse=page.waitForResponse(r=>r.url().endsWith('/hr/routes/'+record.id)&&r.request().method()==='PATCH');
+   await button('Guardar cambios','[role="dialog"]');assert.equal((await editedResponse).status(),200);
+   await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));
+   await rowMenu(record.id);
+   await button('Clonar','tr[data-route-id="'+record.id+'"]');
+   await setInput('[role="dialog"] input[type="date"]',future(3));
+   const cloneResponse=page.waitForResponse(r=>r.url().endsWith('/hr/routes')&&r.request().method()==='POST');await button('Asignar horario','[role="dialog"]');assert.equal((await cloneResponse).status(),200);
+   await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));
+   assert.equal(await db.timeRoute.count({where:{tenant_id:tenant.id}}),initial+2);
+   assert.match((await db.timeRoute.findUnique({where:{id:record.id}})).notes,/QA horario editado/);
+   await page.screenshot({path:path.join(folder,'unified-programming.png')});
+   await page.click(scheduleNav+' a[href$="/mallas"]');
+   await page.waitForSelector(scheduleNav+' a[aria-current="page"][href$="/mallas"]');
+   await page.waitForSelector(rowSelector(route.id));
+   assert.equal(await page.$$eval('button',buttons=>buttons.filter(el=>['Nuevo horario','Editar','Clonar','Eliminar'].includes(el.textContent.trim())).length),0);
+   await page.reload({waitUntil:'domcontentloaded'});await page.waitForSelector(rowSelector(route.id));
+   assert.equal(await db.timeRoute.count({where:{tenant_id:tenant.id}}),initial+2);
+   await page.goBack({waitUntil:'domcontentloaded'});await page.waitForSelector(scheduleNav+' a[aria-current="page"][href$="/rutas"]');
+   await page.goForward({waitUntil:'domcontentloaded'});await page.waitForSelector(scheduleNav+' a[aria-current="page"][href$="/mallas"]');
+   await page.setViewport({width:390,height:844});
+   assert.equal(await page.$$eval('button',buttons=>buttons.filter(el=>el.textContent.trim()==='Nuevo horario').length),0);
+   await page.screenshot({path:path.join(folder,'unified-followup-mobile.png')});await page.setViewport({width:1500,height:1100});
+  });
+  await check('chronological team trace displays all mobile photos and opens lightbox',async()=>{
+   // En Seguimiento el listado tambien abre en la linea de tiempo: el boton Abrir vive en la tabla.
+   await view('Tabla');
+   await button('Abrir','tr[data-route-id="'+route.id+'"]');
+   assert.equal(await page.$$eval('[role="dialog"] button',buttons=>buttons.filter(el=>['Editar','Eliminar'].includes(el.textContent.trim())).length),0);
+   await page.waitForFunction(()=>document.body.innerText.includes('Trazabilidad cronologica del equipo')||document.body.innerText.includes('Trazabilidad cronológica del equipo'));
+   await page.waitForFunction(()=>[...document.querySelectorAll('[role="dialog"] button')].some(node=>node.textContent.trim()==='Cargar evidencia')||[...document.querySelectorAll('[role="dialog"] img')].filter(node=>node.complete&&node.naturalWidth>0).length>=6);
+   await page.evaluate(()=>[...document.querySelectorAll('[role="dialog"] button')].filter(node=>node.textContent.trim()==='Cargar evidencia').forEach(node=>node.click()));
+   await page.waitForFunction(()=>[...document.querySelectorAll('[role="dialog"] img')].filter(node=>node.src.startsWith('data:image/')&&node.complete&&node.naturalWidth>0).length>=6);
+   assert.equal(await page.evaluate(()=>document.querySelector('[role="dialog"]').innerText.includes('Sin evidencia fotografica')),false);
+   await page.screenshot({path:path.join(folder,'seguimiento-monitor.png')});
+   await page.evaluate(()=>[...document.querySelectorAll('[role="dialog"] button')].find(node=>node.querySelector('img')).click());
+   await page.waitForSelector('button[aria-label="Cerrar evidencia"]');
+   await page.screenshot({path:path.join(folder,'seguimiento-lightbox.png')});
+  });
   await check('Reports journey trace renders the activity photograph and opens its enlargement',async()=>{
    await page.goto(new URL('/dashboard/talento-humano/reportes',page.url()).href,{waitUntil:'domcontentloaded',timeout:180000});
    await page.waitForSelector('input[type="date"]');
@@ -147,6 +230,17 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
    await page.screenshot({path:path.join(folder,'report-activity-expanded.png')});
 
   });
+  await check('command palette finds bank master and expanded PYG and opens both real pages',async()=>{
+   await page.goto(new URL('/dashboard/talento-humano',page.url()).href,{waitUntil:'domcontentloaded'});
+   for(const [term,id,suffix,selector] of [['Gestionar bancos de empleados','fn-hr-bancos','/bancos','[data-bank-code="007"]'],['Ver PYG ampliado','fn-contab-pyg-ampliado','/pyg/ampliado','input[type="month"]']]){
+    await page.waitForSelector('button[aria-keyshortcuts="Control+K Meta+K"]');
+    await page.click('button[aria-keyshortcuts="Control+K Meta+K"]');await page.waitForSelector('input[role="combobox"]');await page.type('input[role="combobox"]',term);
+    await page.waitForSelector('#apex-command-'+id);await page.click('#apex-command-'+id);
+    await page.waitForSelector(selector);assert.ok(new URL(page.url()).pathname.endsWith(suffix));
+    await page.screenshot({path:path.join(folder,id+'-navigation.png')});
+   }
+  });
+  assert.deepEqual(browserErrors,[],'The full browser flow must not produce API errors');
  }});
  result.status='passed';result.photo_source='TimePunch.metadata.identity_photo, with legacy support';
 }catch(error){result.status='failed';result.error=error.message;console.error(error.stack);process.exitCode=1;}finally{result.finished_at=new Date().toISOString();if(output)fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n');if(app)await app.close();await db.$disconnect();process.exit(process.exitCode||0);}})();

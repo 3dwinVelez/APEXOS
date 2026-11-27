@@ -95,4 +95,31 @@ Medicion de la secuela, en el arbol integrado:
 - Los dos contratos que **exigian** la ventanilla (`hr-face-enrollments-page.test.mjs` y `hr-shared-devices-page.test.mjs`) se invirtieron en esta misma corrida: ahora exigen `doesNotMatch(/window\.confirm\(/)` mas el estado de la fila, el gatillo, el segundo clic y el cierre.
 - Controles de mutacion: **6**, cada uno rojo por el control esperado y con el archivo devuelto byte a byte. Uno estuvo verde la primera pasada —el bucle asertaba el `onConfirm` pero no el `onClick`, asi que reponer el clic directo no caia nada— y por eso el contrato quedo con las dos aserciones.
 
+## 8. Secuela 2 del mismo dia: las dos piezas que `develop` tenia mas adelante suben a `desarrollo`
+
+El porton de alcance (`scripts/validate-promotion-scope.js:113-161`) exige que cada ruta del candidato sea, blob por blob, la que esa ruta tiene en `origin/desarrollo`; declarado `transport: replay_puntual`, no admite ninguna excepcion de origen. El censo del frente dio **42** rutas divergentes entre las dos puntas. **40** son `desarrollo` reemplazando en la misma funcion lo que `develop` traia, asi que llevarlas tal cual no revierte trabajo ajeno. **2** no: ahi `develop` estaba realmente mas adelante y llevarlas habria borrado trabajo del frente de espacio de trabajo. Esas dos se absorben primero en `desarrollo`, que es la unica direccion que el flujo permite.
+
+| Ruta | Que tenia `develop` | Que se hizo | Que queda medido |
+|---|---|---|---|
+| `scripts/certifications/hr-punch-mobile-evidence-local.js` | el arnes fusionado con el que se certifica este frente en navegador: **246** lineas contra **152**, con la pata del hub unificado, la creacion/edicion/clonacion de jornadas, la trazabilidad cronologica, los reportes, la paleta de comandos y el censo de permisos del lote (**401 / 404 / 403**) | sube el blob de `origin/develop` sin retoque: la suma del archivo en el arbol de trabajo es **f49d9561**, identica a la de `origin/develop` | las **10** patas quedan. La pata de evidencia no pierde lo propio y gana una variante: lee `identity` o `punch` segun exista el endpoint partido (`splitIdentity`) y anade **3** aserciones de permisos que `desarrollo` no tenia |
+| `apps/web/test/command-palette-module-functions.test.mjs` | dos patas vivas del maestro de modulos: `Gestionar bancos de empleados` → `/dashboard/talento-humano/bancos` y `Ver PYG ampliado` colgado del modulo contabilidad | fusion a mano: entran esas cuatro aserciones y **no** entra la que exigia que la marcacion web siguiera oculta, revirsada por la orden del dueno del 2026-11-27 | **10/10** verdes con `node --test test/command-palette-module-functions.test.mjs` |
+
+La paleta no podia tomar el blob de `develop` entero: ese blob aserta `assert.equal(byLabel.has("Registrar marcaciones"), false)` y el contrato de `desarrollo` aserta que el atajo existe y apunta a `/marcacion`. Es la misma clave con la misma etiqueta, asi que no existe fusion que deje vivas las dos aserciones. Gana la orden del dueno, `desarrollo` queda como fuente del contrato y las demas patas de `develop` se conservan.
+
+Comprobaciones de la absorcion:
+
+- `node --check scripts/certifications/hr-punch-mobile-evidence-local.js`: salida **0**.
+- `tsc -p tsconfig.typecheck.json --noEmit` en `apps/web` con las dos piezas ya absorbidas: salida **0**.
+- Suite del portal con las dos piezas ya absorbidas: **956** pruebas, **953** verdes, **3** rojas —los mismos **3** rojos de la seccion 3, atribuidos a `contabilidad/`, `transporte/`, `administracion/` y `lib/api.ts`, ninguna ruta de este diff.
+- Con estas dos piezas dentro, el candidato a `develop` se declara `transport: replay_puntual` con **cero** excepciones de origen: cada ruta del diff es el blob de `origin/desarrollo`, medida por `git rev-parse` ruta por ruta y no por ascendencia de commit.
+
+Corrida del arnés absorbido, en `desarrollo` y en base descartable (`docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/`):
+
+- `node scripts/certifications/hr-employee-user-association-isolated-local.js --certificate=hr-punch-mobile-evidence-local.js`: **10** patas **10** verdes, `exit_code` **0**, `unexpected_5xx` **0**, `source_database_modified: false`, base `apexos_cert_hr_assoc_1795803938790`, artefacto con `commit: 773d0cbd` y **4** minutos **17** segundos de corrida (18:25:55Z → 18:29:42Z).
+- Las **10** patas: las **2** de evidencia (mapa por referencia y `TimePunch` con su foto de identidad), la del hub unificado, **3** del rediseño de horarios (linea de tiempo por defecto, tabla con menu, tema y telefono), creacion/edicion/clonacion de jornadas, trazabilidad cronologica con las **6** fotografias y su lupa, el recorrido de Reportes y la paleta de comandos abriendo bancos y PYG ampliado.
+- **Dos corridas rojas quedaron versionadas, no borradas.** La primera (`run-20261127.out`, vacía) murió en la preparación de la base descartable con un `pg_dump` que respondió vacío; reproducido suelto, el mismo volcado aplicó en **0** y la corrida salió después. La segunda (`certification-corrida-roja-2.json` + `diagnostico-hub-corrida-roja-2.json`) cayó en la pata del hub y su diagnóstico dice por qué: el portal respondió «Acceso no autorizado — Tu rol no tiene permisos para abrir Talento humano» con «Sesión no identificada», y el log del API trae un `P1001` (no alcanza `127.0.0.1:55432`) en `GET /api/v1/talento-humano/bancos`. Es decir: el navegador llegó al hub sin sesión porque el API perdió la base un instante, no porque al hub le falte el enlace. La tercera corrida, sobre el mismo árbol y sin tocar nada, pasó **10/10** —eso es lo que separa un rojo de arnés de un rojo de producto, y por eso el diagnóstico del hub se versiona junto con la corrida.
+- El disco del puesto está al **89 %** y la memoria libre rondaba **0,8 GB** de **8,3** durante la segunda corrida: el arnés levanta API, `next dev` y Chromium a la vez. Queda declarado como condición del puesto, no como defecto del frente.
+
+
+
 Lo que **no** certifica esta seccion: sigue sin haber corrida de Chromium contra un ambiente desplegado (eso pertenece al pre-QA de la promocion), y el barrido cubre Talento Humano, no el resto del portal: fuera de esa carpeta quedan ventanillas en contabilidad (`accounting-reversal-budget-import`), que son de otro frente y sus pruebas las exigen a proposito.

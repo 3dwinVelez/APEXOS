@@ -81,6 +81,7 @@ test("el buscador ofrece las funciones clave del modulo de talento humano", () =
   assert.equal(byLabel.get("Ver mapa operativo")?.href, "/dashboard/talento-humano/mapa");
   assert.match(byLabel.get("Horarios y mallas")?.keywords || "", /marcacion/);
   assert.equal(byLabel.get("Registrar marcaciones")?.href, "/dashboard/talento-humano/marcacion");
+  assert.equal(byLabel.get("Gestionar bancos de empleados")?.href, "/dashboard/talento-humano/bancos");
 });
 
 test("los alias excluidos si son redirecciones y no destinos propios", () => {
@@ -96,6 +97,9 @@ test("PYG se ofrece por Contabilidad y el alias de Transporte redirige", () => {
   const entries = functionEntries.filter((entry) => /\/pyg$/.test(routePath(entry.href)));
   assert.deepEqual(entries.map((entry) => entry.href), ["/dashboard/contabilidad/pyg"]);
   assert.match(read("app/dashboard/transporte/pyg/page.tsx"), /redirect\("\/dashboard\/contabilidad\/pyg"\)/);
+  const expanded = functionEntries.find((entry) => entry.href === "/dashboard/contabilidad/pyg/ampliado");
+  assert.equal(expanded?.module, "contabilidad");
+  assert.equal(expanded?.label, "Ver PYG ampliado");
 });
 
 test("la paleta une acciones, funciones y modulos sin duplicar destinos", () => {
