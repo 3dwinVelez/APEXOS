@@ -3,6 +3,7 @@
 import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Check, Search, Calculator, Download, FileText, Play, Plus, RotateCcw, Trash2, Upload, X } from "lucide-react";
+import { ConfirmWindow } from "@/components/hr/ConfirmWindow";
 import { api } from "@/lib/api";
 import { payrollPeriodError } from "@/lib/payroll-period";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
@@ -162,6 +163,10 @@ const externalWorkdayConceptCodes = [
   ["AJUSTE_MANUAL", "Ajuste manual", "Ajuste libre de valor o minutos"]
 ] as const;
 
+// Las tres escrituras irreversibles de la pantalla se responden dentro de la aplicacion: el operario
+// lee que pierde (comprobantes, jornadas o el cierre) antes de que el boton ejecute.
+type PayrollPendingAction = "reopen" | "delete" | "external";
+
 export default function PayrollLiquidationPage() {
   const [periodReady, setPeriodReady] = useState(false);
   const [payrollMode, setPayrollMode] = useState<"marcaciones" | "archivo_plano">("marcaciones");
@@ -192,6 +197,7 @@ export default function PayrollLiquidationPage() {
   }, [payrollFeedback]);
   const [adjustmentError, setAdjustmentError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PayrollPendingAction | null>(null);
   const [adjustment, setAdjustment] = useState({ employee_id: "", adjustment_type: "manual", concept_code: "AJUSTE_MANUAL", description: "", work_date: "", start_time: "", end_time: "", date_start: "", date_end: "", days: "", paid_by: "", sln_cause: "", pila_ibc_amount: "", ibc_reference_amount: "", ibc_reference_period: "", ibc_reference_captured_at: "", continuity_key: "", reference_source: "", reported_pila_id: "", recognized_value: "", document_support: "", lr_arl_policy: "", advance_obligation: "", advance_period: "", advance_support: "", advance_retention_health: "", advance_retention_pension: "", minutes: "", amount: "" });
 
   const currentPeriodKey = useMemo(() => periodKey(periodType, startDate, endDate), [periodType, startDate, endDate]);
@@ -237,6 +243,30 @@ export default function PayrollLiquidationPage() {
     };
   }, [externalRows]);
   const currentClosure = closures.find((closure) => closure.period_key === currentPeriodKey);
+
+  const pendingCopy: Record<PayrollPendingAction, { title: string; description: string; detail: string; confirmLabel: string; run: () => Promise<void> }> = {
+    reopen: {
+      confirmLabel: "Reabrir periodo",
+      description: "Esto reabre el periodo para permitir correcciones.",
+      detail: `Periodo ${currentPeriodKey}. Mientras este abierto puedes volver a ajustar y recalcular la nomina.`,
+      run: reopenPeriod,
+      title: "Reabrir el periodo"
+    },
+    delete: {
+      confirmLabel: "Borrar documentos",
+      description: "Esto borra los documentos de nomina del periodo para volver a ejecutar.",
+      detail: `Periodo ${currentPeriodKey}. Se eliminan los comprobantes generados; la nomina se puede volver a ejecutar desde esta pantalla.`,
+      run: deleteLiquidation,
+      title: "Borrar los documentos de nomina"
+    },
+    external: {
+      confirmLabel: "Anular jornadas",
+      description: "Esto anula las jornadas importadas por archivo plano para este periodo.",
+      detail: `Periodo ${currentPeriodKey}. Solo aplica si no has liquidado ni cerrado el periodo; despues puedes volver a subir el archivo.`,
+      run: deleteExternalWorkdays,
+      title: "Anular las jornadas importadas"
+    }
+  };
   const periodIsClosed = currentClosure?.status === "cerrado";
   const hasPayrollDocuments = documents.length > 0;
   const canRecalculatePayroll = hasPayrollDocuments && !periodIsClosed;
@@ -389,12 +419,12 @@ export default function PayrollLiquidationPage() {
 
   async function reopenPeriod() {
     if (!currentClosure) return;
-    if (!confirm("Esto reabre el periodo para permitir correcciones. Continuar?")) return;
     setBusy(true);
     try {
       await api("/api/v1/talento-humano/nomina/cierres/reabrir", { method: "POST", body: JSON.stringify({ period_key: currentPeriodKey }) });
       await loadBase();
       setMessage("Periodo reabierto para correcciones.");
+      setPendingAction(null);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "No se pudo reabrir el periodo");
     } finally {
@@ -429,7 +459,6 @@ export default function PayrollLiquidationPage() {
   }
 
   async function deleteLiquidation() {
-    if (!confirm("Esto borra los documentos de nomina del periodo para volver a ejecutar. Continuar?")) return;
     setBusy(true);
     setMessage("");
     try {
@@ -438,6 +467,7 @@ export default function PayrollLiquidationPage() {
       setPreview([]);
       setSelectedDocument(null);
       setMessage("Documentos de nomina borrados para el periodo.");
+      setPendingAction(null);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "No se pudo borrar la liquidacion");
     } finally {
@@ -589,7 +619,6 @@ export default function PayrollLiquidationPage() {
   }
 
   async function deleteExternalWorkdays() {
-    if (!confirm("Esto anula las jornadas importadas por archivo plano para este periodo. Solo aplica si no has liquidado ni cerrado el periodo. Continuar?")) return;
     setBusy(true);
     try {
       const result = await api<{ deleted: number; period_key: string }>("/api/v1/talento-humano/nomina/jornadas-externas", { method: "DELETE", body: JSON.stringify({ period_key: currentPeriodKey }) });
@@ -601,6 +630,7 @@ export default function PayrollLiquidationPage() {
       setSelectedDocument(null);
       await loadBase();
       setMessage(`Jornadas importadas anuladas: ${result.deleted}.`);
+      setPendingAction(null);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "No se pudieron borrar las jornadas importadas.";
       setExternalImportSummary("");
@@ -814,7 +844,7 @@ export default function PayrollLiquidationPage() {
               <details className="mt-3">
                 <summary className="cursor-pointer text-sm font-semibold text-neutral-700">Mas acciones</summary>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm text-rose-700 disabled:opacity-60" disabled={busy} onClick={deleteLiquidation} type="button"><Trash2 size={16} /> Borrar documentos</button>
+                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm text-rose-700 disabled:opacity-60" disabled={busy} onClick={() => setPendingAction("delete")} type="button"><Trash2 size={16} /> Borrar documentos</button>
                 </div>
               </details>
             ) : null}
@@ -1030,7 +1060,7 @@ export default function PayrollLiquidationPage() {
                   <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-60" disabled={busy} onClick={() => closePeriod(true)} type="button"><RotateCcw size={16} /> Recalcular cierre</button>
                 ) : null}
                 {periodIsClosed ? (
-                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-amber-200 px-3 text-sm text-amber-700 disabled:opacity-60" disabled={busy} onClick={reopenPeriod} type="button">Reabrir periodo</button>
+                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-amber-200 px-3 text-sm text-amber-700 disabled:opacity-60" disabled={busy} onClick={() => setPendingAction("reopen")} type="button">Reabrir periodo</button>
                 ) : null}
               </div>
             </details>
@@ -1225,7 +1255,7 @@ export default function PayrollLiquidationPage() {
             <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold" onClick={() => void downloadExternalWorkdayTemplate()} type="button"><Download size={16} /> Plantilla</button>
             <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold"><Upload size={16} /> Seleccionar Excel<input accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" onChange={(event) => void readExternalWorkdayExcel(event)} type="file" /></label>
             <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-60" disabled={busy || !externalRows.length} onClick={() => void importExternalWorkdays()} type="button"><Upload size={16} /> Importar jornadas</button>
-            <button className="inline-flex h-10 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm font-semibold text-rose-700 disabled:opacity-60" disabled={busy} onClick={() => void deleteExternalWorkdays()} type="button"><Trash2 size={16} /> Borrar importadas</button>
+            <button className="inline-flex h-10 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm font-semibold text-rose-700 disabled:opacity-60" disabled={busy} onClick={() => setPendingAction("external")} type="button"><Trash2 size={16} /> Borrar importadas</button>
             <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold" onClick={() => setPayrollMode("marcaciones")} type="button"><Play size={16} /> Ir a liquidacion</button>
           </div>
         </div>
@@ -1293,6 +1323,17 @@ export default function PayrollLiquidationPage() {
       </section>
       ) : null}
 
+      {pendingAction ? (
+        <ConfirmWindow
+          busy={busy}
+          confirmLabel={pendingCopy[pendingAction].confirmLabel}
+          description={pendingCopy[pendingAction].description}
+          detail={pendingCopy[pendingAction].detail}
+          onClose={() => setPendingAction(null)}
+          onConfirm={() => void pendingCopy[pendingAction].run()}
+          title={pendingCopy[pendingAction].title}
+        />
+      ) : null}
 
     </div>
   );

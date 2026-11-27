@@ -5,6 +5,7 @@ import { hrStyles, HrSteps, HrNet } from "@/components/hr/HrWorkspace";
 import { ArrowLeft, Calculator, Download, FileText, Play, Search, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { ConfirmWindow } from "../../../../components/hr/ConfirmWindow";
 import { api } from "../../../../lib/api";
 import { API_BASE_URL } from "../../../../lib/apiBaseUrl";
 import TerminationManualAdjustments from "../../../../components/hr/TerminationManualAdjustments";
@@ -63,6 +64,7 @@ export default function EmployeeTerminationLiquidationPage() {
   const [pendingDays, setPendingDays] = useState<number | null>(null);
   const [reviewRefresh, setReviewRefresh] = useState(0);
   const [message, setMessage] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<TerminationDocument | null>(null);
   const [form, setForm] = useState({ employee_id: "", termination_date: today, termination_reason: "retiro_voluntario", contract_type: "indefinite", pending_start: "", recalculate: false, mark_inactive: false });
 
   async function load() {
@@ -171,13 +173,14 @@ export default function EmployeeTerminationLiquidationPage() {
   }
 
   async function deleteDocument(id?: number) {
-    if (!id || !confirm("Esto borra el documento de liquidacion del trabajador y revierte sus saldos asociados. Continuar?")) return;
+    if (!id) return;
     setBusy(true);
     try {
       await api(`/api/v1/talento-humano/liquidacion-trabajador/documentos/${id}`, { method: "DELETE" });
       setSelected(null);
       await load();
       setMessage("Documento de liquidacion borrado.");
+      setPendingDelete(null);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "No se pudo borrar");
     } finally {
@@ -328,7 +331,7 @@ export default function EmployeeTerminationLiquidationPage() {
                   <td className="px-3 py-2 text-right">
                     <button className="mr-2 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3" onClick={() => setSelected(row)} type="button"><FileText size={15} /> Ver</button>
                     <button className="mr-2 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 disabled:opacity-50" disabled={!row.id} onClick={() => openPdf(row.id)} type="button"><Download size={15} /> PDF</button>
-                    <button className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-rose-700 disabled:opacity-50" disabled={!row.id} onClick={() => deleteDocument(row.id)} type="button"><Trash2 size={15} /> Borrar</button>
+                    <button className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-rose-700 disabled:opacity-50" disabled={!row.id} onClick={() => { if (row.id) setPendingDelete(row); }} type="button"><Trash2 size={15} /> Borrar</button>
                   </td>
                 </tr>
               ))}</tbody>
@@ -369,6 +372,18 @@ export default function EmployeeTerminationLiquidationPage() {
           {Array.isArray(selected.source_summary?.libranzas) ? <div className="space-y-2 p-4 text-sm"><h3 className="font-semibold">Aplicación y saldos de libranzas</h3>{(selected.source_summary.libranzas as { libranza_id: number; balance_before: number; deducted: number; balance_after: number; reason: string }[]).map(row => <p key={row.libranza_id}>Libranza {row.libranza_id}: saldo {money(row.balance_before)} · descontado {money(row.deducted)} · pendiente {money(row.balance_after)}. {row.reason}</p>)}</div> : null}
           <p className="p-4 text-xs text-neutral-600">{String(selected.source_summary?.politica_libranza || "")}</p>
         </dialog>
+      ) : null}
+
+      {pendingDelete ? (
+        <ConfirmWindow
+          busy={busy}
+          confirmLabel="Borrar liquidacion"
+          description={`Esto borra el documento de liquidacion de ${pendingDelete.employee_name || pendingDelete.employee_code || `empleado ${pendingDelete.employee_id}`} y revierte sus saldos asociados.`}
+          detail={`Neto ${money(pendingDelete.net)} · prestaciones ${money(pendingDelete.benefit_balance_amount)} · indemnizacion ${money(pendingDelete.indemnization_amount)} sobre el corte del ${String(pendingDelete.termination_date).slice(0, 10)}. Los anticipos, libranzas y saldos vuelven a quedar disponibles; la liquidacion se puede volver a calcular.`}
+          onClose={() => setPendingDelete(null)}
+          onConfirm={() => void deleteDocument(pendingDelete.id)}
+          title="Borrar la liquidacion del trabajador"
+        />
       ) : null}
     </div>
   );

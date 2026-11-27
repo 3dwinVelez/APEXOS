@@ -220,9 +220,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.53.0",
+      "version": "2.54.0",
       "updated_at": "2026-11-27",
-      "sha256": "30e6baed76a2f0d1c26184050daaf898ea3b5862587f1125d281a92d16136bc4",
+      "sha256": "c666313076a9106341f16f14db8e20161417d458dc8627c983b60c74ff475042",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -363,9 +363,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.140.0",
+      "version": "2.141.0",
       "updated_at": "2026-11-27",
-      "sha256": "4a80d427c2d54184114eb2996f1e6e8843f9d35f1b6fe2baf1da2ec2abc6fef2",
+      "sha256": "32bc4379fed023127ed4de40a3d123f829583b17b7abb22838aa85fd744e8a17",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [

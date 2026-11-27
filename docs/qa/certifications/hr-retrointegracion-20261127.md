@@ -68,8 +68,31 @@ Un control que no puede fallar no protege nada. Cada control nuevo se puso rojo 
 
 1. **Decidir la promoción** de este arbol a `develop` y `main` — dueño: el dueño; instrumento: manifiesto de alcance v2 + `qa:promotion:scope` + `qa:preqa:evidence`, y corrida de navegador antes.
 2. **Cuatro rutas revertidas en Produccion** (telemetria de `api.ts`, identidad de instalacion, base64 del mapa, ventanillas de Empleados) — dueño: `apexos-frontend` y `apexos-qa`; tres quedan corregidas en `desarrollo` con este commit, falta decidir si se suben.
-3. **Siete `confirm(` sin prefijo** en nomina, rostros, liquidacion, dispositivos y aportes — dueño: `apexos-frontend` con su propio brief; no es regressión de esta intervención.
+3. ~~**Siete `confirm(` sin prefijo**~~ — **CERRADO el 2026-11-27** en la sección 7: las siete preguntas destructivas viven ahora en `ConfirmWindow` dentro de la pantalla, con censo de ventanillas nativas en **0**.
 4. **Frente biométrico en Produccion** — dueño: `apexos-db-nube` y el dueño (autorizacion de migracion).
 5. **Un instrumento con la premisa retirada** —dueño + `apexos-qa`—: `scripts/certifications/hr-hide-web-marking-local.js` vino de `develop` para certificar que la marcación web se oculta. La orden del 2026-11-27 es dejarla en producción, así que el archivo queda en el árbol por paridad pero **no** se cita como evidencia: hay que decidir si se retira o se re-ancla.
 6. **El checkout principal quedó una punta atrás** (`desarrollo` local en `536c72bb`, `origin/desarrollo` en `914047aa`): adelante a la fuerza dejaría **106** rutas como «revertidas por alguien» junto al monitor en vuelo. Se recupera re-anclando los **5** archivos del monitor sobre la punta nueva y recién después un `merge --ff-only` —responsable: quien retome ese frente, con `apexos-git-guardian`.
 7. **Worktrees y ramas auxiliares** de esta intervención (`wt-hr-alineacion-20261127`, `wt-hr-base-20261127`, tags `backup/prealineacion-*`) — dueño: el dueño decide el borrado; nada se elimina sin orden expresa.
+
+## 7. Secuela del mismo dia: las siete ventanillas nativas quedaron mudas
+
+El punto 3 de la seccion anterior se cerro dentro de esta intervencion por orden expresa del dueno («no dejes pendientes»). No es un rediseño: es el mismo flujo con la pregunta adentro de la aplicacion.
+
+| Pantalla | ANTES | DESPUES |
+|---|---|---|
+| `rostros` | `window.confirm` con el nombre del empleado | `ConfirmWindow`: nombre, fecha del registro y version de consentimiento; el DELETE sale del segundo clic |
+| `dispositivos-marcacion` | `window.confirm` con la placa | ventana con placa, ultimo uso y la nota de que el historial de marcaciones se conserva |
+| `aportes-sociales` | `confirm(` pelado | ventana con `period_key` y total a pagar del documento |
+| `liquidacion-trabajador` | `confirm(` pelado | ventana con empleado, neto, prestaciones, indemnizacion y fecha de corte |
+| `nomina` (reabrir periodo, borrar documentos, anular jornadas del archivo plano) | tres `confirm(` pelados | una mesa de tres textos con el `period_key` de cada accion; ninguno de los tres botones vuelve a ejecutar directo |
+
+Medicion de la secuela, en el arbol integrado:
+
+- Ventanillas nativas bajo `app/dashboard/talento-humano`: **7 → 0**, barridas sobre los **19** archivos `.tsx` de la carpeta (el contrato exige el censo, no un numero redondo).
+- Suite del portal: **956** pruebas, **953** verdes, **3** rojas. Las **3** se atribuyen por alcance, no por antiguedad: `el editor de presupuesto...`, `la ficha enlaza sucursal...` y `la falta de HR no bloquea la consulta de flota` leen exclusivamente rutas de `contabilidad/`, `transporte/`, `administracion/` y `lib/api.ts`, ninguna dentro de este diff (**7** rutas modificadas + **2** nuevas).
+- `tsc -p tsconfig.typecheck.json --noEmit` en `apps/web`: salida **0**.
+- Contrato nuevo `apps/web/test/hr-confirm-window.test.mjs`: **8** pruebas (barrido, dos controles de contraste, el componente, las cuatro pantallas con estado + gatillo + cierre, las tres de nomina y la marcacion web intacta con su selfie).
+- Los dos contratos que **exigian** la ventanilla (`hr-face-enrollments-page.test.mjs` y `hr-shared-devices-page.test.mjs`) se invirtieron en esta misma corrida: ahora exigen `doesNotMatch(/window\.confirm\(/)` mas el estado de la fila, el gatillo, el segundo clic y el cierre.
+- Controles de mutacion: **6**, cada uno rojo por el control esperado y con el archivo devuelto byte a byte. Uno estuvo verde la primera pasada —el bucle asertaba el `onConfirm` pero no el `onClick`, asi que reponer el clic directo no caia nada— y por eso el contrato quedo con las dos aserciones.
+
+Lo que **no** certifica esta seccion: sigue sin haber corrida de Chromium contra un ambiente desplegado (eso pertenece al pre-QA de la promocion), y el barrido cubre Talento Humano, no el resto del portal: fuera de esa carpeta quedan ventanillas en contabilidad (`accounting-reversal-budget-import`), que son de otro frente y sus pruebas las exigen a proposito.

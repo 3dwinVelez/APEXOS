@@ -4,6 +4,20 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-27
 
+### Las siete preguntas destructivas de Talento Humano seguian en el cuadro del sistema: se mudan a la pantalla con el dato de la fila y el enmudecimiento se certifica con barrido y seis mutaciones
+
+Orden del dueno: «no dejes pendientes procede a terminar todas las instrucciones al pie de la letra garantizando los protocolos adecuadas ya establecidos y con mi atorizacion completa para proceder sin detenerte no tienes atorizado a dejar ningun pendiente para esta intervencion».
+
+- **agentes: `apexos-frontend` 2.53.0 → 2.54.0 (regla 69), `apexos-qa` 2.140.0 → 2.141.0 (regla 155).**
+- **Que se cerro:** el pendiente 3 del corte anterior —**7** ventanillas nativas (**2** `window.confirm` y **5** `confirm(` pelados) en `rostros`, `dispositivos-marcacion`, `aportes-sociales`, `liquidacion-trabajador` y `nomina` ×3—. Un componente nuevo `apps/web/components/hr/ConfirmWindow.tsx` montado sobre el marco accesible que ya existia (`components/ui/ModalFrame.tsx`: `role="dialog"`, `aria-modal`, foco atrapado con Tab, Escape, hoja movil, foco devuelto) en lugar de copiar cinco `<dialog>` sueltos.
+- **El boton ya no ejecuta:** pasa a guardar la fila (`onClick={() => setPendingReset(row)}`) y la escritura sale del segundo clic. Cada contrato aserta cuatro cosas —estado de la fila, gatillo, ausencia de la forma directa y cierre tras la escritura— porque una prueba que solo mira que no haya `confirm` deja pasar el clic que borra sin preguntar.
+- **El texto no empeoro:** la ventana repite la frase que ya leia el operario y le suma la perdida con el dato de la fila (periodo y total de aportes, neto/prestaciones/indemnizacion y corte, placa y ultimo uso del celular, version de consentimiento del rostro, `period_key` en las tres de nomina).
+- **Medicion:** ventanillas bajo `app/dashboard/talento-humano` **7 → 0** barridas sobre los **19** `.tsx` de la carpeta; suite del portal **956** pruebas / **953** verdes / **3** rojas con los tres atribuidos por alcance (leen `contabilidad/`, `transporte/`, `administracion/` y `lib/api.ts`, ninguna ruta dentro del diff); `tsc` salida **0**; contrato nuevo **8** pruebas y los dos contratos que **exigian** `window.confirm(` invertidos en esta misma corrida.
+- **Seis controles de mutacion, todos rojos por el control esperado con el archivo devuelto byte a byte.** Uno estuvo verde la primera pasada: el bucle asertaba el `onConfirm` pero no el `onClick`, asi que reponer el clic directo no caia nada; el contrato quedo con las dos aserciones. El driver es de puesto (`.tmp/mutacion-hr-ventanillas-20261127.py`) y no se versiona.
+- **Lo que NO certifica:** sigue sin corrida de Chromium contra ambiente desplegado (eso es el pre-QA de la promocion) y el barrido cubre Talento Humano: contabilidad conserva sus ventanillas porque sus propias pruebas las exigen.
+- **Pendientes:** los del corte anterior siguen intactos salvo el 3, que queda cerrado aqui. El resto (promociones, biométrico en la nube, re-medicion en Produccion, worktrees y ramas aux) depende de la cadena de promocion que continua en este mismo cierre.
+
+
 ### Talento Humano estaba partido en dos ramas y las dos tenían razón a medias: se retrointegra por blob, se restauran cuatro frentes certificados y se certifica lo que NO se certifica (`hr-retrointegracion-20261127`)
 
 Orden del dueño: «veo que no todos los cambios fueron migrados hacia talento humano desde develop, faltan funciones, campos entre otras herramientas?» y, sobre el mismo frente: «ten en cuenta dejar para produccion provicionalmente la aplicacion de maracion mediante la web, los demas cambios deben migrar de manera completa y sana». Cero escrituras de cliente: `apps/api/prisma/**` no se tocó, no hay migración aplicada y ningún ambiente se desplegó en este corte.
