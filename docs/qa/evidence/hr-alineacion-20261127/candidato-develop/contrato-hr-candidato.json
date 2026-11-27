@@ -1,8 +1,8 @@
 {
-  "medicion": "contrato-hr-candidato",
-  "arbol": "wt-hr-cand-develop-20261127",
-  "commit": "652316ffdc4ac5542cabfb797aa4fff3435f306e",
-  "medido_en": "2026-11-27T19:30:48.846Z",
+  "medicion": "contrato-hr-candidato-final",
+  "arbol": "wt-hr-cand2-develop-20261127",
+  "commit": "b6d727756bd1ad2831a22090f89421f66a069d8f",
+  "medido_en": "2026-11-27T19:48:22.258Z",
   "archivos": 32,
   "tests": 236,
   "pass": 236,

@@ -1,8 +1,8 @@
 {
-  "medicion": "candidato-desarrollo-replay",
-  "arbol": "wt-hr-cand-develop-20261127",
-  "commit": "652316ffdc4ac5542cabfb797aa4fff3435f306e",
-  "medido_en": "2026-11-27T19:30:29.571Z",
+  "medicion": "candidato-final-b6d72775",
+  "arbol": "wt-hr-cand2-develop-20261127",
+  "commit": "b6d727756bd1ad2831a22090f89421f66a069d8f",
+  "medido_en": "2026-11-27T19:48:08.949Z",
   "archivos": 139,
   "tests": 964,
   "pass": 948,
@@ -10,43 +10,43 @@
   "rojos": [
     {
       "file": "certify-company-modal-floating-local.mjs",
-      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-company-modal-floating-local.mjs"
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-company-modal-floating-local.mjs"
     },
     {
       "file": "certify-supplier-create-button-visible-local.mjs",
-      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-supplier-create-button-visible-local.mjs"
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-supplier-create-button-visible-local.mjs"
     },
     {
       "file": "certify-ui-ux-phase-one-local.mjs",
-      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-one-local.mjs"
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-one-local.mjs"
     },
     {
       "file": "certify-ui-ux-phase-three-accessibility-local.mjs",
-      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-accessibility-local.mjs"
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-accessibility-local.mjs"
     },
     {
       "file": "certify-ui-ux-phase-three-collaboration-local.mjs",
-      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-collaboration-local.mjs"
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-collaboration-local.mjs"
     },
     {
       "file": "certify-ui-ux-phase-three-foundation-local.mjs",
-      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-foundation-local.mjs"
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-foundation-local.mjs"
     },
     {
       "file": "certify-ui-ux-phase-three-personalization-local.mjs",
-      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-personalization-local.mjs"
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-personalization-local.mjs"
     },
     {
       "file": "certify-ui-ux-phase-three-toolkit-local.mjs",
-      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-toolkit-local.mjs"
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-toolkit-local.mjs"
     },
     {
       "file": "certify-ui-ux-phase-three-totp-local.mjs",
-      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-totp-local.mjs"
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-three-totp-local.mjs"
     },
     {
       "file": "certify-ui-ux-phase-two-local.mjs",
-      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-two-local.mjs"
+      "motivo": "C:\\\\Users\\\\mq1\\\\Documents\\\\Proyectos\\\\APEXOS\\\\.tmp\\\\wt-hr-cand2-develop-20261127\\\\apps\\\\web\\\\test\\\\certify-ui-ux-phase-two-local.mjs"
     },
     {
       "file": "ibc-nomina-ui.test.mjs",

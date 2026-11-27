@@ -1,0 +1,647 @@
+{
+  "instrumento": "promotion-migration-check",
+  "ejecutado_en": "2026-11-27T19:51:03.516Z",
+  "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\.tmp\\wt-hr-cand2-develop-20261127",
+  "spec": "C:/Users/mq1/Documents/Proyectos/APEXOS/docs/qa/evidence/hr-alineacion-20261127/candidato-develop/spec-mutacion.json",
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "contra": "commit b6d72775",
+  "label": "invariantes del replay",
+  "passed": false,
+  "total": 79,
+  "rotos": 1,
+  "results": [
+    {
+      "tipo": "carry",
+      "file": "apps/web/components/hr/ConfirmWindow.tsx",
+      "esperado": "a7a5f0eee83f2b61fe9ee2613b5a36448b4cde2f",
+      "actual": "a7a5f0eee83f2b61fe9ee2613b5a36448b4cde2f",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/hrMarkingCorrection.ts",
+      "esperado": "b5c9ce0c852b1fdf7ff4325f821ee1cb0e9818df",
+      "actual": "b5c9ce0c852b1fdf7ff4325f821ee1cb0e9818df",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/installationIdentity.ts",
+      "esperado": "e96fd6eddd7909bfea1f7a8a2c5fccc88f1d4c27",
+      "actual": "e96fd6eddd7909bfea1f7a8a2c5fccc88f1d4c27",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-confirm-window.test.mjs",
+      "esperado": "ba668fb4fdb1c7c3d127ae878a2414f5b3ea1920",
+      "actual": "ba668fb4fdb1c7c3d127ae878a2414f5b3ea1920",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-map-no-inline-evidence.test.mjs",
+      "esperado": "0a15bc0585e069a34d424f9ba064e8fe6305435e",
+      "actual": "0a15bc0585e069a34d424f9ba064e8fe6305435e",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-marking-correction.test.mjs",
+      "esperado": "0083635a7d3fdeaf43cc3c3e5daf1e6242e5b610",
+      "actual": "0083635a7d3fdeaf43cc3c3e5daf1e6242e5b610",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-marking-cross-device.test.mjs",
+      "esperado": "a9ae1683b75c3a331a6f8f1032c34c7b7273aa5e",
+      "actual": "a9ae1683b75c3a331a6f8f1032c34c7b7273aa5e",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/installation-identity.test.mjs",
+      "esperado": "93eb93ede733ee539c95fd9059dea1a21b87c42b",
+      "actual": "93eb93ede733ee539c95fd9059dea1a21b87c42b",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/briefs/2026-11-27-hr-retrointegracion-ramas.md",
+      "esperado": "cf5755f07bc7c63a7e4b9ddd31ad023e99f514c7",
+      "actual": "cf5755f07bc7c63a7e4b9ddd31ad023e99f514c7",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/project/CONTRATO_EQUIPO_APEXOS.md",
+      "esperado": "bf3a157b70fb864691805da9a9e6aa6a4480db34",
+      "actual": "bf3a157b70fb864691805da9a9e6aa6a4480db34",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/project/divergencia-desarrollo-develop-20261107.md",
+      "esperado": "15d6286eb6b2a5ee5c49e69c5f278347d5a29c0d",
+      "actual": "15d6286eb6b2a5ee5c49e69c5f278347d5a29c0d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/certifications/hr-retrointegracion-20261127.md",
+      "esperado": "4ec6450c86b66e1ccbe57a4a5ee823b6e987ffda",
+      "actual": "4ec6450c86b66e1ccbe57a4a5ee823b6e987ffda",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/certification-corrida-roja-2.json",
+      "esperado": "72eb3069af7e8bad182ad568c99b5ea661519c03",
+      "actual": "72eb3069af7e8bad182ad568c99b5ea661519c03",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/certification.json",
+      "esperado": "e99f9138c0d3a820fab69884758aed7cc2906fdb",
+      "actual": "e99f9138c0d3a820fab69884758aed7cc2906fdb",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/diagnostico-hub-corrida-roja-2.json",
+      "esperado": "f11266a974ce958efbc855d470576343a04f5a96",
+      "actual": "f11266a974ce958efbc855d470576343a04f5a96",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/isolated-certification.json",
+      "esperado": "89db2fd2ccc4a7b4e4b06a70e58ea9671c2a8de9",
+      "actual": "89db2fd2ccc4a7b4e4b06a70e58ea9671c2a8de9",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/medidas-linea-de-tiempo.json",
+      "esperado": "4355d9431cfb3eb42abd3089f246eacccba1dac1",
+      "actual": "4355d9431cfb3eb42abd3089f246eacccba1dac1",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-develop.json",
+      "esperado": "f6949e40160a1c2c865e0515ad27f5d330f2e9f2",
+      "actual": "f6949e40160a1c2c865e0515ad27f5d330f2e9f2",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/certification.json",
+      "esperado": "0d2799ecdfb28d059dd7081e8cbe89054463fd86",
+      "actual": "0d2799ecdfb28d059dd7081e8cbe89054463fd86",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/detail-phone.png",
+      "esperado": "8cc9f3bca8e1a99ecf49c3ed74d54492d04718bc",
+      "actual": "8cc9f3bca8e1a99ecf49c3ed74d54492d04718bc",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/isolated-certification.json",
+      "esperado": "cf0074b8e85b4a00171dda62c37d900e18e45581",
+      "actual": "cf0074b8e85b4a00171dda62c37d900e18e45581",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/medidas-linea-de-tiempo.json",
+      "esperado": "4355d9431cfb3eb42abd3089f246eacccba1dac1",
+      "actual": "4355d9431cfb3eb42abd3089f246eacccba1dac1",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/report-activity-photo.png",
+      "esperado": "815e88a142f40884cc915769a87d7e600cb6a2a5",
+      "actual": "815e88a142f40884cc915769a87d7e600cb6a2a5",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/table-row-detail.png",
+      "esperado": "f258bd9de6a4087b658aecf43e297f8ea69c2876",
+      "actual": "f258bd9de6a4087b658aecf43e297f8ea69c2876",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/timeline.png",
+      "esperado": "e87e897f24cf581d49c956ff36fbdda4ffcf2615",
+      "actual": "e87e897f24cf581d49c956ff36fbdda4ffcf2615",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/unified-programming.png",
+      "esperado": "ced1cba006d7ac47d7baf0cce7444638309d86be",
+      "actual": "ced1cba006d7ac47d7baf0cce7444638309d86be",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/divergencias.txt",
+      "esperado": "ee227266e10192c3893e40914e2b6bd5467d306d",
+      "actual": "ee227266e10192c3893e40914e2b6bd5467d306d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/paridad.json",
+      "esperado": "d032acc31aa69c88803f73af3094d950f911037c",
+      "actual": "d032acc31aa69c88803f73af3094d950f911037c",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/rojos-api-base.txt",
+      "esperado": "33e38177f7857600b228bad764a24c8047501a7c",
+      "actual": "33e38177f7857600b228bad764a24c8047501a7c",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/rojos-api.txt",
+      "esperado": "33e38177f7857600b228bad764a24c8047501a7c",
+      "actual": "33e38177f7857600b228bad764a24c8047501a7c",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/rojos-web.txt",
+      "esperado": "38cda2dd040309b543a231ee743917d087e21c5f",
+      "actual": "38cda2dd040309b543a231ee743917d087e21c5f",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/hr-map-inline-evidence-artifact-local.js",
+      "esperado": "a4dfabca924a53d9d8b3df3f2e47e83384f62980",
+      "actual": "a4dfabca924a53d9d8b3df3f2e47e83384f62980",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/hr-marking-queue-browser-local.js",
+      "esperado": "dda988174f6ea51279fb27cdd2289671dce76a38",
+      "actual": "dda988174f6ea51279fb27cdd2289671dce76a38",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/hr-paquete-main-qa.js",
+      "esperado": "1bacc134adc340fdccec3ae00badd5fb4191c4b1",
+      "actual": "1bacc134adc340fdccec3ae00badd5fb4191c4b1",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/hr-schedule-timeline-qa.js",
+      "esperado": "7d2122b8c3dd4d96c088840a81f1c41ea6c463b0",
+      "actual": "7d2122b8c3dd4d96c088840a81f1c41ea6c463b0",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/hr-web-selfie-field.js",
+      "esperado": "7b5cb6d4a831cb25ce037e4793c5822477c70f4a",
+      "actual": "7b5cb6d4a831cb25ce037e4793c5822477c70f4a",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-backend/SKILL.md",
+      "esperado": "d63236bfb3ea0f67c8969f39d3d46caec77088b4",
+      "actual": "3f0d8d3e9b3e343a02661324a5b8da7d3bddba12",
+      "ok": false,
+      "detalle": "el contenido publicado no es el de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-brief/SKILL.md",
+      "esperado": "afad00421bbd100105f80399b2b040140f388baf",
+      "actual": "afad00421bbd100105f80399b2b040140f388baf",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-db-nube/SKILL.md",
+      "esperado": "83b68affe960460caf0478acfe01b7b865f566b8",
+      "actual": "83b68affe960460caf0478acfe01b7b865f566b8",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-frontend/SKILL.md",
+      "esperado": "58e3496d241f80d215254274a726459472e841a4",
+      "actual": "58e3496d241f80d215254274a726459472e841a4",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md",
+      "esperado": "24df46f45e13b83a533e32d0e43aff0e2477fdf3",
+      "actual": "24df46f45e13b83a533e32d0e43aff0e2477fdf3",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-qa/SKILL.md",
+      "esperado": "88900a8974bda131c31947164d0063e967301dba",
+      "actual": "88900a8974bda131c31947164d0063e967301dba",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/apexos-seguridad/SKILL.md",
+      "esperado": "739a830bfb5b91a22d7af086f4dff33061e69b8b",
+      "actual": "739a830bfb5b91a22d7af086f4dff33061e69b8b",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": ".qoder/skills/equipo-apexos/SKILL.md",
+      "esperado": "e52f63510d2133cea7f92465b8a7c78d0a0d27c4",
+      "actual": "e52f63510d2133cea7f92465b8a7c78d0a0d27c4",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/CHANGELOG.md",
+      "esperado": "875ed6c6b27e7e97c254500306b2460b3daeda08",
+      "actual": "875ed6c6b27e7e97c254500306b2460b3daeda08",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-backend/SKILL.md",
+      "esperado": "3f0d8d3e9b3e343a02661324a5b8da7d3bddba12",
+      "actual": "3f0d8d3e9b3e343a02661324a5b8da7d3bddba12",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-brief/SKILL.md",
+      "esperado": "afad00421bbd100105f80399b2b040140f388baf",
+      "actual": "afad00421bbd100105f80399b2b040140f388baf",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-db-nube/SKILL.md",
+      "esperado": "83b68affe960460caf0478acfe01b7b865f566b8",
+      "actual": "83b68affe960460caf0478acfe01b7b865f566b8",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-frontend/SKILL.md",
+      "esperado": "58e3496d241f80d215254274a726459472e841a4",
+      "actual": "58e3496d241f80d215254274a726459472e841a4",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-git-guardian/SKILL.md",
+      "esperado": "24df46f45e13b83a533e32d0e43aff0e2477fdf3",
+      "actual": "24df46f45e13b83a533e32d0e43aff0e2477fdf3",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-qa/SKILL.md",
+      "esperado": "88900a8974bda131c31947164d0063e967301dba",
+      "actual": "88900a8974bda131c31947164d0063e967301dba",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/apexos-seguridad/SKILL.md",
+      "esperado": "739a830bfb5b91a22d7af086f4dff33061e69b8b",
+      "actual": "739a830bfb5b91a22d7af086f4dff33061e69b8b",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/equipo-apexos/SKILL.md",
+      "esperado": "e52f63510d2133cea7f92465b8a7c78d0a0d27c4",
+      "actual": "e52f63510d2133cea7f92465b8a7c78d0a0d27c4",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "agents/registry.json",
+      "esperado": "25c704491024dcf9f7554956ef79f9185ee7f6cc",
+      "actual": "25c704491024dcf9f7554956ef79f9185ee7f6cc",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+      "esperado": "78365807126e5eb0d739b3aed9f2b133ca47de11",
+      "actual": "78365807126e5eb0d739b3aed9f2b133ca47de11",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
+      "esperado": "2b11138919b14e8a2a24eac1aa74333c712eacbc",
+      "actual": "2b11138919b14e8a2a24eac1aa74333c712eacbc",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+      "esperado": "3c85aa537a84a2f7b793614f83c8c957328e1ed5",
+      "actual": "3c85aa537a84a2f7b793614f83c8c957328e1ed5",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+      "esperado": "1689fa4aeb54a1b928b29d72e3846fcfdfc8d83c",
+      "actual": "1689fa4aeb54a1b928b29d72e3846fcfdfc8d83c",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+      "esperado": "796ddee85057cb8d3c357f195d60f5e45c3db706",
+      "actual": "796ddee85057cb8d3c357f195d60f5e45c3db706",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+      "esperado": "8ea980321afe758c025f8a42df50a458b44d5af1",
+      "actual": "8ea980321afe758c025f8a42df50a458b44d5af1",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+      "esperado": "bb9e2be1667178f15ab36d154ce6405f36197c8d",
+      "actual": "bb9e2be1667178f15ab36d154ce6405f36197c8d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx",
+      "esperado": "00068c3d84d90cd8a2bda13315bf53dbd5a48774",
+      "actual": "00068c3d84d90cd8a2bda13315bf53dbd5a48774",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+      "esperado": "ae1ffb0235e0cb1108da96b813097ded20143125",
+      "actual": "ae1ffb0235e0cb1108da96b813097ded20143125",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
+      "esperado": "684a9a3de98d30da4e4e4d993fe61a14536bcce4",
+      "actual": "684a9a3de98d30da4e4e4d993fe61a14536bcce4",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/components/operations/PhotoCapture.tsx",
+      "esperado": "9ebc79217831669b30b54ad3c1db6c1f99543c62",
+      "actual": "9ebc79217831669b30b54ad3c1db6c1f99543c62",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/components/shell/MobileNav.tsx",
+      "esperado": "442ad08142db35b76fe9d4e3c84a3063f92f44bd",
+      "actual": "442ad08142db35b76fe9d4e3c84a3063f92f44bd",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/api.ts",
+      "esperado": "32942190b4e70bf7598c7dfd4d0d5d60232b4d86",
+      "actual": "32942190b4e70bf7598c7dfd4d0d5d60232b4d86",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/hrOfflineEvidence.ts",
+      "esperado": "23b9ff886c8fc8341ba3bcd73dba777332f07f48",
+      "actual": "23b9ff886c8fc8341ba3bcd73dba777332f07f48",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/hrOfflineMarking.ts",
+      "esperado": "7f36e53dec5a02c29ab9a9b3ffca02c758ab5a69",
+      "actual": "7f36e53dec5a02c29ab9a9b3ffca02c758ab5a69",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs",
+      "esperado": "7adc6871d1b82e301530f9a88786a47fdb029150",
+      "actual": "7adc6871d1b82e301530f9a88786a47fdb029150",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-face-enrollments-page.test.mjs",
+      "esperado": "ccb3f4cd794c8a59bf0cebb0d4762f8a049f10cd",
+      "actual": "ccb3f4cd794c8a59bf0cebb0d4762f8a049f10cd",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs",
+      "esperado": "f3a5a25f32a48c8626c1d0c155db511917381432",
+      "actual": "f3a5a25f32a48c8626c1d0c155db511917381432",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+      "esperado": "010d968afd3971f87ea22e6a4c8e69732b40eddd",
+      "actual": "010d968afd3971f87ea22e6a4c8e69732b40eddd",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-offline-marking.test.mjs",
+      "esperado": "267bbf25215af7a413285f5c897564f20d6f3b5d",
+      "actual": "267bbf25215af7a413285f5c897564f20d6f3b5d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-shared-devices-page.test.mjs",
+      "esperado": "ba3207e1ae74f6c34155cdfcc00b6af480da9de2",
+      "actual": "ba3207e1ae74f6c34155cdfcc00b6af480da9de2",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/project/app-movil.md",
+      "esperado": "447201441d6542dd234eafc21b8dee106940f2ef",
+      "actual": "447201441d6542dd234eafc21b8dee106940f2ef",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/project/flujo-ramas-y-ambientes.md",
+      "esperado": "07bb5f10733a4686786d47f3e0012fe9b2dd5f69",
+      "actual": "07bb5f10733a4686786d47f3e0012fe9b2dd5f69",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "docs/project/modulos/talento-humano.md",
+      "esperado": "ffeac34f7af008558dd5a86bc9ae7a7843b4b1dc",
+      "actual": "ffeac34f7af008558dd5a86bc9ae7a7843b4b1dc",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "scripts/certifications/hr-marking-blocked-workers.js",
+      "esperado": "bb6b270f5ebed6d20bb3d811b94cf9c0860ddaa5",
+      "actual": "bb6b270f5ebed6d20bb3d811b94cf9c0860ddaa5",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    }
+  ]
+}

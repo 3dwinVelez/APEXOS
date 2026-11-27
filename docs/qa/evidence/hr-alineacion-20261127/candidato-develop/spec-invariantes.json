@@ -1,0 +1,247 @@
+{
+  "base_ref": "origin/develop",
+  "origin_ref": "origin/desarrollo",
+  "candidato": "b6d727756bd1ad2831a22090f89421f66a069d8f",
+  "porte": "las 79 rutas del frente viajan byte a byte desde origin/desarrollo 14ad758c: 43 modificadas y 36 nuevas. Cero rutas de otro frente, cero hunks editados a mano, cero excepciones de origen.",
+  "carry": [
+    {
+      "file": "apps/web/components/hr/ConfirmWindow.tsx"
+    },
+    {
+      "file": "apps/web/lib/hrMarkingCorrection.ts"
+    },
+    {
+      "file": "apps/web/lib/installationIdentity.ts"
+    },
+    {
+      "file": "apps/web/test/hr-confirm-window.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-map-no-inline-evidence.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-marking-correction.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-marking-cross-device.test.mjs"
+    },
+    {
+      "file": "apps/web/test/installation-identity.test.mjs"
+    },
+    {
+      "file": "docs/briefs/2026-11-27-hr-retrointegracion-ramas.md"
+    },
+    {
+      "file": "docs/project/CONTRATO_EQUIPO_APEXOS.md"
+    },
+    {
+      "file": "docs/project/divergencia-desarrollo-develop-20261107.md"
+    },
+    {
+      "file": "docs/qa/certifications/hr-retrointegracion-20261127.md"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/certification-corrida-roja-2.json"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/certification.json"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/diagnostico-hub-corrida-roja-2.json"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/isolated-certification.json"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/medidas-linea-de-tiempo.json"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-develop.json"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/certification.json"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/detail-phone.png"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/isolated-certification.json"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/medidas-linea-de-tiempo.json"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/report-activity-photo.png"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/table-row-detail.png"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/timeline.png"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/unified-programming.png"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/divergencias.txt"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/paridad.json"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/rojos-api-base.txt"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/rojos-api.txt"
+    },
+    {
+      "file": "docs/qa/evidence/hr-alineacion-20261127/rojos-web.txt"
+    },
+    {
+      "file": "scripts/certifications/hr-map-inline-evidence-artifact-local.js"
+    },
+    {
+      "file": "scripts/certifications/hr-marking-queue-browser-local.js"
+    },
+    {
+      "file": "scripts/certifications/hr-paquete-main-qa.js"
+    },
+    {
+      "file": "scripts/certifications/hr-schedule-timeline-qa.js"
+    },
+    {
+      "file": "scripts/certifications/hr-web-selfie-field.js"
+    },
+    {
+      "file": ".qoder/skills/apexos-backend/SKILL.md"
+    },
+    {
+      "file": ".qoder/skills/apexos-brief/SKILL.md"
+    },
+    {
+      "file": ".qoder/skills/apexos-db-nube/SKILL.md"
+    },
+    {
+      "file": ".qoder/skills/apexos-frontend/SKILL.md"
+    },
+    {
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "file": ".qoder/skills/apexos-qa/SKILL.md"
+    },
+    {
+      "file": ".qoder/skills/apexos-seguridad/SKILL.md"
+    },
+    {
+      "file": ".qoder/skills/equipo-apexos/SKILL.md"
+    },
+    {
+      "file": "agents/CHANGELOG.md"
+    },
+    {
+      "file": "agents/apexos-backend/SKILL.md"
+    },
+    {
+      "file": "agents/apexos-brief/SKILL.md"
+    },
+    {
+      "file": "agents/apexos-db-nube/SKILL.md"
+    },
+    {
+      "file": "agents/apexos-frontend/SKILL.md"
+    },
+    {
+      "file": "agents/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "file": "agents/apexos-qa/SKILL.md"
+    },
+    {
+      "file": "agents/apexos-seguridad/SKILL.md"
+    },
+    {
+      "file": "agents/equipo-apexos/SKILL.md"
+    },
+    {
+      "file": "agents/registry.json"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/rostros/page.tsx"
+    },
+    {
+      "file": "apps/web/components/operations/PhotoCapture.tsx"
+    },
+    {
+      "file": "apps/web/components/shell/MobileNav.tsx"
+    },
+    {
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "file": "apps/web/lib/hrOfflineEvidence.ts"
+    },
+    {
+      "file": "apps/web/lib/hrOfflineMarking.ts"
+    },
+    {
+      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-face-enrollments-page.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-offline-marking.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-shared-devices-page.test.mjs"
+    },
+    {
+      "file": "docs/project/app-movil.md"
+    },
+    {
+      "file": "docs/project/flujo-ramas-y-ambientes.md"
+    },
+    {
+      "file": "docs/project/modulos/talento-humano.md"
+    },
+    {
+      "file": "scripts/certifications/hr-marking-blocked-workers.js"
+    }
+  ],
+  "edit": [],
+  "delete": []
+}

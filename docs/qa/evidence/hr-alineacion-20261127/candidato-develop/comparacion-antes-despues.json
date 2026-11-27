@@ -1,7 +1,7 @@
 {
   "comparacion_rojos": {
     "base": "origin/develop a440560d",
-    "candidato": "652316ff",
+    "candidato": "b6d727756bd1ad2831a22090f89421f66a069d8f",
     "base_tests": 915,
     "base_pass": 898,
     "base_fail": 17,
@@ -12,8 +12,9 @@
     "rojos_apagados_por_el_candidato": [
       "hr-offline-marking.test.mjs :: D: las escrituras self-service de HR tampoco caen al respaldo Supabase"
     ],
-    "lectura": "ningun rojo nuevo: cada rojo del candidato ya era rojo en el arbol puro de origin/develop (los 10 arneses certify-*-local exigen un portal vivo en 127.0.0.1:3001 y mueren con ERR_CONNECTION_REFUSED; ibc-nomina-ui 4, transport-print-theme 1 y transport-pyg-account-config 1 son de otros frentes y ya estaban rojos en el destino). El candidato ademas apaga el rojo de hr-offline-marking que si tenia develop"
+    "lectura": "ningun rojo nuevo: cada rojo del candidato ya era rojo en el arbol puro de origin/develop (10 arneses certify-*-local exigen un portal vivo en 127.0.0.1:3001 y mueren con ERR_CONNECTION_REFUSED; ibc-nomina-ui 4, transport-print-theme 1 y transport-pyg-account-config 1 son de otros frentes y ya estaban rojos en el destino). El candidato apaga el rojo hr-offline-marking pata D que si tenia develop"
   },
+  "normalizacion": "los motivos se normalizan quitando rutas absolutas del puesto: sin normalizar, el mismo arnes aparece como rojo nuevo y como rojo apagado",
   "atribucion_rojos_comunes": {
     "certify-company-modal-floating-local.mjs": "certify-company-modal-floating-local.mjs",
     "certify-supplier-create-button-visible-local.mjs": "certify-supplier-create-button-visible-local.mjs",

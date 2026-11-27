@@ -147,3 +147,14 @@ Pendientes que esta sección no cierra: corrida de Chromium contra QA desplegado
 
 Detalle y artefactos en `docs/qa/certifications/hr-retrointegracion-20261127.md` §9 y `docs/qa/evidence/hr-alineacion-20261127/{absorcion-sincronia,candidato-develop}/`.
 
+
+## 14. Secuela 4 (mismo dia): compuertas, control de mutacion y congelado del candidato
+
+El inventario que sube es **79** rutas: **43** `M` + **36** `A`, **0** borrados (`allowed_deletions: []`), **0** rutas bajo `apps/api/`, `apps/control-tower/`, `packages/`, `infra/`, `lib/moduleFunctions.ts`, `lib/modules.ts`, `lib/moduleAccess.ts` y `next.config.ts`. Transporte declarado `replay_puntual` con `origin_waivers: []` y `replay_baseline` el `merge-base` real entre el destino y el commit certificado.
+
+**No entra en el candidato, a proposito:** `docs/qa/evidence/hr-alineacion-20261127/candidato-develop/` y los dos manifiestos (`hr-retrointegracion-develop-20261127-scope.json`, `...-preqa.json`). Razones: un artefacto sellado con el SHA del candidato no puede viajar dentro del arbol que produce ese SHA, y el porton de alcance se pasa por ruta de archivo, no por ruta dentro del commit. Consecuencia verificable: la lista de replay se excluyo de la ruta `candidato-develop` y el diff neto quedo sin esas entradas.
+
+**Criterio de no-regresion, expresado como resta con cifras:** suite del portal en el arbol **puro** de `origin/develop` **915/898/17** contra candidato **964/948/16** = **0** rojos nuevos y **1** rojo del destino apagado; contrato HR dentro del candidato **236/236**; **63** especificaciones de import de **29** archivos, **0** rotas; **8** modulos compartidos reemplazados pierden **0** exportaciones; porton de blobs **79/79** con su control de mutacion rojo (**1** de **79**, salida **1**). Instrumentos: `suite-base-origin-develop.json`, `suite-candidato.json`, `comparacion-antes-despues.json`, `contrato-hr-candidato.json`, `verificacion-estatica.json`, `paridad-rutas.json`, `control-de-mutacion-porton.json`, `paridad-superficie-certificada.json`.
+
+**Pendientes que esta seccion no cierra (con dueño):** corrida de navegador dentro del arbol del candidato y certificacion funcional contra QA desplegado (`apexos-qa`); promocion `desarrollo -> develop` por rama auxiliar + PR (`apexos-git-guardian`); migraciones biometricas `20261121230000`, `20261122060000`, `20261122120000` en QA y Produccion y su despliegue (`apexos-db-nube`, autorizacion expresa del dueño); `develop -> main` con `qa:approval:evidence` (`apexos-qa`); y el brief propio del `frame-src` del mapa (`apexos-frontend`).
+
