@@ -42,6 +42,7 @@ const sha256 = (buffer) => crypto.createHash("sha256").update(buffer).digest("he
 const RUTAS_ANCLA = [
   "apps/api/src/modules/hr/banks.js",
   "apps/api/src/modules/hr/webPunchSelfie.js",
+  "apps/api/src/modules/hr/mobile-identity.js",
   "apps/api/src/modules/hr/payrollPeriod.js",
   "apps/api/src/modules/hr/payrollReceiptPdf.js",
   "apps/api/src/modules/hr/terminationBenefits.js",
@@ -61,6 +62,7 @@ const IDS_PIERNAS = [
   "nomina_cierres_lee_y_valida", "mallas_unificadas_ambas_lecturas", "contencion_sin_P2028",
   "mallas_retiradas_por_estado",
   "marcacion_sin_horario_responde_200_vacio", "punch_sin_selfie_400", "punch_selfie_no_imagen_400",
+  "punch_selfie_formato_ileible_conserva_jornada",
   "punch_horario_ajeno_403", "punch_con_selfie_valida", "punch_idempotente_reenvio",
   "rbac_contraste_roles_sobre_nomina", "aislamiento_tenant_lectura", "liquidacion_completa_con_recibo_pdf"
 ];
@@ -208,9 +210,13 @@ function pngSelfie(lado) {
   const igualdades = RUTAS_ANCLA.map((p) => {
     const s = blob(servido, p);
     const c = blob(CANDIDATO, p);
-    return { ruta: p, servido: s, candidato: c, igual: /^[0-9a-f]{40}$/.test(s) && s === c };
+    // Una ruta ausente en los DOS arboles es un retiro verificado, no una divergencia: es el caso de
+    // `webPunchSelfie.js`, desmontado el 2026-11-24. Si solo falta en uno de los dos, sigue siendo rojo.
+    const retirado = s === "(ausente)" && c === "(ausente)";
+    return { ruta: p, servido: s, candidato: c, retirado, igual: retirado || (/^[0-9a-f]{40}$/.test(s) && s === c) };
   });
   const pares = igualdades.filter((f) => f.igual).length;
+  const retiradas = igualdades.filter((f) => f.retirado).map((f) => f.ruta.replace(/^apps\/api\/src\/modules\/hr\//, ""));
   registrar(evalPierna("ancla_build", "OK",
     health.status === 200 && servido.length >= 12 && gitOk(["cat-file", "-e", `${servido}^{commit}`]) ? "OK" : "FALLO",
     `GET /health -> ${health.status}, commit servido ${servido || "(vacio)"}, resoluble en el arbol local: ${gitOk(["cat-file", "-e", `${servido}^{commit}`])}`));
@@ -224,6 +230,7 @@ function pngSelfie(lado) {
     : sinDeclarar.length > 0 ? " | hay una divergencia sin declarar: el arbol servido no es el que se promociona"
     : " | la unica divergencia es el frente excluido por manifiesto";
   const paridadDetalle = `${pares}/${RUTAS_ANCLA.length} rutas HR del arbol servido son byte a byte las del candidato ${CANDIDATO}`
+    + (retiradas.length ? ` | retiradas en ambos arboles: ${retiradas.join(", ")}` : "")
     + (divergentes.length ? ` | divergen: ${listaDivergentes}` : "") + cierre;
   registrar(evalPierna("paridad_blobs_hr", "OK", sinDeclarar.length === 0 ? "OK" : "FALLO", paridadDetalle));
 
@@ -565,14 +572,32 @@ function pngSelfie(lado) {
     sinFoto.status === 400 && String(sinFoto.cuerpo?.code || "") === "SELFIE_REQUERIDA" ? "OK" : "FALLO",
     `POST /hr/self/time-punches sin identity_photo -> ${resumen(sinFoto)} (code ${(sinFoto.cuerpo || {}).code || "(sin code)"}): la compuerta dura sigue en pie en el ambiente`));
 
-  const fotoPdf = await pedir("/api/v1/hr/self/time-punches", { method: "POST", token: tkMarca, payload: payloadMarca({ identity_photo: { base64: Buffer.from("%PDF-1.4 sondeo").toString("base64"), type: "application/pdf", name: "evidencia.pdf" } }) });
-  const fotoSvg = await pedir("/api/v1/hr/self/time-punches", { method: "POST", token: tkMarca, payload: payloadMarca({ identity_photo: { base64: Buffer.from("<svg xmlns='x'/>").toString("base64"), type: "image/svg+xml", name: "logo.svg" } }) });
+  // Los tres payloads que tenia esta pierna median 15 bytes: tropezaban con el minimo de bytes
+  // (EVIDENCIA_MINIMA) antes de que el veredicto de contenido dijera nada, y el codigo que se exigia
+  // (`SELFIE_INVALIDA`) lo retiro el contrato del 2026-11-24. Con tamano real, la compuerta dura si
+  // responde: el modulo servido devuelve 400 VALIDACION y el motivo machine-readable viaja en
+  // details.evidence_failure_code (PDF -> CLASE_RECHAZADA, SVG -> TIPO_DECLARADO_RECHAZADO).
+  const bulto = (prefijo, bytes, digito) => Buffer.concat([Buffer.from(prefijo), Buffer.alloc(bytes, digito)]).toString("base64");
+  const motivo = (r) => String(r.cuerpo?.details?.evidence_failure_code || r.cuerpo?.evidence_failure_code || "(sin motivo)");
+  const rechazoDuro = (r, esperado) => r.status === 400 && String(r.cuerpo?.code || "") === "VALIDACION" && motivo(r).includes(esperado);
+  const fotoPdf = await pedir("/api/v1/hr/self/time-punches", { method: "POST", token: tkMarca, payload: payloadMarca({ identity_photo: { base64: bulto("%PDF-1.7\n", 120_000, 65), type: "application/pdf", name: "evidencia.pdf" } }) });
+  const fotoSvg = await pedir("/api/v1/hr/self/time-punches", { method: "POST", token: tkMarca, payload: payloadMarca({ identity_photo: { base64: bulto("<svg xmlns='http://www.w3.org/2000/svg'>", 12_000, 66), type: "image/svg+xml", name: "logo.svg" } }) });
+  const fotoVideo = await pedir("/api/v1/hr/self/time-punches", { method: "POST", token: tkMarca, payload: payloadMarca({ identity_photo: { base64: bulto("\0\0\0\u0018ftypmp42", 60_000, 68), type: "image/jpeg", name: "video.mp4" } }) });
   const fotoGrande = await pedir("/api/v1/hr/self/time-punches", { method: "POST", token: tkMarca, payload: payloadMarca({ identity_photo: { base64: Buffer.alloc(2_500_000, 7).toString("base64"), type: "image/jpeg", name: "grande.jpg" } }) });
   registrar(evalPierna("punch_selfie_no_imagen_400", "OK",
-    fotoPdf.status === 400 && String(fotoPdf.cuerpo?.code || "") === "SELFIE_INVALIDA"
-      && fotoSvg.status === 400 && String(fotoSvg.cuerpo?.code || "") === "SELFIE_INVALIDA"
+    rechazoDuro(fotoPdf, "CLASE_RECHAZADA") && rechazoDuro(fotoSvg, "TIPO_DECLARADO") && rechazoDuro(fotoVideo, "CLASE_RECHAZADA")
       && fotoGrande.status >= 400 && fotoGrande.status < 500 ? "OK" : "FALLO",
-    `PDF -> ${resumen(fotoPdf)}; SVG -> ${resumen(fotoSvg)}; 2.5 MB -> ${resumen(fotoGrande)} (contenido duro rechazado en los tres casos; el tercero puede caer en el limite de cuerpo antes del contenido)`));
+    `PDF 120 KB -> ${resumen(fotoPdf)} motivo ${motivo(fotoPdf)}; SVG 12 KB -> ${resumen(fotoSvg)} motivo ${motivo(fotoSvg)}; MP4 60 KB -> ${resumen(fotoVideo)} motivo ${motivo(fotoVideo)}; 2,5 MB -> ${resumen(fotoGrande)} (los cuatro caen antes de tocar la jornada: ninguno deja marcacion)`));
+
+  // La otra mitad del contrato del 2026-11-24: una foto que jura ser JPEG pero no decodifica NO puede
+  // costar la jornada. El payload es de tamano real (60 KB) para que la decision la tome el veredicto
+  // de contenido y no el minimo de bytes. Se exige ademas que lo aceptado quede sin verificar:
+  // `photo_only` con evidencia degradada, nunca una identidad.
+  const fotoIlegible = await pedir("/api/v1/hr/self/time-punches", { method: "POST", token: tkMarca, payload: payloadMarca({ identity_photo: { base64: Buffer.alloc(60_000, 67).toString("base64"), type: "image/jpeg", name: "ilegible.jpg" } }) });
+  const identidadIlegible = fotoIlegible.cuerpo?.punch?.metadata?.identity_verification || fotoIlegible.cuerpo?.identity_verification || null;
+  const jornadaConservada = fotoIlegible.status < 400 && identidadIlegible?.status === "photo_only" && identidadIlegible?.evidence_status === "degraded";
+  registrar(evalPierna("punch_selfie_formato_ileible_conserva_jornada", "OK", jornadaConservada ? "OK" : "FALLO",
+    `POST con 60 KB que declara image/jpeg y no decodifica -> ${resumen(fotoIlegible)} identidad ${JSON.stringify(identidadIlegible || "(sin campo)").slice(0, 190)} (la promesa medida: la jornada se guarda y la foto queda photo_only + degraded, nunca verificada)`));
 
   const horarioAjeno = await pedir("/api/v1/hr/self/time-punches", { method: "POST", token: tokens.sin_horario || tkMarca, payload: payloadMarca({ route_id: idMalla || 1, identity_photo: selfieValida }) });
   registrar(evalPierna("punch_horario_ajeno_403", "OK",
@@ -757,7 +782,9 @@ function pngSelfie(lado) {
   reporte.resumen = { total: cheques.length, verdes: cheques.length - rojas.length - na.length, rojas: rojas.length, no_aplicables: na.length };
   reporte.veredicto = rojas.length === 0 ? "APROBADO" : "BLOQUEADO";
   reporte.piernas_rojas = rojas.map((c) => ({ id: c.id, esperado: c.esperado, observado: c.observado, detalle: c.detalle }));
-  const dir = path.resolve(ROOT, "docs/qa/evidence/hr-paquete-main-20261123");
+  // La carpeta se pasa por bandera: la corrida del 2026-11-23 esta citada en el manifiesto de main y
+  // reescribir su evidencia desde otra intervencion borra la prueba de una promocion ya publicada.
+  const dir = path.resolve(ROOT, arg("evidencia") || "docs/qa/evidence/hr-paquete-main-20261123");
   fs.mkdirSync(dir, { recursive: true });
   const etiqueta = modoEscritura ? "escritura" : "lectura";
   const archivo = path.join(dir, `qa-campo-${etiqueta}.json`);

@@ -359,6 +359,54 @@ async function main() {
     return { filas: await page.evaluate(() => document.querySelectorAll('[data-schedule-view="timeline"] li[data-route-id]').length), recargo: true };
   }
 
+  // Estado del documento en el tamano de telefono. La marca vive en `window`: si la lectura siguiente
+  // no la ve, el navegador recargo (el recargo de setViewport es asincrono y puede aterrizar despues
+  // de que el arnes fijo la fecha).
+  async function leerEstadoTelefono() {
+    return page.evaluate((marca) => {
+      const recargo = window.__apexTelefonoProbe !== marca;
+      window.__apexTelefonoProbe = marca;
+      const el = document.querySelector('input[aria-label="Filtrar por fecha"]');
+      return {
+        recargo,
+        valor_fecha: el ? el.value : "",
+        filas: document.querySelectorAll('[data-schedule-view="timeline"] li[data-route-id]').length,
+        eje: Boolean(document.querySelector('[data-schedule-view="timeline"]')),
+        aviso_vacio: (document.body.innerText || "").includes("No hay horarios con estos filtros")
+      };
+    }, `${RESUL.run_id}:telefono`);
+  }
+
+  // El eje solo se pinta cuando el listado trae jornadas, asi que medir el layout movil sin jornadas
+  // no mide el layout: mide el vacio (corrida del 27-11: el arnes conto 23 filas y cuatro checks
+  // despues salieron en 0 px porque la recarga del cambio de dispositivo se impuso despues y el
+  // filtro volvio a hoy). Se re-fija la fecha hasta ver jornadas con la fecha medida y que se
+  // mantengan; si no se logra, el denominador queda rojo y las patas de layout se declaran sin
+  // denominador en lugar de aprobarse o acusar a la pantalla con una lista vacia.
+  async function estabilizarTelefono(fecha, intentos = 6) {
+    const lectura = [];
+    let recargas = 0;
+    for (let intento = 1; intento <= intentos; intento++) {
+      await page.waitForSelector('input[aria-label="Filtrar por fecha"]', { timeout: NAV_TIMEOUT }).catch(() => undefined);
+      const estado = await leerEstadoTelefono();
+      if (estado.recargo) recargas += 1;
+      lectura.push({ ...estado, intento });
+      if (estado.filas > 0 && estado.valor_fecha === fecha) {
+        await new Promise((resolve) => setTimeout(resolve, 1_200));
+        const estable = await leerEstadoTelefono();
+        if (estable.recargo) recargas += 1;
+        lectura.push({ ...estable, intento, control: "estabilidad" });
+        if (!estable.recargo && estable.filas > 0 && estable.valor_fecha === fecha) {
+          return { filas: estable.filas, valor_fecha: estable.valor_fecha, intentos: intento, recargas, lectura };
+        }
+      }
+      await setDate(fecha);
+      await new Promise((resolve) => setTimeout(resolve, 1_500));
+    }
+    const ultimo = lectura[lectura.length - 1] || {};
+    return { filas: ultimo.filas || 0, valor_fecha: ultimo.valor_fecha || "", intentos, recargas, lectura };
+  }
+
   // El control de tema vive en "Mi cuenta" (ModalFrame), no en la pantalla: abrirlo, pulsar y cerrarlo
   // es el unico camino que tiene quien opera, y es el que se le exige al tablero.
   // Corrida 3: el paso reventaba la corrida entera. Ahora devuelve su diagnostico (disparador visto,
@@ -730,13 +778,40 @@ async function main() {
     await page.screenshot({ path: path.join(OUT, "qa-5-tema-oscuro.png") }).catch(() => undefined);
     await aplicarTema("Claro");
 
-    // 6) Telefono. El cambio de dispositivo recarga la vista: se vuelve a fijar la fecha medida antes
-    //    de exigir nada del eje (corrida 1: la espera moria porque el filtro volvia a hoy, sin jornadas).
+    // 6) Telefono. El cambio de dispositivo recarga la vista y el filtro vuelve a hoy: la recarga puede
+    //    aterrizar DESPUES de que el arnes fije la fecha, y el eje solo se pinta con jornadas. Primero
+    //    se estabiliza el documento con la fecha medida y se exige ese denominador; solo entonces las
+    //    cuatro patas de layout acusan a la pantalla (corrida del 27-11: conto 23 filas, midio 0 px y
+    //    reporto como defecto del tablero una lista vacia).
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true });
-    const recargoTelefono = await asegurarListado(fechaMedida);
-    RESUL.medidas.recargo_telefono = recargoTelefono;
-    await page.waitForSelector('[data-schedule-view="timeline"] li[data-route-id] > div:last-child > button', { visible: true, timeout: NAV_TIMEOUT }).catch(() => undefined);
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    // Si el denominador movil falla hay que decir por que: se escuchan las respuestas del listado de
+    // jornadas durante el tramo de telefono (un 4xx o un payload vacio se ven aqui, no en el censo).
+    const respuestasMoviles = [];
+    const oirListadoMovil = (response) => {
+      try {
+        const url = new URL(response.url());
+        if (url.origin !== apiOrigin || !url.pathname.startsWith("/api/v1/hr/routes")) return;
+        const cabeceras = response.headers() || {};
+        respuestasMoviles.push({ estado: response.status(), consulta: url.search.slice(0, 60), bytes: Number(cabeceras["content-length"] || 0) });
+      } catch { /* un oyente que revienta no puede tumbar la corrida */ }
+    };
+    page.on("response", oirListadoMovil);
+    const telefonoEstable = await estabilizarTelefono(fechaMedida);
+    RESUL.medidas.estabilizacion_telefono = telefonoEstable;
+    const conJornadas = telefonoEstable.filas > 0 && telefonoEstable.valor_fecha === fechaMedida;
+    check("en_390px_el_listado_trae_jornadas_de_la_fecha_medida", conJornadas, {
+      filas: telefonoEstable.filas, valor_fecha: telefonoEstable.valor_fecha, fecha_medida: fechaMedida,
+      intentos: telefonoEstable.intentos, recargas: telefonoEstable.recargas,
+      rutas_api: respuestasMoviles.slice(-4), aviso_vacio: (telefonoEstable.lectura.slice(-1)[0] || {}).aviso_vacio,
+      lectura: telefonoEstable.lectura.slice(-3)
+    });
+    const exigirTelefono = (nombre, ok, payload) => (conJornadas
+      ? check(nombre, ok, payload)
+      : skip(nombre, `el recargo movil no dejo jornadas con la fecha medida (${telefonoEstable.filas} filas, filtro "${telefonoEstable.valor_fecha}", ${telefonoEstable.recargas} recargas)`));
+    if (conJornadas) {
+      await page.waitForSelector('[data-schedule-view="timeline"] li[data-route-id] > div:last-child > button', { visible: true, timeout: NAV_TIMEOUT }).catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, 700));
+    }
     const telefono = await page.evaluate(() => {
       const pista = document.querySelector('[data-schedule-view="timeline"] .overflow-x-auto');
       const rejillas = [...document.querySelectorAll('[class*="auto-fit"]')];
@@ -744,6 +819,7 @@ async function main() {
       const bar = document.querySelector('[data-schedule-view="timeline"] li[data-route-id] > div:last-child > button');
       const topes = grid ? [...new Set([...grid.children].map((n) => Math.round(n.getBoundingClientRect().top)))] : [];
       return {
+        filas: document.querySelectorAll('[data-schedule-view="timeline"] li[data-route-id]').length,
         scroll_horizontal: pista ? pista.scrollWidth > pista.clientWidth : false,
         desborde_pista: pista ? pista.scrollWidth - pista.clientWidth : 0,
         tarjetas: grid ? grid.children.length : 0,
@@ -752,20 +828,20 @@ async function main() {
         desborde_pagina: document.documentElement.scrollWidth - window.innerWidth
       };
     });
-    check("en_390px_los_indicadores_se_apilan", telefono.tarjetas >= 6 && telefono.filas_de_indicadores >= 2, telefono);
-    check("en_390px_la_pista_desborda_con_scroll_horizontal", telefono.scroll_horizontal, { desborde_px: telefono.desborde_pista });
-    check("en_390px_la_franja_se_toca_con_al_menos_40px", telefono.tactil >= 40, { tactil_px: telefono.tactil });
-    check("en_390px_no_aparece_un_scroll_horizontal_de_pagina", telefono.desborde_pagina <= 1, { desborde_px: telefono.desborde_pagina });
+    exigirTelefono("en_390px_los_indicadores_se_apilan", telefono.tarjetas >= 6 && telefono.filas_de_indicadores >= 2, telefono);
+    exigirTelefono("en_390px_la_pista_desborda_con_scroll_horizontal", telefono.scroll_horizontal, { desborde_px: telefono.desborde_pista, filas: telefono.filas });
+    exigirTelefono("en_390px_la_franja_se_toca_con_al_menos_40px", telefono.tactil >= 40, { tactil_px: telefono.tactil, filas: telefono.filas });
+    exigirTelefono("en_390px_no_aparece_un_scroll_horizontal_de_pagina", telefono.desborde_pagina <= 1, { desborde_px: telefono.desborde_pagina, filas: telefono.filas });
     await page.screenshot({ path: path.join(OUT, "qa-6-telefono.png") }).catch(() => undefined);
 
-    const pulsoMovil = await page.evaluate((id) => {
+    const pulsoMovil = conJornadas ? await page.evaluate((id) => {
       const raiz = id ? document.querySelector(`[data-schedule-view="timeline"] li[data-route-id="${id}"]`) : document.querySelector('[data-schedule-view="timeline"]');
       const bar = raiz && [...raiz.querySelectorAll("div:last-child > button")].find((n) => n.getBoundingClientRect().width > 0);
       if (!bar) return false;
       bar.click();
       return true;
-    }, apertura.fila_pulsada || "");
-    check("en_390px_la_franja_tambien_abre_la_ventana", pulsoMovil === true, { jornada: apertura.fila_pulsada || "la primera con franja" });
+    }, apertura.fila_pulsada || "") : false;
+    exigirTelefono("en_390px_la_franja_tambien_abre_la_ventana", pulsoMovil === true, { jornada: apertura.fila_pulsada || "la primera con franja", filas: telefono.filas });
     await page.waitForSelector('[aria-label="Monitor de horario"]', { timeout: NAV_TIMEOUT }).catch(() => undefined);
     const ventanaMovil = await page.evaluate(() => {
       const dialog = document.querySelector('[aria-label="Monitor de horario"]');
@@ -773,9 +849,11 @@ async function main() {
       const caja = dialog.getBoundingClientRect();
       return { abierta: true, ancho: Math.round(caja.width), vw: window.innerWidth, metricas: dialog.querySelectorAll("header .grid > div").length };
     });
-    check("en_390px_la_ventana_ocupa_todo_el_ancho", ventanaMovil.ancho >= ventanaMovil.vw - 1, ventanaMovil);
+    exigirTelefono("en_390px_la_ventana_ocupa_todo_el_ancho", ventanaMovil.ancho >= ventanaMovil.vw - 1, ventanaMovil);
     RESUL.medidas.telefono = { ...telefono, ventana: ventanaMovil };
     await page.screenshot({ path: path.join(OUT, "qa-7-ventana-telefono.png") }).catch(() => undefined);
+    try { page.off("response", oirListadoMovil); } catch { /* el oyente muere con la pagina si la version no expone off */ }
+
 
     // 7) Higiene de la pantalla nueva: no trajo ventanillas, ni tarjetas tecnicas, ni escrituras.
     check("cero_ventanas_nativas_de_la_app", realDialogs().length === 0, { dialogs: realDialogs().slice(0, 3) });
