@@ -1,34 +1,87 @@
 {
-  "change_id": "hr-retrointegracion-develop-20261127",
   "scope_schema_version": 2,
+  "change_id": "hr-retrointegracion-develop-20261127",
+  "target_branch": "develop",
+  "source_branch": "desarrollo",
+  "promotion_branch": "codex/qa-hr-retrointegracion-develop-20261127",
+  "target_head": "a440560d7f04781166b05ac85b130c74d2bf9b43",
   "base_commits": {
     "develop": "a440560d7f04781166b05ac85b130c74d2bf9b43"
   },
-  "certified_commit": "f3169185c6e800b4ac815e4faaca9b03243c45eb",
-  "replay_baseline": "d667276f2f95a0abe27abd5d37cd883e35f2ad02",
-  "transport": "replay_puntual",
-  "origin_waivers": [],
+  "certified_commit": "2eb26b09759c6f6658d473ad54c259f656641ae5",
+  "candidate_tip": "el tip del candidato es el commit de los dos manifiestos; las 89 rutas del commit certificado no cambian despues de el (git diff --quiet certificado..candidato -- <rutas> vacio)",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "2eb26b09759c6f6658d473ad54c259f656641ae5",
+    "replay_sobre": "origin/develop a440560d7f04781166b05ac85b130c74d2bf9b43",
+    "origen_del_contenido": "cada una de las 89 rutas es el blob que esa ruta tiene en origin/desarrollo (punta 1ee9d9e0): 43 M + 46 A, 0 borrados, medido con scripts/certifications/promotion-migration-check.js",
+    "metodo": "replay puntual por archivo sobre el destino, declarado con transporte por ascendencia porque el contrato de CI del destino exige que el commit certificado sea ancestro del candidato y los dos manifiestos viajen dentro de el",
+    "arbol_donde_se_midio": "58ae15917cc7cdde23b5f2139993ff86ad122a8d (tag backup/hr-cand-58ae1591): el mismo commit de replay sin los 10 artefactos de candidato-develop ni el papeleo posterior",
+    "delta_entre_medido_y_certificado": "58ae1591..2eb26b09: 20 rutas (papeleo de agentes y evidencia candidato-develop). 0 rutas bajo apps/ cambiaron: git diff --quiet medido..certificado -- apps/ sale limpio, el arbol de producto medido es el que sube"
+  },
   "change_intent": {
-    "summary": "Alinear el frente de Talento Humano: el portal de marcacion vuelve a leer las jornadas de otros dispositivos, la asociacion empleado-cuenta, la correccion de marcacion, la identidad de instalacion, el capture de foto y las pantallas de nomina, liquidacion, reportes, rostros y dispositivos viajan como replay puntual desde desarrollo sobre el arbol puro de develop. Cero rutas de otros frentes, cero hunks editados a mano, cero borrados.",
+    "summary": "Talento Humano queda alineado: el frente que vivia solo en develop (horarios y mallas sobre eje de dieciseis horas, sincronizacion de jornada entre dispositivos, motores de nomina y liquidacion, bancos, hubs, empleados y retiro) se retrotrajo a desarrollo, se certifico alli y ahora baja a develop como replay blob por blob. La marcacion por la web no se retira: viaja con su selfie en los cuatro tipos y su guarda de origen.",
     "modules": [
-      "hr",
+      "talento-humano",
       "web-portal",
-      "qa-gobernanza",
+      "qa-evidencia",
       "agentes"
     ]
   },
-  "allowed_paths": [
+  "certified_functional_paths": [
+    ".qoder/skills/apexos-backend/SKILL.md",
+    ".qoder/skills/apexos-brief/SKILL.md",
+    ".qoder/skills/apexos-db-nube/SKILL.md",
+    ".qoder/skills/apexos-frontend/SKILL.md",
+    ".qoder/skills/apexos-git-guardian/SKILL.md",
+    ".qoder/skills/apexos-qa/SKILL.md",
+    ".qoder/skills/apexos-seguridad/SKILL.md",
+    ".qoder/skills/equipo-apexos/SKILL.md",
+    "agents/apexos-backend/SKILL.md",
+    "agents/apexos-brief/SKILL.md",
+    "agents/apexos-db-nube/SKILL.md",
+    "agents/apexos-frontend/SKILL.md",
+    "agents/apexos-git-guardian/SKILL.md",
+    "agents/apexos-qa/SKILL.md",
+    "agents/apexos-seguridad/SKILL.md",
+    "agents/CHANGELOG.md",
+    "agents/equipo-apexos/SKILL.md",
+    "agents/registry.json",
+    "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+    "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
     "apps/web/components/hr/ConfirmWindow.tsx",
+    "apps/web/components/operations/PhotoCapture.tsx",
+    "apps/web/components/shell/MobileNav.tsx",
+    "apps/web/lib/api.ts",
     "apps/web/lib/hrMarkingCorrection.ts",
+    "apps/web/lib/hrOfflineEvidence.ts",
+    "apps/web/lib/hrOfflineMarking.ts",
     "apps/web/lib/installationIdentity.ts",
     "apps/web/test/hr-confirm-window.test.mjs",
+    "apps/web/test/hr-employee-biometric-reset.test.mjs",
+    "apps/web/test/hr-face-enrollments-page.test.mjs",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
     "apps/web/test/hr-map-no-inline-evidence.test.mjs",
     "apps/web/test/hr-marking-correction.test.mjs",
     "apps/web/test/hr-marking-cross-device.test.mjs",
+    "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+    "apps/web/test/hr-offline-marking.test.mjs",
+    "apps/web/test/hr-shared-devices-page.test.mjs",
     "apps/web/test/installation-identity.test.mjs",
     "docs/briefs/2026-11-27-hr-retrointegracion-ramas.md",
+    "docs/project/app-movil.md",
     "docs/project/CONTRATO_EQUIPO_APEXOS.md",
     "docs/project/divergencia-desarrollo-develop-20261107.md",
+    "docs/project/flujo-ramas-y-ambientes.md",
+    "docs/project/modulos/talento-humano.md",
     "docs/qa/certifications/hr-retrointegracion-20261127.md",
     "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/certification-corrida-roja-2.json",
     "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/certification.json",
@@ -44,68 +97,168 @@
     "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/table-row-detail.png",
     "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/timeline.png",
     "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/unified-programming.png",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/comparacion-antes-despues.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/contrato-hr-candidato.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/control-de-mutacion-porton.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/paridad-rutas.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/paridad-superficie-certificada.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/spec-invariantes.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/spec-mutacion.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/suite-base-origin-develop.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/suite-candidato.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/verificacion-estatica.json",
     "docs/qa/evidence/hr-alineacion-20261127/divergencias.txt",
     "docs/qa/evidence/hr-alineacion-20261127/paridad.json",
     "docs/qa/evidence/hr-alineacion-20261127/rojos-api-base.txt",
     "docs/qa/evidence/hr-alineacion-20261127/rojos-api.txt",
     "docs/qa/evidence/hr-alineacion-20261127/rojos-web.txt",
     "scripts/certifications/hr-map-inline-evidence-artifact-local.js",
+    "scripts/certifications/hr-marking-blocked-workers.js",
     "scripts/certifications/hr-marking-queue-browser-local.js",
     "scripts/certifications/hr-paquete-main-qa.js",
     "scripts/certifications/hr-schedule-timeline-qa.js",
-    "scripts/certifications/hr-web-selfie-field.js",
-    ".qoder/skills/apexos-backend/SKILL.md",
-    ".qoder/skills/apexos-brief/SKILL.md",
-    ".qoder/skills/apexos-db-nube/SKILL.md",
-    ".qoder/skills/apexos-frontend/SKILL.md",
-    ".qoder/skills/apexos-git-guardian/SKILL.md",
-    ".qoder/skills/apexos-qa/SKILL.md",
-    ".qoder/skills/apexos-seguridad/SKILL.md",
-    ".qoder/skills/equipo-apexos/SKILL.md",
-    "agents/CHANGELOG.md",
-    "agents/apexos-backend/SKILL.md",
-    "agents/apexos-brief/SKILL.md",
-    "agents/apexos-db-nube/SKILL.md",
-    "agents/apexos-frontend/SKILL.md",
-    "agents/apexos-git-guardian/SKILL.md",
-    "agents/apexos-qa/SKILL.md",
-    "agents/apexos-seguridad/SKILL.md",
-    "agents/equipo-apexos/SKILL.md",
-    "agents/registry.json",
-    "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
-    "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
-    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
-    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
-    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
-    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
-    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
-    "apps/web/app/dashboard/talento-humano/page.tsx",
-    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
-    "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
-    "apps/web/components/operations/PhotoCapture.tsx",
-    "apps/web/components/shell/MobileNav.tsx",
-    "apps/web/lib/api.ts",
-    "apps/web/lib/hrOfflineEvidence.ts",
-    "apps/web/lib/hrOfflineMarking.ts",
-    "apps/web/test/hr-employee-biometric-reset.test.mjs",
-    "apps/web/test/hr-face-enrollments-page.test.mjs",
-    "apps/web/test/hr-landing-information-architecture.test.mjs",
-    "apps/web/test/hr-marking-lateness-selfie.test.mjs",
-    "apps/web/test/hr-offline-marking.test.mjs",
-    "apps/web/test/hr-shared-devices-page.test.mjs",
-    "docs/project/app-movil.md",
-    "docs/project/flujo-ramas-y-ambientes.md",
-    "docs/project/modulos/talento-humano.md",
-    "scripts/certifications/hr-marking-blocked-workers.js"
+    "scripts/certifications/hr-web-selfie-field.js"
   ],
   "expected_changes": [
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-backend/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-brief/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-db-nube/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-frontend/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-seguridad/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/apexos-backend/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/apexos-brief/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/apexos-db-nube/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/apexos-frontend/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/apexos-seguridad/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/CHANGELOG.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "agents/registry.json"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rostros/page.tsx"
+    },
     {
       "status": "A",
       "file": "apps/web/components/hr/ConfirmWindow.tsx"
     },
     {
+      "status": "M",
+      "file": "apps/web/components/operations/PhotoCapture.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/MobileNav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
       "status": "A",
       "file": "apps/web/lib/hrMarkingCorrection.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrOfflineEvidence.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrOfflineMarking.ts"
     },
     {
       "status": "A",
@@ -114,6 +267,18 @@
     {
       "status": "A",
       "file": "apps/web/test/hr-confirm-window.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-face-enrollments-page.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
     },
     {
       "status": "A",
@@ -128,6 +293,18 @@
       "file": "apps/web/test/hr-marking-cross-device.test.mjs"
     },
     {
+      "status": "M",
+      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-offline-marking.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-shared-devices-page.test.mjs"
+    },
+    {
       "status": "A",
       "file": "apps/web/test/installation-identity.test.mjs"
     },
@@ -136,12 +313,24 @@
       "file": "docs/briefs/2026-11-27-hr-retrointegracion-ramas.md"
     },
     {
+      "status": "M",
+      "file": "docs/project/app-movil.md"
+    },
+    {
       "status": "A",
       "file": "docs/project/CONTRATO_EQUIPO_APEXOS.md"
     },
     {
       "status": "A",
       "file": "docs/project/divergencia-desarrollo-develop-20261107.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/flujo-ramas-y-ambientes.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/talento-humano.md"
     },
     {
       "status": "A",
@@ -205,6 +394,46 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/comparacion-antes-despues.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/contrato-hr-candidato.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/control-de-mutacion-porton.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/paridad-rutas.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/paridad-superficie-certificada.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/spec-invariantes.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/spec-mutacion.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/suite-base-origin-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/suite-candidato.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/verificacion-estatica.json"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/hr-alineacion-20261127/divergencias.txt"
     },
     {
@@ -228,6 +457,10 @@
       "file": "scripts/certifications/hr-map-inline-evidence-artifact-local.js"
     },
     {
+      "status": "M",
+      "file": "scripts/certifications/hr-marking-blocked-workers.js"
+    },
+    {
       "status": "A",
       "file": "scripts/certifications/hr-marking-queue-browser-local.js"
     },
@@ -244,192 +477,141 @@
       "file": "scripts/certifications/hr-web-selfie-field.js"
     },
     {
-      "status": "M",
-      "file": ".qoder/skills/apexos-backend/SKILL.md"
+      "status": "A",
+      "file": "docs/qa/manifests/hr-retrointegracion-develop-20261127-scope.json"
     },
     {
-      "status": "M",
-      "file": ".qoder/skills/apexos-brief/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": ".qoder/skills/apexos-db-nube/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": ".qoder/skills/apexos-frontend/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": ".qoder/skills/apexos-git-guardian/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": ".qoder/skills/apexos-qa/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": ".qoder/skills/apexos-seguridad/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": ".qoder/skills/equipo-apexos/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": "agents/CHANGELOG.md"
-    },
-    {
-      "status": "M",
-      "file": "agents/apexos-backend/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": "agents/apexos-brief/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": "agents/apexos-db-nube/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": "agents/apexos-frontend/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": "agents/apexos-git-guardian/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": "agents/apexos-qa/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": "agents/apexos-seguridad/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": "agents/equipo-apexos/SKILL.md"
-    },
-    {
-      "status": "M",
-      "file": "agents/registry.json"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/app/dashboard/talento-humano/rostros/page.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/components/operations/PhotoCapture.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/components/shell/MobileNav.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/lib/api.ts"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/lib/hrOfflineEvidence.ts"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/lib/hrOfflineMarking.ts"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/test/hr-face-enrollments-page.test.mjs"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/test/hr-offline-marking.test.mjs"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/test/hr-shared-devices-page.test.mjs"
-    },
-    {
-      "status": "M",
-      "file": "docs/project/app-movil.md"
-    },
-    {
-      "status": "M",
-      "file": "docs/project/flujo-ramas-y-ambientes.md"
-    },
-    {
-      "status": "M",
-      "file": "docs/project/modulos/talento-humano.md"
-    },
-    {
-      "status": "M",
-      "file": "scripts/certifications/hr-marking-blocked-workers.js"
+      "status": "A",
+      "file": "docs/qa/manifests/hr-retrointegracion-develop-20261127-preqa.json"
     }
   ],
+  "allowed_paths": [
+    ".qoder/skills/apexos-backend/SKILL.md",
+    ".qoder/skills/apexos-brief/SKILL.md",
+    ".qoder/skills/apexos-db-nube/SKILL.md",
+    ".qoder/skills/apexos-frontend/SKILL.md",
+    ".qoder/skills/apexos-git-guardian/SKILL.md",
+    ".qoder/skills/apexos-qa/SKILL.md",
+    ".qoder/skills/apexos-seguridad/SKILL.md",
+    ".qoder/skills/equipo-apexos/SKILL.md",
+    "agents/apexos-backend/SKILL.md",
+    "agents/apexos-brief/SKILL.md",
+    "agents/apexos-db-nube/SKILL.md",
+    "agents/apexos-frontend/SKILL.md",
+    "agents/apexos-git-guardian/SKILL.md",
+    "agents/apexos-qa/SKILL.md",
+    "agents/apexos-seguridad/SKILL.md",
+    "agents/CHANGELOG.md",
+    "agents/equipo-apexos/SKILL.md",
+    "agents/registry.json",
+    "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+    "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
+    "apps/web/components/hr/ConfirmWindow.tsx",
+    "apps/web/components/operations/PhotoCapture.tsx",
+    "apps/web/components/shell/MobileNav.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/hrMarkingCorrection.ts",
+    "apps/web/lib/hrOfflineEvidence.ts",
+    "apps/web/lib/hrOfflineMarking.ts",
+    "apps/web/lib/installationIdentity.ts",
+    "apps/web/test/hr-confirm-window.test.mjs",
+    "apps/web/test/hr-employee-biometric-reset.test.mjs",
+    "apps/web/test/hr-face-enrollments-page.test.mjs",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
+    "apps/web/test/hr-map-no-inline-evidence.test.mjs",
+    "apps/web/test/hr-marking-correction.test.mjs",
+    "apps/web/test/hr-marking-cross-device.test.mjs",
+    "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+    "apps/web/test/hr-offline-marking.test.mjs",
+    "apps/web/test/hr-shared-devices-page.test.mjs",
+    "apps/web/test/installation-identity.test.mjs",
+    "docs/briefs/2026-11-27-hr-retrointegracion-ramas.md",
+    "docs/project/app-movil.md",
+    "docs/project/CONTRATO_EQUIPO_APEXOS.md",
+    "docs/project/divergencia-desarrollo-develop-20261107.md",
+    "docs/project/flujo-ramas-y-ambientes.md",
+    "docs/project/modulos/talento-humano.md",
+    "docs/qa/certifications/hr-retrointegracion-20261127.md",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/certification-corrida-roja-2.json",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/certification.json",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/diagnostico-hub-corrida-roja-2.json",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/isolated-certification.json",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-arnes/medidas-linea-de-tiempo.json",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-develop.json",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/certification.json",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/detail-phone.png",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/isolated-certification.json",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/medidas-linea-de-tiempo.json",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/report-activity-photo.png",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/table-row-detail.png",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/timeline.png",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/unified-programming.png",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/comparacion-antes-despues.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/contrato-hr-candidato.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/control-de-mutacion-porton.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/paridad-rutas.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/paridad-superficie-certificada.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/spec-invariantes.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/spec-mutacion.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/suite-base-origin-develop.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/suite-candidato.json",
+    "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/verificacion-estatica.json",
+    "docs/qa/evidence/hr-alineacion-20261127/divergencias.txt",
+    "docs/qa/evidence/hr-alineacion-20261127/paridad.json",
+    "docs/qa/evidence/hr-alineacion-20261127/rojos-api-base.txt",
+    "docs/qa/evidence/hr-alineacion-20261127/rojos-api.txt",
+    "docs/qa/evidence/hr-alineacion-20261127/rojos-web.txt",
+    "scripts/certifications/hr-map-inline-evidence-artifact-local.js",
+    "scripts/certifications/hr-marking-blocked-workers.js",
+    "scripts/certifications/hr-marking-queue-browser-local.js",
+    "scripts/certifications/hr-paquete-main-qa.js",
+    "scripts/certifications/hr-schedule-timeline-qa.js",
+    "scripts/certifications/hr-web-selfie-field.js",
+    "docs/qa/manifests/hr-retrointegracion-develop-20261127-scope.json",
+    "docs/qa/manifests/hr-retrointegracion-develop-20261127-preqa.json"
+  ],
   "allowed_deletions": [],
+  "origin_waivers": [],
+  "verificado_local": {
+    "porton_de_blobs": "promotion-migration-check: 79/79 validas sobre el arbol medido (paridad-rutas.json) y 89/89 contra el indice del commit certificado (este manifiesto se genero despues de medir)",
+    "control_de_mutacion": "rompiendo .qoder/skills/apexos-backend/SKILL.md contra origin/develop el porton responde passed=false, 1 de 79 rota y codigo de salida 1 (control-de-mutacion-porton.json, spec-mutacion.json)",
+    "suite_portal": "apps/web/test: base origin/develop 915 pruebas / 898 verdes / 17 rojas contra candidato 964 / 948 / 16 = 0 rojos nuevos y 1 rojo del destino apagado (comparacion-antes-despues.json)",
+    "contrato_hr": "apps/web/test/hr-*.test.mjs: 227 pruebas en 31 archivos, 0 rojas (contrato-hr-candidato.json)",
+    "estatica": "29 archivos de codigo del diff: 63 especificaciones de import resueltas, 0 rotas; 8 modulos compartidos reemplazados pierden 0 exportaciones (verificacion-estatica.json)",
+    "superficie_del_certificador": "29 rutas de producto y los 2 scripts del instrumento, blob identicos entre el arbol donde corro la certificacion de navegador (542027c7) y el candidato (paridad-superficie-certificada.json)",
+    "derivas_decladas": [
+      "apps/api/** no viaja en este candidato: el contrato del frente se certifico en desarrollo y el destino conserva su arbol de API",
+      "apps/control-tower/** no promociona: vive solo en desarrollo por contrato de residencia (AGENTS.md)",
+      "la corrida de navegador con base efimera no se re-ejecuto dentro del arbol del candidato (1,07 GB libres); se midio la superficie y la cobertura funcional se toma contra QA desplegado",
+      "docs/qa/evidence/hr-alineacion-20261127/candidato-develop/*.json sellan el SHA 58ae1591, el arbol medido: es el arbol de producto identico al certificado, no un arbol distinto"
+    ]
+  },
+  "compuertas_exigidas": [
+    "npm run qa:promotion:scope -- docs/qa/manifests/hr-retrointegracion-develop-20261127-scope.json <candidato> origin/develop",
+    "npm run qa:preqa:evidence -- docs/qa/manifests/hr-retrointegracion-develop-20261127-preqa.json",
+    "node scripts/git-governance-guard.js ci-promotion <candidato> origin/develop develop codex/qa-hr-retrointegracion-develop-20261127",
+    "node scripts/certifications/scoped-qa-governance-local.js"
+  ],
   "protected_capabilities": [
     {
-      "name": "marcacion-web-multiposillo",
+      "name": "La marcacion web multiposillo entra con selfie en los cuatro tipos y ninguna foto real se rechaza por etiqueta",
       "status": "passed",
       "evidence": [
         "../evidence/hr-alineacion-20261127/absorcion-sincronia/certification.json",
         "../evidence/hr-alineacion-20261127/absorcion-sincronia/isolated-certification.json",
-        "../evidence/hr-alineacion-20261127/absorcion-sincronia/medidas-linea-de-tiempo.json",
-        "../evidence/hr-alineacion-20261127/candidato-develop/paridad-superficie-certificada.json"
+        "../evidence/hr-alineacion-20261127/absorcion-sincronia/medidas-linea-de-tiempo.json"
       ]
     },
     {
-      "name": "no-regresion-de-la-punta-de-develop",
+      "name": "No hay regresion contra la punta del destino: 0 rojos nuevos y 1 rojo del destino apagado",
       "status": "passed",
       "evidence": [
         "../evidence/hr-alineacion-20261127/candidato-develop/suite-base-origin-develop.json",
@@ -438,35 +620,54 @@
       ]
     },
     {
-      "name": "contrato-fuente-de-talento-humano",
-      "status": "passed",
-      "evidence": [
-        "../evidence/hr-alineacion-20261127/candidato-develop/contrato-hr-candidato.json"
-      ]
-    },
-    {
-      "name": "integridad-de-imports-y-exportes-compartidos",
-      "status": "passed",
-      "evidence": [
-        "../evidence/hr-alineacion-20261127/candidato-develop/verificacion-estatica.json"
-      ]
-    },
-    {
-      "name": "paridad-de-origen-por-blob",
-      "status": "passed",
-      "evidence": [
-        "../evidence/hr-alineacion-20261127/candidato-develop/paridad-rutas.json",
-        "../evidence/hr-alineacion-20261127/candidato-develop/control-de-mutacion-porton.json"
-      ]
-    },
-    {
-      "name": "cero-dialogos-nativos-en-talento-humano",
+      "name": "El contrato fuente de Talento Humano (horarios, mallas, nomina, hubs, empleados, retiro) corre entero sobre el arbol del candidato",
       "status": "passed",
       "evidence": [
         "../evidence/hr-alineacion-20261127/candidato-develop/contrato-hr-candidato.json",
+        "../evidence/hr-alineacion-20261127/absorcion-develop.json"
+      ]
+    },
+    {
+      "name": "Integridad de imports y exportes de los modulos compartidos reemplazados",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-alineacion-20261127/candidato-develop/verificacion-estatica.json",
+        "../evidence/hr-alineacion-20261127/paridad.json"
+      ]
+    },
+    {
+      "name": "Paridad de origen por blob: cada ruta que sube es la de desarrollo y el porton se pruebo rompiendolo",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-alineacion-20261127/candidato-develop/paridad-rutas.json",
+        "../evidence/hr-alineacion-20261127/candidato-develop/spec-invariantes.json",
+        "../evidence/hr-alineacion-20261127/candidato-develop/control-de-mutacion-porton.json",
+        "../evidence/hr-alineacion-20261127/candidato-develop/spec-mutacion.json"
+      ]
+    },
+    {
+      "name": "Cero dialogos nativos en Talento Humano: ventana, confirmacion y aviso propios",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-retrointegracion-20261127.md",
         "../evidence/hr-alineacion-20261127/absorcion-arnes/certification.json"
       ]
     }
   ],
-  "nota": "El transporte es replay puntual: b6d72775 se reconstruyo sobre el arbol puro de origin/develop y cada una de las 79 rutas es, blob por blob, la ruta que tiene origin/desarrollo. No se promociona ninguna migracion, ninguna ruta de apps/api, ninguna de apps/control-tower y ningun token global de modulos. El inventario excluye a proposito docs/qa/evidence/hr-alineacion-20261127/candidato-develop: la evidencia que describe al candidato no viaja dentro del candidato."
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-27T15:40:00-05:00",
+    "instruction": "tu instruccion ahora es validar el modulo de talento humano con los cambios que se han realizado y migrarlo de manera correcta desde develop hasta el main, sin adulterar registros, dañar funciones agenas al cambio, se requiere que queden los 3 ambientes alineados con la version que ya tenemos trabajada en develop, monta el plan de migracion y con mi autorizacion procede a migrar todo el modulo de manera correcta. autorizado la migracion",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "direct_push_to_develop": false,
+      "candidate_on_detached_head": false,
+      "allowed_deletion": false,
+      "origin_waiver_for_certifier": false
+    },
+    "authorization_texto": "La orden del 2026-11-27 «no dejes pendientes procede a terminar todas las instrucciones al pie de la letra garantizando los protocolos adecuadas ya establecidos y con mi atorizacion completa para proceder sin detenerte» cubre el flujo desarrollo -> develop -> main con sus compuertas, el despliegue y la verificacion en los tres ambientes. No cubre force push, reescritura de historia compartida, borrado de ramas ajenas al frente ni cambios de secretos.",
+    "nota": "Cubre las 89 rutas del inventario certificado mas los 2 manifiestos. La marcacion por web no se retira de Produccion: viaja y queda operativa."
+  }
 }

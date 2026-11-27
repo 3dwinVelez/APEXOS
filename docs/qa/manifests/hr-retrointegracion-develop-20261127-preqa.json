@@ -1,10 +1,12 @@
 {
   "change_id": "hr-retrointegracion-develop-20261127",
-  "commit": "58ae15917cc7cdde23b5f2139993ff86ad122a8d",
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
   "qa_status": "pending",
+  "promotion_branch": "codex/qa-hr-retrointegracion-develop-20261127",
+  "commit": "2eb26b09759c6f6658d473ad54c259f656641ae5",
+  "target_head": "a440560d7f04781166b05ac85b130c74d2bf9b43",
   "certification": {
     "status": "passed",
     "script": "../../../scripts/certifications/hr-punch-mobile-evidence-local.js",
@@ -14,7 +16,12 @@
       "../evidence/hr-alineacion-20261127/absorcion-sincronia/medidas-linea-de-tiempo.json",
       "../evidence/hr-alineacion-20261127/candidato-develop/paridad-superficie-certificada.json"
     ],
-    "notas": "Diez patas de la marcacion web multiposillo en base descartable, con el blob de la pantalla y del propio instrumento identicos entre el arbol donde se corrio (542027c7) y el candidato (58ae1591). La corrida pesada NO se repitio dentro del worktree del candidato: el puesto tiene 1,07 GB libres y el arnes levanta API, next dev y Chromium sobre una copia de la base. Eso queda declarado y medido en paridad-superficie-certificada.json, y la cobertura funcional del arbol integrado se toma contra el ambiente QA desplegado despues de este push."
+    "controls": 10,
+    "passed": 10,
+    "failed": 0,
+    "substrate": "API Fastify real + PostgreSQL local en 127.0.0.1:55432 + next dev + Chromium sobre una copia descartable de la base",
+    "arbol": "worktree del candidato en 58ae15917cc7cdde23b5f2139993ff86ad122a8d, con node_modules propio; el arbol de producto del certificado es identico (0 rutas bajo apps/ cambiaron)",
+    "notas": "Diez patas de la marcacion web multiposillo en base descartable. La corrida pesada NO se repitio dentro del worktree del candidato: el puesto tiene 1,07 GB libres y el arnes levanta API, next dev y Chromium sobre una copia de la base. Eso queda declarado y medido en paridad-superficie-certificada.json (29 rutas de producto y 2 scripts del instrumento, blob identicos), y la cobertura funcional del arbol integrado se toma contra el ambiente QA desplegado despues de este push."
   },
   "regression_certification": {
     "status": "passed",
@@ -28,7 +35,7 @@
       "../evidence/hr-alineacion-20261127/candidato-develop/suite-candidato.json",
       "../evidence/hr-alineacion-20261127/candidato-develop/comparacion-antes-despues.json"
     ],
-    "notas": "Paridad blob por blob de las 79 rutas contra origin/desarrollo f3169185: VALIDAS 79/79. El control de mutacion declara la ruta que se rompio (.qoder/skills/apexos-backend/SKILL.md), el ref contra el que se rompio (origin/develop) y la razon; con esa mutacion el porton responde passed=false, 1 de 79 rotas y codigo de salida 1, asi que el verde significa algo. La no-regresion es una resta con cifras: arbol puro de origin/develop 915/898/17 contra candidato 964/948/16 = 0 rojos nuevos y 1 rojo del destino apagado, con los motivos normalizados a nombre de archivo porque las rutas absolutas crean rojos nuevos falsos."
+    "basis": "Paridad blob por blob de las 79 rutas de producto contra origin/desarrollo (paridad-rutas.json: VALIDAS 79/79) y de las 89 del commit certificado contra el indice, medida al generar este manifiesto. El control de mutacion declara la ruta que se rompio (.qoder/skills/apexos-backend/SKILL.md), el ref contra el que se rompio (origin/develop) y la razon; con esa mutacion el porton responde passed=false, 1 de 79 rotas y codigo de salida 1, asi que el verde significa algo. La no-regresion es una resta con cifras: arbol puro de origin/develop 915/898/17 contra candidato 964/948/16 = 0 rojos nuevos y 1 rojo del destino apagado."
   },
   "checks": {
     "functional": {
@@ -75,26 +82,40 @@
       ]
     }
   },
+  "validation_summary": {
+    "certified_application_commit": "2eb26b09759c6f6658d473ad54c259f656641ae5",
+    "arbol_medido": "58ae15917cc7cdde23b5f2139993ff86ad122a8d",
+    "baseline_preserved": "a440560d7f04781166b05ac85b130c74d2bf9b43",
+    "inventario_certificado": "89 rutas (43 M + 46 A), 0 borrados, 0 excepciones de origen",
+    "porton_blobs": "79/79 de producto y 89/89 del commit certificado, con el control de mutacion rojo",
+    "suite_portal": "964/948/16 contra base 915/898/17: 0 rojos nuevos, 1 rojo del destino apagado",
+    "contrato_hr": "227 pruebas en 31 archivos, 0 rojas",
+    "estatica": "63 imports resueltos, 0 rotos; 8 modulos compartidos, 0 exportaciones perdidas",
+    "certificacion_navegador": "10/10 patas de la marcacion web en base descartable, superficie medida blob por blob",
+    "lineas_anadidas_en_el_hunkeo": 0,
+    "evidence_policy": "La evidencia citada por los dos manifiestos viaja dentro del commit certificado porque scripts/git-governance-guard.js:103-113 la exige versionada en el ref del candidato. Los logs del API levantado, la base descartable y la evidencia sellada con el SHA del candidato quedan fuera del repositorio."
+  },
   "suites": {
     "portal_completo": "apps/web/test/*.mjs dentro del arbol del candidato: 964 pruebas, 948 verdes, 16 rojas, las 16 ya rojas en origin/develop a440560d y atribuidas por archivo",
     "contrato_hr": "apps/web/test/hr-*.test.mjs dentro del arbol del candidato: 227 pruebas en 31 archivos, 0 rojas, incluido hr-marking-cross-device.test.mjs (8/8 roja antes de la fusion y 8/8 verde despues)",
     "estatica": "29 archivos de codigo del diff, 63 especificaciones de import resueltas, 0 rotas; 8 modulos compartidos reemplazados pierden 0 exportaciones",
-    "porton_blobs": "promotion-migration-check: 79/79 validas y 1/79 rota con la mutacion declarada"
+    "porton_blobs": "promotion-migration-check: 79/79 validas de producto, 89/89 del certificado y 1/79 rota con la mutacion declarada"
   },
   "approval": {
     "status": "approved",
     "scope": "promotion_to_develop_for_qa",
     "approved_by": "dueno del proyecto (Edwin)",
-    "approved_at": "2026-11-27T19:40:00-05:00",
+    "approved_at": "2026-11-27T15:40:00-05:00",
+    "instruction": "no dejes pendientes procede a terminar todas las instrucciones al pie de la letra garantizando los protocolos adecuadas ya establecidos y con mi atorizacion completa para proceder sin detenerte no tienes atorizado a dejar ningun pendiente para esta intervencion",
     "authorization_flags": {
+      "auxiliary_branch_promotion": true,
       "direct_push_to_develop": false,
-      "candidate_on_detached_head": true,
       "allowed_deletion": false,
       "origin_waiver_for_certifier": false,
       "promotion_via_aux_branch_and_pr": true
     },
-    "authorization_texto": "Orden del dueño: «validar el modulo de talento humano con los cambios que se han realizado y migrarlo de manera correcta desde develop hasta el main, sin adulterar registros, dañar funciones agenas al cambio, se requiere que queden los 3 ambientes alineados con la version que ya tenemos trabajada en develop [...] autorizado la migracion» y «no dejes pendientes procede a terminar todas las instrucciones al pie de la letra garantizando los protocolos adecuadas ya establecidos y con mi atorizacion completa para proceder sin detenerte». La marcacion web no se retira de Produccion: viaja y queda operativa.",
-    "nota": "Cubre exclusivamente las 79 rutas del inventario de hr-retrointegracion-develop-20261127-scope.json. No autoriza force push, borrado de ramas, infraestructura ni cambios en Railway/Supabase por si mismos; las migraciones en la nube y el despliegue se pidieron y se ejecutan con su propio registro."
+    "authorization_texto": "Orden del dueño: «validar el modulo de talento humano con los cambios que se han realizado y migrarlo de manera correcta desde develop hasta el main, sin adulterar registros, dañar funciones agenas al cambio, se requiere que queden los 3 ambientes alineados con la version que ya tenemos trabajada en develop [...] autorizado la migracion». La marcacion web no se retira de Produccion: viaja y queda operativa.",
+    "nota": "Cubre exclusivamente las 89 rutas del inventario mas los 2 manifiestos. No autoriza force push, borrado de ramas, ni cambios de secretos; las migraciones en la nube y el despliegue se ejecutan con su propio registro."
   },
-  "nota": "commit declara el SHA del candidato reconstruido (58ae1591), no el de este manifiesto. La evidencia que describe al candidato vive en docs/qa/evidence/hr-alineacion-20261127/candidato-develop y este manifiesto se pasa al porton por ruta de archivo: ninguno de los dos viaja dentro del candidato, porque un sello del SHA N no puede estar dentro del arbol que produce el SHA N. La pata contra el ambiente QA desplegado se corre despues del push y se versiona en la contabilidad posterior."
+  "nota": "commit declara el SHA del commit certificado (39b63722), no el de este manifiesto. Los dos manifiestos viajan en un commit posterior al certificado porque no pueden citarse a si mismos: declaran el SHA que ya existe. La evidencia que describe al candidato viaja dentro del certificado porque el contrato de CI del destino la exige versionada en el ref."
 }
