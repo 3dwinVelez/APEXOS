@@ -3,6 +3,7 @@
 import { api } from "@/lib/api";
 import { getGpsFix, type GpsFix } from "@/lib/gps";
 import { scheduleGpsRequired } from "@/lib/hrScheduleMonitor";
+import { attendancePunches } from "@/lib/hrAttendanceState";
 import { publishHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
 import { isMarkingOnlyAccess } from "@/lib/accessProfile";
 import {
@@ -59,7 +60,7 @@ import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, PHOTO_UNUSABLE_COPY, type CapturedFile, type PhotoUnusableOutcome } from "@/components/operations/PhotoCapture";
 import { AlertTriangle, ArrowLeft, CalendarX, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, WifiOff, X } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
@@ -929,6 +930,44 @@ export default function MobilePunchPage() {
     load();
   }, [load]);
 
+  // Revalidacion antes de marcar: dos dispositivos sobre la misma jornada no pueden abrir dos
+  // veces la misma pierna. La lectura es de un solo vuelo y trae exactamente lo que decide el
+  // boton: horarios del dia y asistencia ya confirmada.
+  const operationalRefresh = useRef<Promise<{ attendance: Attendance[]; routes: TimeRoute[] }> | null>(null);
+  const punchSignature = useRef("");
+  function refreshOperationalState() {
+    if (operationalRefresh.current) return operationalRefresh.current;
+    const options = { cache: "no-store" as const, silentFailureAlert: true };
+    const request = Promise.all([
+      api<Attendance[]>("/api/v1/hr/self/attendance", options),
+      api<TimeRoute[]>("/api/v1/hr/self/routes", options)
+    ]).then(([freshAttendance, freshRoutes]) => {
+      const today = todayBogota();
+      const dayRoutes = freshRoutes.filter((item) => !item.date || String(item.date).slice(0, 10) === today);
+      setAttendance(freshAttendance);
+      setRoutes((current) => (JSON.stringify(current) === JSON.stringify(dayRoutes) ? current : dayRoutes));
+      setScheduleSource("live");
+      setScheduleNotice("");
+      setBlocked(dayRoutes.length ? null : "no_horario");
+      // Las actividades llevan fotos: se releen solo cuando cambia la firma de marcaciones.
+      const signature = JSON.stringify([freshAttendance.map((row) => [row.user_name, row.route_id, row.punches.map((punch) => [punch.id, punch.type, punch.time])]), dayRoutes.map((item) => [item.id, item.date])]);
+      if (signature !== punchSignature.current) {
+        punchSignature.current = signature;
+        void api<WorkSession>("/api/v1/hr/self/work-session", options).then((value) => setSession(value)).catch(() => undefined);
+      }
+      const previous = readHrSnapshot();
+      const snapshot = buildHrOfflineSnapshot({ previous, self: requestOutcome(false, null), routes: requestOutcome(true, dayRoutes), activityTypes: requestOutcome(false, []), takenAt: new Date().toISOString(), takenDay: today });
+      if (snapshot) writeHrSnapshot(snapshot);
+      const pendingKeys = new Set(readPendingSync().filter((item) => !isBlockedItem(item) && item.path.endsWith("/time-punches")).map((item) => String((item.payload as { idempotency_key?: string })?.idempotency_key || "")));
+      setOptimisticPunches((current) => current.filter((punch) => punch.idempotency_key && pendingKeys.has(punch.idempotency_key)));
+      return { attendance: freshAttendance, routes: dayRoutes };
+    });
+    operationalRefresh.current = request;
+    const clear = () => { if (operationalRefresh.current === request) operationalRefresh.current = null; };
+    void request.then(clear, clear);
+    return request;
+  }
+
   // El conteo de fotos pendientes de revision sobrevive a recargar la pantalla:
   // viven en su propio almacen, fuera de la cola que si se sincroniza.
   useEffect(() => {
@@ -1064,7 +1103,11 @@ export default function MobilePunchPage() {
   });
   const fallbackNextType = "entrada";
   const optimisticPunchesForRoute = optimisticPunches.filter((punch) => String(punch.route_id || "") === String(route?.id || ""));
-  const mergedPunches = [...(attendanceForRoute?.punches || []), ...optimisticPunchesForRoute]
+  // La union la hace la libreria compartida (`attendancePunches`): /self/attendance llega
+  // agrupado por identidad y un mismo empleado puede tener grupos por codigo, por nombre y por
+  // alias. Tomar el primer grupo perdia las marcaciones que el celular del camion ya habia
+  // subido cuando la web leia su propia fila.
+  const mergedPunches = attendancePunches(attendance, employee?.id, [...aliases, userName, employeeName(employee)], route?.id, optimisticPunchesForRoute)
     .reduce<AttendancePunch[]>((acc, punch) => {
       if (!punch.type || acc.some((item) => item.type === punch.type)) return acc;
       acc.push(punch);
@@ -1228,6 +1271,27 @@ export default function MobilePunchPage() {
     notify("");
     try {
       const isOnline = typeof navigator === "undefined" ? true : navigator.onLine !== false;
+      if (isOnline) {
+        // El servidor manda: si otro dispositivo ya abrio o cerro la pierna, este boton no puede
+        // inventarse una segunda. Un fallo de red en la revalidacion no bloquea al operario: se
+        // conserva la politica de cola offline y nunca se afirma confirmacion del servidor.
+        let latest: Awaited<ReturnType<typeof refreshOperationalState>> | null = null;
+        try { latest = await refreshOperationalState(); } catch { /* Sin respuesta, la cola offline decide. */ }
+        if (latest) {
+          if (!latest.routes.some((item) => String(item.id) === String(route.id))) {
+            notify("El horario cambió en el servidor. Revisa el horario actualizado antes de marcar.", "error");
+            return;
+          }
+          const pendingKeys = new Set(readPendingSync().filter((item) => !isBlockedItem(item)).map((item) => String((item.payload as { idempotency_key?: string })?.idempotency_key || "")));
+          const localPunches = optimisticPunchesForRoute.filter((punch) => punch.idempotency_key && pendingKeys.has(punch.idempotency_key));
+          const types = attendancePunches(latest.attendance, employee.id, [...aliases, userName, employeeName(employee)], route.id, localPunches).map((punch) => punch.type);
+          const expected = nextPunchForTypes(types);
+          if (expected !== type) {
+            notify(expected ? `La jornada se actualizó desde otro dispositivo. La siguiente marcación es ${punchLabels[expected]?.title || expected}.` : "La jornada ya fue cerrada desde otro dispositivo.", "pending");
+            return;
+          }
+        }
+      }
       let fix: GpsFix | null = null;
       let cause: GpsFailureCause | null = null;
       if (gpsRequired) {
