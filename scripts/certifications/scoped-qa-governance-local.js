@@ -26,10 +26,12 @@ function record(name, ok, detail = {}) {
   checks.push({ name, status: ok ? "passed" : "failed", ...detail });
   if (!ok) throw new Error(`${name} failed`);
 }
-function expect(name, command, args, env, expectedFailure = false) {
+function expect(name, command, args, env, expectedFailure = false, expectedError = null) {
   const result = runNode(command, args, env);
-  const passed = expectedFailure ? result.status !== 0 : result.status === 0;
-  record(name, passed, { exit_code: result.status, stdout: String(result.stdout || "").trim().slice(-500), stderr: String(result.stderr || "").trim().slice(-500) });
+  const stderr = String(result.stderr || "").trim();
+  const failedAsExpected = result.status !== 0 && (!expectedError || stderr.includes(expectedError));
+  const passed = expectedFailure ? failedAsExpected : result.status === 0;
+  record(name, passed, { exit_code: result.status, stdout: String(result.stdout || "").trim().slice(-500), stderr: stderr.slice(-500), expected_error: expectedError });
 }
 function writeJson(file, value) { fs.writeFileSync(path.join(fixture, file), `${JSON.stringify(value, null, 2)}\n`); }
 function commit(message) { git(["add", "."]); git(["commit", "-m", message]); return git(["rev-parse", "HEAD"]); }
@@ -66,6 +68,9 @@ function runStrictPromotionFixture() {
     for (const utility of ["scripts/validate-promotion-scope.js", "scripts/validate-preqa-promotion-evidence.js"]) { const target = path.join(dir, utility); fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(path.join(root, utility), target); }
     fs.appendFileSync(path.join(dir, ".git/info/exclude"), "scripts/validate-promotion-scope.js\nscripts/validate-preqa-promotion-evidence.js\n");
     const candidate = sg(["rev-parse", "HEAD"]); const guard = path.join(dir, "scripts/git-governance-guard.js");
+    // El guard re-corre el porton de alcance, que desde 21a99f47 compara cada blob contra
+    // `origin/desarrollo`. El fixture no traia ese ref y la pata autorizada moria ahi.
+    sg(["update-ref", "refs/remotes/origin/desarrollo", candidate]);
     sx("strict_authorized_develop_promotion", guard, ["ci-promotion", "HEAD", base, "develop", "codex/qa-ibc-57481e6c"]);
     sx("strict_develop_to_main_ci_remains_allowed", guard, ["ci"], { GITHUB_EVENT_NAME: "pull_request", GITHUB_BASE_REF: "main", GITHUB_HEAD_REF: "develop" });
     sx("strict_wrong_actual_head_branch_rejected", guard, ["ci-promotion", "HEAD", base, "develop", "codex/qa-wrong"], {}, true, "promotion_branch no coincide");
@@ -134,7 +139,19 @@ try {
   expect("guard_main_target_rejected", guard, ["ci"], { GITHUB_EVENT_NAME: "pull_request", GITHUB_BASE_REF: "main", GITHUB_HEAD_REF: "desarrollo" }, true);
   expect("guard_unapproved_promotion_rejected", guard, ["promote", "desarrollo-to-develop"], {}, true);
   expect("guard_auxiliary_branch_rejected", guard, ["ci"], { GITHUB_REF_NAME: "codex/qa-unapproved" }, true);
+  // El porton de origen (21a99f47) lee `origin/desarrollo` para comparar blob por blob cada
+  // ruta del hunkeo. El fixture no traia ese ref, asi que la pata autorizada moria de otro
+  // motivo desde el 24-11 y las negativas pasaban por la razon equivocada.
+  git(["update-ref", "refs/remotes/origin/desarrollo", candidate]);
   expect("scope_authorized_flow", scope, ["scope.json", candidate, "develop"]);
+
+  // Control de mutacion del porton de origen: con el mismo candidato, si el ref de origen deja
+  // de contener la ruta, no promociona. Replica el incidente del 23-11 (contenido escrito
+  // directo en develop) y prueba que el verde de la pata anterior puede fallar.
+  git(["update-ref", "refs/remotes/origin/desarrollo", base]);
+  expect("scope_unoriginated_blob_rejected", scope, ["scope.json", candidate, "develop"], {}, true, "contenido sin origen en desarrollo");
+  git(["update-ref", "refs/remotes/origin/desarrollo", candidate]);
+
 
   const missingCert = { ...manifest, certified_commit: divergent };
   writeJson("missing-cert.json", missingCert);
