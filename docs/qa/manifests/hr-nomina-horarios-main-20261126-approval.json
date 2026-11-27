@@ -5,7 +5,7 @@
   "source_branch": "develop",
   "target_branch": "main",
   "creado": "2026-11-26T23:30:00-05:00",
-  "actualizado": "2026-11-26T23:45:00-05:00",
+  "actualizado": "2026-11-27T04:33:00.778Z",
   "estado_porton": "ABIERTO_CON_UN_HECHO_POR_CERRAR_DEL_DESPUES_SERVIDO",
   "authorized_by_dueno": "dueno del proyecto (Edwin), 2026-11-26, texto literal: \"migrarlo de manera correcta desde develop hasta el main, sin adulterar registros, dañar funciones agenas al cambio, se requiere que queden los 3 ambientes alineados con la version que ya tenemos trabajada en develop ... autorizado la migracion\". Dos decisiones registradas sobre ese pedido: (1) el frente biometrico (huella WebAuthn, rostro, celulares compartidos, sus 4 modulos, sus paginas, sus tests y las 3 migraciones hr_shared_devices / hr_face_enrollments / hr_webauthn_credentials) queda FUERA; (2) el cierre llega HASTA EL AMBIENTE SERVIDO (push a main + despliegue de API y portal + DESPUES medido contra lo que Produccion sirve). Consecuencia medida de (1): cero migraciones y cero escrituras de registros de cliente en todo el porton.",
   "manifiesto_de_alcance": "./hr-nomina-horarios-main-20261126-scope.json",
@@ -129,5 +129,13 @@
       "despliegue_produccion": true
     },
     "nota": "Aprobacion funcional explicita del dueno: \"monta el plan de migracion y con mi autorizacion procede a migrar todo el modulo de manera correcta. autorizado la migracion\" (2026-11-26), con las dos decisiones de alcance tomadas sobre ese pedido (frente biometrico fuera y cierre hasta el ambiente servido). Las validaciones automaticas no autorizan main solas: lo que ampara este push es la instruccion del dueno, y su alcance es exactamente este inventario de 39 rutas. No se declara resuelto el rechazo de foto invalida (PENDIENTE 4) ni el rojo de la portada (heredado de main): ambos siguen pendientes con su dueno."
+  },
+  "punta_a_empujar": {
+    "sha": "48451603894ad17d4a0a872305770883b8ee35fc",
+    "certificada_desde": "05886b09b46e62c98de7c5b043119c84f5ea3ced",
+    "diferencia": "solo documentacion: git diff --name-only 05886b09..48451603 tiene 0 rutas fuera de docs/",
+    "blobs_de_producto_identicos": "35/35 carry verificados por hash de blob entre el sha certificado y la punta",
+    "invariantes_remedidas": "INVARIANTES DE REPLAY VALIDAS: 35/35 contra la punta publicada (invariantes-punta.json)",
+    "motivo": "los dos commits extra son el manifiesto de alcance rehizo por diff neto y la evidencia del porton; el arbol de producto no cambia"
   }
 }

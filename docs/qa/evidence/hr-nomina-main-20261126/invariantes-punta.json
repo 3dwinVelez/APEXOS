@@ -1,0 +1,295 @@
+{
+  "instrumento": "promotion-migration-check",
+  "ejecutado_en": "2026-11-27T04:32:49.474Z",
+  "cwd": "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\.tmp\\wt-hr-main-20261126",
+  "spec": "docs/qa/evidence/hr-nomina-main-20261126/spec-invariantes-main.json",
+  "base_ref": "origin/main",
+  "origin_ref": "origin/develop",
+  "contra": "commit HEAD",
+  "label": "invariantes del replay",
+  "passed": true,
+  "total": 35,
+  "rotos": 0,
+  "results": [
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/accumulatedOrdinaryTime.js",
+      "esperado": "7e29e5df0367f5003f0cc5a75537260f0589c6d6",
+      "actual": "7e29e5df0367f5003f0cc5a75537260f0589c6d6",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/adjustmentCalendarConcept.js",
+      "esperado": "e42ae6be808be8a313721751f673ad942d151f95",
+      "actual": "e42ae6be808be8a313721751f673ad942d151f95",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/banks.js",
+      "esperado": "5ae1d703c664fb77f8b2909dcaa962bbdcd6aa35",
+      "actual": "5ae1d703c664fb77f8b2909dcaa962bbdcd6aa35",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/contractCalendarDate.js",
+      "esperado": "1ba6dd64e791d5bfcdbf2eee7bdcf9a49bcd055c",
+      "actual": "1ba6dd64e791d5bfcdbf2eee7bdcf9a49bcd055c",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/contractFoundationRepair.js",
+      "esperado": "40429d17d6b3fd5bc1ac47e67b83569e742498fc",
+      "actual": "40429d17d6b3fd5bc1ac47e67b83569e742498fc",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/davivienda-file.js",
+      "esperado": "2c6947cc46c99dbb601d262e0c71021f0797a483",
+      "actual": "2c6947cc46c99dbb601d262e0c71021f0797a483",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-accumulated-ordinary-time.test.js",
+      "esperado": "e2d43ba8e0fb6d825e9cd63a889bcba6d7eec5ac",
+      "actual": "e2d43ba8e0fb6d825e9cd63a889bcba6d7eec5ac",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-adjustment-calendar-concept.test.js",
+      "esperado": "b94ef5d090f8450499c3e9b2db740f979d907da3",
+      "actual": "b94ef5d090f8450499c3e9b2db740f979d907da3",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-contract-calendar-date.test.js",
+      "esperado": "3560e798f3a8f12a3016f93351c6d12165e2061c",
+      "actual": "3560e798f3a8f12a3016f93351c6d12165e2061c",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-davivienda-bank-file.test.js",
+      "esperado": "69bb10c846fb668f3de46f9c81a515937a95b797",
+      "actual": "69bb10c846fb668f3de46f9c81a515937a95b797",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-deferred-marking-offline.test.js",
+      "esperado": "c61ead7ade54a8e2c4f7a2337f164a55d6973c3e",
+      "actual": "c61ead7ade54a8e2c4f7a2337f164a55d6973c3e",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-marking-concurrency.test.js",
+      "esperado": "c219c2220f4ca6c135621f59027266c6c0947ec3",
+      "actual": "c219c2220f4ca6c135621f59027266c6c0947ec3",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+      "esperado": "640ce98758b2aa73c6dc1bd09ba2e46d61004166",
+      "actual": "640ce98758b2aa73c6dc1bd09ba2e46d61004166",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx",
+      "esperado": "7f1bbd671bca0dc9ed2d822120f5d31f1224bc23",
+      "actual": "7f1bbd671bca0dc9ed2d822120f5d31f1224bc23",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+      "esperado": "dc73e0b1f4eb636bfe983b00cbf7fd9f82f38bf7",
+      "actual": "dc73e0b1f4eb636bfe983b00cbf7fd9f82f38bf7",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/libranzas/page.tsx",
+      "esperado": "6ea9ce401971812bcc66a3a16e5810bd6da4de2d",
+      "actual": "6ea9ce401971812bcc66a3a16e5810bd6da4de2d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+      "esperado": "612e48fa469166f2af8c2a3c041f4e005c59f853",
+      "actual": "612e48fa469166f2af8c2a3c041f4e005c59f853",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+      "esperado": "771d4dcbf7ac180736f1f49770213570ccaa1a33",
+      "actual": "771d4dcbf7ac180736f1f49770213570ccaa1a33",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/payroll.module.css",
+      "esperado": "655826756c2f96eb12cd7b3f9543c522ab6993bb",
+      "actual": "655826756c2f96eb12cd7b3f9543c522ab6993bb",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx",
+      "esperado": "768011746e4985edfe55cd63e1788c5a71cdc842",
+      "actual": "768011746e4985edfe55cd63e1788c5a71cdc842",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/provisiones/page.tsx",
+      "esperado": "bef40317ba8867d49675c015364512af0c260afa",
+      "actual": "bef40317ba8867d49675c015364512af0c260afa",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+      "esperado": "4473068e447ceb22627176cadd5d91e3d1d3397b",
+      "actual": "4473068e447ceb22627176cadd5d91e3d1d3397b",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/components/hr/HrWorkspace.module.css",
+      "esperado": "161442ad10986c30fd239321b534ca6da7310460",
+      "actual": "161442ad10986c30fd239321b534ca6da7310460",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/components/hr/HrWorkspace.tsx",
+      "esperado": "d6fa0b91ab5ff0a57af3d54bab03d10a4d814777",
+      "actual": "d6fa0b91ab5ff0a57af3d54bab03d10a4d814777",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/hrScheduleMonitor.ts",
+      "esperado": "d4ab11caadba0917e47743c1800e21a129ac28df",
+      "actual": "d4ab11caadba0917e47743c1800e21a129ac28df",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/hrTimeReport.ts",
+      "esperado": "bc1955f69a9480255043f26d7d5bb9255b42f59a",
+      "actual": "bc1955f69a9480255043f26d7d5bb9255b42f59a",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/payrollDisplay.ts",
+      "esperado": "41e746507f873b094079856fc93ce6d93ce71898",
+      "actual": "41e746507f873b094079856fc93ce6d93ce71898",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/reportExports.ts",
+      "esperado": "715bb2a3ab2cade994e5ab1200096272dd42f7a2",
+      "actual": "715bb2a3ab2cade994e5ab1200096272dd42f7a2",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-davivienda-bank-file-ui.test.mjs",
+      "esperado": "e9ae472f73f463d90b891b464bef4cf088626548",
+      "actual": "e9ae472f73f463d90b891b464bef4cf088626548",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-punch-mobile-evidence.test.mjs",
+      "esperado": "b44a2029314d920df814c18b13dd61738a2e7fee",
+      "actual": "b44a2029314d920df814c18b13dd61738a2e7fee",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-reports-xlsx.test.mjs",
+      "esperado": "3b5388431b08d3650603fa315bf513f626e77edf",
+      "actual": "3b5388431b08d3650603fa315bf513f626e77edf",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-schedule-timeline-view.test.mjs",
+      "esperado": "f8cb6bd18f6d1e2076e3437236e07e3d1422e191",
+      "actual": "f8cb6bd18f6d1e2076e3437236e07e3d1422e191",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-time-report.test.mjs",
+      "esperado": "e979355de6a69928bc543bbf746468de68cf81cb",
+      "actual": "e979355de6a69928bc543bbf746468de68cf81cb",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs",
+      "esperado": "bc2b9074828fe34d4b8bb6729e5f71b26e00e4d2",
+      "actual": "bc2b9074828fe34d4b8bb6729e5f71b26e00e4d2",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/payroll-display.test.mjs",
+      "esperado": "673932f1101ff671de66ecb926c94e44ab67a864",
+      "actual": "673932f1101ff671de66ecb926c94e44ab67a864",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    }
+  ]
+}
