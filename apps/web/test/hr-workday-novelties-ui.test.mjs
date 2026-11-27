@@ -12,7 +12,9 @@ test("talent landing exposes novelties, employees and mallas navigation", () => 
   assert.match(source, /Maestro de empleados/);
   assert.match(source, /Entidades y afiliaciones/);
   assert.match(source, /Configuración laboral/);
-  assert.match(source, /\/dashboard\/talento-humano\/mallas/);
+  assert.match(source, /title: "Horarios y mallas"/);
+  assert.match(source, /\/dashboard\/talento-humano\/rutas/);
+  assert.doesNotMatch(source, /href: "\/dashboard\/talento-humano\/mallas"/);
 });
 
 test("mobile closing flow requires day mileage when the schedule has a vehicle", () => {
@@ -139,8 +141,8 @@ test("labor configuration page edits night range, overtime limits and surcharge 
 
 test("payroll page supports preview, real liquidation, adjustments and pdf vouchers", () => {
   const source = read("app/dashboard/talento-humano/nomina/page.tsx");
-  assert.match(source, /Liquidacion de nomina/);
-  assert.match(source, /Liquidacion con marcaciones/);
+  assert.match(source, /Liquidaci[oó]n de n[oó]mina/);
+  assert.match(source, /(?:Con marcaciones|Liquidacion con marcaciones)/);
   assert.match(source, /Archivo plano/);
   assert.match(source, /role="tablist"/);
   assert.match(source, /payrollMode === "marcaciones"/);
@@ -162,22 +164,22 @@ test("payroll page supports preview, real liquidation, adjustments and pdf vouch
   assert.match(source, /role="dialog"/);
   assert.match(source, /Conceptos del comprobante/);
   assert.match(source, /line\.quantity/);
-  assert.match(source, /registros con horas/);
+  assert.match(source, /documentos/);
   assert.match(source, /Liquidacion de prueba/);
   assert.doesNotMatch(source, /Validar periodo/);
   assert.doesNotMatch(source, /Validación previa del periodo/);
   assert.match(source, /Liquidar nomina/);
   assert.match(source, /Recalcular nomina/);
-  assert.match(source, /Borrar documentos/);
+  assert.match(source, /Borrar (?:nómina|documentos)/);
   assert.match(source, /Mas acciones/);
   assert.match(source, /canDeletePayroll/);
   assert.match(source, /canClosePeriod/);
-  assert.match(source, /Cierre integral del periodo/);
+  assert.match(source, /Cierre (?:integral )?del periodo/);
   assert.match(source, /Validar cierre/);
   assert.match(source, /Cerrar periodo/);
   assert.match(source, /Recalcular cierre/);
   assert.match(source, /Reabrir periodo/);
-  assert.match(source, /Ajustes manuales, licencias y vacaciones/);
+  assert.match(source, /Ajustes(?: manuales)?, licencias y vacaciones/);
   assert.match(source, /jornada_ordinaria/);
   assert.match(source, /Olvido de marcacion/);
   assert.match(source, /JORNADA_ORDINARIA/);
@@ -249,20 +251,20 @@ test("libranzas page manages concepts, employee balances and recurrent deduction
   assert.match(source, /Cancelar edición/);
   assert.match(source, /Borrar/);
   assert.match(source, /Inactivar/);
-  assert.match(source, /Asignación al trabajador/);
+  assert.match(source, /Resumen de la libranza/);
   assert.match(source, /Reporte de libranzas/);
   assert.match(source, /reportFilters/);
   assert.match(source, /filteredLibranzas/);
   assert.match(source, /exportLibranzas/);
   assert.match(source, /reporte-libranzas\.xlsx/);
-  assert.match(source, /Cédula empleado/);
+  assert.match(source, /reportEmployeeCode\(row\)/);
   assert.match(source, /row\.employee_document/);
   assert.match(source, /Enter vacío abre buscador/);
   assert.match(source, /calculatedInstallment/);
   assert.match(source, /inactive_at/);
   assert.match(source, /Por cuotas/);
   assert.match(source, /Perpetua/);
-  assert.match(source, /Saldo restante/);
+  assert.match(source, /Saldo pendiente · cuotas/);
   assert.match(source, /\/api\/v1\/talento-humano\/libranzas\/conceptos/);
   assert.match(source, /\/api\/v1\/talento-humano\/libranzas\/empleados/);
 });
@@ -278,12 +280,19 @@ test("employee termination liquidation page supports severance balances and inde
   assert.match(source, /Liquidacion de trabajador/);
   assert.match(source, /sin_justa_causa/);
   assert.match(source, /obra_labor/);
-  assert.match(source, /Dias faltantes contrato/);
-  assert.match(source, /Saldos de prestaciones/);
+  assert.match(source, /Tipo contrato vigente/);
+  assert.match(source, /<dialog ref=\{detailDialog\}/);
+  assert.match(source, /libranza_authorizations: authorizations/);
+  assert.match(source, /<TerminationManualAdjustments employeeId=/);
+  const manual = read("components/hr/TerminationManualAdjustments.tsx");
+  assert.match(manual, /Bonificaciones y conceptos manuales/);
+  assert.match(manual, /Registrar concepto/);
+  assert.match(manual, /request_id: requestId.current/);
+  assert.doesNotMatch(source, /Saldos de prestaciones/);
   assert.match(source, /Indemnizacion/);
   assert.match(source, /\/api\/v1\/talento-humano\/liquidacion-trabajador\/preview/);
   assert.match(source, /\/api\/v1\/talento-humano\/liquidacion-trabajador\/documentos/);
-  assert.match(source, /\/api\/v1\/talento-humano\/liquidacion-trabajador\/saldos/);
+  assert.doesNotMatch(source, /\/api\/v1\/talento-humano\/liquidacion-trabajador\/saldos/);
   assert.match(source, /\/pdf/);
 });
 
@@ -348,7 +357,11 @@ test("social benefit provisions live outside payroll liquidation", () => {
   assert.match(source, /Provisionar/);
   assert.doesNotMatch(payroll, /provisiones y aportes/);
   assert.match(payroll, /periodRangeError/);
-  assert.match(payroll, /no puede ser menor que la inicial/);
+  // La pagina publicada conserva la validacion inline; desarrollo puede usar el
+  // validador compartido del arreglo independiente de periodos. Ambos deben bloquear fechas invertidas.
+  const rangeValidation = payroll.includes("payrollPeriodError(") ? read("lib/payroll-period.ts") : payroll;
+  assert.match(rangeValidation, /no puede ser menor que la inicial/);
+  if (payroll.includes("payrollPeriodError(")) assert.match(payroll, /payrollPeriodError\(periodType, startDate, endDate\)/);
   assert.match(payroll, /payrollReceiptLines/);
   assert.match(payroll, /SOCIAL_BENEFIT_LINE_CODES/);
   assert.doesNotMatch(payroll, /<th className="px-3 py-2">Origen<\/th>/);

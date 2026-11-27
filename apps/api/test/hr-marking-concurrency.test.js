@@ -221,17 +221,34 @@ test("fix concurrencia: la marcacion espera el lock con deadline y rinde un 503 
   }
 });
 
-test("fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante", () => {
+function hrFunction(source, name) {
+  const start = source.search(new RegExp(`^(?:async )?function ${name}\\(`, "m"));
+  assert.ok(start >= 0, `Falta funcion ${name}`);
+  const tail = source.slice(start);
+  const next = tail.slice(1).search(/\n(?:async )?function /);
+  return next < 0 ? tail : tail.slice(0, next + 1);
+}
+
+test("fix concurrencia: asignacion, marcacion y ajuste de jornada conservan locks acotados", () => {
   const service = fs.readFileSync(path.resolve(__dirname, "../src/modules/hr/service.js"), "utf8");
-  assert.doesNotMatch(
-    service,
-    /pg_advisory_xact_lock/,
-    "un lock bloqueante no puede avisar al operario: espera hasta que Prisma aborta y el error sale como 500"
-  );
+  // Payroll/benefit settlement serialization is a different financial lock. Check
+  // every function covered by the operational contention fix, not the entire file.
+  for (const name of ["lockRouteAssignmentScopes", "createPunch", "createPayrollAdjustment"]) {
+    const body = hrFunction(service, name);
+    assert.doesNotMatch(body, /pg_advisory_xact_lock/, `${name} no debe bloquear sin deadline`);
+    assert.match(body, /await acquireBoundedScopeLocks\(/);
+  }
   assert.equal((service.match(/await acquireBoundedScopeLocks\(/g) || []).length, 4, "mallas, marcacion, kilometraje y ajuste de nomina");
   const helper = service.slice(service.indexOf("async function acquireBoundedScopeLocks"));
   assert.match(helper, /pg_try_advisory_xact_lock/);
   assert.match(helper, /if \(Date\.now\(\) >= deadlineAt\) throw validationError\(message, 503, code\)/);
+});
+
+test("nomina y prestaciones conservan su llave comun de serializacion financiera", () => {
+  const service = fs.readFileSync(path.resolve(__dirname, "../src/modules/hr/service.js"), "utf8");
+  for (const name of ["runPayrollLiquidation", "runEmployeeTerminationLiquidation", "deleteEmployeeTerminationLiquidation", "runSocialBenefitProvisions", "runSocialBenefitPayments", "deleteSocialBenefitPaymentDocument"]) {
+    assert.match(hrFunction(service, name), /pg_advisory_xact_lock\(hashtext\(\$\{tenantId\}\), 7418\)/, name);
+  }
 });
 
 

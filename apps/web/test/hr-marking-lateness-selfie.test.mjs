@@ -60,14 +60,26 @@ test("las cuatro marcaciones web exigen selfie y el navegador y el API piden las
   // el viejo "entrada / cierre".
   assert.match(marking, /label=\{`Selfie de \$\{punchLabels\[nextType/);
   assert.doesNotMatch(marking, /Selfie de validacion de entrada/);
+  assert.match(marking, /degradedPhoto && degradedPhoto\.step === type/);
   assert.match(marking, /Las cuatro marcaciones piden foto/);
   assert.doesNotMatch(marking, /El almuerzo y el retorno no piden foto/);
 
   const body = markBody();
-  assert.match(body, /selfieRequiredPunches\.has\(type\) && !identitySelfie && !degradedPhoto/);
+  assert.match(body, /selfieRequiredPunches\.has\(type\) && !identitySelfie && !degradedFor\(type\)/);
+  // El envio degradado solo cuenta en el paso donde la camara fallo.
+  assert.match(body, /degradedFor\(type\) && selfieRequiredPunches\.has\(type\)/);
   assert.match(body, /payload\.identity_photo = \{ base64: identitySelfie\.base64/);
   // El blob: del navegador no sirve en el servidor ni sobrevive a la cola.
   assert.doesNotMatch(body, /payload\.identity_photo = identitySelfie;/);
+});
+
+test("la selfie queda ligada al paso que se esta marcando", () => {
+  assert.match(marking, /const \[selfieType, setSelfieType\] = useState\(""\)/);
+  assert.match(marking, /onChange=\{\(photo\) => \{ setIdentitySelfie\(photo\); setSelfieType\(nextType \?\? ""\); \}\}/);
+  assert.match(marking, /value=\{selfieType === nextType \? identitySelfie : null\}/);
+  assert.match(marking, /key=\{nextType\}/, "la camara se reinicia en cada paso");
+  assert.match(markBody(), /identitySelfie && selfieType !== type && !degradedFor\(type\)/);
+  assert.match(markBody(), /setSelfieType\(""\);/, "marcar suelta la foto: si no, el paso siguiente heredaria la del anterior");
 });
 
 test("la camara frontal es lo que hace que la selfie sea selfie", () => {

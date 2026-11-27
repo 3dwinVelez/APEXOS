@@ -6,8 +6,7 @@ const source = fs.readFileSync(new URL("../app/dashboard/talento-humano/page.tsx
 
 const HR_ACCESS_ROUTES = [
   "rutas",
-  "mallas",
-  "marcacion",
+  "bancos",
   "novedades",
   "mapa",
   "empleados",
@@ -28,14 +27,17 @@ test("la portada usa el patron de hub por tarjetas de los demas modulos", () => 
   assert.match(source, /actions\.map\(\(action\) => <ActionCard key=\{action\.href\} \{\.\.\.action\} \/>\)/);
 });
 
-test("la portada expone como acceso cada pantalla del modulo, incluida nomina", () => {
+test("la portada conserva los accesos de gestion, incluida nomina", () => {
   for (const route of HR_ACCESS_ROUTES) assert.match(source, new RegExp(`/dashboard/talento-humano/${route}"`));
   assert.match(source, /Nómina/);
   assert.doesNotMatch(source, /Disponible próximamente|cursor-not-allowed/, "ningun acceso funcional debe quedar bloqueado como proximamente");
 });
 
-test("mallas conserva acceso a planeacion, marcaciones, monitor y reportes", () => {
-  for (const route of ["rutas", "marcacion", "mapa", "reportes"]) assert.match(source, new RegExp(`/dashboard/talento-humano/${route}`));
+test("rutas fusiona horarios y mallas y el hub conserva la marcacion web", () => {
+  for (const route of ["rutas", "mapa", "reportes"]) assert.match(source, new RegExp(`/dashboard/talento-humano/${route}`));
+  // La marcacion web queda visible por orden expresa del dueno (2026-11-27): Produccion la sirve
+  // y el retiro de la tarjeta solo puede darse con esa autorizacion, nunca como efecto de una fusion.
+  assert.match(source, /href: "\/dashboard\/talento-humano\/marcacion"/);
 });
 
 test("la portada no mezcla vehiculos ni depende de consultas operativas", () => {

@@ -776,6 +776,9 @@ export default function MobilePunchPage() {
   const [extraDetail, setExtraDetail] = useState("");
   const [extraEvidence, setExtraEvidence] = useState<CapturedFile | null>(null);
   const [identitySelfie, setIdentitySelfie] = useState<CapturedFile | null>(null);
+  // La foto vale para el paso en que se tomo: sin este ancla, una selfie de entrada
+  // sirve de validacion de salida cuando el paso avanza sin que la pantalla la suelte.
+  const [selfieType, setSelfieType] = useState("");
   const [dayMileage, setDayMileage] = useState("");
   const [startMileage, setStartMileage] = useState("");
   const [gps, setGps] = useState<GpsFix | null>(null);
@@ -816,7 +819,10 @@ export default function MobilePunchPage() {
   // siendo posible y la hora se registra. `degradedPhoto` guarda el motivo tecnico
   // (para el supervisor) y activa el envio degradado; la operario solo ve una frase
   // en espanol plano que no nombra formatos.
-  const [degradedPhoto, setDegradedPhoto] = useState<{ reason: string; detail: string } | null>(null);
+  const [degradedPhoto, setDegradedPhoto] = useState<{ reason: string; detail: string; step: string } | null>(null);
+  // La camara fallo en UN paso, no en la jornada: si el operario cambia de paso sin marcar,
+  // el paso nuevo vuelve a exigir foto.
+  const degradedFor = (type: string) => Boolean(degradedPhoto && degradedPhoto.step === type);
   // Fotos rechazadas que siguen vivas en IndexedDB esperando revision. Se leen al
   // montar para que el conteo sobreviva a recargar la pantalla.
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
@@ -840,7 +846,7 @@ export default function MobilePunchPage() {
       punched_at: new Date().toISOString()
     });
     setPendingReviewCount((current) => current + (stored ? 1 : 0));
-    setDegradedPhoto({ reason: outcome.reason, detail: outcome.message });
+    setDegradedPhoto({ reason: outcome.reason, detail: outcome.message, step: String(currentAttendance.next_type || "entrada") });
   }
 
   const load = useCallback(async () => {
@@ -1243,8 +1249,12 @@ export default function MobilePunchPage() {
       // La selfie sigue siendo obligatoria, SALVO cuando el telefono demostro que no
       // puede entregarla: ahi bloquear al operario es perderle la jornada por culpa de
       // un formato. Se marca igual y la foto va a revision del supervisor.
-      if (selfieRequiredPunches.has(type) && !identitySelfie && !degradedPhoto) {
+      if (selfieRequiredPunches.has(type) && !identitySelfie && !degradedFor(type)) {
         notify("Toma la selfie de validacion antes de marcar.", "error");
+        return;
+      }
+      if (selfieRequiredPunches.has(type) && identitySelfie && selfieType !== type && !degradedFor(type)) {
+        notify(`La foto es de ${punchLabels[selfieType as keyof typeof punchLabels]?.title || "otro paso"}: toma la selfie de ${punchLabels[type]?.title.toLowerCase() || "este paso"}.`, "error");
         return;
       }
       if (type === "entrada" && isArrivingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
@@ -1321,7 +1331,7 @@ export default function MobilePunchPage() {
       }
       // Marcacion degradada declarada: la hora viaja sin foto y con la novedad del
       // supervisor pegada al metadata, que es el unico transporte que existe hoy.
-      if (degradedPhoto && selfieRequiredPunches.has(type)) {
+      if (degradedFor(type) && selfieRequiredPunches.has(type)) {
         payload.metadata = attachHrNoveltyMarker(payload, buildHrNoveltyMarker({
           kind: "degraded_evidence",
           message: NOVELTY_PENDING_PHOTO_MESSAGE,
@@ -1336,6 +1346,7 @@ export default function MobilePunchPage() {
       setExtraDetail("");
       setExtraEvidence(null);
       setIdentitySelfie(null);
+      setSelfieType("");
       setDegradedPhoto(null);
       if (type === "entrada") setStartMileage("");
       if (type === "salida") setDayMileage("");
@@ -1670,11 +1681,12 @@ export default function MobilePunchPage() {
               <div className="mt-3">
                 <PhotoCapture
                   facing="user"
+                  key={nextType}
                   label={`Selfie de ${punchLabels[nextType ?? ""]?.title || "validacion"}`}
-                  onChange={setIdentitySelfie}
+                  onChange={(photo) => { setIdentitySelfie(photo); setSelfieType(nextType ?? ""); }}
                   onUnusable={onSelfieUnusable}
                   required
-                  value={identitySelfie}
+                  value={selfieType === nextType ? identitySelfie : null}
                 />
                 {degradedPhoto ? (
                   <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs font-semibold text-amber-950" role="status">

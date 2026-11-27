@@ -61,7 +61,7 @@ test("surcharge value_type drives pay: percentage-only for recargos, full factor
 test("salary base follows the 30-day commercial month paying only covered days", () => {
   const service = read("apps/api/src/modules/hr/service.js");
   const schema = read("apps/api/src/modules/hr/schema.js");
-  assert.match(service, /const commercialBaseDays = periodType === "mes" \? 30 : 15;/);
+  assert.match(service, /const commercialBaseDays = options\.termination \? Math\.min\(periodDays, periodType === "mes" \? 30 : 15\) : periodType === "mes" \? 30 : 15;/);
   // Descanso explicito desde la malla (kind='descanso').
   assert.match(service, /prisma\.timeRoute\.findMany/);
   assert.match(service, /normalizeRouteKind\(route\.kind\) !== "descanso"/);
@@ -407,7 +407,7 @@ test("payroll liquidation creates employee documents, adjustments and pdf vouche
   assert.match(source, /ordinary_night_minutes/);
   assert.match(source, /RECARGO_NOCTURNO/);
   assert.match(source, /simplePayrollPdf/);
-  assert.match(source, /Firma empleado/);
+  assert.match(fs.readFileSync(path.join(__dirname, '../src/modules/hr/payrollReceiptPdf.js'), 'utf8'), /Firma empleado/);
   assert.match(routes, /\/talento-humano\/nomina\/preview/);
   assert.match(routes, /\/talento-humano\/nomina\/validar/);
   assert.match(routes, /\/talento-humano\/nomina\/liquidaciones\/:id\/pdf/);

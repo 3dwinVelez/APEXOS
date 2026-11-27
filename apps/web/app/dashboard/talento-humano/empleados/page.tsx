@@ -20,6 +20,10 @@ type Employee = {
   contract_type?: string;
   active?: boolean;
   metadata?: {
+    bank_code?: string;
+    bank_entity_name?: string;
+    bank_account_code?: string;
+    bank_account_type?: string;
     name?: string;
     // Telefono registrado para marcar con huella desde la app.
     mobile_biometric?: { device_id?: string; device_model?: string | null; platform?: string | null; enrolled_at?: string | null };
@@ -55,6 +59,9 @@ type Affiliation = { id: number; entity_type: string; entity_id: number; valid_f
 type SalaryHistory = { id: number; monthly_salary: string | number; currency: string; valid_from: string; valid_to?: string | null; reason: string };
 type EmployeeContract = { id: number; contract_type: string; status: string; reason: string; valid_from: string; valid_to?: string | null; salary_base?: string | number; cost_center?: string; termination_reason?: string | null };
 type EmployeeForm = {
+  bank_code: string;
+  bank_account_code: string;
+  bank_account_type: string;
   first_name: string;
   middle_name: string;
   last_name: string;
@@ -152,6 +159,8 @@ export default function EmployeesMasterPage() {
   const [mounted, setMounted] = useState(false);
   const [rows, setRows] = useState<Employee[]>([]);
   const [entities, setEntities] = useState<LaborEntity[]>([]);
+  const [banks, setBanks] = useState<{ code: string; name: string; active: boolean }[]>([]);
+  const [bankError, setBankError] = useState("");
   const [documentTypes, setDocumentTypes] = useState<MasterItem[]>(fallbackDocumentTypes);
   const [costCenters, setCostCenters] = useState<MasterItem[]>(fallbackCostCenters);
   const [organization, setOrganization] = useState<PayrollOrganizationTree>(EMPTY_PAYROLL_ORGANIZATION);
@@ -176,6 +185,7 @@ export default function EmployeesMasterPage() {
   const [salaryForm, setSalaryForm] = useState({ monthly_salary: "", valid_from: today(), reason: "Cambio salarial" });
   const [contractForm, setContractForm] = useState({ valid_from: today(), new_hire_date: today(), contract_type: "indefinite", end_date: "", salary_base: "", cost_center: "", reason: "Otrosi contractual", notes: "" });
   const [form, setForm] = useState<EmployeeForm>({
+    bank_code: "", bank_account_code: "", bank_account_type: "ahorros",
     first_name: "",
     middle_name: "",
     last_name: "",
@@ -212,6 +222,7 @@ export default function EmployeesMasterPage() {
 
   function baseForm(): EmployeeForm {
     return {
+      bank_code: "", bank_account_code: "", bank_account_type: "ahorros",
       first_name: "",
       middle_name: "",
       last_name: "",
@@ -253,6 +264,8 @@ export default function EmployeesMasterPage() {
       ]);
       setRows(Array.isArray(employeeData) ? employeeData : []);
       setEntities(Array.isArray(entityData) ? entityData : []);
+      try { setBanks(await api("/api/v1/talento-humano/bancos", { cache: "no-store" })); setBankError(""); }
+      catch { setBankError("No se pudo cargar el maestro de bancos. Recarga para modificar los datos bancarios."); }
       if (masterData?.document_types?.length) setDocumentTypes(masterData.document_types.filter((item) => item.active !== false));
       if (masterData?.cost_centers?.length) setCostCenters(masterData.cost_centers.filter((item) => item.active !== false));
       try {
@@ -337,6 +350,9 @@ export default function EmployeesMasterPage() {
     setSalaryForm({ monthly_salary: employee.salary_base ? String(employee.salary_base) : "", valid_from: today(), reason: "Cambio salarial" });
     setContractForm({ valid_from: today(), new_hire_date: today(), contract_type: employee.contract_type || "indefinite", end_date: displayDate(employee.end_date), salary_base: employee.salary_base ? String(employee.salary_base) : "", cost_center: employee.metadata?.cost_center || "", reason: employee.active === false ? "Recontratacion" : "Otrosi contractual", notes: "" });
     setForm({
+      bank_code: employee.metadata?.bank_code || "",
+      bank_account_code: employee.metadata?.bank_account_code || "",
+      bank_account_type: employee.metadata?.bank_account_type || "ahorros",
       first_name: first,
       middle_name: middle,
       last_name: last,
@@ -429,6 +445,7 @@ export default function EmployeesMasterPage() {
     setModalMessage("");
     try {
       const payload = {
+        ...(!bankError ? { bank_code: form.bank_code, bank_account_code: form.bank_account_code, bank_account_type: form.bank_account_type } : {}),
         ...(userId ? { user_id: Number(userId) } : {}),
         first_name: form.first_name,
         middle_name: form.middle_name,
@@ -697,6 +714,15 @@ export default function EmployeesMasterPage() {
                 <SelectField label="Tipo de contrato" disabled={mode === "view"} value={form.contract_type} onChange={(value) => setForm((current) => ({ ...current, contract_type: value, end_date: value === "fixed" ? current.end_date : "" }))} options={contractTypes.map((item) => ({ value: item.code, label: item.name }))} />
                 {form.contract_type === "fixed" ? <EmployeeField label="Fecha de vencimiento del contrato" readOnly={mode === "view"} type="date" value={form.end_date} onChange={(value) => { clearFormError("end_date"); setForm((current) => ({ ...current, end_date: value })); }} error={formErrors.end_date} /> : null}
                 <EmployeeField label="Salario mensual" readOnly={mode === "view"} value={form.salary_base} prefix="$" type="number" onChange={(value) => setForm((current) => ({ ...current, salary_base: value }))} />
+                <section className="md:col-span-2 rounded-md border border-line p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">Datos bancarios</h3><Link className="text-sm font-semibold text-apex" href="/dashboard/talento-humano/bancos">Administrar bancos</Link></div>
+                  {bankError ? <p role="alert" className="mb-2 text-sm text-rose-700">{bankError}</p> : null}
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="text-sm">Banco<select aria-label="Banco del empleado" disabled={mode === "view" || Boolean(bankError)} className="mt-1 h-10 w-full rounded-md border border-line px-3" value={form.bank_code} onChange={event => setForm(current => ({ ...current, bank_code: event.target.value }))}><option value="">Sin banco</option>{banks.filter(bank => bank.active || bank.code === form.bank_code).map(bank => <option key={bank.code} value={bank.code}>{bank.code} · {bank.name}{bank.active ? "" : " (inactivo)"}</option>)}{form.bank_code && !banks.some(bank => bank.code === form.bank_code) ? <option value={form.bank_code}>{form.bank_code} · {selected?.metadata?.bank_entity_name || "Banco registrado"}</option> : null}</select></label>
+                    <label className="text-sm">Tipo de cuenta<select aria-label="Tipo de cuenta bancaria" disabled={mode === "view" || Boolean(bankError)} className="mt-1 h-10 w-full rounded-md border border-line px-3" value={form.bank_account_type} onChange={event => setForm(current => ({ ...current, bank_account_type: event.target.value }))}><option value="ahorros">Ahorros</option><option value="corriente">Corriente</option></select></label>
+                    <label className="text-sm">Cuenta bancaria<input aria-label="Cuenta bancaria del empleado" type="text" maxLength={100} readOnly={mode === "view" || Boolean(bankError)} className="mt-1 h-10 w-full rounded-md border border-line px-3" value={form.bank_account_code} onChange={event => setForm(current => ({ ...current, bank_account_code: event.target.value }))} /></label>
+                  </div>
+                </section>
                 <EmployeeField label="Jornada semanal" readOnly={mode === "view"} value={form.weekly_hours} suffix="h" type="number" onChange={(value) => setForm((current) => ({ ...current, weekly_hours: value }))} />
                 <SelectField label="Riesgo ARL" disabled={mode === "view"} value={form.arl_risk_class} onChange={(value) => setForm((current) => ({ ...current, arl_risk_class: value }))} options={[
                   { value: "1", label: "Riesgo I - 0.522%" },

@@ -57,9 +57,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.32.0",
-      "updated_at": "2026-11-25",
-      "sha256": "2276807c0710c838643619365ade427b414a36c31f77711125b609aa32e29edd",
+      "version": "2.33.0",
+      "updated_at": "2026-11-27",
+      "sha256": "3d58b483ed72d1e6efe0e19f130b1e214cf6d69e56963595366c5de858e67eb8",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -96,7 +96,9 @@
         "clave-publica-en-esquema-con-forma",
         "lenguaje-cercano-al-dueno",
         "camino-sesion-una-sentencia-por-lectura",
-        "una-sola-regla-de-selfie-por-canal"
+        "una-sola-regla-de-selfie-por-canal",
+        "censo-de-identificadores-en-dos-direcciones",
+        "modulo-portado-declara-ambiente-sin-tablas"
       ]
     },
     {
@@ -218,9 +220,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.52.0",
-      "updated_at": "2026-11-26",
-      "sha256": "1cc375e42c852a87a0ed80cba9fb8b85cf0aa8ded869e97f657d30a4e93ce334",
+      "version": "2.53.0",
+      "updated_at": "2026-11-27",
+      "sha256": "30e6baed76a2f0d1c26184050daaf898ea3b5862587f1125d281a92d16136bc4",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -270,7 +272,9 @@
         "enlace-directo-sin-portapapeles",
         "matematica-de-eje-ejecutable-en-el-contrato",
         "tema-y-telefono-medidos-en-navegador",
-        "registro-fuera-del-rango-visible-se-declara"
+        "registro-fuera-del-rango-visible-se-declara",
+        "linaje-superconjunto-restaurado-e-injerto-tenso",
+        "puerto-aditivo-con-anclajes-de-perdida"
       ]
     },
     {
@@ -359,9 +363,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.139.0",
+      "version": "2.140.0",
       "updated_at": "2026-11-27",
-      "sha256": "ef93ef277731a340784c1f5b2f35b3b6dcc35b5210c46ebcb975aacc6ef2a06e",
+      "sha256": "4a80d427c2d54184114eb2996f1e6e8843f9d35f1b6fe2baf1da2ec2abc6fef2",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -467,15 +471,17 @@
         "arnes-nuevo-se-prueba-contra-el-arbol-anterior",
         "base-local-por-plantilla-y-no-por-db-push",
         "antes-contra-los-blobs-del-destino",
-        "arnes-desplegado-blanco-rango-y-modal-limpio"
+        "arnes-desplegado-blanco-rango-y-modal-limpio",
+        "paridad-por-blob-y-rojo-atribuido-en-baseline",
+        "certificado-declara-lo-que-no-certifica"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.44.0",
-      "updated_at": "2026-11-25",
-      "sha256": "1c325e30e718d2b85ab31b6d827c5deef56a4015db30c17c16a28a24d4c2ca64",
+      "version": "2.45.0",
+      "updated_at": "2026-11-27",
+      "sha256": "1eb9754a6b70d9ad1b5c9efd68e241e43dac918dd5e17772bffd0c9543e24a44",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -518,15 +524,17 @@
         "lenguaje-cercano-al-dueno",
         "login-no-es-oraculo-de-correos",
         "cuatro-marcaciones-sin-firma-necesitan-cara",
-        "contrato-con-prueba-de-servidor-real"
+        "contrato-con-prueba-de-servidor-real",
+        "control-rojo-heredado-se-re-tensa",
+        "porton-de-escrituras-con-asercion-positiva"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.79.0",
+      "version": "2.80.0",
       "updated_at": "2026-11-27",
-      "sha256": "064be455bc5e74835f7834f344e0b929a518b039db0a45aef58aaa65effab7d7",
+      "sha256": "5a73f4fb0fdf99ff4d585919e9841b967f264dd0440affdf4358836ca86637ef",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -584,7 +592,9 @@
         "transporte-se-mide-contra-la-distancia-del-destino",
         "autorizacion-con-consecuencia-se-cierra-y-se-rinde",
         "arbol-compartido-se-reporta-por-patas",
-        "orden-de-despliegue-exige-pata-contra-el-ambiente-servido"
+        "orden-de-despliegue-exige-pata-contra-el-ambiente-servido",
+        "paridad-entre-ramas-por-blob-y-linea-sin-replica",
+        "retrointegracion-por-canastas-no-por-merge"
       ]
     }
   ],

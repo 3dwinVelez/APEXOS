@@ -17,7 +17,8 @@ export function MobileNav() {
   const operationalFlow = pathname.startsWith("/dashboard/servicios") ||
     pathname === "/dashboard/talento-humano/marcacion" ||
     pathname.startsWith("/dashboard/talento-humano/mapa") ||
-    pathname.startsWith("/dashboard/talento-humano/rutas");
+    pathname.startsWith("/dashboard/talento-humano/rutas") ||
+    pathname.startsWith("/dashboard/talento-humano/mallas");
   if (operationalFlow) return null;
 
   return (

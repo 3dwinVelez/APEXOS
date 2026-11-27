@@ -1,5 +1,7 @@
 "use client";
 
+import { hrStyles, HrKpis } from "@/components/hr/HrWorkspace";
+
 import { ArrowLeft, Calculator, FileText, Play, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -102,6 +104,7 @@ export default function SocialContributionsPage() {
   const [lines, setLines] = useState<ContributionLine[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [activeView, setActiveView] = useState("documentos");
 
   const periodKey = `${periodType}:${startDate}:${endDate}`;
   const rows = preview ? [preview, ...documents] : documents;
@@ -175,6 +178,7 @@ export default function SocialContributionsPage() {
       setPreview(result.document);
       setSelected(result.document);
       setLines(result.document.lines || []);
+      setActiveView("resumen");
       setMessage("Aportes calculados en modo prueba.");
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "No se pudo calcular");
@@ -192,6 +196,7 @@ export default function SocialContributionsPage() {
         body: JSON.stringify({ fecha_inicio: startDate, fecha_fin: endDate, period_type: periodType, period_key: periodKey, recalculate })
       });
       setPreview(null);
+      setActiveView("documentos");
       await load();
       setMessage(recalculate ? "Documento recalculado." : "Documento de aportes creado.");
     } catch (err) {
@@ -202,6 +207,7 @@ export default function SocialContributionsPage() {
   }
 
   async function openDocument(row: ContributionDocument) {
+    setActiveView("resumen");
     setSelected(row);
     if (!row.id) {
       setLines(row.lines || []);
@@ -228,7 +234,7 @@ export default function SocialContributionsPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className={`${hrStyles.workspace} space-y-5`}>
       <header>
         <Link className="inline-flex items-center gap-2 text-sm font-semibold text-apex" href="/dashboard/talento-humano"><ArrowLeft size={16} /> Talento Humano</Link>
         <h1 className="mt-2 text-3xl font-semibold">Aportes sociales</h1>
@@ -251,15 +257,19 @@ export default function SocialContributionsPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-5">
-        <Kpi label="IBC" value={money(totals?.total_ibc)} />
-        <Kpi label="Empleado" value={money(totals?.total_employee)} />
-        <Kpi label="Empleador" value={money(totals?.total_employer)} />
-        <Kpi label="Total conceptual" value={money(totals?.total_payable)} />
-        <Kpi label="Total PILA calculado" value={money(totals?.total_payable_pila ?? totals?.source_summary?.total_payable_pila)} />
-      </section>
-
-      <section className="rounded-md border border-line bg-white">
+      <HrKpis items={[
+        {label:"IBC total",value:money(totals?.total_ibc)},
+        {label:"Aportes empleado",value:money(totals?.total_employee)},
+        {label:"Aportes empleador",value:money(totals?.total_employer)},
+        {label:"Total PILA calculado",value:money(totals?.total_payable_pila ?? totals?.source_summary?.total_payable_pila)},
+        {label:"Diferencia conceptual / PILA",value:totals && (totals.total_payable_pila ?? totals.source_summary?.total_payable_pila) != null ? money(Number(totals.total_payable)-Number(totals.total_payable_pila ?? totals.source_summary?.total_payable_pila)) : "—"}
+      ]} />
+      <div className={hrStyles.columns}>
+      <div className={hrStyles.main}>
+      <div className={hrStyles.tabs} role="tablist" aria-label="Detalle de aportes">
+        {[["documentos","Documentos"],["resumen","Resumen por empleado"],["novedades","Novedades por segmento"]].map(([key,label])=><button key={key} role="tab" aria-selected={activeView===key} onClick={()=>setActiveView(key)} type="button">{label}</button>)}
+      </div>
+      <section hidden={activeView !== "documentos"} className="rounded-md border border-line bg-white">
         <div className="flex items-center justify-between border-b border-line p-4"><h2 className="text-base font-semibold">Documentos</h2><span className="text-sm text-neutral-500">{rows.length} registros</span></div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[880px] text-sm">
@@ -269,7 +279,7 @@ export default function SocialContributionsPage() {
         </div>
       </section>
 
-      <section className="rounded-md border border-line bg-white">
+      <section hidden={activeView !== "resumen"} className="rounded-md border border-line bg-white">
         <div className="border-b border-line p-4"><h2 className="text-base font-semibold">Resumen por empleado</h2><p className="text-sm text-neutral-500">IBC, aportes por concepto, deducciones del empleado y aportes del empleador.</p></div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] text-sm" data-table-layout="detail">
@@ -317,7 +327,7 @@ export default function SocialContributionsPage() {
         </div>
       </section>
 
-      <section className="rounded-md border border-line bg-white">
+      <section hidden={activeView !== "novedades"} className="rounded-md border border-line bg-white">
         <div className="border-b border-line p-4">
           <h2 className="text-base font-semibold">Base y novedades por segmento</h2>
           <p className="text-sm text-neutral-500">Detalle trazable de trabajo, VAC disfrutadas/compensadas, licencia remunerada y SLN. La referencia histórica conserva periodo, soporte y origen capturado.</p>
@@ -349,10 +359,19 @@ export default function SocialContributionsPage() {
           {!segmentRows.length ? <p className="p-4 text-sm text-neutral-500">Calcula o abre un documento con novedades segmentadas para ver el desglose.</p> : null}
         </div>
       </section>
+      </div>
+      <aside className={hrStyles.panel} aria-label="Totales por subsistema">
+        <h2>Totales por subsistema</h2>
+        <p>{totals ? totals.period_key : "Calcula o abre un documento"}</p>
+        <div className={hrStyles.breakdown}>{conceptGroups.map(([code,label])=>{
+          const amount=lines.filter(line=>contributionConceptKey(line.concept_code)===code).reduce((sum,line)=>sum+Number(line.total_amount||0),0);
+          return <div key={code}><span>{label}</span><b>{money(amount)}</b></div>;
+        })}</div>
+        <HrKpis items={[{label:"Total conceptual",value:money(totals?.total_payable)}]} />
+        <p className={hrStyles.hint}>Los importes corresponden al documento seleccionado. La planilla PILA puede aplicar redondeos.</p>
+      </aside>
+      </div>
+
     </div>
   );
-}
-
-function Kpi({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-md border border-line bg-white p-4"><p className="text-xs uppercase text-neutral-500">{label}</p><p className="mt-1 text-xl font-semibold">{value}</p></div>;
 }

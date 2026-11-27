@@ -315,6 +315,8 @@ const employeeSchema = {
       last_name: { type: "string" },
       second_last_name: { type: "string" },
       birth_date: { type: "string" },
+      bank_code: { type: "string", maxLength: 3 },
+      bank_account_code: { type: "string", maxLength: 100 },
       email: { type: "string" },
       phone: { type: "string" },
       company_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
@@ -357,6 +359,20 @@ const employeePatchSchema = {
   body: {
     type: "object",
     properties: employeeSchema.body.properties
+  }
+};
+
+const employeeContractRepairSchema = {
+  params: { type: "object", required: ["id"], properties: { id: { type: "integer", minimum: 1 } } },
+  body: {
+    type: "object", additionalProperties: false,
+    required: ["contract_id", "expected_start", "expected_hire_date"],
+    properties: {
+      contract_id: { type: "integer", minimum: 1 },
+      expected_start: { type: "string", format: "date" },
+      expected_hire_date: { type: "string", format: "date" },
+      apply: { type: "boolean", default: false }
+    }
   }
 };
 
@@ -791,6 +807,11 @@ const employeeTerminationLiquidationSchema = {
       employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       termination_date: { type: "string" },
       termination_reason: { type: "string" },
+      pending_start: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
+      libranza_authorizations: { type: "array", maxItems: 100, items: { type: "object", required: ["id", "support"], properties: {
+        id: { type: "integer", minimum: 1 }, support: { type: "string", maxLength: 500 },
+        benefits_percent: { type: "number", minimum: 0, maximum: 100 }, legal_support: { type: "string", maxLength: 500 }
+      } } },
       contract_type: { type: "string" },
       salary_base: { anyOf: [{ type: "number" }, { type: "string" }] },
       pending_salary_days: { anyOf: [{ type: "number" }, { type: "string" }] },
@@ -883,7 +904,17 @@ const preopSubmitSchema = {
   }
 };
 
+const terminationManualAdjustmentSchema = {
+  body: { type: "object", required: ["employee_id", "termination_date", "work_date", "concept_code", "amount", "request_id"], properties: {
+    employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] }, termination_date: { type: "string" }, pending_start: { type: "string" },
+    work_date: { type: "string" }, concept_code: { type: "string", maxLength: 100 }, amount: { anyOf: [{ type: "number" }, { type: "string" }] },
+    description: { type: "string", maxLength: 500 }, request_id: { type: "string", maxLength: 36 }
+  } }
+};
+
 module.exports = {
+  employeeContractRepairSchema,
+  terminationManualAdjustmentSchema,
   personalWebauthnSchema,
   faceEnrollmentSchema,
   sharedDeviceRegistrationSchema,

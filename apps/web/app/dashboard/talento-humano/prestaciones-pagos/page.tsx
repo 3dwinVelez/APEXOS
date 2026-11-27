@@ -1,5 +1,7 @@
 "use client";
 
+import { hrStyles, HrNet } from "@/components/hr/HrWorkspace";
+
 import { api } from "@/lib/api";
 import { Calculator, Download, RotateCcw, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -34,6 +36,7 @@ type PaymentPreview = {
 };
 
 type PaymentDocument = {
+  source_summary?: { termination_document_id?: number; included_in_termination_net?: boolean };
   id: number;
   payment_type: string;
   period_key: string;
@@ -185,7 +188,7 @@ export default function SocialBenefitPaymentsPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className={`${hrStyles.workspace} space-y-5`}>
       <header>
         <p className="text-sm font-medium text-apex">Talento Humano - Prestaciones</p>
         <h1 className="text-3xl font-semibold">Pago de prestaciones sociales</h1>
@@ -195,25 +198,24 @@ export default function SocialBenefitPaymentsPage() {
       {message ? <p className="rounded-md border border-line bg-white p-3 text-sm text-neutral-700">{message}</p> : null}
       {missingSeveranceFundCount ? <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{missingSeveranceFundCount} empleado(s) tienen cesantías por pagar sin fondo de cesantías asociado.</p> : null}
 
+      <div className={hrStyles.choices} aria-label="Tipo de prestación">
+        {paymentTypes.map(type=><button type="button" disabled={busy} key={type.value} aria-pressed={paymentType===type.value} onClick={()=>changePaymentType(type.value)}><span>{type.label}</span><small>{type.value==="cesantias" ? "Pago al fondo de cesantías" : "Pago al trabajador"}</small></button>)}
+      </div>
       <section className="rounded-md border border-line bg-white p-4">
-        <div className="grid gap-3 md:grid-cols-5">
-          <label className="text-sm">Tipo de pago
-            <select className="mt-1 h-10 w-full rounded-md border border-line px-3" value={paymentType} onChange={(event) => changePaymentType(event.target.value)}>
-              {paymentTypes.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
-            </select>
-          </label>
-          <label className="text-sm">Desde<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label>
-          <label className="text-sm">Hasta<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label>
-          <label className="text-sm">Fecha pago<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={paymentDate} onChange={(event) => setPaymentDate(event.target.value)} /></label>
+        <div className="grid gap-3 md:grid-cols-4">
+          <label className="text-sm">Desde<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={startDate} onChange={(event) => { setStartDate(event.target.value); setPreview(null); }} /></label>
+          <label className="text-sm">Hasta<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={endDate} onChange={(event) => { setEndDate(event.target.value); setPreview(null); }} /></label>
+          <label className="text-sm">Fecha pago<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={paymentDate} onChange={(event) => { setPaymentDate(event.target.value); setPreview(null); }} /></label>
           <label className="text-sm">Empleado<input className="mt-1 h-10 w-full rounded-md border border-line px-3" placeholder="Cédula o nombre" value={employeeQuery} onChange={(event) => setEmployeeQuery(event.target.value)} /></label>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-60" disabled={busy} onClick={previewPayment} type="button"><Calculator size={16} /> Previsualizar</button>
-          <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-60" disabled={busy || !preview?.lines.length} onClick={createPayment} type="button"><Save size={16} /> Crear pago</button>
+
           <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-60" disabled={!filteredLines.length} onClick={() => void exportPreview()} type="button"><Download size={16} /> Excel</button>
         </div>
       </section>
 
+      <div className={hrStyles.columns}>
       <section className="rounded-md border border-line bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
           <div>
@@ -222,20 +224,32 @@ export default function SocialBenefitPaymentsPage() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1040px] text-sm">
-            <thead><tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500"><th className="px-3 py-2">Cédula</th><th className="px-3 py-2">Empleado</th><th className="px-3 py-2">Concepto</th><th className="px-3 py-2">Entidad</th><th className="px-3 py-2 text-right">Causado</th><th className="px-3 py-2 text-right">Pagado</th><th className="px-3 py-2 text-right">Saldo</th><th className="px-3 py-2 text-right">A pagar</th></tr></thead>
-            <tbody>{filteredLines.map((line) => <tr className="border-b border-line/70" key={`${line.benefit_balance_id}-${line.concept_code}`}><td className="px-3 py-2">{line.employee_document || line.employee_id}</td><td className="px-3 py-2 font-medium">{line.employee_name || line.employee_id}</td><td className="px-3 py-2">{line.concept_code}<p className="text-xs text-neutral-500">{line.source_period_key}</p></td><td className="px-3 py-2">{line.entity_name || (line.payment_target === "fondo_cesantias" ? "Fondo pendiente" : "Trabajador")}{line.missing_entity ? <p className="text-xs font-semibold text-amber-700">Falta fondo de cesantías</p> : null}</td><td className="px-3 py-2 text-right">{money(line.accrued_amount)}</td><td className="px-3 py-2 text-right">{money(line.paid_amount)}</td><td className="px-3 py-2 text-right">{money(line.balance_amount)}</td><td className="px-3 py-2 text-right font-semibold">{money(line.amount)}</td></tr>)}</tbody>
+          <table className="w-full min-w-[760px] text-sm">
+            <thead><tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500"><th className="px-3 py-2">Empleado</th><th className="px-3 py-2">Concepto</th><th className="px-3 py-2">Entidad</th><th className="px-3 py-2 text-right">Causado</th><th className="px-3 py-2 text-right">Pagado</th><th className="px-3 py-2 text-right">Saldo</th><th className="px-3 py-2 text-right">A pagar</th></tr></thead>
+            <tbody>{filteredLines.map((line) => <tr className="border-b border-line/70" key={`${line.benefit_balance_id}-${line.concept_code}`}><td className="px-3 py-2 font-medium">{line.employee_name || line.employee_id}<p className="text-xs text-neutral-500">{line.employee_document || line.employee_id}</p></td><td className="px-3 py-2">{line.concept_code}<p className="max-w-40 text-xs text-neutral-500">{line.source_period_key.split(":").slice(0,3).join(" · ")}</p></td><td className="px-3 py-2">{line.entity_name || (line.payment_target === "fondo_cesantias" ? "Fondo pendiente" : "Trabajador")}{line.missing_entity ? <p className="text-xs font-semibold text-amber-700">Falta fondo de cesantías</p> : null}</td><td className="px-3 py-2 text-right">{money(line.accrued_amount)}</td><td className="px-3 py-2 text-right">{money(line.paid_amount)}</td><td className="px-3 py-2 text-right">{money(line.balance_amount)}</td><td className="px-3 py-2 text-right font-semibold">{money(line.amount)}</td></tr>)}</tbody>
+            {filteredLines.length ? <tfoot><tr><td className="p-3 font-semibold" colSpan={3}>Total visible</td>{(["accrued_amount","paid_amount","balance_amount","amount"] as const).map(key=><td className="p-3 text-right font-semibold" key={key}>{money(filteredLines.reduce((sum,line)=>sum+Number(line[key]||0),0))}</td>)}</tr></tfoot> : null}
           </table>
           {!filteredLines.length ? <p className="p-4 text-sm text-neutral-500">Previsualiza un periodo con saldos provisionados para pagar.</p> : null}
         </div>
       </section>
 
+      <aside className={hrStyles.panel} aria-label="Resumen del pago">
+        <h2>Resumen del pago</h2>
+        <p>{paymentTypes.find(type=>type.value===paymentType)?.label}</p>
+        <HrNet label="Total a pagar" value={preview ? money(preview.total_amount) : "—"} />
+        <dl><div><dt>Empleados incluidos</dt><dd>{new Set((preview?.lines||[]).map(line=>line.employee_id)).size}</dd></div>
+        <div><dt>Fecha de pago</dt><dd>{paymentDate}</dd></div>
+        <div><dt>Saldo de las líneas</dt><dd>{money((preview?.lines||[]).reduce((sum,line)=>sum+Number(line.balance_amount||0),0))}</dd></div></dl>
+        <p className={hrStyles.hint}>La búsqueda filtra la tabla y el Excel. El documento incluye todas las líneas de la previsualización.</p>
+        <div className="mt-5">          <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-60" disabled={busy || !preview?.lines.length} onClick={createPayment} type="button"><Save size={16} /> Crear pago</button></div>
+      </aside>
+      </div>
       <section className="rounded-md border border-line bg-white">
         <div className="border-b border-line p-4"><h2 className="text-base font-semibold">Documentos de pago</h2></div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] text-sm">
             <thead><tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500"><th className="px-3 py-2">Documento</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2">Periodo</th><th className="px-3 py-2">Fecha pago</th><th className="px-3 py-2">Estado</th><th className="px-3 py-2 text-right">Total</th><th className="px-3 py-2 text-right">Acciones</th></tr></thead>
-            <tbody>{documents.map((doc) => <tr className="border-b border-line/70" key={doc.id}><td className="px-3 py-2 font-semibold">#{doc.id}</td><td className="px-3 py-2">{doc.payment_type}</td><td className="px-3 py-2">{doc.period_key}</td><td className="px-3 py-2">{String(doc.payment_date).slice(0, 10)}</td><td className="px-3 py-2">{doc.status}</td><td className="px-3 py-2 text-right">{money(doc.total_amount)}</td><td className="px-3 py-2 text-right">{doc.status !== "anulado" ? <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-xs font-semibold text-red-700" disabled={busy} onClick={() => void voidDocument(doc.id)} type="button"><RotateCcw size={14} /> Anular</button> : "--"}</td></tr>)}</tbody>
+            <tbody>{documents.map((doc) => <tr className="border-b border-line/70" key={doc.id}><td className="px-3 py-2 font-semibold">#{doc.id}</td><td className="px-3 py-2">{paymentTypes.find(type=>type.value===doc.payment_type)?.label || doc.payment_type}{doc.source_summary?.termination_document_id ? <p className="text-xs text-neutral-500">Incluido en liquidación #{doc.source_summary.termination_document_id}. No pagar nuevamente.</p> : null}</td><td className="px-3 py-2">{doc.source_summary?.termination_document_id ? "Liquidación final" : doc.period_key.split(":").slice(0,3).join(" · ")}</td><td className="whitespace-nowrap px-3 py-2">{String(doc.payment_date).slice(0, 10)}</td><td className="px-3 py-2">{doc.status}</td><td className="px-3 py-2 text-right">{money(doc.total_amount)}</td><td className="px-3 py-2 text-right">{doc.source_summary?.termination_document_id ? "Reversar desde la liquidación final" : doc.status !== "anulado" ? <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-xs font-semibold text-red-700" disabled={busy} onClick={() => void voidDocument(doc.id)} type="button"><RotateCcw size={14} /> Anular</button> : "--"}</td></tr>)}</tbody>
           </table>
           {!documents.length ? <p className="p-4 text-sm text-neutral-500">Aún no hay documentos de pago.</p> : null}
         </div>

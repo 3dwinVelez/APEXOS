@@ -1,5 +1,7 @@
 "use client";
 
+import { hrStyles, HrKpis, HrNet, HrSegmented } from "@/components/hr/HrWorkspace";
+
 import { api } from "@/lib/api";
 import { ArrowLeft, Download, Edit3, Power, RefreshCw, Save, Search, Trash2, X } from "lucide-react";
 import Link from "next/link";
@@ -17,7 +19,7 @@ type EmployeeLibranza = {
 };
 
 const inputClass = "mt-1 h-10 w-full rounded-md border border-line bg-white px-3 text-sm";
-const tabClass = "inline-flex h-11 items-center rounded-md px-4 text-sm font-semibold";
+
 
 function money(value: number | string | null | undefined) {
   return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(value || 0));
@@ -46,6 +48,7 @@ export default function LibranzasPage() {
   const [loading, setLoading] = useState(false);
   const [employeeSearch, setEmployeeSearch] = useState("");
   const [employeeFinderOpen, setEmployeeFinderOpen] = useState(false);
+  const [selectedLibranzaId, setSelectedLibranzaId] = useState<number|null>(null);
   const [editingConceptId, setEditingConceptId] = useState<number | null>(null);
   const [reportFilters, setReportFilters] = useState({ employee: "", concept_id: "", mode: "", status: "" });
   const [conceptForm, setConceptForm] = useState({ code: "PERDIDA_INVENTARIO", name: "Perdida de inventario", description: "", entity_id: "", debit_account_code: "", credit_account_code: "", active: true });
@@ -77,6 +80,10 @@ export default function LibranzasPage() {
     });
   }, [libranzas, reportFilters]);
 
+  const selectedConcept=concepts.find(concept=>String(concept.id)===assignmentForm.concept_id);
+  const activeEmployeeLoans=libranzas.filter(row=>String(row.employee_id)===assignmentForm.employee_id && row.status==="activa");
+  const employeeDeductions=activeEmployeeLoans.filter(row=>row.frequency===assignmentForm.frequency).reduce((sum,row)=>sum+Number(row.installment_amount||0),0);
+  const selectedLibranza=filteredLibranzas.find(row=>row.id===selectedLibranzaId) || filteredLibranzas[0];
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -253,7 +260,7 @@ export default function LibranzasPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className={`${hrStyles.workspace} space-y-5`}>
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link className="inline-flex items-center gap-2 text-sm font-semibold text-apex" href="/dashboard/talento-humano"><ArrowLeft size={16} /> Talento Humano</Link>
@@ -265,10 +272,8 @@ export default function LibranzasPage() {
 
       {message ? <p className="rounded-md border border-line bg-white p-3 text-sm text-neutral-700">{message}</p> : null}
 
-      <nav className="rounded-md border border-line bg-white p-2">
-        <button className={`${tabClass} ${activeTab === "configuracion" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setActiveTab("configuracion")} type="button">Configuración</button>
-        <button className={`${tabClass} ${activeTab === "asignacion" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setActiveTab("asignacion")} type="button">Asignación</button>
-        <button className={`${tabClass} ${activeTab === "reporte" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setActiveTab("reporte")} type="button">Reporte</button>
+      <nav className={hrStyles.tabs} aria-label="Libranzas" role="tablist">
+        {([["configuracion","Configuración",concepts.length],["asignacion","Asignación",null],["reporte","Reporte",libranzas.length]] as const).map(([key,label,count])=><button key={key} role="tab" aria-selected={activeTab===key} onClick={()=>setActiveTab(key)} type="button">{label}{count!==null ? ` (${count})` : ""}</button>)}
       </nav>
 
       {activeTab === "configuracion" ? (
@@ -315,30 +320,60 @@ export default function LibranzasPage() {
       ) : null}
 
       {activeTab === "asignacion" ? (
+        <div className={hrStyles.columns}>
+        <div className={hrStyles.main}>
         <section className="rounded-md border border-line bg-white p-4">
-          <h2 className="text-base font-semibold">Asignación al trabajador</h2>
+          <h2 className="text-base font-semibold"><span className={hrStyles.number}>1</span> Trabajador</h2>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             <label className="text-sm md:col-span-2">Empleado por cédula o nombre
               <div className="mt-1 flex gap-2">
                 <input className="h-10 w-full rounded-md border border-line bg-white px-3 text-sm" placeholder="Digita cédula o nombre; Enter vacío abre buscador" value={employeeSearch} onChange={(event) => { setEmployeeSearch(event.target.value); setAssignmentForm((current) => ({ ...current, employee_id: "" })); }} onKeyDown={handleEmployeeSearchKeyDown} />
                 <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold" onClick={() => setEmployeeFinderOpen(true)} type="button"><Search size={16} /> Buscar</button>
               </div>
-              {selectedEmployee ? <span className="mt-1 block text-xs text-neutral-500">Seleccionado: {employeeDocument(selectedEmployee)} - {employeeName(selectedEmployee)}</span> : null}
+              {selectedEmployee ? <span className={hrStyles.identity}><span className={hrStyles.avatar}>{employeeName(selectedEmployee).slice(0,2).toUpperCase()}</span><span><strong>{employeeName(selectedEmployee)}</strong><small>CC {employeeDocument(selectedEmployee)} · {activeEmployeeLoans.length} libranza(s) activa(s)</small></span></span> : <span className="mt-2 block text-xs text-neutral-500">Enter sin texto abre el buscador avanzado.</span>}
             </label>
-            <label className="text-sm">Concepto<select className={inputClass} value={assignmentForm.concept_id} onChange={(event) => setAssignmentForm((current) => ({ ...current, concept_id: event.target.value }))}><option value="">Seleccionar</option>{concepts.filter((concept) => concept.active !== false).map((concept) => <option key={concept.id} value={concept.id}>{concept.code} - {concept.name}</option>)}</select></label>
-            <label className="text-sm">Frecuencia<select className={inputClass} value={assignmentForm.frequency} onChange={(event) => setAssignmentForm((current) => ({ ...current, frequency: event.target.value }))}><option value="quincena">Quincenal</option><option value="mes">Mensual</option></select></label>
-            <label className="text-sm">Tipo<select className={inputClass} value={assignmentForm.mode} onChange={(event) => setAssignmentForm((current) => ({ ...current, mode: event.target.value }))}><option value="cuotas">Por cuotas</option><option value="perpetua">Perpetua</option></select></label>
+          </div>
+        </section>
+        <section className="rounded-md border border-line bg-white p-4">
+          <h2><span className={hrStyles.number}>2</span> Concepto</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <label className="text-sm md:col-span-2">Concepto<select className={inputClass} value={assignmentForm.concept_id} onChange={(event) => setAssignmentForm((current) => ({ ...current, concept_id: event.target.value }))}><option value="">Seleccionar</option>{concepts.filter((concept) => concept.active !== false).map((concept) => <option key={concept.id} value={concept.id}>{concept.code} - {concept.name}</option>)}</select></label>
+            {selectedConcept ? <p className="text-xs text-neutral-500 md:col-span-2">{selectedConcept.entity_name || "Sin entidad"} · Débito {selectedConcept.debit_account_code || "—"} · Crédito {selectedConcept.credit_account_code || "—"}</p> : null}
+          </div>
+        </section>
+        <section className="rounded-md border border-line bg-white p-4">
+          <h2><span className={hrStyles.number}>3</span> Condiciones del descuento</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <HrSegmented label="Tipo" value={assignmentForm.mode} options={[{value:"cuotas",label:"Por cuotas"},{value:"perpetua",label:"Permanente"}]} onChange={value=>setAssignmentForm(current=>({...current,mode:value}))} />
+            <HrSegmented label="Frecuencia" value={assignmentForm.frequency} options={[{value:"quincena",label:"Quincenal"},{value:"mes",label:"Mensual"}]} onChange={value=>setAssignmentForm(current=>({...current,frequency:value}))} />
             {assignmentForm.mode === "cuotas" ? <label className="text-sm">Deuda total<input className={inputClass} type="number" value={assignmentForm.original_amount} onChange={(event) => setAssignmentForm((current) => ({ ...current, original_amount: event.target.value }))} /></label> : null}
             {assignmentForm.mode === "cuotas" ? <label className="text-sm">Número de cuotas<input className={inputClass} type="number" value={assignmentForm.installments_total} onChange={(event) => setAssignmentForm((current) => ({ ...current, installments_total: event.target.value }))} /></label> : null}
             <label className="text-sm">Valor por periodo<input className={inputClass} readOnly={assignmentForm.mode === "cuotas"} type="number" value={assignmentForm.mode === "cuotas" ? String(calculatedInstallment || "") : assignmentForm.installment_amount} onChange={(event) => setAssignmentForm((current) => ({ ...current, installment_amount: event.target.value }))} /></label>
             <label className="text-sm">Fecha inicio<input className={inputClass} type="date" value={assignmentForm.start_date} onChange={(event) => setAssignmentForm((current) => ({ ...current, start_date: event.target.value }))} /></label>
             <label className="text-sm md:col-span-2">Detalle<input className={inputClass} value={assignmentForm.description} onChange={(event) => setAssignmentForm((current) => ({ ...current, description: event.target.value }))} /></label>
           </div>
+          <button className="mr-3 mt-4 h-10 rounded-md border border-line px-4 text-sm" type="button" onClick={()=>{setEmployeeSearch("");setAssignmentForm({employee_id:"",concept_id:"",description:"",frequency:"quincena",mode:"cuotas",original_amount:"",installments_total:"8",installment_amount:"",start_date:new Date().toISOString().slice(0,10),end_date:""});}}>Limpiar</button>
           <button className="mt-4 inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={saveAssignment} type="button"><Save size={16} /> Asociar libranza</button>
         </section>
+        </div>
+        <aside className={hrStyles.panel} aria-label="Resumen de la libranza"><h2>Resumen de la libranza</h2>
+          <HrNet label="Valor por periodo" value={money(calculatedInstallment)} />
+          <dl><div><dt>Frecuencia</dt><dd>{assignmentForm.frequency==="mes"?"Mensual":"Quincenal"}</dd></div><div><dt>Modalidad</dt><dd>{assignmentForm.mode==="cuotas"?`${assignmentForm.installments_total} cuotas`:"Permanente"}</dd></div>
+          {assignmentForm.mode==="cuotas" ? <div><dt>Deuda total</dt><dd>{money(assignmentForm.original_amount)}</dd></div> : null}
+          <div><dt>Fecha inicio</dt><dd>{assignmentForm.start_date}</dd></div><div><dt>Otros descuentos activos de la misma frecuencia</dt><dd>{money(employeeDeductions)}</dd></div><div><dt>Total por periodo con esta libranza</dt><dd>{money(employeeDeductions+calculatedInstallment)}</dd></div></dl>
+          <p className={hrStyles.hint}>Los descuentos se aplicarán en la nómina según la fecha de inicio, la frecuencia y el saldo pendiente.</p>
+        </aside></div>
       ) : null}
 
       {activeTab === "reporte" ? (
+        <>
+        <HrKpis items={[
+          {label:"Libranzas activas",value:libranzas.filter(row=>row.status==="activa").length},
+          {label:"Deuda original · cuotas",value:money(libranzas.filter(row=>row.mode==="cuotas").reduce((sum,row)=>sum+Number(row.original_amount||0),0))},
+          {label:"Saldo pendiente · cuotas",value:money(libranzas.filter(row=>row.mode==="cuotas").reduce((sum,row)=>sum+Number(row.balance_amount||0),0))},
+          {label:"Descuento activo mensual",value:money(libranzas.filter(row=>row.status==="activa"&&row.frequency==="mes").reduce((sum,row)=>sum+Number(row.installment_amount||0),0))}
+        ]} />
+        <div className={hrStyles.columns}>
         <section className="rounded-md border border-line bg-white">
           <div className="border-b border-line p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -376,13 +411,26 @@ export default function LibranzasPage() {
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1120px] text-sm">
-              <thead><tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500"><th className="px-3 py-2">Cédula empleado</th><th className="px-3 py-2">Nombre empleado</th><th className="px-3 py-2">Concepto</th><th className="px-3 py-2">Frecuencia</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2">Deuda total</th><th className="px-3 py-2">Valor periodo</th><th className="px-3 py-2">Valor pagado</th><th className="px-3 py-2">Saldo restante</th><th className="px-3 py-2">Estado</th><th className="px-3 py-2">Inactivada</th><th className="px-3 py-2">Acciones</th></tr></thead>
-              <tbody>{filteredLibranzas.map((row) => <tr className="border-b border-line/70" key={row.id}><td className="px-3 py-2">{reportEmployeeCode(row)}</td><td className="px-3 py-2 font-medium">{row.employee_name || reportEmployeeCode(row)}</td><td className="px-3 py-2">{row.concept_code}<p className="text-xs text-neutral-500">{row.concept_name}</p></td><td className="px-3 py-2">{row.frequency}</td><td className="px-3 py-2">{row.mode}</td><td className="px-3 py-2">{row.mode === "perpetua" ? "Permanente" : money(row.original_amount)}</td><td className="px-3 py-2">{money(row.installment_amount)}</td><td className="px-3 py-2">{money(row.deducted_amount)}</td><td className="px-3 py-2">{row.mode === "perpetua" ? "Permanente" : money(row.balance_amount)}</td><td className="px-3 py-2">{row.status}</td><td className="px-3 py-2">{row.inactive_at ? new Date(row.inactive_at).toLocaleDateString("es-CO") : "--"}</td><td className="px-3 py-2">{row.mode === "perpetua" && row.status === "activa" ? <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-red-700" onClick={() => void inactivateLibranza(row)} type="button"><Power size={14} /> Inactivar</button> : "--"}</td></tr>)}
-              {!filteredLibranzas.length ? <tr><td className="px-3 py-6 text-center text-neutral-500" colSpan={12}>No hay libranzas con los filtros actuales.</td></tr> : null}</tbody>
+            <table className="w-full min-w-[680px] text-sm">
+              <thead><tr><th className="p-3 text-left">Empleado</th><th className="p-3 text-left">Concepto</th><th className="p-3 text-right">Valor periodo</th><th className="p-3 text-right">Pagado / deuda</th><th className="p-3 text-right">Saldo</th><th className="p-3 text-left">Estado</th><th className="p-3">Acciones</th></tr></thead>
+              <tbody>{filteredLibranzas.map(row=><tr className="border-b border-line" key={row.id}>
+                <td className="p-3"><strong>{row.employee_name || reportEmployeeCode(row)}</strong><p className="text-xs text-neutral-500">{reportEmployeeCode(row)}</p></td>
+                <td className="p-3">{row.concept_name}<p className="text-xs text-neutral-500">{row.frequency==="mes"?"Mensual":"Quincenal"} · {row.mode==="cuotas"?"Por cuotas":"Permanente"}</p></td>
+                <td className="p-3 text-right">{money(row.installment_amount)}</td><td className="p-3 text-right">{money(row.deducted_amount)}<p className="text-xs text-neutral-500">de {row.mode==="perpetua"?"Permanente":money(row.original_amount)}</p></td>
+                <td className="p-3 text-right font-semibold">{row.mode==="perpetua"?"Permanente":money(row.balance_amount)}</td><td className="p-3">{row.status}</td>
+                <td className="p-3"><button type="button" aria-label={`Ver libranza ${row.id}`} className="rounded-md border border-line px-3 py-2" onClick={()=>setSelectedLibranzaId(row.id)}>Ver detalle</button>{row.mode==="perpetua" && row.status==="activa" ? <button type="button" className="mt-2 text-red-700" onClick={()=>void inactivateLibranza(row)}>Inactivar</button>:null}</td>
+              </tr>)}{!filteredLibranzas.length ? <tr><td className="p-6 text-center text-neutral-500" colSpan={7}>No hay libranzas con los filtros actuales.</td></tr>:null}</tbody>
             </table>
           </div>
         </section>
+        <aside className={hrStyles.panel} aria-label="Detalle de libranza"><h2>Detalle de libranza</h2>{selectedLibranza ? <>
+          <p>{selectedLibranza.status}</p><div className={hrStyles.identity}><div><strong>{selectedLibranza.employee_name || reportEmployeeCode(selectedLibranza)}</strong><small>{reportEmployeeCode(selectedLibranza)}</small></div></div>
+          <h2>{selectedLibranza.concept_name}</h2><p>{selectedLibranza.concept_code} · {selectedLibranza.mode === "perpetua" ? "Permanente" : "Por cuotas"}</p><HrNet label="Valor por periodo" value={money(selectedLibranza.installment_amount)} />
+          <dl><div><dt>Frecuencia</dt><dd>{selectedLibranza.frequency==="mes"?"Mensual":"Quincenal"}</dd></div><div><dt>Pagado</dt><dd>{money(selectedLibranza.deducted_amount)}</dd></div><div><dt>Saldo</dt><dd>{selectedLibranza.mode==="perpetua"?"Permanente":money(selectedLibranza.balance_amount)}</dd></div><div><dt>Inicio</dt><dd>{selectedLibranza.start_date?.slice(0,10) || "—"}</dd></div><div><dt>Inactivada</dt><dd>{selectedLibranza.inactive_at?.slice(0,10) || "—"}</dd></div><div><dt>Cuotas aplicadas</dt><dd>{selectedLibranza.installments_paid} / {selectedLibranza.installments_total || "—"}</dd></div></dl>
+          {selectedLibranza.mode==="cuotas" && Number(selectedLibranza.original_amount)>0 ? <div className={hrStyles.progress} aria-label="Progreso del pago"><span style={{width:`${Math.min(100,Math.max(0,Number(selectedLibranza.deducted_amount)/Number(selectedLibranza.original_amount)*100))}%`}} /></div> : null}
+          <p className={hrStyles.hint}>{selectedLibranza.description || "Sin observaciones"}</p>
+        </> : <p>Selecciona una libranza del reporte.</p>}</aside>
+        </div></>
       ) : null}
 
       {employeeFinderOpen ? (

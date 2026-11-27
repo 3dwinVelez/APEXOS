@@ -32,6 +32,22 @@ test("el reporte genera un XLSX real, ordenado y filtrable", async () => {
   assert.equal(sheet.views[0].ySplit, 5);
 });
 
+test("los totales quedan fuera de los datos, conservan precision y se actualizan con filtros de Excel", async () => {
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.load(await buildXlsxWorkbook([{
+    name: "Minutos", title: "Minutos sin redondeo acumulado",
+    columns: [{ key: "nombre", label: "Empleado" }, { key: "horas", label: "Horas", numberFormat: "0.00" }],
+    rows: Array.from({ length: 14 }, () => ({ nombre: "Persona", horas: 1 / 60 })),
+    totals: { nombre: "TOTAL", horas: 14 / 60 }
+  }]));
+  const sheet = book.getWorksheet("Minutos");
+  assert.equal(sheet.getCell("A20").value, "TOTAL");
+  assert.equal(sheet.getCell("B20").value.formula, "SUBTOTAL(109,B6:B19)");
+  assert.ok(Math.abs(sheet.getCell("B20").value.result - 14 / 60) < 1e-12);
+  assert.equal(sheet.getTable("ApexosMinutosTable").table.autoFilterRef, "A5:B19");
+  assert.ok(Math.abs(sheet.getCell("B6").value - 1 / 60) < 1e-12);
+});
+
 test("la pantalla aplica rango al origen, filtros inteligentes y descarga xlsx", () => {
   const page = fs.readFileSync(path.join(root, "apps/web/app/dashboard/talento-humano/reportes/page.tsx"), "utf8");
   const api = fs.readFileSync(path.join(root, "apps/web/lib/api.ts"), "utf8");

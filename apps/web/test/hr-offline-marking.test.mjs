@@ -455,7 +455,11 @@ test("D: las escrituras self-service de HR tampoco caen al respaldo Supabase", (
   const guard = api.slice(start, api.indexOf("\n}", start) + 2);
 
   assert.match(guard, /const hrSelfServiceWrite = pathname\.startsWith\("\/api\/v1\/hr\/self\/"\);/);
-  assert.match(guard, /return method !== "GET" && \(criticalWritePaths\.has\(pathname\) \|\| hrRouteDetailWrite \|\| hrSelfServiceWrite\);/);
+  assert.match(guard, /return method !== "GET" && \(criticalWritePaths\.has\(pathname\) \|\| hrRouteDetailWrite \|\| hrSelfServiceWrite(?: \|\| \w+Write)+\);/);
+  // Las escrituras del frente biométrico entraron despues y tambien deben quedar bloqueadas:
+  // si alguien las saca de la compuerta, este control tiene que ponerse rojo.
+  assert.match(guard, /const hrSharedDeviceWrite = /);
+  assert.match(guard, /const hrFaceWrite = /);
   // Lo ya certificado por hr-route-write-fallback.test.mjs se conserva intacto.
   assert.match(guard, /"\/api\/v1\/hr\/routes"/);
   assert.match(guard, /"\/api\/v1\/hr\/routes\/bulk"/);

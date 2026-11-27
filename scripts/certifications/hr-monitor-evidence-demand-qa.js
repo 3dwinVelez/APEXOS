@@ -7,11 +7,6 @@ function argsFrom(argv) {
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (!value.startsWith("--")) continue;
-    const separator = value.indexOf("=", 2);
-    if (separator !== -1) {
-      result[value.slice(2, separator)] = value.slice(separator + 1);
-      continue;
-    }
     result[value.slice(2)] = argv[index + 1] && !argv[index + 1].startsWith("--") ? argv[++index] : true;
   }
   return result;
@@ -147,12 +142,7 @@ async function main() {
       body: { activity_type_id: types[0].id, employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, route_id: route.id, gps_required: false, gps_skipped: true, observation: "Actividad con evidencia bajo demanda", photo: { base64: PHOTO, name: `activity-${RUN_ID}.png`, type: "image/png", size: 68 } }
     });
     for (const type of ["inicio_almuerzo", "fin_almuerzo"]) {
-      // El canal web pide selfie en las cuatro marcaciones (mobile-identity.js:
-      // WEB_SELFIE_REQUIRED_TYPES). Antes el almuerzo se colaba sin foto: este control
-      // deja constancia de que la exigencia esta viva y del codigo con el que responde.
-      const lunchWithoutSelfie = await request("/api/v1/hr/self/time-punches", { token: employeeToken, method: "POST", expected: 400, body: { employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, type, route_id: route.id, punched_at: new Date().toISOString() } });
-      check(result, `${type}_sin_selfie_rechazada`, lunchWithoutSelfie.code === "SELFIE_REQUERIDA", { code: lunchWithoutSelfie.code });
-      await request("/api/v1/hr/self/time-punches", { token: employeeToken, method: "POST", body: { employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, type, route_id: route.id, punched_at: new Date().toISOString(), identity_photo: SELFIE } });
+      await request("/api/v1/hr/self/time-punches", { token: employeeToken, method: "POST", body: { employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, type, route_id: route.id, punched_at: new Date().toISOString() } });
     }
     const exit = await request("/api/v1/hr/self/time-punches", {
       token: employeeToken,

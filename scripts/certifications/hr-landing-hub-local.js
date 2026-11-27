@@ -17,11 +17,10 @@ const HUB_PATH = '/dashboard/talento-humano';
 const HUB_SECTION = 'section[aria-label="Herramientas activas de talento humano"]';
 const EXPECTED_ACCESS_HREFS = [
   '/dashboard/talento-humano/rutas',
-  '/dashboard/talento-humano/mallas',
-  '/dashboard/talento-humano/marcacion',
   '/dashboard/talento-humano/novedades',
   '/dashboard/talento-humano/mapa',
   '/dashboard/talento-humano/empleados',
+  '/dashboard/talento-humano/bancos',
   '/dashboard/talento-humano/entidades',
   '/dashboard/talento-humano/configuracion-laboral',
   '/dashboard/talento-humano/nomina',
@@ -201,7 +200,7 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
           result.opened_screens = opened;
         });
 
-        await check('hub stays reachable from each destination and keeps the same fifteen accesses', async () => {
+        await check('hub stays reachable from each destination and keeps the same fourteen accesses', async () => {
           const returns = {};
           for (const href of EXPECTED_ACCESS_HREFS) {
             await warm(href);
