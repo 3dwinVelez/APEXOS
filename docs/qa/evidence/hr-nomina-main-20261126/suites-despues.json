@@ -1,0 +1,505 @@
+{
+  "promocion": "hr-nomina-horarios-main-20261126",
+  "etiqueta": "despues",
+  "head": "05886b09b46e62c98de7c5b043119c84f5ea3ced",
+  "instrument": "node --test --no-warnings <archivo>, resolucion de modulos subiendo al node_modules raiz",
+  "ejecutado_en": "2026-11-27T03:46:54.773Z",
+  "resumen": {
+    "archivos": 60,
+    "tests": 421,
+    "pass": 417,
+    "fail": 4,
+    "ausentes": 0
+  },
+  "resultados": [
+    {
+      "archivo": "apps/api/test/hr-accumulated-ordinary-time.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-adjustment-calendar-concept.test.js",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-administrative-punch-correction.test.js",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-banks.test.js",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-contract-calendar-date.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-date-assignments.test.js",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-davivienda-bank-file.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-day-review.test.js",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-deferred-marking-offline.test.js",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-employee-organization.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-employee-user-link.test.js",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-evidence-backfill-tool.test.js",
+      "tests": 7,
+      "pass": 4,
+      "fail": 3,
+      "fallidos": [
+        "sin ambiente declarado no hay corrida, y el modo por defecto es dry",
+        "--keep-inline solo existe sobre una escritura declarada",
+        "el tenant y la rama se validan antes de leer configuracion"
+      ],
+      "exito": false,
+      "clasificacion": "ROJO ambiental conocido: config/qa.env gitignoreado, no existe en checkout limpio; idéntico en ANTES con el mismo blob. No introduce regresión (mismo test, mismo árbol base)."
+    },
+    {
+      "archivo": "apps/api/test/hr-evidence-resilience.test.js",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-evidence-storage-gate.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-gps-metadata-projection.test.js",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-ibc-caps-floors.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-labor-rates-vigencia.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-list-truncation.test.js",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-marking-concurrency-certificate.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-marking-concurrency.test.js",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-marking-declared-employee.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-marking-kilometraje-conflict.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-marking-only-rbac.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-mobile-identity.test.js",
+      "tests": 40,
+      "pass": 40,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-monitor-evidence-columns.test.js",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-monitor-evidence-demand.test.js",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-monitor-silent-failures.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-nomina-legal-2026.test.js",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-operations-map-contract.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-adjustment-lock.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-adjustment-permission.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-close-provisions.test.js",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-period.test.js",
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-receipt-pdf.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-social-contributions-bulk.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-workdays.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-punch-mobile-evidence.test.js",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-reports-range.test.js",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-route-assignment-lock.test.js",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-route-event-summaries.test.js",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-route-physical-deletion-contract.test.js",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-route-physical-deletion.test.js",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-single-active-schedule-certificate.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-single-selfie-gate.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-social-contribution-segments.test.js",
+      "tests": 21,
+      "pass": 21,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-termination-benefits.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-termination-deductions.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-termination-manual-adjustments.test.js",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-user-association.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-workday-novelties-contract.test.js",
+      "tests": 24,
+      "pass": 24,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-workday-novelties-policy.test.js",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/api/test/hr-workdays-projection.test.js",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/web/test/payroll-display.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/web/test/hr-time-report.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/web/test/hr-schedule-timeline-view.test.mjs",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/web/test/hr-davivienda-bank-file-ui.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/web/test/hr-workday-novelties-ui.test.mjs",
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/web/test/hr-reports-xlsx.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    },
+    {
+      "archivo": "apps/web/test/hr-landing-information-architecture.test.mjs",
+      "tests": 5,
+      "pass": 4,
+      "fail": 1,
+      "fallidos": [
+        "la portada expone como acceso cada pantalla del modulo, incluida nomina"
+      ],
+      "exito": false,
+      "clasificacion": "MEDICION FUERA DE INVENTARIO: la ruta ya no es cambio del candidato (05886b09 la devuelve al blob exacto de origin/main, ec85d10c). Se corre solo como control y replica el ROJO preexistente de main: falla \"la portada expone como acceso cada pantalla del modulo, incluida nomina\" porque page.tsx no viaja y main tampoco tiene el href literal exigido. No forma parte del DESPUES promovido."
+    },
+    {
+      "archivo": "apps/web/test/hr-punch-mobile-evidence.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "exito": true
+    }
+  ],
+  "instrumento": "node --test --no-warnings <archivo>, conductor .tmp/qa-hr-gate-20261127/run-suites.js"
+}

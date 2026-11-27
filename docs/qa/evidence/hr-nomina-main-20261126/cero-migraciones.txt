@@ -1,0 +1,34 @@
+CERO MIGRACIONES - porton hr-nomina-horarios-main-20261126
+candidato: 05886b09b46e62c98de7c5b043119c84f5ea3ced
+destino:   origin/main 0ec1cff04c1b48a8a7d76b1219223efc76689164
+medido:    2026-11-26T22:49:47-05:00
+
+$ git diff --name-only origin/main HEAD -- apps/api/prisma/
+-> salida vacia: el candidato no anade, modifica ni borra ni un archivo de prisma
+
+$ conteo de archivos migration.sql
+origin/main:      72
+candidato HEAD:   72
+origin/develop:   75
+-> develop trae 3 migraciones mas (las del frente biometrico) y ninguna viaja:
+     apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql
+     apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql
+     apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql
+
+$ blob de apps/api/prisma/schema.prisma
+origin/main:    a0d4c6b7f21788d98c32074c4727af0b27a9fb35
+candidato HEAD: a0d4c6b7f21788d98c32074c4727af0b27a9fb35
+origin/develop: 6d173d8180675df29bc6bb7aa7de0de52dd41b44
+-> identico entre el destino y el candidato; el de develop NO viaja (anade las 3 tablas biomtricas)
+
+VEREDICTO: 0 rutas de migracion y 0 cambios de schema en la promocion.
+Produccion no recibe DDL. El ledger _prisma_migrations queda exactamente como esta hoy
+(72 aplicadas / 72 en repo, medido el 2026-11-26 en docs/qa/evidence/produccion-desplegada-tres-cuentas-20261126/).
+Cero escrituras de registros de cliente: este transporte no ejecuta migrate, no ejecuta
+backfill y ninguna ruta del inventario toca datos en reposo.
+
+\$ npx prisma migrate status --schema prisma/schema.prisma   (base de Produccion, solo lectura)
+72 migrations found in prisma/migrations
+Database schema is up to date!
+-> medida authoritative: Prisma 5.22 no ve NINGUNA migracion pendiente contra la base de
+   Produccion vigente. El pre-deploy `prisma migrate deploy` del despliegue no aplica DDL.

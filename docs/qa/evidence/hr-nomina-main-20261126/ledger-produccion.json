@@ -1,0 +1,29 @@
+{
+  "medido_en": "2026-11-27T03:51:13.442Z",
+  "consulta": "GET _prisma_migrations (solo lectura, service role del ambiente)",
+  "candidato": "05886b09b46e62c98de7c5b043119c84f5ea3ced",
+  "origin_main": "0ec1cff04c1b48a8a7d76b1219223efc76689164",
+  "filas_del_ledger": 73,
+  "terminadas": 72,
+  "sin_finalizar": [
+    "20260814003500_sales_invoicing_cxc"
+  ],
+  "migraciones_en_el_arbol_del_candidato": 72,
+  "migraciones_en_el_arbol_de_origin_main": 72,
+  "iguales_al_arbol_de_main": true,
+  "aplicaria_en_produccion": [],
+  "deuda_ajena_del_arbol": [],
+  "veredicto": "CERO DDL: el arbol del candidato no trae ninguna migracion sin aplicar en Produccion",
+  "control_de_mutacion": {
+    "arbol": "origin/develop",
+    "migraciones": 75,
+    "pendientes": [
+      "20261121230000_hr_shared_devices",
+      "20261122060000_hr_face_enrollments",
+      "20261122120000_hr_webauthn_credentials"
+    ],
+    "pudo_fallar": true,
+    "esperado": "rojo: develop trae DDL que Produccion no tiene",
+    "resultado": "rojo (detectado)"
+  }
+}

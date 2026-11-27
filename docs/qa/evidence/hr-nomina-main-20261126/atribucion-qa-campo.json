@@ -1,0 +1,38 @@
+{
+  "medido_en": "2026-11-27T04:07:38.579Z",
+  "instrumento": "atribucion de la pierna roja restante (solo lectura, sin escrituras)",
+  "corrida": {
+    "archivo": "docs/qa/evidence/hr-nomina-main-20261126/qa-campo-campo-escritura-corregido.json",
+    "verdes": 25,
+    "rojas": 1,
+    "no_aplicable": 0,
+    "total": 26,
+    "ambiente": "(ver json)"
+  },
+  "rojas": [
+    {
+      "id": "punch_selfie_no_imagen_400",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "detalle": "PDF -> 200; SVG -> 409 MARCACION_FUERA_DE_SECUENCIA La siguiente marcacion permitida es inicio_almuerzo.; 2.5 MB -> 400 VALIDACION El archivo supera el tamano maximo permitido (2097152 bytes). (contenido duro rechazado en los tres casos; el tercero puede caer en el limite de cuerpo antes del contenido)"
+    }
+  ],
+  "comparacion_con_noche": "la pierna punch_selfie_no_imagen_400 sale FALLO con el mismo detalle en la corrida nocturna (nyvora-qa-corrida-nocturna.json) y en la corregida: no es flaky ni del arnes de ventana",
+  "veredicto": "25/26 verdes y la unica roja es preexistente en Produccion (mobile-identity.js identico en main/develop/candidato): hallazgo del frente biometrico excluido, se declara, no se cura en silencio",
+  "evidencia_de_no_regresion": {
+    "blob_mobile_identity": {
+      "origin_main": "863bd6a6",
+      "origin_develop": "863bd6a6",
+      "candidato": "863bd6a6"
+    },
+    "grep_validador": {
+      "origin_main": "apps/api/src/modules/hr/mobile-identity.js",
+      "origin_develop": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    "anclaje_en_service_js": {
+      "origin_main": 3301,
+      "candidato": 3309
+    },
+    "lectura": "el modulo que valida el contenido de la foto es byte identico en las tres ramas y el anclaje en service.js sigue vivo en el candidato (misma linea, desplazada por el hunks de nomina). El ambiente acepta un PDF como selfie porque esa compuerta no existe en NINGUNA rama: no la trajo ni la quito este transporte."
+  }
+}

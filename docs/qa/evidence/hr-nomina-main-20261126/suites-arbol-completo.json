@@ -1,0 +1,93 @@
+{
+  "medido_en": "2026-11-27T04:07:56.205Z",
+  "instrumento": "corrida completa del arbol (no solo el subset HR) sobre la linea base y sobre el candidato",
+  "linea_base_ausentes": {
+    "archivos_que_solo_existen_en_el_candidato": [
+      "apps/api/test/hr-accumulated-ordinary-time.test.js",
+      "apps/api/test/hr-adjustment-calendar-concept.test.js",
+      "apps/api/test/hr-contract-calendar-date.test.js",
+      "apps/api/test/hr-davivienda-bank-file.test.js",
+      "apps/web/test/hr-davivienda-bank-file-ui.test.mjs",
+      "apps/web/test/hr-schedule-timeline-view.test.mjs",
+      "apps/web/test/hr-time-report.test.mjs",
+      "apps/web/test/payroll-display.test.mjs"
+    ],
+    "archivos_que_desaparecen_del_arbol": [],
+    "lectura": "8 archivos de prueba nuevos (4 api + 4 web) y 0 desaparecen: el candidato suma cobertura, no la quita"
+  },
+  "antes": {
+    "commit": "0ec1cff04c1b48a8a7d76b1219223efc76689164",
+    "api": {
+      "archivos": 162,
+      "tests": 1268,
+      "pass": 1256,
+      "fail": 9,
+      "rojos": [
+        "apps/api/test/accounting-routes-contract.test.js:1",
+        "apps/api/test/core-tenant-models.test.js:1",
+        "apps/api/test/hr-marking-concurrency.test.js:1",
+        "apps/api/test/offline-bootstrap.test.js:1",
+        "apps/api/test/petty-cash-vouchers.test.js:1",
+        "apps/api/test/serverless-handler.test.js:1",
+        "apps/api/test/telemetry-client-logs-public.test.js:1",
+        "apps/api/test/transport-tms-foundation.test.js:1",
+        "apps/api/test/trust-proxy.test.js:1"
+      ]
+    },
+    "web": {
+      "archivos": 117,
+      "tests": 868,
+      "pass": 860,
+      "fail": 8,
+      "rojos": [
+        "apps/web/test/hr-landing-information-architecture.test.mjs:1",
+        "apps/web/test/hr-punch-mobile-evidence.test.mjs:1",
+        "apps/web/test/ibc-nomina-ui.test.mjs:4",
+        "apps/web/test/transport-print-theme.test.mjs:1",
+        "apps/web/test/transport-pyg-account-config.component.test.mjs:1"
+      ]
+    }
+  },
+  "despues": {
+    "commit": "05886b09b46e62c98de7c5b043119c84f5ea3ced",
+    "api": {
+      "archivos": 166,
+      "tests": 1288,
+      "pass": 1277,
+      "fail": 8,
+      "rojos": [
+        "apps/api/test/accounting-routes-contract.test.js:1",
+        "apps/api/test/core-tenant-models.test.js:1",
+        "apps/api/test/offline-bootstrap.test.js:1",
+        "apps/api/test/petty-cash-vouchers.test.js:1",
+        "apps/api/test/serverless-handler.test.js:1",
+        "apps/api/test/telemetry-client-logs-public.test.js:1",
+        "apps/api/test/transport-tms-foundation.test.js:1",
+        "apps/api/test/trust-proxy.test.js:1"
+      ]
+    },
+    "web": {
+      "archivos": 121,
+      "tests": 892,
+      "pass": 885,
+      "fail": 7,
+      "rojos": [
+        "apps/web/test/hr-landing-information-architecture.test.mjs:1",
+        "apps/web/test/ibc-nomina-ui.test.mjs:4",
+        "apps/web/test/transport-print-theme.test.mjs:1",
+        "apps/web/test/transport-pyg-account-config.component.test.mjs:1"
+      ]
+    }
+  },
+  "comparacion": {
+    "api_rojos_nuevos": [],
+    "web_rojos_nuevos": [],
+    "api_curados": [
+      "apps/api/test/hr-marking-concurrency.test.js"
+    ],
+    "web_curados": [
+      "apps/web/test/hr-punch-mobile-evidence.test.mjs"
+    ]
+  },
+  "conclusion": "CERO rojos nuevos en el arbol completo: API 1256/1268 -> 1277/1288 (archivos rojos 9 -> 8), Web 860/868 -> 885/892 (archivos rojos 5 -> 4). Se curan 2: apps/api/test/hr-marking-concurrency.test.js, apps/web/test/hr-punch-mobile-evidence.test.mjs"
+}

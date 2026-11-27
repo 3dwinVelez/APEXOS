@@ -1,0 +1,154 @@
+{
+  "instrumento": "promotion-migration-check",
+  "origen": "origin/develop (binario certificado en QA: a440560d)",
+  "origin_ref": "origin/develop",
+  "base_ref": "origin/main",
+  "against": "commit",
+  "file": "HEAD",
+  "candidato": "05886b09b46e62c98de7c5b043119c84f5ea3ced",
+  "nota": "Replay por ruta develop->main del frente nomina y horarios. 35 rutas carry byte a byte contra origin/develop; 4 fusiones nombradas (service.js, routes.js, schema.js, reportes/page.tsx) excluyen el hunk biometrico por decision expresa del dueno y se declaran en origin_waivers del manifiesto de alcance. Cero borrados: la seccion delete queda vacia porque el inventario no elimina rutas.",
+  "carry": [
+    {
+      "file": "apps/api/src/modules/hr/accumulatedOrdinaryTime.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/api/src/modules/hr/adjustmentCalendarConcept.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/api/src/modules/hr/banks.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/api/src/modules/hr/contractCalendarDate.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/api/src/modules/hr/contractFoundationRepair.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/api/src/modules/hr/davivienda-file.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/api/test/hr-accumulated-ordinary-time.test.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/api/test/hr-adjustment-calendar-concept.test.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/api/test/hr-contract-calendar-date.test.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/api/test/hr-davivienda-bank-file.test.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/api/test/hr-deferred-marking-offline.test.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/api/test/hr-marking-concurrency.test.js",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/libranzas/page.tsx",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/nomina/payroll.module.css",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/provisiones/page.tsx",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/components/hr/HrWorkspace.module.css",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/components/hr/HrWorkspace.tsx",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/lib/hrScheduleMonitor.ts",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/lib/hrTimeReport.ts",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/lib/payrollDisplay.ts",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/lib/reportExports.ts",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/test/hr-davivienda-bank-file-ui.test.mjs",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/test/hr-punch-mobile-evidence.test.mjs",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/test/hr-reports-xlsx.test.mjs",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/test/hr-schedule-timeline-view.test.mjs",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/test/hr-time-report.test.mjs",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs",
+      "from_ref": "origin/develop"
+    },
+    {
+      "file": "apps/web/test/payroll-display.test.mjs",
+      "from_ref": "origin/develop"
+    }
+  ],
+  "delete": [],
+  "edit": []
+}

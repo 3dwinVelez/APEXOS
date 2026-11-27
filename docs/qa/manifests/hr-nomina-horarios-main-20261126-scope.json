@@ -1,0 +1,797 @@
+{
+  "scope_schema_version": 2,
+  "transport": "replay_por_ruta_desde_origin_develop_con_cuatro_fusiones_blob_nombradas",
+  "change_id": "hr-nomina-horarios-main-20261126",
+  "creado": "2026-11-26T23:30:00-05:00",
+  "autorizado": "dueno del proyecto (Edwin), 2026-11-26: viaja SOLO el frente de nomina y horarios; el frente biometrico (huella WebAuthn, rostro, celulares compartidos, sus 4 modulos, sus paginas, sus tests y las 3 migraciones 20261121230000_hr_shared_devices / 20261122060000_hr_face_enrollments / 20261122120000_hr_webauthn_credentials) queda FUERA. Cero migraciones y cero escrituras de registros: el frente usa tablas que Produccion ya tiene. Este manifiesto NO autoriza push, merge, deploy, force push ni escritura en la base de Produccion.",
+  "target_branch": "main",
+  "source_branch": "develop",
+  "promotion_branch": "(HEAD despegado 05886b09 en .tmp/wt-hr-main-20261126, sin rama nueva)",
+  "base_commits": {
+    "main": "0ec1cff04c1b48a8a7d76b1219223efc76689164",
+    "develop": "a440560d7f04781166b05ac85b130c74d2bf9b43",
+    "desarrollo": "dad33b30f4b8f7c7b18e12e06350b204c17cbff9"
+  },
+  "base_commit": "0ec1cff04c1b48a8a7d76b1219223efc76689164",
+  "target_head": "0ec1cff04c1b48a8a7d76b1219223efc76689164",
+  "certified_commit": "05886b09b46e62c98de7c5b043119c84f5ea3ced",
+  "binario_certificado_en_qa": "a440560d7f04781166b05ac85b130c74d2bf9b43",
+  "candidate_source": {
+    "branch": "develop",
+    "commit": "a440560d7f04781166b05ac85b130c74d2bf9b43",
+    "nota": "El candidato nace sobre origin/main (0ec1cff0) y recibe por replay de rutas los blobs de origin/develop (a440560d) del frente de nomina y horarios, EXCEPTO cuatro rutas fusionadas (ver origin_waivers) donde el blob del candidato no es identico ni al de develop ni al de desarrollo porque excluye el hunk biometrico. Medido contra 05886b09: 35 de 39 rutas son blob a blob las de origin/develop; 4 son fusiones nombradas."
+  },
+  "naturaleza": "Porton funcional a Produccion: el frente de nomina y horarios de Talento Humano (nomina quincenal, liquidacion, prestaciones, provisiones, libranzas, aportes sociales, davivienda, reporte de tiempo, linea de tiempo de horarios y workspace HR) sube a main SIN el frente biometrico y SIN ninguna migracion: cero DDL, cero escrituras de registros, solo lectura y calculo sobre tablas que Produccion ya sirve.",
+  "change_intent": {
+    "modules": [
+      "hr-payroll",
+      "hr-schedule-monitor",
+      "hr-time-report",
+      "hr-workspace-frontend",
+      "hr-api-contracts"
+    ],
+    "summary": "Inventario exacto: 39 rutas (22 A, 17 M, 0 D), todas del frente de nomina y horarios bajo apps/api/src/modules/hr, apps/api/test y apps/web. Cero rutas bajo packages/, infra/, apps/control-tower/, agents/**, apps/api/prisma/** (cero migraciones). El frente biometrico y las cinco rutas cuyo delta en develop es biometrico o de otro frente (apps/web/lib/api.ts, apps/web/lib/moduleFunctions.ts, apps/web/app/dashboard/talento-humano/page.tsx, apps/web/test/module-portfolio.test.mjs, apps/web/test/command-palette-module-functions.test.mjs) quedan deliberadamente fuera."
+  },
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/accumulatedOrdinaryTime.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/adjustmentCalendarConcept.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/banks.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/contractCalendarDate.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/contractFoundationRepair.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/davivienda-file.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-accumulated-ordinary-time.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-adjustment-calendar-concept.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-contract-calendar-date.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-davivienda-bank-file.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-deferred-marking-offline.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-marking-concurrency.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/libranzas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/payroll.module.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/provisiones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/HrWorkspace.module.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/HrWorkspace.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrScheduleMonitor.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/hrTimeReport.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/payrollDisplay.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/reportExports.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-davivienda-bank-file-ui.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-punch-mobile-evidence.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-reports-xlsx.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-schedule-timeline-view.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-time-report.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/payroll-display.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/atribucion-qa-campo.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/cero-migraciones.txt",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/certification-candidato-local.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/control-ausencia-biometrica-negativo-desarrollo.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/control-ausencia-biometrica.js",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/control-ausencia-biometrica.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/control-de-mutacion.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/hr-paquete-main-qa-corregido.js",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/invariantes-main.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/ledger-produccion.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/mide-ledger-produccion.js",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/nyvora-qa-corrida-nocturna.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/porton-alcance.txt",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/porton-aprobacion.txt",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/qa-campo-campo-escritura-corregido.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/resultados.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/resultados.md",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/spec-invariantes-main.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/suites-antes.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/suites-arbol-completo.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/suites-despues.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/admin-inactive-reactivation-main-20261120-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/admin-inactive-reactivation-main-20261120-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/auth-latency-single-statement-main-20261123-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/auth-latency-single-statement-main-20261123-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/boton-abre-directo-develop-20261126-preqa.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/boton-abre-directo-develop-20261126-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/boton-abre-directo-main-20261126-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/boton-abre-directo-main-20261126-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/cero-rechazos-foto-web-main-20261124-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/cierre-despues-produccion-develop-20261124-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/cierre-despues-produccion-main-20261124-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/cierre-despues-produccion-main-20261124-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/fase-3-ad-main-20261120-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/fase-3-ad-main-20261120-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-mallas-sync-production-20261123-qa.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-mallas-sync-production-20261123-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marca-ladder-main-20261123-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marca-ladder-main-20261123-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marking-gate-20261117-main-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marking-gate-20261117-main-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-monitor-evidence-by-reference-20261119-main-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-monitor-evidence-by-reference-20261119-main-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-nomina-horarios-main-20261126-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-nomina-horarios-main-20261126-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-paquete-main-20261123-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-paquete-main-20261123-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/modal-empresa-flotante-main-20261109-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/modal-empresa-flotante-main-20261109-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/nomina-legal-2026-20261113-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/nomina-legal-2026-20261113-main-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/nomina-legal-2026-20261113-preqa.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/nomina-legal-2026-20261113-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/plan-candado-main-20261109-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/seguridad-plan-candado-main-20261109-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/sesion-main-20261108-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/sesion-main-20261108-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-main-20261119-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-main-20261119-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-seq-main-20261120-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-seq-main-20261120-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-main-20261124-approval.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/web-selfie-cuatro-marcaciones-main-20261124-scope.json",
+      "motivo": "artefacto del porton: evidencia o manifiesto que la compuerta del destino exige ver en el candidato"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/accumulatedOrdinaryTime.js",
+    "apps/api/src/modules/hr/adjustmentCalendarConcept.js",
+    "apps/api/src/modules/hr/banks.js",
+    "apps/api/src/modules/hr/contractCalendarDate.js",
+    "apps/api/src/modules/hr/contractFoundationRepair.js",
+    "apps/api/src/modules/hr/davivienda-file.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-accumulated-ordinary-time.test.js",
+    "apps/api/test/hr-adjustment-calendar-concept.test.js",
+    "apps/api/test/hr-contract-calendar-date.test.js",
+    "apps/api/test/hr-davivienda-bank-file.test.js",
+    "apps/api/test/hr-deferred-marking-offline.test.js",
+    "apps/api/test/hr-marking-concurrency.test.js",
+    "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+    "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/libranzas/page.tsx",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/payroll.module.css",
+    "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx",
+    "apps/web/app/dashboard/talento-humano/provisiones/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/components/hr/HrWorkspace.module.css",
+    "apps/web/components/hr/HrWorkspace.tsx",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/lib/hrTimeReport.ts",
+    "apps/web/lib/payrollDisplay.ts",
+    "apps/web/lib/reportExports.ts",
+    "apps/web/test/hr-davivienda-bank-file-ui.test.mjs",
+    "apps/web/test/hr-punch-mobile-evidence.test.mjs",
+    "apps/web/test/hr-reports-xlsx.test.mjs",
+    "apps/web/test/hr-schedule-timeline-view.test.mjs",
+    "apps/web/test/hr-time-report.test.mjs",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "apps/web/test/payroll-display.test.mjs",
+    "docs/qa/evidence/hr-nomina-main-20261126/atribucion-qa-campo.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/cero-migraciones.txt",
+    "docs/qa/evidence/hr-nomina-main-20261126/certification-candidato-local.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/control-ausencia-biometrica-negativo-desarrollo.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/control-ausencia-biometrica.js",
+    "docs/qa/evidence/hr-nomina-main-20261126/control-ausencia-biometrica.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/control-de-mutacion.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/hr-paquete-main-qa-corregido.js",
+    "docs/qa/evidence/hr-nomina-main-20261126/invariantes-main.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/ledger-produccion.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/mide-ledger-produccion.js",
+    "docs/qa/evidence/hr-nomina-main-20261126/nyvora-qa-corrida-nocturna.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/porton-alcance.txt",
+    "docs/qa/evidence/hr-nomina-main-20261126/porton-aprobacion.txt",
+    "docs/qa/evidence/hr-nomina-main-20261126/qa-campo-campo-escritura-corregido.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/resultados.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/resultados.md",
+    "docs/qa/evidence/hr-nomina-main-20261126/spec-invariantes-main.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/suites-antes.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/suites-arbol-completo.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/suites-despues.json",
+    "docs/qa/manifests/admin-inactive-reactivation-main-20261120-approval.json",
+    "docs/qa/manifests/admin-inactive-reactivation-main-20261120-scope.json",
+    "docs/qa/manifests/auth-latency-single-statement-main-20261123-approval.json",
+    "docs/qa/manifests/auth-latency-single-statement-main-20261123-scope.json",
+    "docs/qa/manifests/boton-abre-directo-develop-20261126-preqa.json",
+    "docs/qa/manifests/boton-abre-directo-develop-20261126-scope.json",
+    "docs/qa/manifests/boton-abre-directo-main-20261126-approval.json",
+    "docs/qa/manifests/boton-abre-directo-main-20261126-scope.json",
+    "docs/qa/manifests/cero-rechazos-foto-web-main-20261124-approval.json",
+    "docs/qa/manifests/cero-rechazos-foto-web-main-20261124-scope.json",
+    "docs/qa/manifests/cierre-despues-produccion-develop-20261124-scope.json",
+    "docs/qa/manifests/cierre-despues-produccion-main-20261124-approval.json",
+    "docs/qa/manifests/cierre-despues-produccion-main-20261124-scope.json",
+    "docs/qa/manifests/fase-3-ad-main-20261120-approval.json",
+    "docs/qa/manifests/fase-3-ad-main-20261120-scope.json",
+    "docs/qa/manifests/hr-mallas-sync-production-20261123-qa.json",
+    "docs/qa/manifests/hr-mallas-sync-production-20261123-scope.json",
+    "docs/qa/manifests/hr-marca-ladder-main-20261123-approval.json",
+    "docs/qa/manifests/hr-marca-ladder-main-20261123-scope.json",
+    "docs/qa/manifests/hr-marking-gate-20261117-main-approval.json",
+    "docs/qa/manifests/hr-marking-gate-20261117-main-scope.json",
+    "docs/qa/manifests/hr-monitor-evidence-by-reference-20261119-main-approval.json",
+    "docs/qa/manifests/hr-monitor-evidence-by-reference-20261119-main-scope.json",
+    "docs/qa/manifests/hr-nomina-horarios-main-20261126-approval.json",
+    "docs/qa/manifests/hr-nomina-horarios-main-20261126-scope.json",
+    "docs/qa/manifests/hr-paquete-main-20261123-approval.json",
+    "docs/qa/manifests/hr-paquete-main-20261123-scope.json",
+    "docs/qa/manifests/modal-empresa-flotante-main-20261109-approval.json",
+    "docs/qa/manifests/modal-empresa-flotante-main-20261109-scope.json",
+    "docs/qa/manifests/monitor-latencia-brief-develop-20261124-scope.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-main-approval.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-main-scope.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-preqa.json",
+    "docs/qa/manifests/monitor-latencia-sesion-20261124-scope.json",
+    "docs/qa/manifests/nomina-legal-2026-20261113-approval.json",
+    "docs/qa/manifests/nomina-legal-2026-20261113-main-scope.json",
+    "docs/qa/manifests/nomina-legal-2026-20261113-preqa.json",
+    "docs/qa/manifests/nomina-legal-2026-20261113-scope.json",
+    "docs/qa/manifests/plan-candado-main-20261109-approval.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-approval.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-scope.json",
+    "docs/qa/manifests/seguridad-plan-candado-main-20261109-scope.json",
+    "docs/qa/manifests/sesion-main-20261108-approval.json",
+    "docs/qa/manifests/sesion-main-20261108-scope.json",
+    "docs/qa/manifests/technical-alert-silence-main-20261119-approval.json",
+    "docs/qa/manifests/technical-alert-silence-main-20261119-scope.json",
+    "docs/qa/manifests/technical-alert-silence-seq-main-20261120-approval.json",
+    "docs/qa/manifests/technical-alert-silence-seq-main-20261120-scope.json",
+    "docs/qa/manifests/web-selfie-cuatro-marcaciones-main-20261124-approval.json",
+    "docs/qa/manifests/web-selfie-cuatro-marcaciones-main-20261124-scope.json"
+  ],
+  "allowed_deletions": [],
+  "origin_waivers": [
+    {
+      "file": "apps/api/src/modules/hr/service.js",
+      "reason": "Fusion deliberada: el blob de origin/develop incluye el hunk biometrico (WebAuthn, rostro, dispositivos compartidos) que el dueno excluyo de Produccion; el blob del candidato es el de develop menos ese hunk, por eso no es identico ni a develop ni a origin/desarrollo.",
+      "approval": "dueno del proyecto (Edwin), 2026-11-26: viaja solo el frente de nomina y horarios; el frente biometrico queda fuera."
+    },
+    {
+      "file": "apps/api/src/modules/hr/routes.js",
+      "reason": "Fusion deliberada: same rule — se excluyen los endpoints biometricos del blob de origin/develop; el resto del archivo viaja byte a byte desde develop.",
+      "approval": "dueno del proyecto (Edwin), 2026-11-26: viaja solo el frente de nomina y horarios; el frente biometrico queda fuera."
+    },
+    {
+      "file": "apps/api/src/modules/hr/schema.js",
+      "reason": "Fusion deliberada: se excluyen los esquemas Zod de las rutas biometricas del blob de origin/develop; los esquemas de nomina y horarios viajan intactos.",
+      "approval": "dueno del proyecto (Edwin), 2026-11-26: viaja solo el frente de nomina y horarios; el frente biometrico queda fuera."
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+      "reason": "Fusion deliberada: la pagina de reportes en develop trae la pestana biometrica; el candidato lleva la version de reportes sin esa pestana, unica lectura posible con el frente biométrico excluido.",
+      "approval": "dueno del proyecto (Edwin), 2026-11-26: viaja solo el frente de nomina y horarios; el frente biometrico queda fuera."
+    }
+  ],
+  "regla_de_blob_desarrollo": "El canon del repo exige que cada blob del candidato exista en origin/desarrollo o sea un waiver nombrado. Medido contra origin/desarrollo (dad33b30) sobre 05886b09: la mayoria de rutas tienen blob distinto o ausente en desarrollo. La causa es conocida y declarada: main tiene trabajo propio de release que nunca se retrointegro a desarrollo (convencion forward-only) y el frente de nomina/horarios maduro vive en origin/develop (QA lo sirve: a440560d). Las 35 rutas no fusionadas son blob a blob las de origin/develop, que es la rama fuente de esta promocion develop -> main; las 4 fusionadas llevan su waiver arriba. PENDIENTE honesto: para cerrar la regla del canon sin waiver global, estas rutas divergentes deben plegarse primero a origin/desarrollo (retrointegracion) o recibirse una autorizacion expresa del dueno que se citara aqui mismo ruta por ruta.",
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/davivienda-file.js",
+    "apps/api/src/modules/hr/accumulatedOrdinaryTime.js",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/components/hr/HrWorkspace.tsx",
+    "apps/web/lib/hrTimeReport.ts",
+    "apps/web/lib/payrollDisplay.ts",
+    "apps/web/lib/hrScheduleMonitor.ts"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Nomina quincenal y liquidacion calculan sobre las tablas que Produccion ya tiene, sin DDL",
+      "status": "passed",
+      "evidence_pendientes": "PENDIENTE 1 y 2 del manifiesto de aprobacion: corrida de suites sobre el arbol del candidato y medicion del DESPUES servido. El status passed ampara la capacidad certificada en el porton anterior; lo propio de este binario esta declarado pendiente ruta por ruta.",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/certification-local.json",
+        "../evidence/hr-nomina-main-20261126/suites-despues.json"
+      ],
+      "nota_pendiente": "PARCIALMENTE CERRADO 2026-11-26: las suites del frente (nomina legal, preview, liquidacion, provisiones) corren verdes sobre el arbol del candidato 05886b09 (suites-despues.json). Queda PENDIENTE 2: la certificacion end-to-end local (hr-payroll-markings-local.js exige PostgreSQL local vivo) y la medicion del DESPUES servido en Produccion."
+    },
+    {
+      "name": "Importacion bancaria Davivienda y reporte de tiempo (hrTimeReport) validan sin escribir registros nuevos",
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/qa-certification.json",
+        "../evidence/hr-nomina-main-20261126/suites-despues.json"
+      ],
+      "nota_pendiente": "CERRADO para este binario 2026-11-26: hr-davivienda-bank-file.test.js (7/7) y hr-time-report.test.mjs (6/6) + hr-davivienda-bank-file-ui.test.mjs (3/3) corren verdes sobre 05886b09 segun suites-despues.json."
+    },
+    {
+      "name": "RBAC y aislamiento multi-tenant de HR intactos en el arbol de main",
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/api-suite.txt",
+        "../evidence/hr-nomina-main-20261126/suites-antes.json",
+        "../evidence/hr-nomina-main-20261126/suites-despues.json"
+      ],
+      "nota_pendiente": "CERRADO 2026-11-26 con el par ANTES/DESPUES del mismo instrumento sobre 0ec1cff0 y 05886b09: rbac-module-access, hr-marking-only-rbac y las suites de contrato pasan en ambas corridas; los unicos rojos del DESPUES son heredados de main o ambientales (ver clasificaciones en suites-despues.json)."
+    },
+    {
+      "name": "Cero migraciones y cero escrituras: el ledger de Produccion no cambia con este porton",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-nomina-main-20261126/cero-migraciones.txt",
+        "../evidence/hr-nomina-main-20261126/ledger-produccion.json"
+      ],
+      "nota_pendiente": "CERRADO 2026-11-26 en la parte de arbol: git diff origin/main HEAD -- apps/api/prisma/ vacio y las 3 migraciones biometricas ausentes. Ledger de Produccion medido en solo lectura contra la punta actual (73 filas, 0 aplicables del candidato, control de mutacion rojo contra origin/develop). Queda PENDIENTE 2: la medicion del DESPUES servido tras el despliegue."
+    },
+    {
+      "name": "El frente biometrico NO entra: huella, rostro, celulares compartidos y sus 3 migraciones quedan fuera del arbol",
+      "status": "passed",
+      "evidence": [
+        "../evidence/boton-abre-directo-main-20261126/invariantes-main.json",
+        "../evidence/hr-nomina-main-20261126/invariantes-main.json",
+        "../evidence/hr-nomina-main-20261126/control-de-mutacion.json",
+        "../evidence/hr-nomina-main-20261126/control-ausencia-biometrica.json",
+        "../evidence/hr-nomina-main-20261126/control-ausencia-biometrica-negativo-desarrollo.json",
+        "../evidence/hr-nomina-main-20261126/cero-migraciones.txt"
+      ],
+      "nota_pendiente": "CERRADO 2026-11-26: spec-invariantes propio contra origin/develop (35 carry byte a byte + 4 fusiones waiver nombradas en origin_waivers), INVARIANTES DE REPLAY VALIDAS 35/35; control de mutacion del instrumento verde (3 derivas detectadas); control de ausencia biometrica 13/13 sobre 05886b09 con autocontrol de mutacion y control negativo rojo contra origin/develop; git diff origin/main HEAD -- apps/api/prisma/ vacio (cero migraciones)."
+    }
+  ],
+  "compuertas_exigidas": [
+    "node scripts/validate-promotion-scope.js <este manifiesto> 05886b09... 0ec1cff0... (VERDE 2026-11-26: ALCANCE DE PROMOCION VALIDO, 39 rutas)",
+    "node --test sobre el arbol del candidato y sobre origin/main puro con el mismo instrumento (VERDE con rojos heredados clasificados: suites-antes.json / suites-despues.json)",
+    "node scripts/certifications/promotion-migration-check.js --spec docs/qa/evidence/hr-nomina-main-20261126/spec-invariantes-main.json --against commit --ref HEAD (VERDE: 35 carry byte a byte, cero borrados; 4 waivers en origin_waivers)",
+    "node scripts/certifications/promotion-migration-check.js --selftest (VERDE: control-de-mutacion.json, 3 derivas detectadas)",
+    "control de ausencia biometrica docs/qa/evidence/hr-nomina-main-20261126/control-ausencia-biometrica.js --mutacion (VERDE 13/13 + mutacion detectada; negativo rojo contra origin/develop)",
+    "npm run qa:approval:evidence -- ./hr-nomina-horarios-main-20261126-approval.json (BLOQUEADA a proposito: pendiente 2 NYVORA desplegado y DESPUES servido, mas aprobacion QA explícita)",
+    "node scripts/git-governance-guard.js promote develop-to-main con APEXOS_PROMOTION_AUTH",
+    "respaldo de la punta con tag backup/premain-hr-nomina-20261126 antes de empujar",
+    "git push --dry-run origin <candidato>:refs/heads/main fast-forward del target certificado"
+  ],
+  "deriva_declarada": [
+    "El frente biometrico completo (4 modulos, sus paginas, sus tests y las migraciones 20261121230000_hr_shared_devices, 20261122060000_hr_face_enrollments, 20261122120000_hr_webauthn_credentials) NO viaja: decision expresa del dueno, 2026-11-26.",
+    "apps/web/lib/api.ts, apps/web/lib/moduleFunctions.ts, apps/web/app/dashboard/talento-humano/page.tsx, apps/web/test/module-portfolio.test.mjs y apps/web/test/command-palette-module-functions.test.mjs NO viajan: su delta en develop es biometrico o de otro frente.",
+    "Cero rutas bajo apps/api/prisma/**: este porton no trae migraciones ni toca el esquema de la base.",
+    "agents/** y .qoder/skills no viajan a main: contabilidad propia de cada rama, como en los portones previos.",
+    "Este manifiesto y el de aprobacion se escriben en el worktree pero NO estan todavia en el arbol del candidato 3543b325; el commit final del porton debe incluirlos (y a la evidencia) antes de empujar, como hizo 0ec1cff0 con el porton del boton."
+  ],
+  "verificado_local": {
+    "fecha_hora_local": "2026-11-26T23:30:00-05:00",
+    "puntas": {
+      "origin/main": "0ec1cff04c1b48a8a7d76b1219223efc76689164",
+      "origin/develop": "a440560d7f04781166b05ac85b130c74d2bf9b43",
+      "origin/desarrollo": "dad33b30f4b8f7c7b18e12e06350b204c17cbff9"
+    },
+    "candidato": "05886b09b46e62c98de7c5b043119c84f5ea3ced",
+    "rutas_inventario": 39,
+    "borrados": 0,
+    "blob_igual_a_develop": 35,
+    "fusionadesarrollo_o_desarrollo_ausente": "19 existentes con blob distinto + 18 ausentes en origin/desarrollo (causa: convencion forward-only, el frente maduro vive en develop; ver regla_de_blob_desarrollo)",
+    "produccion_sirve": "/health.commit = 0ec1cff04c1b (verificado por el dueno al abrir el porton)"
+  },
+  "approval": {
+    "status": "not_approved",
+    "scope": "promotion_to_main",
+    "nota": "Pendiente de la autorizacion expresa del dueno sobre este inventario de 40 rutas y de la evidencia del manifiesto de aprobacion. Mientras approval no sea approved y las compuertas esten pendientes, este manifiesto documenta alcance pero NO habilita el push."
+  },
+  "scope_nota_alcance": "Este manifiesto documenta y valida el ALCANCE exacto (39 rutas, cero borrados, medido git diff --name-status origin/main HEAD sobre 05886b09). NO constituye aprobacion QA ni autorizacion de push: esa vive en ./hr-nomina-horarios-main-20261126-approval.json, hoy bloqueada con los pendientes declarados.",
+  "rutas_de_gobierno_incluidas": {
+    "total": 71,
+    "carpetas": [
+      "docs/qa/manifests",
+      "docs/qa/evidence/hr-nomina-main-20261126"
+    ],
+    "regla": "Regla 24(b) de equipo-apexos: el contrato del destino pide que los manifiestos y la evidencia que ellos citan viajen en el candidato. No amplian el alcance de producto: las 39 rutas de producto siguen siendo 39."
+  },
+  "actualizado": "2026-11-26T23:55:00-05:00"
+}

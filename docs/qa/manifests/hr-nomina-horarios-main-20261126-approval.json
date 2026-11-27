@@ -1,0 +1,133 @@
+{
+  "change_id": "hr-nomina-horarios-main-20261126",
+  "commit": "05886b09b46e62c98de7c5b043119c84f5ea3ced",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "creado": "2026-11-26T23:30:00-05:00",
+  "actualizado": "2026-11-26T23:45:00-05:00",
+  "estado_porton": "ABIERTO_CON_UN_HECHO_POR_CERRAR_DEL_DESPUES_SERVIDO",
+  "authorized_by_dueno": "dueno del proyecto (Edwin), 2026-11-26, texto literal: \"migrarlo de manera correcta desde develop hasta el main, sin adulterar registros, dañar funciones agenas al cambio, se requiere que queden los 3 ambientes alineados con la version que ya tenemos trabajada en develop ... autorizado la migracion\". Dos decisiones registradas sobre ese pedido: (1) el frente biometrico (huella WebAuthn, rostro, celulares compartidos, sus 4 modulos, sus paginas, sus tests y las 3 migraciones hr_shared_devices / hr_face_enrollments / hr_webauthn_credentials) queda FUERA; (2) el cierre llega HASTA EL AMBIENTE SERVIDO (push a main + despliegue de API y portal + DESPUES medido contra lo que Produccion sirve). Consecuencia medida de (1): cero migraciones y cero escrituras de registros de cliente en todo el porton.",
+  "manifiesto_de_alcance": "./hr-nomina-horarios-main-20261126-scope.json",
+  "portones_ya_verdes": [
+    "npm run qa:promotion:scope -- docs/qa/manifests/hr-nomina-horarios-main-20261126-scope.json 05886b09b46e62c98de7c5b043119c84f5ea3ced origin/main => ALCANCE DE PROMOCION VALIDO: hr-nomina-horarios-main-20261126 (39 rutas). Recorrido de nuevo el 2026-11-26 23:30 -05:00 despues de verificar que origin/main sigue en 0ec1cff0 y que 05886b09 lo contiene (no hay que re-medir el replay).",
+    "node scripts/certifications/promotion-migration-check.js --spec docs/qa/evidence/hr-nomina-main-20261126/spec-invariantes-main.json --against commit --ref HEAD => INVARIANTES DE REPLAY VALIDAS: 35/35 (35 carry byte a byte contra origin/develop, cero delete, cero edit-no-declarado).",
+    "node scripts/certifications/promotion-migration-check.js --selftest => CONTROL DE MUTACION VALIDO: 3 derivas medidas y las 3 caen rojas.",
+    "node docs/qa/evidence/hr-nomina-main-20261126/control-ausencia-biometrica.js --mutacion => CONTROL DE AUSENCIA BIOMETRICA VALIDO: 13/13 con mutacion detectada. El mismo instrumento contra a440560d (punta de develop) da ROJO 3/13: control negativo versionado que prueba que el instrumento puede fallar y que el frente excluido NO viaja.",
+    "git diff --name-status origin/main 05886b09 -- apps/api/prisma/ => vacio. Sumergido: npx prisma migrate status contra el ledger de Produccion = 72 migraciones found, Database schema is up to date (cero-migraciones.txt).",
+    "node docs/qa/evidence/hr-nomina-main-20261126/mide-ledger-produccion.js => CERO DDL: ledger 73 filas / 72 terminadas, aplicaria_en_produccion []. Su control de mutacion contra origin/develop sale rojo por las 3 migraciones biomtricas (detectado).",
+    "node scripts/certifications/hr-payroll-markings-local.js --output=docs/qa/evidence/hr-nomina-main-20261126/certification-candidato-local.json => CERTIFICACION LOCAL PASADA sobre el arbol del candidato: 6 de 6 piernas, ambiente LOCAL, con navegador real (Chrome headless + next dev del candidato) y base de datos scratch local.",
+    "npm run qa:approval:evidence -- docs/qa/manifests/hr-nomina-horarios-main-20261126-approval.json => (resultado se versiona en docs/qa/evidence/hr-nomina-main-20261126/porton-aprobacion.txt)"
+  ],
+  "pendientes_declarados": [
+    "PENDIENTE 1 - CERRADO 2026-11-26 (dos niveles de medida): (a) subset del frente, mismo instrumento ANTES/DESPUES: origin/main puro 0ec1cff0 = 60 archivos, 377 tests, 371 pass, 6 fail, 8 suites ausentes; candidato 05886b09 = 60 archivos, 421 tests, 417 pass, 4 fail (suites-antes.json / suites-despues.json). (b) ARBOL COMPLETO (suites-arbol-completo.json): API 1256/1268 -> 1277/1288 y Web 860/868 -> 885/892; archivos rojos API 9 -> 8 y Web 5 -> 4; CERO rojos nuevos en las dos mitades y se curan dos que ya estaban rojos en Produccion (hr-marking-concurrency y hr-punch-mobile-evidence). El candidato anade 8 archivos de prueba y no elimina ninguno. Los 4 rojos restantes del subset y los 12 del arbol completo estan atribuidos uno a uno en resultados.md: son del propio destino (portada vs test de arquitectura, preexistente en main y probado por blob y por corrida en la linea base) o del arnes ambiental (config/qa.env, gitignoreado).",
+    "PENDIENTE 2 - ABIERTO, ES EL DESPUES SERVIDO: una vez empujado el candidato y desplegado en Produccion, medir /health.commit = 05886b09..., sonda de artefacto sobre los chunks servidos del portal (marca propia de nomina/horarios presente y cero marcas del frente biometrico) y el ledger en solo lectura (debe seguir en 72/72, sin DDL nuevo). Se versiona en docs/qa/evidence/hr-nomina-main-20261126/despues-servido.json. Ningun registro de cliente se escribe en esa medicion: son lecturas y sondas.",
+    "PENDIENTE 3 - CERRADO 2026-11-26: spec-invariantes propio del replay (docs/qa/evidence/hr-nomina-main-20261126/spec-invariantes-main.json): 35 carry byte a byte + 4 waivers nombrados (apps/api/src/modules/hr/service.js, routes.js, schema.js y apps/web/app/dashboard/talento-humano/reportes/page.tsx), cero delete y cero edit-no-declarado. El brief decia 40 rutas / 36 carry sobre el sha viejo 3543b325; al salir el test de arquitectura de la portada del transporte quedan 39 rutas = 35 carry + 4 waiver, y esa correccion esta en el brief §2.1.",
+    "PENDIENTE 4 - CERRADO 2026-11-26 con una excepcion declarada: corrida de campo contra el ambiente QA desplegado (binario a440560d) con el instrumento hr-paquete-main-qa.js corregido: 25 de 26 piernas verdes (qa-campo-campo-escritura-corregido.json). La corrida nocturna marcaba 16/26 por dos defectos del arnes, no del negocio: el reloj del puesto cruzaba medianoche dentro de la ventana pedida (cascaba 5 piernas de mallas con HORARIO_CRUZA_MEDIANOCHE legitimo) y la comparacion de anclaje trataba ausente-contra-ausente como divergencia. Unica pierna roja: punch_selfie_no_imagen_400 - el ambiente acepta un PDF como selfie de marcacion. NO es de este transporte: mobile-identity.js es byte identico en origin/main, origin/develop y el candidato (863bd6a6) y la pierna cae igual en las dos corridas. Pertenece al frente biometrico excluido y queda como hallazgo con dueno (apexos-seguridad) en lugar de curarse en silencio; atribucion completa en atribucion-qa-campo.json. Las escrituras de la corrida fueron solo cuentas y mallas efimeras, retiradas por el propio endpoint al final.",
+    "PENDIENTE 5 - HECHO HUMANO, REGISTRADO: la aprobacion funcional la firma el dueno con su instruccion del 2026-11-26 (\"autorizado la migracion\", cierre hasta el ambiente servido). No se declara el incidente del selfie resuelto: ese frente no sube en este transporte y su certificacion de campo es otra intervencion con sus 3 migraciones."
+  ],
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-nomina-main-20261126/certification-candidato-local.json",
+        "../evidence/hr-nomina-main-20261126/qa-campo-campo-escritura-corregido.json",
+        "../evidence/hr-nomina-main-20261126/suites-despues.json"
+      ],
+      "notes": "Funcional del frente, medido dos veces y en dos ambientes. En local sobre el arbol del candidato: 6/6 piernas del certificador de nomina y marcaciones con navegador real (preview quincenal sin escrituras, frontera de periodo, RBAC y aislamiento, liquidacion definitiva que persiste las mismas horas, reintentos idempotentes, correccion de dia aprobada sin doble pago). En campo contra el QA desplegado: 25/26 piernas con la unica roja atribuida a codigo que no viaja (ver PENDIENTE 4)."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-nomina-main-20261126/suites-despues.json",
+        "../evidence/hr-nomina-main-20261126/suites-antes.json",
+        "../evidence/hr-nomina-main-20261126/qa-campo-campo-escritura-corregido.json"
+      ],
+      "notes": "Los rechazos con nombre propio corren sobre 05886b09: hr-payroll-period (13/13), hr-nomina-legal-2026 (9/9), hr-termination-deductions (4/4), hr-ibc-caps-floors (7/7), hr-workday-novelties-contract (24/24) y hr-marking-concurrency (9/9, rojo heredado de main corregido por el candidato). En campo: punch_sin_selfie_400 (SELFIE_REQUERIDA), punch_horario_ajeno_403 (HORARIO_AJENO_DENEGADO), 2.5 MB (400 VALIDACION), cierre de periodo y validacion de IBC con su codigo de dominio."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-nomina-main-20261126/mide-ledger-produccion.js",
+        "../evidence/hr-nomina-main-20261126/control-ausencia-biometrica.js",
+        "../evidence/hr-nomina-main-20261126/hr-paquete-main-qa-corregido.js",
+        "../evidence/hr-nomina-main-20261126/cero-migraciones.txt"
+      ],
+      "notes": "Cuatro instrumentos versionados con su control de mutacion: ledger de Produccion en solo lectura (rojo contra develop por las 3 biomtricas), ausencia biometrica 13/13 con autocontrol y control negativo, certificador de campo corregido (su --selftest da 26 piernas que solo cumplen cuando lo observado coincide con lo declarado), y la constancia de cero rutas bajo apps/api/prisma/."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-nomina-main-20261126/invariantes-main.json",
+        "../evidence/hr-nomina-main-20261126/control-de-mutacion.json",
+        "../evidence/hr-nomina-main-20261126/control-ausencia-biometrica-negativo-desarrollo.json"
+      ],
+      "notes": "Invariantes del replay VALIDAS 35/35 contra origin/develop, selftest del instrumento en verde y la exclusion del frente biometrico probada por los dos lados (13/13 en el candidato, 3/13 en develop)."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-nomina-main-20261126/suites-arbol-completo.json",
+        "../evidence/hr-nomina-main-20261126/ledger-produccion.json",
+        "../evidence/hr-nomina-main-20261126/cero-migraciones.txt"
+      ],
+      "notes": "Regresion de plataforma medida en el arbol ENTERO, no solo en el subset del frente: API 1256/1268 -> 1277/1288 y Web 860/868 -> 885/892 con CERO rojos nuevos y dos rojos del destino curados. Base: cero rutas bajo apps/api/prisma/, schema.prisma con blob identico entre origin/main y el candidato (a0d4c6b7), ledger de Produccion 73 filas / 72 terminadas y aplicaria_en_produccion vacio, prisma migrate status en verde. Lo que queda del lado de la plataforma es el DESPUES SERVIDO (PENDIENTE 2), que es despliegue y no codigo."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-payroll-markings-local.js",
+    "evidence": [
+      "../evidence/hr-nomina-main-20261126/certification-candidato-local.json",
+      "../evidence/hr-nomina-main-20261126/resultados.md"
+    ],
+    "procedencia": "Corrida el 2026-11-26 23:23 -05:00 sobre el arbol del candidato (05886b09) en el worktree auxiliar, con DATABASE_URL apuntando a una base SCRATCH LOCAL creada en el contenedor infra-postgres-1 (55432): base nueva apexos_hrmain261126 alimentada con pg_dump --schema-only de la base de desarrollo local (216 tablas, cero filas de datos). El certificador rechaza DATABASE_URL remota por contruccion, asi que ninguna escritura toco QA ni Produccion. Dependencias: tres enlaces por paquete hacia el node_modules del arbol principal (fastify, next, puppeteer-core); se retiraron al cerrar la intervencion.",
+    "notes": "6 de 6 piernas verdes, incluida la pierna de navegador (next dev del candidato + Chrome headless) que muestra dias y horas vinculados en la quincena pedida y la que interrumpe el guardado para probar que la recarga conserva lo confirmado."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/hr-nomina-main-20261126/invariantes-main.json",
+      "../evidence/hr-nomina-main-20261126/control-de-mutacion.json"
+    ],
+    "notes": "Es la certificacion transversal de que el replay publicado es el replay certificado: 35/35 carry byte a byte y control de mutacion valido (detecta anadir linea en hunk, tocar un carry y revivir un borrado)."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-paquete-main-qa.js",
+    "instrumento_usado": "../evidence/hr-nomina-main-20261126/hr-paquete-main-qa-corregido.js",
+    "evidence": [
+      "../evidence/hr-nomina-main-20261126/qa-campo-campo-escritura-corregido.json",
+      "../evidence/hr-nomina-main-20261126/atribucion-qa-campo.json",
+      "../evidence/hr-nomina-main-20261126/nyvora-qa-corrida-nocturna.json"
+    ],
+    "excepcion_declarada": "25 de 26 piernas verdes. La pierna punch_selfie_no_imagen_400 queda roja y NO se declara curada: el ambiente acepta un PDF como selfie. Es comportamiento preexistente de las tres ramas (mobile-identity.js 863bd6a6 identico en main, develop y candidato; anclaje require('./mobile-identity') vivo en service.js) y pertenece al frente biometrico que el dueno excluyo de este transporte. El dueno lo recibe como hallazgo con responsable (apexos-seguridad) y su certificacion es otra intervencion con sus 3 migraciones.",
+    "notes": "La empresa modelo es la unica con flujo de marcaciones y nomina activo y el instrumento aborta si no existe. Cero cuentas activas al final: las efimeras se retiraron por el endpoint (DELETE fisico responde 400 sin la bandera) y las mallas de la corrida pasaron a inactive por PATCH."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "0ec1cff04c1b48a8a7d76b1219223efc76689164",
+    "trigger": "Si en Produccion la nomina quincenal, la liquidacion, el reporte de tiempo o la linea de tiempo de horarios dejan de responder, o /health.commit no es el del candidato promocionado, se revierte el commit con `git revert` sobre main y se empuja la reversa por el mismo porton; el binario estable queda en 0ec1cff0 (Produccion lo sirve hoy).",
+    "notas": [
+      "La reversa no toca la base: este porton tiene cero migraciones (git diff origin/main 05886b09 -- apps/api/prisma/ vacio y schema.prisma con el mismo blob a0d4c6b7), asi que revertir el arbol devuelve exactamente el estado de datos que Produccion ya tenia.",
+      "Ningun archivo del frente biometrico entra en el inventario, por lo que el revert no puede arrastrar funciones que Produccion no conocia (control-ausencia-biometrica.json 13/13 con control negativo).",
+      "Antes de empujar se respalda la punta de main con un tag (backup/precanon-main-*) y el push se hace dry-run primero; no se usa force push."
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-26T23:45:00-05:00",
+    "authorization_flags": {
+      "candidate_on_detached_head": true,
+      "direct_push_to_main": true,
+      "produccion_db_write": false,
+      "despliegue_produccion": true
+    },
+    "nota": "Aprobacion funcional explicita del dueno: \"monta el plan de migracion y con mi autorizacion procede a migrar todo el modulo de manera correcta. autorizado la migracion\" (2026-11-26), con las dos decisiones de alcance tomadas sobre ese pedido (frente biometrico fuera y cierre hasta el ambiente servido). Las validaciones automaticas no autorizan main solas: lo que ampara este push es la instruccion del dueno, y su alcance es exactamente este inventario de 39 rutas. No se declara resuelto el rechazo de foto invalida (PENDIENTE 4) ni el rojo de la portada (heredado de main): ambos siguen pendientes con su dueno."
+  }
+}

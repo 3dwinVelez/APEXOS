@@ -1,0 +1,544 @@
+{
+  "promocion": "develop->main modulo Talento Humano (nomina y horarios)",
+  "candidato": {
+    "sha": "05886b09b46e62c98de7c5b043119c84f5ea3ced",
+    "sobre": "origin/main 0ec1cff04c1b48a8a7d76b1219223efc76689164",
+    "comentario": "punta final del candidato; las corridas de la seccion originals se hicieron sobre 3543b325 y la correccion se midio sobre esta punta"
+  },
+  "objetivo": "origin/main 0ec1cff04c1b48a8a7d76b1219223efc76689164",
+  "worktree": "C:/Users/mq1/Documents/Proyectos/APEXOS/.tmp/wt-hr-main-20261126",
+  "fecha_ejecucion": "2026-11-26",
+  "harness": "node --test por archivo, Node v22.23.1, node_modules resuelto desde el raiz del repositorio padre (sin node_modules propio en el worktree)",
+  "logs_crudos": "C:/Users/mq1/Documents/Proyectos/APEXOS/.tmp/qa-hr-logs/",
+  "resumen": {
+    "api_archivos": 52,
+    "api_tests": 337,
+    "api_pass": 337,
+    "api_fail": 0,
+    "web_archivos": 8,
+    "web_tests": 47,
+    "web_pass": 46,
+    "web_fail": 1,
+    "rojos_bloqueantes_candidato": 0,
+    "rojo_preexistente_destino": 1
+  },
+  "resultados": [
+    {
+      "archivo": "apps/api/test/hr-accumulated-ordinary-time.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-adjustment-calendar-concept.test.js",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-administrative-punch-correction.test.js",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-banks.test.js",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-contract-calendar-date.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-date-assignments.test.js",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-davivienda-bank-file.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-day-review.test.js",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-deferred-marking-offline.test.js",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-employee-organization.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-employee-user-link.test.js",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-evidence-backfill-tool.test.js",
+      "tests": 7,
+      "pass": 4,
+      "fail": 3,
+      "fallidos": [
+        "sin ambiente declarado no hay corrida, y el modo por defecto es dry",
+        "--keep-inline solo existe sobre una escritura declarada",
+        "el tenant y la rama se validan antes de leer configuracion"
+      ],
+      "clasificacion": "(b) preexistente en origin/main + (c) limitacion del arnes: los 3 mismos tests fallan igual contra la version exacta del test en origin/main (blob identico, sin diff candidato vs main). Causa: config/qa.env esta gitignoreado (.gitignore linea 7 'config/*.env') y no existe en un checkout limpio; el tool exige el archivo de ambiente. Reproducido con git show origin/main:<ruta> ejecutado desde apps/api/test/_baseline-backfill.test.js (temporal, eliminado): 7 tests / 4 pass / 3 fail, identicos."
+    },
+    {
+      "archivo": "apps/api/test/hr-evidence-resilience.test.js",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-evidence-storage-gate.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-gps-metadata-projection.test.js",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-ibc-caps-floors.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-labor-rates-vigencia.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-list-truncation.test.js",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-marking-concurrency-certificate.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-marking-concurrency.test.js",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-marking-declared-employee.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-marking-kilometraje-conflict.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-marking-only-rbac.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-mobile-identity.test.js",
+      "tests": 40,
+      "pass": 40,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-monitor-evidence-columns.test.js",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-monitor-evidence-demand.test.js",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-monitor-silent-failures.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-nomina-legal-2026.test.js",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-operations-map-contract.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-adjustment-lock.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-adjustment-permission.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-close-provisions.test.js",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-period.test.js",
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-receipt-pdf.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-social-contributions-bulk.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-payroll-workdays.test.js",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-punch-mobile-evidence.test.js",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-reports-range.test.js",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-route-assignment-lock.test.js",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-route-event-summaries.test.js",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-route-physical-deletion-contract.test.js",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-route-physical-deletion.test.js",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-single-active-schedule-certificate.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-single-selfie-gate.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-social-contribution-segments.test.js",
+      "tests": 21,
+      "pass": 21,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-termination-benefits.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-termination-deductions.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-termination-manual-adjustments.test.js",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-user-association.test.js",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-workday-novelties-contract.test.js",
+      "tests": 24,
+      "pass": 24,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-workday-novelties-policy.test.js",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/api/test/hr-workdays-projection.test.js",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/web/test/payroll-display.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/web/test/hr-time-report.test.mjs",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/web/test/hr-schedule-timeline-view.test.mjs",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/web/test/hr-davivienda-bank-file-ui.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/web/test/hr-workday-novelties-ui.test.mjs",
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/web/test/hr-reports-xlsx.test.mjs",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    },
+    {
+      "archivo": "apps/web/test/hr-landing-information-architecture.test.mjs",
+      "tests": 5,
+      "pass": 4,
+      "fail": 1,
+      "fallidos": [
+        "mallas conserva planeacion, monitor y reportes sin acceso para marcar"
+      ],
+      "clasificacion": "(b) preexistente en origin/main, en forma espejo. El rojo del candidato exige que page.tsx NO tenga href '/dashboard/talento-humano/marcacion' (intencional: el transporte excluye el frente biometrico/marcacion), pero page.tsx esta identico entre origin/main y el candidato (md5 b2c61d52cfacae61183de45a6924d661 ambos) y si conserva ese href. Se reprodujo contra origin/main: el test version main ('la portada expone como acceso cada pantalla del modulo, incluida nomina', que exige el href literal de mallas con comilla de cierre al final,') falla 5/4/1 contra el mismo page.tsx porque main tampoco tiene ese href literal. Ningun lado discrimina al candidato: es desalineacion test-pantalla ya presente en main, no regresion introducida por el candidato. Requiere decision del dueno (alineacion de page.tsx o del test) antes o despues de la promocion, no bloquea por calidad del codigo promovido."
+    },
+    {
+      "archivo": "apps/web/test/hr-punch-mobile-evidence.test.mjs",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "fallidos": [],
+      "clasificacion": "verde"
+    }
+  ],
+  "correccion_2026_11_26": {
+    "motivo": "medicion propia sobre la punta final del candidato; anula dos afirmaciones de la seccion anterior",
+    "config_qa_env": "el worktree no trae config/qa.env (gitignoreado). Copiado desde el checkout principal (queda ignorado, nunca se commitea).",
+    "hr_evidence_backfill_tool": {
+      "antes": "7 tests / 4 pass / 3 fail",
+      "despues": "7 tests / 7 pass / 0 fail",
+      "clasificacion": "limitacion del arnes, NO rojo de main"
+    },
+    "api_frente_hr": {
+      "archivos": 52,
+      "tests": 337,
+      "pass": 337,
+      "fail": 0
+    },
+    "landing_test": {
+      "blob_origin_main": "ec85d10c",
+      "blob_candidato": "ec85d10c",
+      "blob_origin_develop": "040c44fd",
+      "page_tsx_blob_en_ambos": "b60fe540",
+      "falla": "la portada expone como acceso cada pantalla del modulo, incluida nomina",
+      "linea_base_pura_0ec1cff0": "4 pass / 1 fail, misma prueba",
+      "conclusion": "rojo preexistente en main demostrado por identidad de blob y por reproduccion en el arbol limpio; el candidato no reescribio el test"
+    },
+    "web_frente_hr": {
+      "archivos": 8,
+      "tests": 47,
+      "pass": 46,
+      "fail": 1
+    },
+    "candidato_commit": "05886b09b46e62c98de7c5b043119c84f5ea3ced"
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "instrumento": "control-ausencia-biometrica",
+  "promocion": "hr-nomina-horarios-main-20261126",
+  "ejecutado_en": "2026-11-27T03:49:10.541Z",
+  "ref_medido": "a440560d7f04781166b05ac85b130c74d2bf9b43",
+  "repo": "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\.tmp\\wt-hr-main-20261126",
+  "checks": [
+    {
+      "tipo": "ausencia_api",
+      "file": "apps/api/src/modules/hr/face-consent.js",
+      "ok": false,
+      "detalle": "EL FRENTE BIOMETRICO VIAJA: modulo presente en el arbol"
+    },
+    {
+      "tipo": "ausencia_api",
+      "file": "apps/api/src/modules/hr/face-identity.js",
+      "ok": false,
+      "detalle": "EL FRENTE BIOMETRICO VIAJA: modulo presente en el arbol"
+    },
+    {
+      "tipo": "ausencia_api",
+      "file": "apps/api/src/modules/hr/personal-webauthn.js",
+      "ok": false,
+      "detalle": "EL FRENTE BIOMETRICO VIAJA: modulo presente en el arbol"
+    },
+    {
+      "tipo": "ausencia_api",
+      "file": "apps/api/src/modules/hr/shared-device-identity.js",
+      "ok": false,
+      "detalle": "EL FRENTE BIOMETRICO VIAJA: modulo presente en el arbol"
+    },
+    {
+      "tipo": "ausencia_web",
+      "file": "apps/web/app/dashboard/talento-humano/rostros/",
+      "ok": false,
+      "detalle": "paginas biometricas presentes: apps/web/app/dashboard/talento-humano/rostros/page.tsx"
+    },
+    {
+      "tipo": "ausencia_web",
+      "file": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/",
+      "ok": false,
+      "detalle": "paginas biometricas presentes: apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx"
+    },
+    {
+      "tipo": "cadena_shared_device",
+      "file": "apps/api/src/modules/hr/**",
+      "ok": false,
+      "detalle": "la cadena shared_device aparece:\norigin/develop:apps/api/src/modules/hr/service.js:2854:  const sharedScope = options.scope === \"shared_device\";\norigin/develop:apps/api/src/modules/hr/service.js:3643:      shared_device_session_user_id: user?.id || null,\norigin/develop:apps/api/src/modules/hr/service.js:3648:  return createPunch(tenantId, crewInput, user, { scope: \"shared_device\", employeeId });\norigin/develop:apps/api/src/modules/hr/shared-device-identity.js:245:        channel: \"shared_device\",",
+      "lineas": 4
+    },
+    {
+      "tipo": "ausencia_migracion",
+      "file": "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql",
+      "ok": false,
+      "detalle": "MIGRACION BIOMETRICA VIAJA A PRODUCCION"
+    },
+    {
+      "tipo": "ausencia_migracion",
+      "file": "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql",
+      "ok": false,
+      "detalle": "MIGRACION BIOMETRICA VIAJA A PRODUCCION"
+    },
+    {
+      "tipo": "ausencia_migracion",
+      "file": "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql",
+      "ok": false,
+      "detalle": "MIGRACION BIOMETRICA VIAJA A PRODUCCION"
+    },
+    {
+      "tipo": "caso_positivo",
+      "file": "apps/api/src/modules/hr/service.js",
+      "ok": true,
+      "detalle": "el frente de nomina/horarios si esta en el arbol"
+    },
+    {
+      "tipo": "caso_positivo",
+      "file": "apps/api/src/modules/hr/davivienda-file.js",
+      "ok": true,
+      "detalle": "el frente de nomina/horarios si esta en el arbol"
+    },
+    {
+      "tipo": "caso_positivo",
+      "file": "apps/api/src/modules/hr/routes.js",
+      "ok": true,
+      "detalle": "el frente de nomina/horarios si esta en el arbol"
+    }
+  ],
+  "passed": false,
+  "total": 13,
+  "rotos": 10,
+  "autocontrol_mutacion": null,
+  "conclusion": "CONTROL FALLIDO: revise los checks rotos antes de promocionar",
+  "nota": "CONTROL NEGATIVO del mismo instrumento: corrido contra origin/develop (a440560d), donde el frente biometrico SI vive. Debe dar rojo y lo da: detecta los 4 modulos, las cadenas shared_device y las 3 migraciones. Prueba que el verde sobre 05886b09 es discriminacion real y no arbol vacio."
+}

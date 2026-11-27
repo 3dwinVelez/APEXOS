@@ -1,0 +1,370 @@
+{
+  "certificacion": "hr-paquete-main-qa",
+  "version": 1,
+  "rol_evidencia": "field_measurement_qa",
+  "ambiente": "QA",
+  "empresa_modelo": "NYVORA",
+  "generado_en": "2026-11-27T04:04:22.139Z",
+  "api_host": "apexos-api-qa-production.up.railway.app",
+  "project_ref": "jbirkghkekuifgfsgquq",
+  "script_sha256": "8fb625730973750c4d7bd08204210a722ec56b352edf0616e417764ce8bb7c4e",
+  "candidato_ref": "a440560d",
+  "escribe_en_qa": true,
+  "piernas": [
+    {
+      "id": "ancla_build",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "GET /health -> 200, commit servido a440560d7f04, resoluble en el arbol local: true"
+    },
+    {
+      "id": "paridad_blobs_hr",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "10/10 rutas HR del arbol servido son byte a byte las del candidato a440560d"
+    },
+    {
+      "id": "bancos_por_defecto",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "GET /talento-humano/bancos -> 200 (23 filas; defaults 001/007/051 presentes: true)"
+    },
+    {
+      "id": "banco_efimero_alta_lectura",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST /talento-humano/bancos -> 200 929 (code 929); relectura: fila presente, activa=true en 24 filas"
+    },
+    {
+      "id": "banco_duplicado_409",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST repetido del code 929 -> 409 BANCO_INVALIDO Ya existe un banco con ese codigo nacional. (409 esperado: el codigo nacional identifica al banco y no se cambia)"
+    },
+    {
+      "id": "banco_rechaza_codigo_corto",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST code \"12\" -> 400 FST_ERR_VALIDATION body/code must match pattern \"^[0-9]{3}$\" y el maestro no conserva la fila (rechazo en schema, sin escritura)"
+    },
+    {
+      "id": "banco_rechaza_swift_invalido",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST swift \"AB12CD34\" (digitos dentro del bloque de letras) -> 422 BANCO_INVALIDO El codigo SWIFT/BIC debe tener 8 u 11 caracteres validos. (el patron exige 6 letras + 2 alfanumericos)"
+    },
+    {
+      "id": "escritura_banco_preserva_otras_configuraciones",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "claves de Tenant.config distintas de hr_banks, antes y despues de tocar el maestro, byte a byte iguales: true (2 claves -> 2 claves)"
+    },
+    {
+      "id": "cuenta_pago_empleado_resuelve_banco",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "PATCH cuenta -> 200 QA-PQ-F-20261127040431; relectura bank_entity_name=\"CERT QA 20261127040431\" cuenta=\"1420431\" (el nombre lo resuelve el maestro, no lo envia el cliente)"
+    },
+    {
+      "id": "cuenta_pago_rechaza_banco_inactivo",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "alta de 930 y PATCH active=false -> 200 930; asignar ese banco fuera de servicio a la ficha 789, que tiene el banco vigente 929 -> 422 BANCO_INVALIDO Selecciona un banco activo del maestro de esta empresa.; la ficha conserva bank=\"929\" (ninguna cuenta se paga a un banco inactivo y el rechazo no degrada la asignacion buena)"
+    },
+    {
+      "id": "cuenta_pago_rechaza_cuenta_sin_banco",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "PATCH solo con cuenta y sin banco en la ficha libre 790 -> 422 BANCO_INVALIDO Selecciona el banco y escribe la cuenta bancaria, o deja ambos campos vacios. (banco y cuenta van juntos o quedan ambos vacios)"
+    },
+    {
+      "id": "liquidacion_preview_sin_persistir",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST preview (retiro 2026-12-27, 30 dias despues del ingreso) -> 200 mode=preview con 10 lineas [DED_PENSION, DED_SALUD, DED_PENSION, DED_SALUD, DED_PENSION, DED_SALUD, PRIMA_SERVICIOS, CESANTIAS] y gross=0 deductions=0 net=0; el listado de documentos no gano fila del empleado efimero (0 -> 0): el preview calcula y no escribe"
+    },
+    {
+      "id": "revision_dias_lee_y_valida_clasificacion",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "GET revision-dias del empleado 789 con retiro 2026-12-27 -> 200 (31 dias del tramo y 5 clasificaciones del catalogo: trabajado_sin_marcacion, induccion, descanso, permiso_remunerado, ausencia_no_remunerada); POST classification \"teletrabajo\" -> 400 FST_ERR_VALIDATION body/classification must be equal to one of the allowed values; POST nota de 3 caracteres -> 400 FST_ERR_VALIDATION body/note must NOT have fewer than 5 characters"
+    },
+    {
+      "id": "nomina_cierres_lee_y_valida",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "GET cierres -> 200 (0 periodos) y configuracion de nomina del tenant: periodicidad \"(sin campo)\" leida de /configuracion-laboral/nomina (200); POST validar 2026-10-01..2026-10-15 -> 409 IBC_REPORTADO_REQUERIDO No existe IBC reportado de nomina para Nyvora Monitor Certificate 1789763747186; en 1028 ms; POST validar 2026-10-01..2026-10-31 -> 400 NOMINA_PERIODO_INVALIDO La nomina quincenal debe ir del 1 al 15 o del 16 al ultimo dia del mes. (la regla de periodicidad se aplica con codigo de dominio,"
+    },
+    {
+      "id": "liquidacion_completa_con_recibo_pdf",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "tramo justificado dia por dia (31 pendientes -> 0 tras la corrida); POST documentos -> 200 id 13; GET pdf -> 200, 6296 bytes, magic \"%PDF-\"; DELETE -> 200 (liquidacion completa calculada y recibo PDF real servido por el ambiente, documento retirado por endpoint)"
+    },
+    {
+      "id": "mallas_unificadas_ambas_lecturas",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST /talento-humano/mallas -> 200 id 442; la misma fila aparece en /talento-humano/mallas (true) y en /hr/routes (true) con el mismo identificador: un solo almacen, dos lecturas"
+    },
+    {
+      "id": "contencion_sin_P2028",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "6 escrituras concurrentes de malla -> [200, 409, 409, 409, 409, 409]; cuerpos con P2028/Transaction not found: 0; codigos fuera de contrato: 0; 503 sin retry-after: 0; ganadoras con id 1 (su retiro se mide en la pierna mallas_retiradas_por_estado, no se da por hecho)"
+    },
+    {
+      "id": "marcacion_sin_horario_responde_200_vacio",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "GET /hr/self/routes de la ficha sin jornada -> 200 con 1 filas y 0 asignadas al operario libre (200 vacio, no un error: la pantalla puede decir \"sin horario asignado\")"
+    },
+    {
+      "id": "punch_sin_selfie_400",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST /hr/self/time-punches sin identity_photo -> 400 SELFIE_REQUERIDA Toma la selfie de validacion para registrar esta marcacion. (code SELFIE_REQUERIDA): la compuerta dura sigue en pie en el ambiente"
+    },
+    {
+      "id": "punch_selfie_no_imagen_400",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "cumple": false,
+      "detalle": "PDF -> 200; SVG -> 409 MARCACION_FUERA_DE_SECUENCIA La siguiente marcacion permitida es inicio_almuerzo.; 2.5 MB -> 400 VALIDACION El archivo supera el tamano maximo permitido (2097152 bytes). (contenido duro rechazado en los tres casos; el tercero puede caer en el limite de cuerpo antes del contenido)"
+    },
+    {
+      "id": "punch_horario_ajeno_403",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST con route_id 442 desde la ficha que no tiene ese horario asignado -> 403 HORARIO_AJENO_DENEGADO El horario indicado no esta asignado al empleado conectado. (code HORARIO_AJENO_DENEGADO: la compuerta de horario vive antes que la foto)"
+    },
+    {
+      "id": "punch_con_selfie_valida",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST con selfie PNG real (24x24 de ruido, 1820 bytes) y route_id propio -> 200 ok=true punch.id 1861 hora_servida \"23:06\", identidad {\"status\":\"photo_only\",\"channel\":\"web\",\"face_match\":{\"status\":\"sin_registro\"},\"captured_at\":\"2026-11-27T04:06:18.819Z\",\"fingerprint\":{\"status\":\"sin_registro\"}} | el ambiente pidio justificacion (JUSTIFICACION_LLEGADA_TARDE_REQUERIDA) y se reenvio con motivo | el ambiente pidio evidencia fotografica (EVIDENCIA_LLEGADA_TARDE_REQUERIDA) y se reenvio con la foto"
+    },
+    {
+      "id": "punch_idempotente_reenvio",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "primera marcacion id 1861; reenvio con el mismo idempotency_key -> 200 replayed=true id 1861; filas leidas con esa llave: 1 (la revalidacion de la foto no paga una segunda hora)"
+    },
+    {
+      "id": "rbac_contraste_roles_sobre_nomina",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "POST /talento-humano/nomina/cierres/validar con el mismo tramo 2026-10-01..2026-10-15: rol \"Empleado marcaciones\" -> 403 PERMISO_DENEGADO Sin permiso para esta acción (403 esperado) y rol \"Administrador de empresa\" -> 409 IBC_REPORTADO_REQUERIDO No existe IBC reportado de nomina para Nyvora Monitor Certificate 1789763747186; (pasa el permiso y responde con codigo de dominio); control: ese mismo token si lee sus propios horarios (200), o sea el bloqueo es del permiso de nomina y no del ambiente"
+    },
+    {
+      "id": "aislamiento_tenant_lectura",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "lectura del empleado 425 (code QA-DEL-x-0924072703) de la empresa vecina NYVORA QA ISOLATION CONTROL con la sesion de NYVORA -> 404 EMPLEADO_NO_ENCONTRADO Empleado no encontrado.; listado propio 34 filas y filas fuera del alcance del tenant: 0"
+    },
+    {
+      "id": "mallas_retiradas_por_estado",
+      "esperado": "OK",
+      "observado": "OK",
+      "cumple": true,
+      "detalle": "2/2 mallas de la corrida pasan a status=inactive por PATCH /hr/routes/:id y la lectura del almacen lo confirma; todas se veian activas antes (2); borrado fisico: DELETE -> 400 sin delete_physical_records; id 442 active->inactive, id 443 active->inactive"
+    }
+  ],
+  "despliegue": {
+    "status": 200,
+    "commit_servido": "a440560d7f04",
+    "modulos": 19,
+    "version": "2.0"
+  },
+  "tenant": {
+    "id": "1d162ffd-bd27-4855-8141-b015388265fc",
+    "nombre": "NYVORA",
+    "modulos_activos": 37
+  },
+  "roles_de_medicion": [
+    {
+      "nombre": "Administrador de empresa",
+      "modulos": []
+    },
+    {
+      "nombre": "Empleado marcaciones",
+      "modulos": []
+    }
+  ],
+  "cuentas_efimeras": {
+    "jefe": 926,
+    "operario": 927,
+    "sin_horario": 928,
+    "lector": null
+  },
+  "sesiones_obtenidas": [
+    "jefe",
+    "operario",
+    "sin_horario"
+  ],
+  "empleado_operario_id": 789,
+  "empleado_sin_horario_id": 790,
+  "tramo_de_retiro_medido": {
+    "ingreso": "2026-11-27",
+    "retiro": "2026-12-27",
+    "dia_revisado": "2026-12-26"
+  },
+  "justificacion_del_tramo": {
+    "pendientes_iniciales": 31,
+    "intentos": 31,
+    "statuses": "200",
+    "pendientes_releidos": 0,
+    "campos_del_dia": [
+      "date",
+      "status",
+      "paid",
+      "classification",
+      "note",
+      "actor_id",
+      "actor_name",
+      "reviewed_at"
+    ]
+  },
+  "ventana_alterna_por_reloj": true,
+  "ventana_de_malla": {
+    "fecha": "2026-11-26",
+    "start_time": "08:00",
+    "end_time": "17:00",
+    "hora_local_bogota": "23:06"
+  },
+  "malla_id": 442,
+  "reposicion_residuos_anteriores": {
+    "mallas_de_corridas_previas_encontradas_activas": 0,
+    "activas_en_almacen_antes": 0,
+    "activas_en_almacen_despues": 0,
+    "ids": [],
+    "por": "PATCH /hr/routes/:id status=inactive con la sesion del administrador efmero de esta corrida"
+  },
+  "verificacion_de_reposicion": {
+    "mallas_cert_en_almacen": [
+      {
+        "id": 442,
+        "antes": "active",
+        "despues": "inactive",
+        "retirado_confirmado": true,
+        "delete_fisico": 400
+      },
+      {
+        "id": 443,
+        "antes": "active",
+        "despues": "inactive",
+        "retirado_confirmado": true,
+        "delete_fisico": 400
+      }
+    ],
+    "borrado_fisico_disponible": false,
+    "detalle": "2/2 mallas de la corrida con status=inactive releido del almacen; el DELETE fisico responde 400 porque exige delete_physical_records"
+  },
+  "reposicion_de_qa": [
+    {
+      "tipo": "malla",
+      "id": 442,
+      "visible_antes": true,
+      "estado_antes": "active",
+      "status_patch": 200,
+      "patch_observado": "200",
+      "estado_despues": "inactive",
+      "status_delete_fisico": 400,
+      "delete_fisico_observado": "400 FST_ERR_VALIDATION body must be object",
+      "retirado_confirmado": true
+    },
+    {
+      "tipo": "malla",
+      "id": 443,
+      "visible_antes": true,
+      "estado_antes": "active",
+      "status_patch": 200,
+      "patch_observado": "200",
+      "estado_despues": "inactive",
+      "status_delete_fisico": 400,
+      "delete_fisico_observado": "400 FST_ERR_VALIDATION body must be object",
+      "retirado_confirmado": true
+    },
+    {
+      "tipo": "banco",
+      "code": "929",
+      "status": 200,
+      "retirado_confirmado": true,
+      "por": "PATCH /talento-humano/bancos/:code active=false"
+    },
+    {
+      "tipo": "banco_control_inactivo",
+      "code": "930",
+      "retirado_confirmado": true,
+      "por": "relectura del maestro: se creo solo para medir la asignacion de un banco fuera de servicio"
+    },
+    {
+      "tipo": "usuario_operario",
+      "id": 927,
+      "status": 200,
+      "retirado_confirmado": true,
+      "por": "PATCH /admin/users/:id/status active=false"
+    },
+    {
+      "tipo": "usuario_sin_horario",
+      "id": 928,
+      "status": 200,
+      "retirado_confirmado": true,
+      "por": "PATCH /admin/users/:id/status active=false"
+    },
+    {
+      "tipo": "usuario_jefe",
+      "id": 926,
+      "status": 200,
+      "retirado_confirmado": true,
+      "por": "PATCH /admin/users/:id/status active=false"
+    }
+  ],
+  "residuos_declarados": [
+    "3 fichas de empleado \"Paquete *\" de la corrida 20261127040431 quedan inactivas: retiradas por endpoint, el producto no expone DELETE de empleado",
+    "banco 929 queda active=false en Tenant.config.hr_banks: el maestro se retira por estado",
+    "banco 930 queda active=false en Tenant.config.hr_banks: se creo solo para medir la asignacion de un banco fuera de servicio",
+    "31 clases \"trabajado_sin_marcacion\" en revision-dias del empleado efimero 789: el catalogo no expone DELETE de revision de dia y quedan ligadas a una ficha ya retirada",
+    "2 mallas de la corrida (442, 443) quedan con status=inactive por PATCH /hr/routes/:id: el DELETE fisico responde 400 porque exige delete_physical_records, que este arnes no se entrega a si mismo; la fila no se borra, se retira por estado",
+    "marcaciones de prueba con idempotency_key qa-paquete-20261127040431-reenvio, si la pierna idempotente se ejecuto"
+  ],
+  "resumen": {
+    "total": 26,
+    "verdes": 25,
+    "rojas": 1,
+    "no_aplicables": 0
+  },
+  "veredicto": "BLOQUEADO",
+  "piernas_rojas": [
+    {
+      "id": "punch_selfie_no_imagen_400",
+      "esperado": "OK",
+      "observado": "FALLO",
+      "detalle": "PDF -> 200; SVG -> 409 MARCACION_FUERA_DE_SECUENCIA La siguiente marcacion permitida es inicio_almuerzo.; 2.5 MB -> 400 VALIDACION El archivo supera el tamano maximo permitido (2097152 bytes). (contenido duro rechazado en los tres casos; el tercero puede caer en el limite de cuerpo antes del contenido)"
+    }
+  ]
+}

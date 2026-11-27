@@ -1,0 +1,100 @@
+{
+  "instrumento": "control-ausencia-biometrica",
+  "promocion": "hr-nomina-horarios-main-20261126",
+  "ejecutado_en": "2026-11-27T03:48:57.428Z",
+  "ref_medido": "05886b09b46e62c98de7c5b043119c84f5ea3ced",
+  "repo": "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\.tmp\\wt-hr-main-20261126",
+  "checks": [
+    {
+      "tipo": "ausencia_api",
+      "file": "apps/api/src/modules/hr/face-consent.js",
+      "ok": true,
+      "detalle": "modulo ausente"
+    },
+    {
+      "tipo": "ausencia_api",
+      "file": "apps/api/src/modules/hr/face-identity.js",
+      "ok": true,
+      "detalle": "modulo ausente"
+    },
+    {
+      "tipo": "ausencia_api",
+      "file": "apps/api/src/modules/hr/personal-webauthn.js",
+      "ok": true,
+      "detalle": "modulo ausente"
+    },
+    {
+      "tipo": "ausencia_api",
+      "file": "apps/api/src/modules/hr/shared-device-identity.js",
+      "ok": true,
+      "detalle": "modulo ausente"
+    },
+    {
+      "tipo": "ausencia_web",
+      "file": "apps/web/app/dashboard/talento-humano/rostros/",
+      "ok": true,
+      "detalle": "carpeta ausente"
+    },
+    {
+      "tipo": "ausencia_web",
+      "file": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/",
+      "ok": true,
+      "detalle": "carpeta ausente"
+    },
+    {
+      "tipo": "cadena_shared_device",
+      "file": "apps/api/src/modules/hr/**",
+      "ok": true,
+      "detalle": "cero coincidencias",
+      "lineas": 0
+    },
+    {
+      "tipo": "ausencia_migracion",
+      "file": "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql",
+      "ok": true,
+      "detalle": "migracion ausente (cero DDL)"
+    },
+    {
+      "tipo": "ausencia_migracion",
+      "file": "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql",
+      "ok": true,
+      "detalle": "migracion ausente (cero DDL)"
+    },
+    {
+      "tipo": "ausencia_migracion",
+      "file": "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql",
+      "ok": true,
+      "detalle": "migracion ausente (cero DDL)"
+    },
+    {
+      "tipo": "caso_positivo",
+      "file": "apps/api/src/modules/hr/service.js",
+      "ok": true,
+      "detalle": "el frente de nomina/horarios si esta en el arbol"
+    },
+    {
+      "tipo": "caso_positivo",
+      "file": "apps/api/src/modules/hr/davivienda-file.js",
+      "ok": true,
+      "detalle": "el frente de nomina/horarios si esta en el arbol"
+    },
+    {
+      "tipo": "caso_positivo",
+      "file": "apps/api/src/modules/hr/routes.js",
+      "ok": true,
+      "detalle": "el frente de nomina/horarios si esta en el arbol"
+    }
+  ],
+  "passed": true,
+  "total": 13,
+  "rotos": 0,
+  "autocontrol_mutacion": {
+    "deriva": "shared_device_inyectado_en_service",
+    "esperado": "roto",
+    "detectado_roto": true,
+    "checks_rotos": [
+      "cadena_shared_device:apps/api/src/modules/hr/**"
+    ]
+  },
+  "conclusion": "el frente biometrico (huella WebAuthn, rostro, celulares compartidos) NO viaja a main y el control es capaz de detectarlo"
+}
