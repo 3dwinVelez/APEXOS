@@ -1,1 +1,4 @@
-ALCANCE DE PROMOCION VALIDO: hr-nomina-horarios-main-20261126 (39 rutas)
+ALCANCE DE PROMOCION VALIDO: hr-nomina-horarios-main-20261126 (62 rutas)
+candidate_tip=a155ac93d787a49cde8d0cb6dc2f83679826f423
+base_main=0ec1cff0
+re-medido_contra_la_punta_publicada(el porton no viaja dentro del commit que lo describe)
