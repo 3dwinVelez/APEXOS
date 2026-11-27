@@ -236,6 +236,11 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/hr-nomina-main-20261126/invariantes-punta.json",
+      "motivo": "artefacto del porton: manifiesto o evidencia que el contrato del destino exige ver en el candidato (regla 24b de equipo-apexos)"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/hr-nomina-main-20261126/ledger-produccion.json",
       "motivo": "artefacto del porton: manifiesto o evidencia que el contrato del destino exige ver en el candidato (regla 24b de equipo-apexos)"
     },
@@ -354,6 +359,7 @@
     "docs/qa/evidence/hr-nomina-main-20261126/control-de-mutacion.json",
     "docs/qa/evidence/hr-nomina-main-20261126/hr-paquete-main-qa-corregido.js",
     "docs/qa/evidence/hr-nomina-main-20261126/invariantes-main.json",
+    "docs/qa/evidence/hr-nomina-main-20261126/invariantes-punta.json",
     "docs/qa/evidence/hr-nomina-main-20261126/ledger-produccion.json",
     "docs/qa/evidence/hr-nomina-main-20261126/mide-ledger-produccion.js",
     "docs/qa/evidence/hr-nomina-main-20261126/nyvora-qa-corrida-nocturna.json",
@@ -509,9 +515,10 @@
   "inventario_recalculado": {
     "medido_en": "2026-11-27T04:32:20.440Z",
     "metodo": "git diff --name-status origin/main HEAD (el inventario es la punta medida, no una lista a mano)",
-    "total": 62,
+    "total": 63,
     "producto": 39,
-    "de_gobierno": 23,
-    "correccion": "El plegado inicial sumo 71 rutas porque barrio el directorio completo de docs/qa/manifests (manifiestos de portones anteriores que no viajan en este diff). Se rehizo por diff neto: 62 rutas = 39 de producto + 23 de porton."
+    "de_gobierno": 24,
+    "correccion": "El plegado inicial sumo 71 rutas porque barrio el directorio completo de docs/qa/manifests (manifiestos de portones anteriores que no viajan en este diff). Se rehizo por diff neto: 62 rutas = 39 de producto + 23 de porton.",
+    "nota_final": "El inventario se genera del diff neto en cada re-medicion; por eso la ultima ruta de porton (invariantes-punta.json) entra con su commit y no se deja fuera por inercia del manifiesto."
   }
 }
