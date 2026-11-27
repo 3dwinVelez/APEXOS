@@ -1,0 +1,100 @@
+{
+  "instrumento": "censo de permiso de plataforma y configuracion de ambiente (solo lectura + 3 escrituras autorizadas)",
+  "fecha": "2026-11-27",
+  "hora_puesto": "UTC-05:00",
+  "ambientes": {
+    "produccion": "proyecto de Produccion (config/production.env)",
+    "qa": "proyecto de QA (config/qa.env)"
+  },
+  "autorizacion_dueno": "dale, aplicá el permiso a adminsjc@apexos.local y sumá las dos escrituras de la tabla del enlace de la app",
+  "verificado_previo": {
+    "portal_servido_habla_con": "https://jzbwzmkidfthknsohhnr.supabase.co",
+    "como_se_medido": "se enumeraron 10 chunks del bundle servido en www.apexos.com.co y se leyo el host embebido; coincide con el proyecto de Produccion consultado",
+    "binario_servido": "commit 91d43c79220d reportado por /health del API de Produccion",
+    "rutas_del_transporte_desarrollo_a_main": 63,
+    "rutas_que_tocan_auth_admin_platform_login_session_security_middleware": 0,
+    "archivos_del_panel_byte_identicos_antes_despues": {
+      "apps/web/app/dashboard/administracion/suscripciones/page.tsx": "ced3550b",
+      "apps/web/lib/supabaseQa.ts": "43e2b991",
+      "apps/web/app/api/platform/companies/route.ts": "b7a987fa",
+      "apps/web/lib/supabaseClient.ts": "712635e0"
+    }
+  },
+  "ANTES": {
+    "produccion": {
+      "platform_admins_filas": 1,
+      "platform_admins_detalle": [
+        {
+          "email": "ehvelez092@gmail.com",
+          "status": "active",
+          "otorgado_el": "2026-07-01 05:41",
+          "ultimo_login_supabase": "2026-11-13 01:23",
+          "sesiones_ultimas_14h": 0
+        }
+      ],
+      "cuentas_humanas_con_rol_APEX_ADMIN_del_API_sin_permiso_de_plataforma": 8,
+      "ingresos_recientes_todos_sin_permiso": [
+        "operario 1 (apexos.local) 11-27 01:13",
+        "soporte de empresa (apex.local) 11-26 21:45",
+        "correo personal 1 (11-25 19:15)",
+        "adminsjc@apexos.local 11-23 13:17",
+        "cuenta de cliente (apexos.local) 11-20 02:04"
+      ],
+      "redaccion_aplicada": "cuatro de estos correos no estaban versionados en el repositorio y se redactan por Ley 1581; solo se citan los dos ya documentados en docs/PLATFORM_INITIALIZATION.md y en la evidencia de 2026-10-26",
+      "empresas_activas_en_la_base": 3,
+      "platform_settings_filas": 0,
+      "platform_settings_service_role_select": false,
+      "platform_settings_anon_select": false,
+      "platform_settings_authenticated_select": false,
+      "platform_settings_rls": true,
+      "platform_settings_politicas": 0,
+      "rest_platform_settings_con_service_role": "403 42501",
+      "publico_mobile_app": "https://appapexos-production.up.railway.app (source: respaldo quemado, no fila)"
+    },
+    "qa": {
+      "platform_admins_filas": 1,
+      "platform_admins_detalle": [
+        {
+          "email": "admin@apexos.qa",
+          "status": "active",
+          "ultimo_login_supabase": "2026-11-27 00:10"
+        }
+      ],
+      "platform_settings_filas": 1,
+      "platform_settings_service_role_select": true,
+      "platform_settings_rls": false,
+      "mobile_app_url_almacenada": "https://appapexos-production.up.railway.app"
+    },
+    "objetos_de_seguridad_comparados": "politicas de companies/profiles/company_users/platform_admins y la funcion app_private.is_platform_admin(): identicas entre QA y Produccion; authenticated tiene SELECT en la vista; cero factores MFA y cero bloqueos en la cuenta con permiso"
+  },
+  "diagnostico": "la pantalla no esta rota: el portal de administracion consulta Supabase desde el navegador con el token de la cuenta con la que se entro, y el aislamiento por politicas solo deja ver empresas si esa cuenta tiene fila en public.platform_admins. La cuenta que se usaba no la tenia, asi que la consulta responde 200 con 0 filas y la pestaña queda vacia sin error. En QA la cuenta con permiso si esta en la tabla y por eso ahi carga.",
+  "ESCRITURAS_APLICADAS": {
+    "transaccion": "una sola, con guarda WHERE NOT EXISTS en las dos inserciones",
+    "salida_psql": ["BEGIN", "INSERT 0 1", "INSERT 0 1", "GRANT", "COMMIT"],
+    "efectos": [
+      "public.platform_admins: fila para adminsjc@apexos.local (user_id 7441d678-fd42-4be0-832c-28f5f5bce9c6), status active",
+      "public.platform_settings: clave mobile_app.url con el valor que el ambiente ya servia por respaldo",
+      "GRANT SELECT ON public.platform_settings TO service_role (espeja QA; no se otorgo a authenticated porque no existe consumidor por PostgREST)"
+    ],
+    "no_toco": "ninguna tabla operativa ni de cliente; las tres sentencias referencian solo platform_admins, platform_settings y el grant",
+    "no_se_hizo": "no se desactivo RLS en platform_settings (Produccion queda mas estricto que QA), no se edito la migracion 20261125183000_platform_settings y no se corrio prisma migrate deploy"
+  },
+  "DESPUES": {
+    "platform_admins_filas": 2,
+    "platform_admins_detalle": [
+      { "email": "ehvelez092@gmail.com", "status": "active", "otorgado_el": "2026-07-01 05:41" },
+      { "email": "adminsjc@apexos.local", "status": "active", "otorgado_el": "2026-11-27 11:26" }
+    ],
+    "platform_settings_filas": 1,
+    "platform_settings_actualizado_por": "seed_20261127_produccion",
+    "platform_settings_service_role_select": true,
+    "rest_platform_settings_con_service_role": "HTTP 200 con la fila mobile_app.url",
+    "publico_mobile_app": "https://appapexos-production.up.railway.app (sin cambio en lo que ve un anonimo: 0 regresiones)",
+    "confirmacion_pendiente": "el panel del navegador lo tiene que recargar quien tiene la sesion: las politicas de RLS se evaluan por consulta contra la tabla, no contra el token, asi que alcanza con recargar la pestana y no hace falta volver a entrar"
+  },
+  "NO_CERTIFICA": [
+    "no se mintio el flujo de navegador con sesion real: no se inicio sesion con ninguna credencial en Produccion (la clave local dice TEMP y ningun instrumento versionado la consume)",
+    "no se promueve nada a develop ni a main por esta intervencion",
+    "no se re-midio el censo de columnas de colisiones de correo despues de la escritura"
+  ]
+}
