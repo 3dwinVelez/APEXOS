@@ -1,0 +1,170 @@
+{
+  "scope_schema_version": 2,
+  "transport": "replay_puntual",
+  "change_id": "hr-modulo-main-pantallas-20261128",
+  "creado": "2026-11-27T21:35:00-05:00",
+  "sello_utc": "2026-11-28T02:35:00Z",
+  "nota_fecha": "El puesto esta a 2026-11-27 21:35 -05:00 (hora estandar de Colombia), que son 2026-11-28T02:35Z. El change_id dice 20261128 porque las mediciones que sostienen esta ronda se sellan en UTC (la paridad, la sonda y las invariantes corrieron despues de las 02:00Z del 28). La hora de autorizacion y creacion se consigna en la zona del puesto con su desplazamiento declarado, y la equivalencia en UTC va al lado: es la misma salvaguarda que la ronda 1 se llevo por error (sus manifiestos salieron sellados un dia adelante de la corrida).",
+  "autorizado": "dueno del proyecto (Edwin), 2026-11-27: «tu instruccion ahora es validar el modulo de talento humano con los cambios que se han realizado y migrarlo de manera correcta desde develop hasta el main, sin adulterar registros, danar funciones agenas al cambio, se requiere que queden los 3 ambientes alineados con la version que ya tenemos trabajada en develop, monta el plan de migracion y con mi autorizacion procede a migrar todo el modulo de manera correcta. autorizado la migracion», reforzada con «no dejes pendientes procede a terminar todas las instrucciones al pie de la letra garantizando los protocolos adecuadas ya establecidos y con mi atorizacion completa para proceder sin detenerte no tienes atorizado a dejar ningun pendiente para esta intervencion» y acotada por «sin elminar de produccion la aplicaicon de marcacion lo demas debe quedar alineado en todos los ambientes». Esta ronda es la extension que cierra lo que la ronda 1 no llevo: dos pantallas del mismo modulo. La orden ampara el viaje, el despliegue y la verificacion en Produccion. No autoriza force push, reescritura de historia compartida, borrado de ramas ajenas ni cambios de secretos.",
+  "target_branch": "main",
+  "source_branch": "develop",
+  "promotion_branch": "refs/heads/codex/qa-hr-modulo-main-20261127 (worktree .tmp/wt-hr-main-20261126, sobre origin/main b2012af2)",
+  "base_commits": {
+    "main": "b2012af2bc04b316b3808c238583548aaaee1ea3",
+    "develop": "3e7fabf5f535b0709229b456df3fb3c963ab6d78",
+    "desarrollo": "ceacdb72128c0332525be7d0937cf39a935dddc3"
+  },
+  "base_commit": "b2012af2bc04b316b3808c238583548aaaee1ea3",
+  "target_head": "b2012af2bc04b316b3808c238583548aaaee1ea3",
+  "certified_commit": "ceacdb72128c0332525be7d0937cf39a935dddc3",
+  "replay_baseline": "cfbd94d341a12945c5d8a107186afb409fe5f1c5",
+  "certified_commit_nota": "certified_commit = ceacdb72 es la punta de desarrollo medida antes de empacar: trae las dos paginas (nacieron en 773d0cbd, que ademas ya es ancestro de main por el merge -s ours de la ronda 1), el spec de la ronda 2, las invariantes, el control de mutacion y la medicion de Produccion. Las cuatro rutas documentales que este manifiesto y el de aprobacion citan (los dos manifiestos, suites-candidato-pantallas.txt y equivalencia-blob-pantallas.json) salen del commit de desarrollo vigente al empacar, descendiente de ceacdb72, y viajan con el mismo blob: por eso el porton de origen las verifica una por una y no perdonando nada. replay_baseline = cfbd94d3 es el ultimo ancestro comun entre origin/main b2012af2 y el commit certificado, medido con git merge-base.",
+  "binario_certificado_en_qa": "a440560d7f04",
+  "candidate_source": {
+    "branch": "develop",
+    "commits_de_origen": [
+      "773d0cbd fix(hr): las siete preguntas destructivas de talento humano se responden dentro de la pantalla (commit donde nacen las dos paginas en desarrollo)",
+      "2d84b3f1 (rama auxiliar) feat(hr): las dos pantallas biométricas se llevan blob-identicas desde origin/desarrollo y viaja su medicion",
+      "f9ff6b29 (rama auxiliar) docs(qa): el spec de la ronda 2 se separa del de la ronda 1 para que la evidencia citada siga siendo verificable"
+    ],
+    "nota": "Ronda 2 del mismo frente, no un transporte nuevo. La ronda 1 ya aterrizo en main como b2012af2bc04 (PR #120, 53 rutas, cuatro fusiones a tres vias certificadas en docs/qa/manifests/hr-modulo-main-20261127-scope.json). El inventario de esa ronda se armo por delta modificado y no por existencia de rutas, y dejo dos paginas del modulo fuera. Esta ronda las lleva por replay puntual puro: sin una sola via de fusion, sin ninguna excepcion de origen. El spec de la ronda 1 no se reabre ni se edita."
+  },
+  "naturaleza": "Porton de completitud del modulo de Talento Humano en Produccion: las dos pantallas que el hub ya enlaza y que hoy responden 404. `apps/web/app/dashboard/talento-humano/rostros/page.tsx` es el maestro de rostros registrados con consentimiento y restablecimiento; `apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx` es el maestro de celulares compartidos del camión con su marca paso-a-paso. Ningun endpoint cambia: los dos maestros del API ya fueron servidos y medidos en la ronda 1 (401 registrado en api-servido-produccion.json). No se retira la marcacion por web: cero rutas bajo apps/api en este inventario.",
+  "change_intent": {
+    "modules": [
+      "hr-biometria-face-enrollment",
+      "hr-biometria-shared-devices",
+      "documentacion-qa"
+    ],
+    "summary": "Inventario exacto: 19 rutas. 2 de producto (A/A, ambas blob-identicas a origin/desarrollo): las dos paginas del portal. 17 documentales: 1 spec de replay de la ronda 2, 11 piezas de evidencia de medicion (paridad por blob, sonda de rutas, sonda de pantallas, ledger de Produccion antes/despues/comparacion, ventana de marcaciones de 7 dias, censo de endpoints servidos, invariantes del replay, control de mutacion, suites y build, equivalencia por blob), los 2 manifiestos de esta ronda y la actualizacion del brief (paragrafo 11) y de la certificacion (paragrafos 8 y 9). 0 borrados, 0 rutas bajo apps/api, packages/, infra/, apps/control-tower/ ni agents/**."
+  },
+  "nota_inventario": "Dos conteos que no son comparables y por eso se declaran: expected_changes son las 19 rutas del delta neto origin/main b2012af2..candidato (lo que esta ronda cambia). El spec docs/qa/specs/hr-modulo-main-20261128.pantallas.replay.json mide otra cosa: 36 entradas carry = el nucleo del modulo (las 34 carry certificadas por la ronda 1, que siguen blob-identicas en el candidato, mas las 2 paginas nuevas). Las 3 vias de fusion de la ronda 1 (insert) no se reabren aqui y por eso no aparecen: su invariante vive en docs/qa/specs/hr-modulo-main-20261127.replay.json y su evidencia en invariantes-replay.json, que esta ronda no toca.",
+  "expected_changes": [    { "status": "A", "file": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx" },
+    { "status": "A", "file": "apps/web/app/dashboard/talento-humano/rostros/page.tsx" },
+    { "status": "A", "file": "docs/qa/specs/hr-modulo-main-20261128.pantallas.replay.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/paridad-tres-ramas-antes.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/rutas-nuevas-servidas-antes.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/pantallas-servido-antes.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/api-servido-produccion.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/ledger-produccion-antes.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/ledger-produccion-despues.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/ledger-produccion-comparacion.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/marcaciones-produccion-dias7.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/invariantes-replay-pantallas.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/controls/selftest-instrumento-pantallas.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/suites-candidato-pantallas.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-modulo-main-20261127/equivalencia-blob-pantallas.json" },
+    { "status": "A", "file": "docs/qa/manifests/hr-modulo-main-pantallas-20261128-scope.json" },
+    { "status": "A", "file": "docs/qa/manifests/hr-modulo-main-pantallas-20261128-approval.json" },
+    { "status": "M", "file": "docs/briefs/2026-11-27-hr-modulo-main-migracion.md" },
+    { "status": "M", "file": "docs/qa/certifications/hr-modulo-main-20261127.md" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
+    "docs/qa/specs/hr-modulo-main-20261128.pantallas.replay.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/paridad-tres-ramas-antes.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/rutas-nuevas-servidas-antes.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/pantallas-servido-antes.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/api-servido-produccion.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/ledger-produccion-antes.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/ledger-produccion-despues.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/ledger-produccion-comparacion.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/marcaciones-produccion-dias7.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/invariantes-replay-pantallas.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/controls/selftest-instrumento-pantallas.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/suites-candidato-pantallas.txt",
+    "docs/qa/evidence/hr-modulo-main-20261127/equivalencia-blob-pantallas.json",
+    "docs/qa/manifests/hr-modulo-main-pantallas-20261128-scope.json",
+    "docs/qa/manifests/hr-modulo-main-pantallas-20261128-approval.json",
+    "docs/briefs/2026-11-27-hr-modulo-main-migracion.md",
+    "docs/qa/certifications/hr-modulo-main-20261127.md"
+  ],
+  "allowed_deletions": [],
+  "origin_waivers": [],
+  "por_que_no_hay_fusiones_en_esta_ronda": [
+    "Las dos rutas de producto no existen en main (medido: git rev-parse origin/main:<ruta> falla y la sonda servida devuelve 404), asi que no hay nada del destino que haya que conservar: no hay conflicto que fusionar.",
+    "Las 4 fusiones a tres vias de la ronda 1 (schema.prisma, package-lock.json, apps/api/package.json y la compuerta de escrituras en apps/web/lib/api.ts) ya viven en main b2012af2bc04 y quedan certificadas por docs/qa/manifests/hr-modulo-main-20261127-scope.json y sus invariantes. Reabrirlas para 'alinear el blob con desarrollo' pisaria trabajo ajeno al frente, que es lo que el porton de origen existe para impedir.",
+    "Consecuencia medida y declarada: por eso apps/web/lib/api.ts sigue distinto entre main y desarrollo, y apps/web/lib/installationIdentity.ts sigue sin viajar (nadie lo importa en main, git grep origin/main = 0 rutas). Son frentes distintos, no huecos de este porton."
+  ],
+  "certified_functional_paths": [
+    "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
+    "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "las_dos_pantallas_biometricas_existen_en_produccion",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/paridad-tres-ramas-antes.json",
+        "../evidence/hr-modulo-main-20261127/rutas-nuevas-servidas-antes.json",
+        "../evidence/hr-modulo-main-20261127/suites-candidato-pantallas.txt"
+      ],
+      "nota": "Medicion ANTES: el nucleo del modulo esta 63/65 identical en blob contra desarrollo y contra develop, con 0 rutas distintas y 2 ausentes (rostros y dispositivos-marcacion), y la sonda sobre el binario servido b2012af2bc04 da 404 en las dos rutas mientras el hub responde 200. Prueba de existencia del candidato: next build salida 0, 154 rutas en el manifiesto y las dos paginas prerenderizadas con su .html estatico. La sonda despues del despliegue es el cierre del DESPUES."
+    },
+    {
+      "name": "marcacion_por_web_sigue_viva_en_produccion",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/api-servido-produccion.json",
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-pantallas.json",
+        "../evidence/hr-modulo-main-20261127/marcaciones-produccion-dias7.json"
+      ],
+      "nota": "El inventario no toca ninguna ruta de marcado: 0 rutas bajo apps/api/** y 0 rutas bajo los componentes de marcacion. Censo servido del API en Produccion: POST /api/v1/hr/self/time-punches responde 400 (registrado, valida cuerpo) y el control /api/v1/hr/no-existe-zz responde 404, asi que el 400 no es una ruta ausente. Ventana de 7 dias leida sin escrituras: 8 rechazos de foto sobre 230 marcaciones aceptadas despues del corte (3,5 %) contra 35 sobre 198 antes (17,7 %). La compuerta alterna no revivio."
+    },
+    {
+      "name": "funciones_agenas_no_se_danan",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/suites-candidato-pantallas.txt",
+        "../evidence/hr-modulo-main-20261127/paridad-tres-ramas-antes.json",
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-pantallas.json"
+      ],
+      "nota": "Suite del portal hr-*.test.mjs 185/185 dentro del arbol candidato y build exit 0 sobre el mismo arbol. El porton de origen verifica que las 19 rutas son, blob por blob, las de origin/desarrollo: ninguna reconstruccion parecida. Cero borrados en el inventario y cero rutas de otros modulos."
+    },
+    {
+      "name": "esquema_y_datos_de_cliente_intactos",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/ledger-produccion-comparacion.json",
+        "../evidence/hr-modulo-main-20261127/ledger-produccion-antes.json",
+        "../evidence/hr-modulo-main-20261127/ledger-produccion-despues.json"
+      ],
+      "nota": "Esta ronda no trae migracion: las 3 biométricas ya se aplicaron en la ronda 1 y el ledger de solo lectura lo certifica (72 a 75 aplicadas, 235 a 238 tablas, sellos movidos = []). Las paginas nuevas solo leen esas tablas, asi que no hay escritura de registros de cliente ni en el despliegue ni en la verificacion."
+    }
+  ],
+  "compuertas_exigidas": [
+    "npm run qa:promotion:scope -- docs/qa/manifests/hr-modulo-main-pantallas-20261128-scope.json <punta-candidato> origin/main",
+    "npm run qa:approval:evidence -- docs/qa/manifests/hr-modulo-main-pantallas-20261128-approval.json",
+    "node scripts/certifications/promotion-migration-check.js --mode invariantes --spec docs/qa/specs/hr-modulo-main-20261128.pantallas.replay.json --against commit --ref <punta-candidato> --output docs/qa/evidence/hr-modulo-main-20261127/invariantes-replay-pantallas.json",
+    "node scripts/certifications/promotion-migration-check.js --selftest --output docs/qa/evidence/hr-modulo-main-20261127/controls/selftest-instrumento-pantallas.json"
+  ],
+  "deriva_declarada": [
+    "main no alinea con desarrollo las rutas de frentes ajenos a Talento Humano: apps/web/lib/moduleAccess.ts, apps/web/lib/moduleFunctions.ts y apps/web/lib/modules.ts (telemetria y monitor) y apps/web/lib/installationIdentity.ts (el enlace de la app administrable, que vive en develop y no tiene consumidor en main: git grep installationIdentity origin/main -- apps/web devuelve 0 rutas). Medido en paridad-tres-ramas-antes.json: 75 rutas compartidas, 69 identicas, 4 distintas, de las cuales 1 es la fusion de la compuerta de escrituras certificada en la ronda 1.",
+    "schema.prisma y package-lock.json de main no se reescriben en esta ronda: la ronda 1 ya los fusiono aditivamente y tocarlos otra vez seria pisar el arbol vivo de Produccion sin necesidad del frente."
+  ],
+  "verificado_local": {
+    "fecha_hora_local": "2026-11-27T21:35:00-05:00",
+    "rama_trabajo": "codex/qa-hr-modulo-main-20261127 (worktree auxiliar .tmp/wt-hr-main-20261126), contenido nacido en desarrollo",
+    "puntas": {
+      "origin/main": "b2012af2bc04b316b3808c238583548aaaee1ea3",
+      "origin/develop": "3e7fabf5f535b0709229b456df3fb3c963ab6d78",
+      "origin/desarrollo": "ceacdb72128c0332525be7d0937cf39a935dddc3"
+    },
+    "instrumentos": "promotion-migration-check.js (invariantes 36/36 y selftest 6/6 rojas), scripts/validate-promotion-scope.js (transporte puntual, cero excepciones de origen), sonda HTTP del portal y del API sobre Produccion (solo lectura), ledger SQL de solo lectura, script de paridad por blob del modulo"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-27T21:35:00-05:00",
+    "authorization_flags": {
+      "direct_push_to_main": false,
+      "pull_request_a_main": true,
+      "migraciones_en_produccion": false,
+      "redeploy_railway": true
+    },
+    "nota": "No hay migracion nueva en esta ronda, asi que el flag de migraciones queda en false y no se ejecuta ninguna escritura remota. El despliegue es el automatico de Railway al construir desde fuente la punta de main; no se fuerza un redeploy manual."
+  }
+}

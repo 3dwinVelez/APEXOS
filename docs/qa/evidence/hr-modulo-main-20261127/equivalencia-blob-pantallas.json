@@ -1,0 +1,29 @@
+{
+ "instrumento": "equivalencia-blob-pantallas",
+ "ejecutado_en": "2026-11-28T02:41:10.731Z",
+ "candidato_ref": "01e9a400047fbde2457b7747a45b2cf1b09cc5fc",
+ "base_ref": "b2012af2bc04b316b3808c238583548aaaee1ea3",
+ "origen_ref": "6ae7d5d5",
+ "origen_punta": "6ae7d5d53bd94c83c8379b9e341513d152b7ef98",
+ "rutas_declaradas_en_manifiesto": 19,
+ "rutas_netas_en_candidato_ref": 18,
+ "este_documento": {
+  "file": "docs/qa/evidence/hr-modulo-main-20261127/equivalencia-blob-pantallas.json",
+  "status": "A",
+  "motivo": "se escribe sobre esta punta y sube en el commit siguiente"
+ },
+ "altas": 16,
+ "modificaciones": 2,
+ "eliminaciones": 0,
+ "blob_identico_con_desarrollo": 18,
+ "rutas_medidas": 18,
+ "rutas_distintas_o_ausentes": [],
+ "vias_de_fusion_a_tres_vias": [],
+ "rutas_sin_blob_en_desarrollo": [],
+ "inventario_vs_diff": {
+  "declaradas_no_en_diff": [],
+  "en_diff_no_decladas": []
+ },
+ "control": "Blob identico = la ruta llega byte a byte desde origin/desarrollo, que es donde el frente se escribio y se probo. Rutas distintas = vacio en esta ronda: no hay fusion a tres vias porque el delta no comparte archivo con el trabajo propio de main. Rutas sin blob en desarrollo = vacio: ninguna ruta se invento en el puerto.",
+ "nota": "Medido en 01e9a40004: el delta contra main era de 18 rutas y este documento era la numero 19, asi que no podia estar en el arbol que describe (un sello del SHA N no vive en el arbol que produce N). El inventario completo de 19 rutas lo verifica el porton contra la punta final, que ya incluye este archivo: npm run qa:promotion:scope."
+}

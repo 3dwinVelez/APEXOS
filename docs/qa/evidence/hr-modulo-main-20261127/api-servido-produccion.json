@@ -1,0 +1,21 @@
+{
+  "hora_utc": "2026-11-28T02:16:40.440Z",
+  "base": "https://apexos-api-prod-production.up.railway.app",
+  "health": {
+    "commit": "b2012af2bc04",
+    "status": "OK",
+    "modulos": 19
+  },
+  "censo_endpoints": {
+    "GET /api/v1/hr/shared-devices": 401,
+    "GET /api/v1/hr/face-enrollments": 401,
+    "GET /api/v1/hr/self/face-enrollment": 401,
+    "GET /api/v1/hr/self/webauthn": 401,
+    "POST /api/v1/hr/self/webauthn/registration-challenge": 401,
+    "POST /api/v1/hr/shared-devices/registration-challenge": 401,
+    "POST /api/v1/hr/self/time-punches": 400,
+    "GET /api/v1/hr/no-existe-zz": 404
+  },
+  "lectura": "401 = endpoint registrado que exige sesion; 400 = registrado y valida el cuerpo; 404 = no construido (control: /api/v1/hr/no-existe-zz)",
+  "veredicto": "ENDPOINTS_BIOMETRICOS_SERVIDOS_Y_MARCACION_WEB_SIGUE_REGISTRADA"
+}

@@ -1,0 +1,119 @@
+{
+  "change_id": "hr-modulo-main-pantallas-20261128",
+  "base_ref": "origin/main",
+  "origin_ref": "origin/desarrollo",
+  "nota": "Segunda ronda del mismo puerto: lleva las dos pantallas del frente biometrico que el hub de Talento Humano enlaza (rostros y dispositivos-marcacion) y re-mide, contra el arbol ya promocionado, que las 34 rutas carry de la ronda anterior sigan siendo el blob de origin/desarrollo. Las 3 rutas de fusion a tres vias (apps/api/prisma/schema.prisma, apps/api/package.json y apps/web/lib/api.ts) no entran en este spec porque su blob no es el de origen por diseno: quedaron certificadas en docs/qa/specs/hr-modulo-main-20261127.replay.json y su evidencia es docs/qa/evidence/hr-modulo-main-20261127/invariantes-replay.json (37/37 contra 303f0725, que es el arbol que ya sirve Produccion).",
+  "carry": [
+    {
+      "file": "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql"
+    },
+    {
+      "file": "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql"
+    },
+    {
+      "file": "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.js"
+    },
+    {
+      "file": "apps/api/src/modules/auth/schema.js"
+    },
+    {
+      "file": "apps/api/src/modules/auth/service.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/face-consent.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/face-identity.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/personal-webauthn.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/shared-device-identity.js"
+    },
+    {
+      "file": "apps/api/test/auth-webauthn-login.test.js"
+    },
+    {
+      "file": "apps/api/test/hr-face-identity.test.js"
+    },
+    {
+      "file": "apps/api/test/hr-personal-webauthn.test.js"
+    },
+    {
+      "file": "apps/api/test/hr-shared-device-identity.test.js"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/rostros/page.tsx"
+    },
+    {
+      "file": "apps/web/components/hr/ConfirmWindow.tsx"
+    },
+    {
+      "file": "apps/web/components/operations/PhotoCapture.tsx"
+    },
+    {
+      "file": "apps/web/lib/hrMarkingCorrection.ts"
+    },
+    {
+      "file": "apps/web/lib/hrOfflineEvidence.ts"
+    },
+    {
+      "file": "apps/web/lib/hrOfflineMarking.ts"
+    },
+    {
+      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-offline-marking.test.mjs"
+    }
+  ],
+  "insert": [],
+  "delete": [],
+  "edit": []
+}

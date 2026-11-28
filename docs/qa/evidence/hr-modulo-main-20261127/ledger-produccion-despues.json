@@ -1,0 +1,91 @@
+{
+  "etapa": "despues",
+  "destino": "produccion (pooler de sesion)",
+  "hora_utc": "2026-11-28T02:05:45.972Z",
+  "migraciones_aplicadas": [
+    {
+      "total": 75,
+      "ultima_aplicada": "2026-11-28T02:05:35.336Z"
+    }
+  ],
+  "ultimas_cinco": [
+    {
+      "migration_name": "20261122120000_hr_webauthn_credentials",
+      "finished_at": "2026-11-28T02:05:35.336Z"
+    },
+    {
+      "migration_name": "20261122060000_hr_face_enrollments",
+      "finished_at": "2026-11-28T02:05:34.263Z"
+    },
+    {
+      "migration_name": "20261121230000_hr_shared_devices",
+      "finished_at": "2026-11-28T02:05:33.062Z"
+    },
+    {
+      "migration_name": "20261125183000_platform_settings",
+      "finished_at": "2026-11-26T18:32:05.850Z"
+    },
+    {
+      "migration_name": "20261113120000_hr_nomina_legal_2026",
+      "finished_at": "2026-11-17T22:17:40.180Z"
+    }
+  ],
+  "tablas_biometricas": [
+    {
+      "nombre": "hr_shared_devices",
+      "existe": true
+    },
+    {
+      "nombre": "hr_face_enrollments",
+      "existe": true
+    },
+    {
+      "nombre": "hr_webauthn_credentials",
+      "existe": true
+    }
+  ],
+  "protegidas": [
+    {
+      "nombre": "TimePunch",
+      "existe": false
+    },
+    {
+      "nombre": "Employee",
+      "existe": false
+    },
+    {
+      "nombre": "Tenant",
+      "existe": false
+    },
+    {
+      "nombre": "TimeRoute",
+      "existe": false
+    },
+    {
+      "nombre": "employees",
+      "existe": true,
+      "filas": "101",
+      "max_id": "f72c0016-5a37-4807-bb81-31e9329e31af",
+      "ultimo_cambio": "2026-11-28 01:49:01.100337+00"
+    },
+    {
+      "nombre": "platform_settings",
+      "existe": true,
+      "filas": "1",
+      "max_id": "1",
+      "ultimo_cambio": "2026-11-27 11:26:22.77"
+    },
+    {
+      "nombre": "platform_admins",
+      "existe": true,
+      "filas": "2",
+      "max_id": "1f326a0f-238b-4d78-a5df-62acd6b19a91",
+      "ultimo_cambio": "2026-11-27 11:26:22.769616+00"
+    }
+  ],
+  "tablas_total": [
+    {
+      "tablas": 238
+    }
+  ]
+}
