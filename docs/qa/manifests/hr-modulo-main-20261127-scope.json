@@ -1,0 +1,458 @@
+{
+  "scope_schema_version": 2,
+  "transport": "replay_puntual_con_hunks_fusionados",
+  "change_id": "hr-modulo-main-20261127",
+  "creado": "2026-11-27T21:20:00-05:00",
+  "autorizado": "dueno del proyecto (Edwin), 2026-11-27: «tu instruccion ahora es validar el modulo de talento humano con los cambios que se han realizado y migrarlo de manera correcta desde develop hasta el main, sin adulterar registros, danar funciones agenas al cambio, se requiere que queden los 3 ambientes alineados con la version que ya tenemos trabajada en develop, monta el plan de migracion y con mi autorizacion procede a migrar todo el modulo de manera correcta. autorizado la migracion», reforzada con «no dejes pendientes procede a terminar todas las instrucciones al pie de la letra garantizando los protocolos adecuadas ya establecidos y con mi atorizacion completa», y acotada por «ten en cuenta dejar para produccion provicionalmente la aplicacion de maracion mediante la web los demas cambios deben migrar de manera completa y sana». La orden ampara el viaje del frente completo de Talento Humano por desarrollo -> develop -> main, sus despliegues y las migraciones declaradas. No autoriza force push, reescritura de historia compartida, borrado de ramas ajenas ni cambios de secretos.",
+  "target_branch": "main",
+  "source_branch": "develop",
+  "promotion_branch": "refs/heads/codex/qa-hr-modulo-main-20261127 (worktree .tmp/wt-hr-main-20261126, nace sobre origin/main)",
+  "base_commits": {
+    "main": "91d43c79220dec00995284118a8ef30d3ea061cd",
+    "develop": "3e7fabf5f535b0709229b456df3fb3c963ab6d78",
+    "desarrollo": "aa2659854a2e9781717c13c81936bfe66c7041ff"
+  },
+  "base_commit": "91d43c79220dec00995284118a8ef30d3ea061cd",
+  "target_head": "91d43c79220dec00995284118a8ef30d3ea061cd",
+  "certified_commit": "aa2659854a2e9781717c13c81936bfe66c7041ff",
+  "binario_certificado_en_qa": "a440560d7f04",
+  "candidate_source": {
+    "branch": "develop",
+    "commit": "3e7fabf5f535b0709229b456df3fb3c963ab6d78",
+    "commits_de_origen": [
+      "875f2768 feat(hr): el modulo de Talento Humano sube a main replayando el arbol ya certificado",
+      "f51509a8 feat(hr): el lock trae el subarbol biometrico y el instrumento de replay viaja con la invariante insert",
+      "9e2b41dd feat(hr): el gate de escrituras biometricas de la web sube fusionado con el modulo y el porton aprende el reemplazo declarado",
+      "303f0725 test(qa): el selftest del porton exige las seis derivas que el instrumento mide"
+    ],
+    "nota": "El candidato nace sobre origin/main (91d43c79). La punta de la rama auxiliar lleva ademas un merge `-s ours` con origin/desarrollo (aa265985): no cambia un byte del arbol y solo registra como ancestro el commit donde el contenido nacio y se probo, que es lo que el porton de ascendencia exige cuando el transporte no es liso. Las 12 rutas documentales (brief, certificacion, los dos manifiestos y la evidencia que ellos citan, incluido el instrumento de campo) se llevan despues, blob-identicas a origin/desarrollo: cero rutas de producto en ese commit."
+  },
+  "naturaleza": "Porton funcional a Produccion: el modulo de Talento Humano llega completo a main. Trae el maestro de celulares compartidos del camion y su marca paso-a-paso, el maestro de rostros con consentimiento y restablecimiento, la credencial WebAuthn personal, la tanda del operador con sincronizacion entre dispositivos, la correccion administrativa de marcacion, la lectura de evidencia degradada sin base64 en el reporte, el panel biométrico de dos clics y la compuerta de escrituras del cliente. No retira la marcacion por web de Produccion: ninguna ruta de este inventario desactiva el flujo de marcado del operario.",
+  "change_intent": {
+    "modules": [
+      "hr-biometria-shared-devices",
+      "hr-biometria-face-enrollment",
+      "hr-webauthn-personal",
+      "hr-marcacion-y-signos-vitales",
+      "hr-nomina-y-liquidacion",
+      "hr-fallback-de-escrituras-en-cliente",
+      "certificaciones-qa",
+      "documentacion-qa"
+    ],
+    "summary": "Inventario exacto: 53 rutas. 41 de producto e instrumentos (14 altas, 27 modificaciones, 0 borrados): 19 de apps/api (producto, 4 pruebas y 3 migraciones), 18 de apps/web (8 pantallas, 4 librerias, 2 componentes y 4 pruebas), mas el spec de replay, el verificador de invariantes, su test y el lock de la raiz. 12 documentales: 1 brief, 1 certificacion, 2 manifiestos, 7 piezas de evidencia versionada y el instrumento de campo que las produjo. Cero rutas bajo packages/, infra/, apps/control-tower/ ni agents/**. Cero borrados en todo el inventario."
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/auth/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/auth/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/auth/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/face-consent.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/face-identity.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/personal-webauthn.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/shared-device-identity.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/auth-webauthn-login.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-face-identity.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-personal-webauthn.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-shared-device-identity.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/ConfirmWindow.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/operations/PhotoCapture.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/hrMarkingCorrection.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrOfflineEvidence.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrOfflineMarking.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-offline-marking.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/specs/hr-modulo-main-20261127.replay.json"
+    },
+    {
+      "status": "M",
+      "file": "package-lock.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/promotion-migration-check.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/test/promotion-replay-instruments.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-27-hr-modulo-main-migracion.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-modulo-main-20261127.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-modulo-main-20261127-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-modulo-main-20261127-approval.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-modulo-main-20261127/invariantes-replay.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-modulo-main-20261127/equivalencia-blob-candidato.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-modulo-main-20261127/equivalencia-lock-biometrico.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-modulo-main-20261127/suites-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-modulo-main-20261127/controls/selftest-instrumento.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/paquete-qa-desplegado/qa-campo-escritura.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/certification.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-paquete-main-qa.js"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql",
+    "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql",
+    "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/package.json",
+    "apps/api/src/modules/auth/routes.js",
+    "apps/api/src/modules/auth/schema.js",
+    "apps/api/src/modules/auth/service.js",
+    "apps/api/src/modules/hr/face-consent.js",
+    "apps/api/src/modules/hr/face-identity.js",
+    "apps/api/src/modules/hr/personal-webauthn.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/shared-device-identity.js",
+    "apps/api/test/auth-webauthn-login.test.js",
+    "apps/api/test/hr-face-identity.test.js",
+    "apps/api/test/hr-personal-webauthn.test.js",
+    "apps/api/test/hr-shared-device-identity.test.js",
+    "apps/web/app/dashboard/talento-humano/",
+    "apps/web/components/hr/ConfirmWindow.tsx",
+    "apps/web/components/operations/PhotoCapture.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/hrMarkingCorrection.ts",
+    "apps/web/lib/hrOfflineEvidence.ts",
+    "apps/web/lib/hrOfflineMarking.ts",
+    "apps/web/test/hr-employee-biometric-reset.test.mjs",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
+    "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+    "apps/web/test/hr-offline-marking.test.mjs",
+    "docs/briefs/2026-11-27-hr-modulo-main-migracion.md",
+    "docs/qa/specs/hr-modulo-main-20261127.replay.json",
+    "docs/qa/certifications/hr-modulo-main-20261127.md",
+    "docs/qa/manifests/hr-modulo-main-20261127-scope.json",
+    "docs/qa/manifests/hr-modulo-main-20261127-approval.json",
+    "docs/qa/evidence/hr-modulo-main-20261127/",
+    "docs/qa/evidence/hr-alineacion-20261127/paquete-qa-desplegado/qa-campo-escritura.json",
+    "docs/qa/evidence/hr-alineacion-20261127/absorcion-sincronia/certification.json",
+    "scripts/certifications/promotion-migration-check.js",
+    "scripts/certifications/hr-paquete-main-qa.js",
+    "scripts/test/promotion-replay-instruments.test.js",
+    "package-lock.json"
+  ],
+  "allowed_deletions": [],
+  "origin_waivers": [
+    {
+      "file": "apps/api/prisma/schema.prisma",
+      "reason": "El blob de origin/desarrollo trae 324 lineas de modelos de frentes que Produccion no tiene (Comercio M-30, facturas recibidas, torre de control, bases de auditoria). Copiarlo entero pondria modelos sin migracion aplicada y sin certificar sobre el esquema vivo de Produccion. La via alternativa suma sobre el blob de main las 94 lineas del frente (94 agregadas, 0 eliminadas) y la invariante insert del porton rompe si la fusion se lleva una linea propia del destino sin declararla.",
+      "approval": "dueno del proyecto (Edwin), 2026-11-27, dentro de la orden de migrar el modulo «sin adulterar registros, danar funciones agenas al cambio»: esta via existe precisamente para no llevarse por delante los frentes ajenos."
+    },
+    {
+      "file": "apps/api/package.json",
+      "reason": "El manifest de desarrollo declara 11 dependencias de otros frentes que main no instala. Sobre el blob de main se suman solo las 4 del frente biometrico (0 bajas, 4 agregadas), verificadas version e integridad contra el lock en equivalencia-lock-biometrico.json.",
+      "approval": "dueno del proyecto (Edwin), 2026-11-27, misma base: el delta es aditivo y no toca dependencias ajenas."
+    },
+    {
+      "file": "package-lock.json",
+      "reason": "Archivo generado por npm. El lock de desarrollo arrastra 449 lineas de subarboles de frentes ajenos. El candidato no pisa el lock de main: le suma 153 lineas y 0 bajas, y el subarbol de las 4 dependencias biométricas queda byte a byte identico al de desarrollo en version y en integrity, que es lo que Railway instala con npm ci. Sin esta via el despliegue no tendria las dependencias del modulo que sube en el mismo commit.",
+      "approval": "dueno del proyecto (Edwin), 2026-11-27, misma base."
+    },
+    {
+      "file": "apps/web/lib/api.ts",
+      "reason": "Cuarta via de fusion, nacida de un rojo del arnés y no de una preferencia: el punto D de apps/web/test/hr-offline-marking.test.mjs cayo cuando la ruta quedo fuera por telemetria, porque en este archivo vive shouldBlockHrWriteFallback, la guarda que impide que el respaldo de Supabase escriba donde la API rechazo. Sin ella los maestros biométricos hubieran llegado a Produccion con respaldo activo, la clase de defecto ya documentada como «la pantalla miente por omision». Se llevan solo las 5 lineas de la compuerta (con 1 linea de condicion reemplazada, declarada en el spec) y quedan fuera las 55 lineas de telemetria de cliente y otros frentes. Tras la fusion: 185/185 en el portal.",
+      "approval": "dueno del proyecto (Edwin), 2026-11-27, misma base."
+    }
+  ],
+  "por_que_no_es_replay_puntual_liso": [
+    "main y develop ya no descienden uno del otro: medido con git rev-list --count, develop trae 173 commits que Produccion no tiene y main trae 220 que develop no tiene. Un merge de rama arrastraria frentes completos ajenos a Talento Humano.",
+    "37 de las 41 rutas si son replay liso (blob identico a origin/desarrollo, verificado por el porton). Las 4 restantes son rutas compartidas donde copiar el blob de desarrollo destruiria trabajo ajeno: schema.prisma, apps/api/package.json, package-lock.json y apps/web/lib/api.ts.",
+    "El transporte no es replay_puntual liso porque el porton de ese modo exige cero excepciones de origen; aqui las cuatro excepciones van nombradas con su razon, su delta medido y su invariante que las verifica linea por linea."
+  ],
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/shared-device-identity.js",
+    "apps/api/src/modules/hr/face-identity.js",
+    "apps/api/src/modules/hr/face-consent.js",
+    "apps/api/src/modules/hr/personal-webauthn.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/auth/service.js",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/hrOfflineMarking.ts",
+    "apps/web/lib/hrOfflineEvidence.ts",
+    "apps/web/lib/hrMarkingCorrection.ts",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "docs/qa/specs/hr-modulo-main-20261127.replay.json"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "marcacion_por_web_vive_en_produccion",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-candidato.json",
+        "../evidence/hr-modulo-main-20261127/suites-candidato.txt",
+        "../evidence/hr-alineacion-20261127/paquete-qa-desplegado/qa-campo-escritura.json"
+      ],
+      "nota": "Ninguna ruta del inventario toca el retiro de la compuerta de marcacion web. La tanda del operador (entrada, almuerzo, almuerzo, salida) sigue ejercitada en las 185 pruebas del portal y en las 46 del API, y el certificado de campo en QA cierra 27/27 sobre el binario servido a440560d7f04. El modulo webPunchSelfie.js esta ausente del candidato (0 rutas citan webPunchSelfie en apps/api/src): es el retiro ya certificado el 2026-11-24, no un retiro nuevo de este viaje."
+    },
+    {
+      "name": "fallback_de_escrituras_del_cliente",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/suites-candidato.txt",
+        "../evidence/hr-modulo-main-20261127/invariantes-replay.json",
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-candidato.json"
+      ],
+      "nota": "shouldBlockHrWriteFallback queda activo para shared-devices y para el restablecimiento de rostro, medido por el punto D de hr-offline-marking.test.mjs sobre el arbol candidato (185/185). La via de fusion esta declarada linea por linea en el spec y verificada por la invariante insert."
+    },
+    {
+      "name": "aislamiento_de_tenant",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/suites-candidato.txt",
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-candidato.json"
+      ],
+      "nota": "Las guardas tenant_id del horario, del maestro de celulares y del de rostros viajan en blobs identicos a origin/desarrollo (37 de 41 rutas), y las suites apuntadas las ejercitan. Cero rutas de otros modulos entran en el inventario."
+    },
+    {
+      "name": "esquema_y_migraciones",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/invariantes-replay.json",
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-candidato.json"
+      ],
+      "nota": "schema.prisma suma 94 lineas y no elimina ninguna del arbol de Produccion (medido: -0). Viajan las 3 migraciones SQL del frente; este porton no ejecuta escritura remota alguna, la aplicacion en Produccion queda declarada y se mide aparte."
+    },
+    {
+      "name": "dependencias_instalables_en_railway",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/equivalencia-lock-biometrico.json",
+        "../evidence/hr-modulo-main-20261127/suites-candidato.txt"
+      ],
+      "nota": "El lock de la raiz no pierde ni cambia una entrada frente al de main y suma 153 lineas; el subarbol de las 4 dependencias biométricas queda identico en version e integrity. Las suites del API corrieron en el arbol candidato con esas dependencias instaladas: 46/46."
+    },
+    {
+      "name": "cero_dano_a_frentes_ajenos",
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-candidato.json",
+        "../evidence/hr-modulo-main-20261127/controls/selftest-instrumento.json",
+        "../evidence/hr-modulo-main-20261127/invariantes-replay.json"
+      ],
+      "nota": "0 borrados en las 53 rutas, 37 rutas byte-identicas al origen, 4 fusiones aditivas y 12 documentales. El selftest del porton demuestra que el instrumento puede fallar: 6 derivas inyectadas, 6 rojas."
+    }
+  ],
+  "compuertas_exigidas": [
+    "npm run qa:promotion:scope -- docs/qa/manifests/hr-modulo-main-20261127-scope.json <punta-candidato> origin/main",
+    "npm run qa:approval:evidence -- docs/qa/manifests/hr-modulo-main-20261127-approval.json",
+    "node scripts/certifications/promotion-migration-check.js --mode invariantes --spec docs/qa/specs/hr-modulo-main-20261127.replay.json --against commit --ref 303f07258236bc8a900738743a9e29e0739ae3e9",
+    "node scripts/certifications/promotion-migration-check.js --selftest (control de mutacion: 6 derivas, 6 rojas)",
+    "node --test en apps/api (46/46), en apps/web hr-*.test.mjs (185/185) y scripts/test/promotion-replay-instruments.test.js (4/4) sobre el arbol candidato",
+    "next build del portal sobre el arbol candidato (exit 0)"
+  ],
+  "deriva_declarada": [
+    "apps/web/lib/api.ts NO trae la telemetria de cliente de desarrollo (health.commit por peticion, 55 lineas): queda fuera por no ser de este frente. La consecuencia medida es que el portal de Produccion seguira reportando commit servido solo por /health, como hoy.",
+    "schema.prisma, package-lock.json y apps/api/package.json no alinean los frentes ajenos a Talento Humano: comercio, facturas recibidas y torre siguen sin existir en Produccion. Eso no es una regresion de este porton, es su limite.",
+    "La marcacion por web sigue con la compuerta del 24-11 (foto obligatoria por tipo, sin el modulo alterno). Su retiro alterno en develop/main no viaja aqui.",
+    "Las 3 migraciones no se aplican en este porton: el despliegue las trae en el arbol y su aplicacion en Produccion se mide en el paso siguiente, con ledger de solo lectura antes."
+  ],
+  "verificado_local": {
+    "fecha_hora_local": "2026-11-27T21:20:00-05:00",
+    "rama_trabajo": "codex/qa-hr-modulo-main-20261127 (worktree auxiliar), contenido nacido en desarrollo",
+    "puntas": {
+      "origin/main": "91d43c79220dec00995284118a8ef30d3ea061cd",
+      "origin/develop": "3e7fabf5f535b0709229b456df3fb3c963ab6d78",
+      "origin/desarrollo": "aa2659854a2e9781717c13c81936bfe66c7041ff"
+    },
+    "candidato": "303f07258236bc8a900738743a9e29e0739ae3e9",
+    "rutas_inventario": 53,
+    "rutas_producto_en_el_diff": 41,
+    "rutas_blob_identico_con_desarrollo": 37,
+    "rutas_divergentes_del_blob": [
+      "apps/api/package.json",
+      "apps/api/prisma/schema.prisma",
+      "apps/web/lib/api.ts",
+      "package-lock.json"
+    ],
+    "suites_sobre_el_arbol": "api apuntadas 46/46 · web hr-* 185/185 · porton 4/4 · build exit 0 (141 paginas)",
+    "invariantes": "37/37 validas contra el arbol commiteado 303f07258236bc8a900738743a9e29e0739ae3e9",
+    "selftest_del_porton": "6 derivas inyectadas, 6 rojas",
+    "campo_qa": "27/27 APROBADO sobre a440560d7f04 (NYVORA, ambiente QA)"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main",
+    "approved_by": "dueno del proyecto (Edwin)",
+    "approved_at": "2026-11-27T21:20:00-05:00",
+    "authorization_flags": {
+      "direct_push_to_main": false,
+      "pull_request_a_main": true,
+      "migraciones_en_produccion": true,
+      "redeploy_railway": true
+    },
+    "nota": "La orden ampara el flujo desarrollo -> develop -> main con sus compuertas y el despliegue, y la autorizacion permanente solo cubre git push origin desarrollo. El viaje a main se hace por rama auxiliar + PR (no push directo), las migraciones de Produccion se aplican por el pooler con ledger de solo lectura antes y el retiro de la marcacion web queda excluido por orden expresa."
+  },
+  "certified_commit_nota": "certified_commit = aa265985 es la punta del arbol funcional certificado: el modulo replayado, los instrumentos del porton y el spec con la linea escapada. Las 12 rutas documentales salen de la punta de desarrollo vigente al empacar (8e99c17d), que es descendiente de aa265985 y queda registrada como ancestro por el mismo merge -s ours: el porton de ascendencia verifica aa265985 y el de origen verifica el blob de cada ruta contra origin/desarrollo."
+}

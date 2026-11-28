@@ -23,13 +23,18 @@ const {
   buildHrOfflineSnapshot,
   classifySyncFailure,
   decideOfflineMarking,
+  decideQueueTransition,
   degradeUntilPersisted,
   degradedScheduleNotice,
+  detachEvidence,
+  evidenceCodeOf,
   evidenceRefMarker,
   evidenceRefOf,
+  expectedPunchTypeOf,
   gpsFailureCause,
   gpsUnavailableMetadata,
   inlineEvidenceBytes,
+  isEvidenceBlockedSelfHealCandidate,
   payloadByteLength,
   quotaDegradationPlan,
   requestOutcome,
@@ -450,7 +455,11 @@ test("D: las escrituras self-service de HR tampoco caen al respaldo Supabase", (
   const guard = api.slice(start, api.indexOf("\n}", start) + 2);
 
   assert.match(guard, /const hrSelfServiceWrite = pathname\.startsWith\("\/api\/v1\/hr\/self\/"\);/);
-  assert.match(guard, /return method !== "GET" && \(criticalWritePaths\.has\(pathname\) \|\| hrRouteDetailWrite \|\| hrSelfServiceWrite\);/);
+  assert.match(guard, /return method !== "GET" && \(criticalWritePaths\.has\(pathname\) \|\| hrRouteDetailWrite \|\| hrSelfServiceWrite(?: \|\| \w+Write)+\);/);
+  // Las escrituras del frente biométrico entraron despues y tambien deben quedar bloqueadas:
+  // si alguien las saca de la compuerta, este control tiene que ponerse rojo.
+  assert.match(guard, /const hrSharedDeviceWrite = /);
+  assert.match(guard, /const hrFaceWrite = /);
   // Lo ya certificado por hr-route-write-fallback.test.mjs se conserva intacto.
   assert.match(guard, /"\/api\/v1\/hr\/routes"/);
   assert.match(guard, /"\/api\/v1\/hr\/routes\/bulk"/);
@@ -481,4 +490,114 @@ test("la pantalla conserva los contratos de marcacion ya certificados", () => {
   assert.doesNotMatch(markingSource, /selectedRouteId/);
   assert.doesNotMatch(markingSource, /api<[^>]+>\("\/api\/v1\/hr\/routes"/);
   assert.doesNotMatch(markingSource, /\/api\/v1\/hr\/operations-map/);
+});
+
+// ---------------------------------------------------------------------------
+// Rechazo de escalera: el operario se destraba solo; el resto necesita supervisor.
+// ---------------------------------------------------------------------------
+
+// `authorizedJson` lanza un `Error` con `status`, `code` y `details` (lib/api.ts:440): la frase del
+// servidor llega dentro del mensaje, ya traducida. Los fixtures imitan esa forma, no un objeto plano.
+function clientError(status, code, message, details) {
+  const error = new Error(message);
+  Object.assign(error, { status, code, ...(details ? { details } : {}) });
+  return error;
+}
+
+test("el tipo que espera el servidor se lee del detalle y, si no hay, de la frase", () => {
+  assert.equal(expectedPunchTypeOf({
+    code: "MARCACION_FUERA_DE_SECUENCIA",
+    message: "La siguiente marcacion permitida es fin_almuerzo.",
+    details: { expected_type: "fin_almuerzo", punch_type: "salida" }
+  }), "fin_almuerzo");
+  // El ambiente desplegado contesta el 409 sin `details`: la frase es el unico camino.
+  assert.equal(expectedPunchTypeOf({ message: "La siguiente marcacion permitida es inicio_almuerzo." }), "inicio_almuerzo");
+  assert.equal(expectedPunchTypeOf({ code: "HORARIO_NO_ACTIVO", message: "Tu horario no esta activo hoy." }), "");
+  assert.equal(expectedPunchTypeOf(null), "");
+});
+
+test("un 409 de secuencia cierra la fila diciendo cual marcacion sigue", () => {
+  const transition = decideQueueTransition({
+    error: clientError(409, "MARCACION_FUERA_DE_SECUENCIA", "No se pudo guardar: La siguiente marcacion permitida es fin_almuerzo.", { expected_type: "fin_almuerzo", punch_type: "salida" }),
+    hasPhotoAttached: true
+  });
+  assert.equal(transition.failureClass, "marking");
+  assert.equal(transition.action, "close", "no puede quedar reintentando todo el dia una marcacion rechazada");
+  assert.equal(transition.notice.includes("fin_almuerzo"), true, transition.notice);
+  assert.equal(transition.notice.includes("registrala con su boton"), true, transition.notice);
+});
+
+test("un rechazo de horario no promete autocorreccion", () => {
+  const transition = decideQueueTransition({
+    error: clientError(409, "HORARIO_NO_ACTIVO", "No se pudo guardar: Tu horario no esta activo para esta fecha."),
+    hasPhotoAttached: false
+  });
+  assert.equal(transition.action, "close");
+  assert.equal(transition.notice.includes("registrala con su boton"), false, transition.notice);
+  assert.equal(transition.notice.includes("Tu horario no esta activo"), true, transition.notice);
+});
+
+test("la jornada completa no inventa un tipo que marcar", () => {
+  const transition = decideQueueTransition({
+    error: clientError(409, "JORNADA_COMPLETA", "No se pudo guardar: La jornada ya esta completa para hoy.", { punch_type: "entrada" }),
+    hasPhotoAttached: false
+  });
+  assert.equal(transition.action, "close");
+  assert.equal(transition.notice.includes("registrala con su boton"), false, transition.notice);
+});
+
+test("un 403 no se disfraza de rechazo de negocio corregible por el operario", () => {
+  const transition = decideQueueTransition({
+    error: clientError(403, "ROL_NO_DEFINIDO", "No tienes permiso para guardar este registro. Pide el acceso a tu administrador."),
+    hasPhotoAttached: false
+  });
+  assert.equal(transition.failureClass, "marking");
+  assert.equal(transition.action, "close");
+  assert.equal(transition.notice.includes("No tienes permiso"), true, transition.notice);
+});
+
+// El incidente de produccion: la version anterior encolaba el item bloqueado CON la foto dentro
+// del payload. Si al liberarla se reenvia esa misma foto, el servidor la vuelve a rechazar y la
+// politica de cola -que ya no ve foto que desprender- cierra el item: la hora se pierde otra vez.
+// La foto tiene que salir del payload antes del reenvio, no despues del segundo rechazo.
+test("el self-heal libera el item bloqueado sin la foto que lo bloque", () => {
+  const blocked = {
+    id: "qb-self-heal",
+    path: "/api/v1/hr/self/time-punches",
+    status: "blocked",
+    attempts: 3,
+    blocked_code: "EVIDENCIA_ALFABETO_INVALIDO",
+    blocked_reason: "El archivo de validacion debe ser una imagen JPEG o PNG.",
+    payload: {
+      punched_at: "2026-11-13T06:30:00.000-05:00",
+      type: "entrada",
+      idempotency_key: "hr-punch-1",
+      identity_photo: { base64: "no-es-base64-@@@", type: "image/jpeg", name: "selfie.jpg" }
+    }
+  };
+  assert.equal(isEvidenceBlockedSelfHealCandidate(blocked), true, "un bloqueo de evidencia con foto es candidate");
+
+  const release = sliceFrom(markingSource, "export function releaseEvidenceBlockedItems", "\n// Se llama una sola vez por carga");
+  assert.match(release, /detachEvidence\(item\.payload as Record<string, unknown>, DEGRADED_MARKING_BLOCKED_REASON\)/);
+  assert.match(release, /payload: withEscalationMarker\(detached\.payload, \{/);
+  assert.match(release, /kind: "degraded_evidence",/);
+  assert.match(release, /failureCode: String\(item\.blocked_code \|\| ""\)/);
+  assert.match(release, /photoRefs: evidenceRefsOf\(item\)/);
+
+  const detached = detachEvidence(blocked.payload, "El archivo de validacion debe ser una imagen JPEG o PNG.");
+  assert.equal(detached.payload.identity_photo, undefined, "la foto rechazada no puede volver a viajar en el reenvio");
+  assert.deepEqual(detached.detachedKeys, ["identity_photo"]);
+  assert.equal(detached.payload.metadata.evidence_status, "degraded", "la marca de degradado viaja con el payload");
+  assert.equal(isEvidenceBlockedSelfHealCandidate({ ...blocked, payload: detached.payload }), false,
+    "sin foto que desprender el item deja de ser candidato: el unico reintento no se gasta dos veces");
+});
+
+// El codigo que declara el desprendimiento decide si el API acepta la hora sin foto: el paraguas
+// `VALIDACION` no esta en el contrato de evidencia, asi que la excepcion no aplica y el reenvio
+// vuelve rechazado (medido en la certificacion de navegador del 2026-11-19).
+test("C: el reenvio sin foto declara el codigo de evidencia del servidor, no VALIDACION", () => {
+  const flush = sliceFrom(markingSource, "async function flushPendingSync", "\nfunction offlineQueueWeight");
+  assert.match(flush, /failureCode: evidenceCodeOf\(error\) \|\| failure\.code/);
+  const error = { status: 400, code: "VALIDACION", message: "El contenido del archivo no coincide con el formato declarado.", details: { evidence_failure_code: "EVIDENCIA_ALFABETO_INVALIDO" } };
+  assert.equal(evidenceCodeOf(error), "EVIDENCIA_ALFABETO_INVALIDO");
 });
