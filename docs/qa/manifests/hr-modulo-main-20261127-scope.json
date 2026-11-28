@@ -453,5 +453,6 @@
       "redeploy_railway": true
     },
     "nota": "La orden ampara el flujo desarrollo -> develop -> main con sus compuertas y el despliegue, y la autorizacion permanente solo cubre git push origin desarrollo. El viaje a main se hace por rama auxiliar + PR (no push directo), las migraciones de Produccion se aplican por el pooler con ledger de solo lectura antes y el retiro de la marcacion web queda excluido por orden expresa."
-  }
+  },
+  "certified_commit_nota": "certified_commit = aa265985 es la punta del arbol funcional certificado: el modulo replayado, los instrumentos del porton y el spec con la linea escapada. Las 12 rutas documentales salen de la punta de desarrollo vigente al empacar (8e99c17d), que es descendiente de aa265985 y queda registrada como ancestro por el mismo merge -s ours: el porton de ascendencia verifica aa265985 y el de origen verifica el blob de cada ruta contra origin/desarrollo."
 }
