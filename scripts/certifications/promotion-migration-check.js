@@ -9,11 +9,22 @@
 // agentes duenos del frente reportaron verde sin haber medido el invariante. Un cambio
 // escrito por un agente y no medido contra el destino es un cambio no certificado.
 //
-// Las tres invariantes, medida cada una contra el arbol del destino:
+// Las cuatro invariantes, medida cada una contra el arbol del destino:
 //   carry   el archivo viaja byte a byte desde la rama de origen   -> blob igual
 //   delete  la ruta queda ausente en el destino                    -> blob inexistente
 //   edit    un hunk solo quita las lineas declaradas               -> 0 anadidas y las
 //                                                                   eliminadas coinciden
+//   insert  un archivo que el destino tiene propio solo recibe lo
+//           declarado (fusion a tres vias)                          -> 0 eliminadas y las
+//                                                                   anadidas coinciden
+//
+// `insert` nace de la promocion del modulo de Talento Humano a `main` (2026-11-27): dos
+// rutas del frente (apps/api/prisma/schema.prisma y apps/api/package.json) no pueden viajar
+// como blob de origen porque el destino conserva modelos, comentarios y dependencias de
+// otros modulos. Copiar el blob de desarrollo habria borrado ese contenido ajeno en
+// silencio. La invariante exige que lo unico que cambia sea lo declarado, linea por linea:
+// `add_lines` para el conjunto exacto o `added_exact` cuando el volumen hace inviable
+// enumerarlo (el lockfile, por ejemplo). En ambas variantes, una sola linea eliminada rompe.
 //
 // Uso:
 //   node scripts/certifications/promotion-migration-check.js --spec <spec.json> \
@@ -135,7 +146,41 @@ function checkSpec(spec, cwd, against, ref) {
             : `replay exacto: 0 anadidas, ${quitadasReales.length} eliminadas declaradas`
     });
   }
+  for (const item of spec.insert || []) {
+    results.push(checkInsert(spec, item, cwd, against, ref));
+  }
   return results;
+}
+
+// Fusion a tres vias: el destino conserva su contenido y solo recibe lo declarado.
+function checkInsert(spec, item, cwd, against, ref) {
+  const change = diffAgainstBase(spec.base_ref, item.file, cwd, against, ref);
+  const anadidas = change.added.filter((line) => line.length > 0);
+  const eliminadas = change.removed.filter((line) => line.length > 0);
+  const declared = Array.isArray(item.add_lines) ? item.add_lines.map((line) => String(line).trim()) : null;
+  const faltan = declared ? declared.filter((line) => !anadidas.includes(line)) : [];
+  const sobran = declared ? anadidas.filter((line) => !declared.includes(line)) : [];
+  const cuentaDeclarada = declared ? declared.length : item.added_exact;
+  const cuentaCoincide = typeof cuentaDeclarada === "number" ? anadidas.length === cuentaDeclarada : anadidas.length > 0;
+  const ok = eliminadas.length === 0 && faltan.length === 0 && sobran.length === 0 && cuentaCoincide && anadidas.length > 0;
+  return {
+    tipo: "insert",
+    file: item.file,
+    esperado: { anadidas: cuentaDeclarada ?? ">0", eliminadas: 0 },
+    actual: { anadidas: anadidas.length, eliminadas: eliminadas.length },
+    lineas_sobran: sobran,
+    lineas_faltan: faltan,
+    ok,
+    detalle: ok
+      ? `fusion exacta: ${anadidas.length} anadidas declaradas, 0 eliminadas (el contenido del destino queda intacto)`
+      : eliminadas.length
+        ? `la insercion borro ${eliminadas.length} lineas propias del destino en ${item.file}`
+        : !cuentaCoincide
+          ? `la insercion anadio ${anadidas.length} lineas, se declararon ${cuentaDeclarada}`
+          : sobran.length || faltan.length
+            ? "las lineas anadidas no son las declaradas en el spec"
+            : `la ruta no recibio ninguna linea en ${item.file}`
+  };
 }
 
 function summarize(label, results) {
@@ -163,6 +208,7 @@ function selftest() {
     write("src/rule.js", "const SELFIE = ['entrada', 'salida'];\nmodule.exports = { SELFIE };\n");
     write("src/gate.js", "module.exports = { strict: true };\n");
     write("src/service.js", "async function mark(input) {\n  input = strict(input);\n  return run(input);\n}\n");
+    write("src/schema.txt", "model TimePunch {\n  id Int\n}\n\nmodel GastosMenores {\n  // nota del destino que desarrollo no tiene\n}\n");
     run(["add", "-A"]);
     run(["commit", "-qm", "destino antes de la promocion"]);
 
@@ -170,15 +216,17 @@ function selftest() {
     write("src/rule.js", "const SELFIE = ['entrada', 'salida'];\nconst WEB_SELFIE = ['entrada', 'inicio_almuerzo', 'fin_almuerzo', 'salida'];\nmodule.exports = { SELFIE, WEB_SELFIE };\n");
     run(["rm", "-q", "src/gate.js"]);
     write("src/service.js", "async function mark(input) {\n  return run(input);\n}\n");
+    write("src/schema.txt", "model TimePunch {\n  id Int\n}\n\n// maestro nuevo\nmodel HrShared {\n  id Int\n}\n\nmodel GastosMenores {\n  // nota del destino que desarrollo no tiene\n}\n");
     run(["add", "-A"]);
-    run(["commit", "-qm", "replay exacto del hunks y del carry"]);
+    run(["commit", "-qm", "replay exacto del hunks, del carry y de la fusion a tres vias"]);
 
     const spec = {
       base_ref: "base",
       origin_ref: "work",
       carry: [{ file: "src/rule.js" }],
       delete: ["src/gate.js"],
-      edit: [{ file: "src/service.js", remove_lines: ["  input = strict(input);"] }]
+      edit: [{ file: "src/service.js", remove_lines: ["  input = strict(input);"] }],
+      insert: [{ file: "src/schema.txt", add_lines: ["// maestro nuevo", "model HrShared {", "  id Int", "}"] }]
     };
 
     const bueno = summarize("replay correcto", checkSpec(spec, cwd, "commit", "work"));
@@ -205,6 +253,12 @@ function selftest() {
     drift("revivir_borrado", () => {
       write("src/gate.js", "module.exports = { strict: true };\n");
     }, "roto porque la ruta borrada vuelve a existir");
+    drift("insert_borra_contenido_del_destino", () => {
+      write("src/schema.txt", "model TimePunch {\n  id Int\n}\n\n// maestro nuevo\nmodel HrShared {\n  id Int\n}\n");
+    }, "roto porque la insercion se llevo por delante el modelo propio del destino");
+    drift("insert_linea_no_declada", () => {
+      write("src/schema.txt", "model TimePunch {\n  id Int\n}\n\n// maestro nuevo\nmodel HrShared {\n  id Int\n  extra String\n}\n\nmodel GastosMenores {\n  // nota del destino que desarrollo no tiene\n}\n");
+    }, "roto porque la insercion anade una linea que nadie declaro");
 
     const derivasRojas = derivas.filter((deriva) => !deriva.passed);
     return {
@@ -215,7 +269,7 @@ function selftest() {
       controles_de_mutacion: derivas,
       conclusion:
         bueno.passed && derivasRojas.length === derivas.length
-          ? "el instrumento detecta las tres derivas que justifica su existencia"
+          ? "el instrumento detecta las cinco derivas que justifica su existencia"
           : "el instrumento puede quedar verde con el replay roto: no es evidencia de nada"
     };
   } finally {
@@ -276,4 +330,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { argsFrom, blobAt, checkSpec, diffAgainstBase, main, selftest };
+module.exports = { argsFrom, blobAt, checkInsert, checkSpec, diffAgainstBase, main, selftest };

@@ -20,14 +20,14 @@ function runNode(script, args) {
   return spawnSync(process.execPath, [script, ...args], { cwd: ROOT, encoding: "utf8", windowsHide: true });
 }
 
-test("el control de mutacion del verificador de replay detecta las tres derivas", () => {
+test("el control de mutacion del verificador de replay detecta las cinco derivas", () => {
   const output = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "apexos-replay-selftest-")), "control.json");
   const result = runNode(CHECK, ["--selftest", "--output", output]);
   assert.equal(result.status, 0, `el selftest debe terminar en verde: ${result.stdout}${result.stderr}`);
   const report = JSON.parse(fs.readFileSync(output, "utf8"));
   assert.equal(report.passed, true);
   assert.equal(report.replay_correcto.passed, true, "el replay exacto tiene que dar verde");
-  assert.equal(report.controles_de_mutacion.length, 3, "se miden las tres derivas declaradas");
+  assert.equal(report.controles_de_mutacion.length, 5, "se miden las cinco derivas declaradas");
   for (const deriva of report.controles_de_mutacion) {
     assert.equal(deriva.passed, false, `la deriva ${deriva.name} tenia que quedar roja`);
   }
@@ -35,6 +35,7 @@ test("el control de mutacion del verificador de replay detecta las tres derivas"
   assert.ok(tipos.includes("edit"), "anadir lineas en un hunks debe romperse por la invariante edit");
   assert.ok(tipos.includes("carry"), "tocar un archivo llevado debe romperse por la invariante carry");
   assert.ok(tipos.includes("delete"), "revivir un borrado debe romperse por la invariante delete");
+  assert.ok(tipos.includes("insert"), "borrar contenido del destino en una fusion a tres vias debe romperse por la invariante insert");
   fs.rmSync(path.dirname(output), { recursive: true, force: true });
 });
 
