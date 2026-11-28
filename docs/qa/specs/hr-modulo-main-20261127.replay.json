@@ -2,7 +2,7 @@
   "change_id": "hr-modulo-main-20261127",
   "base_ref": "origin/main",
   "origin_ref": "origin/desarrollo",
-  "nota": "Las 36 rutas carry viajan byte a byte desde origin/desarrollo, incluidas las dos pantallas nuevas del frente biometrico (rostros y dispositivos-marcacion) que el hub de Talento Humano enlaza: la primera pasada del inventario las dejo fuera porque el inventario se armo por delta modificado y ellas son altas. Tres rutas se fusionan a tres vias porque main conserva contenido propio: schema.prisma (solo el bloque de los 3 modelos biometricos, 94 lineas), apps/api/package.json (solo las 4 dependencias biometricas) y apps/web/lib/api.ts (solo la compuerta de escrituras, con una linea de condicion reemplazada). package-lock.json no entra en el spec: es generado, y su invariante real (version e integrity identicas a las de origin/desarrollo para el subarbol biometrico, y cero lineas eliminadas contra origin/main) se mide en evidencia-equivalencia-lock-biometrico.json.",
+  "nota": "Las 34 rutas carry viajan byte a byte desde origin/desarrollo. Dos rutas se fusionan a tres vias porque main conserva contenido ajeno al cambio: schema.prisma solo recibe el bloque de los 3 modelos HR (lineas 2314..2407 de desarrollo, medido como 94 fisicas) y apps/api/package.json solo recibe las 4 dependencias biometricas. package-lock.json no entra en el spec: es generado, y su invariante real (version e integrity identicas a las de origin/desarrollo para el subarbol biometrico, y cero lineas eliminadas contra origin/main) se mide en evidencia-equivalencia-lock-biometrico.json.; api.ts via fusion con una linea reemplazada declarada",
   "carry": [
     {
       "file": "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql"
@@ -59,9 +59,6 @@
       "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
     },
     {
-      "file": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx"
-    },
-    {
       "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
     },
     {
@@ -81,9 +78,6 @@
     },
     {
       "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
-    },
-    {
-      "file": "apps/web/app/dashboard/talento-humano/rostros/page.tsx"
     },
     {
       "file": "apps/web/components/hr/ConfirmWindow.tsx"
