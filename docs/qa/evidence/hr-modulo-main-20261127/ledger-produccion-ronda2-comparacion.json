@@ -1,0 +1,53 @@
+{
+  "instrumento": "ledger-produccion-ronda2-comparacion",
+  "ejecutado_en": "2026-11-28T02:53:46.791Z",
+  "escrituras": 0,
+  "lectura_anterior": "ledger-produccion-despues.json (ronda 1, post-despliegue)",
+  "lectura_actual": "ledger-produccion-ronda2.json",
+  "migraciones_aplicadas": {
+    "antes": 75,
+    "ahora": 75
+  },
+  "tablas_base": {
+    "antes": 238,
+    "ahora": 238
+  },
+  "protegidas_comparadas": [
+    {
+      "nombre": "TimePunch",
+      "igual": true
+    },
+    {
+      "nombre": "Employee",
+      "igual": true
+    },
+    {
+      "nombre": "Tenant",
+      "igual": true
+    },
+    {
+      "nombre": "TimeRoute",
+      "igual": true
+    },
+    {
+      "nombre": "employees",
+      "sello_antes": "2026-11-28 01:49:01.100337+00",
+      "sello_ahora": "2026-11-28 01:49:01.100337+00",
+      "igual": true
+    },
+    {
+      "nombre": "platform_settings",
+      "sello_antes": "2026-11-27 11:26:22.77",
+      "sello_ahora": "2026-11-27 11:26:22.77",
+      "igual": true
+    },
+    {
+      "nombre": "platform_admins",
+      "sello_antes": "2026-11-27 11:26:22.769616+00",
+      "sello_ahora": "2026-11-27 11:26:22.769616+00",
+      "igual": true
+    }
+  ],
+  "sellos_movidos": [],
+  "veredicto": "ADITIVO_CERO:la ronda 2 no movio ni un registro de cliente"
+}

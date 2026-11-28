@@ -1,0 +1,57 @@
+{
+  "hora_utc": "2026-11-28T02:52:29.477Z",
+  "escrituras": 0,
+  "health": {
+    "status": 200,
+    "commit": "e34ef9d3ba5b",
+    "estado": "OK",
+    "claves": [
+      "status",
+      "version",
+      "modules",
+      "commit",
+      "service_certification"
+    ],
+    "modulos": 19,
+    "servicios": null,
+    "checks": null
+  },
+  "endpoints": [
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/hr/shared-devices",
+      "status": 401,
+      "code": "TOKEN_INVALIDO"
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/hr/face-enrollments",
+      "status": 401,
+      "code": "TOKEN_INVALIDO"
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/hr/self/face-enrollment",
+      "status": 401,
+      "code": "TOKEN_INVALIDO"
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/hr/self/webauthn",
+      "status": 401,
+      "code": "TOKEN_INVALIDO"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/hr/self/time-punches",
+      "status": 400,
+      "code": "FST_ERR_VALIDATION"
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/hr/no-existe-zz",
+      "status": 404,
+      "code": null
+    }
+  ]
+}

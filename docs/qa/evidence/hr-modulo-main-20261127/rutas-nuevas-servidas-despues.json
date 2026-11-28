@@ -1,0 +1,29 @@
+{
+  "hora_utc": "2026-11-28T02:52:29.477Z",
+  "base": "https://www.apexos.com.co",
+  "escrituras": 0,
+  "rutas": [
+    {
+      "ruta": "/dashboard/talento-humano",
+      "status": 200,
+      "location": null
+    },
+    {
+      "ruta": "/dashboard/talento-humano/rostros",
+      "status": 200,
+      "location": null
+    },
+    {
+      "ruta": "/dashboard/talento-humano/dispositivos-marcacion",
+      "status": 200,
+      "location": null
+    },
+    {
+      "ruta": "/dashboard/talento-humano/no-existe-zz",
+      "status": 404,
+      "location": null
+    }
+  ],
+  "control_404": true,
+  "veredicto": "PANTALLAS_SERVIDAS_EN_PRODUCCION"
+}

@@ -1,0 +1,66 @@
+{
+  "hora_utc": "2026-11-28T02:52:29.477Z",
+  "base": "https://www.apexos.com.co",
+  "escrituras": 0,
+  "paginas": [
+    {
+      "ruta": "/dashboard/talento-humano",
+      "status": 200,
+      "chunks": 13,
+      "kb": 917,
+      "chunks_faltantes": [],
+      "ventanillas_nativas": 0,
+      "marcas_biometricas": {
+        "face": 45,
+        "shared-device": 1,
+        "enrollment": 1
+      },
+      "marcas_marcacion": {
+        "punch": 78,
+        "time_punch": 7,
+        "marcar": 3
+      }
+    },
+    {
+      "ruta": "/dashboard/talento-humano/rostros",
+      "status": 200,
+      "chunks": 14,
+      "kb": 925,
+      "chunks_faltantes": [],
+      "ventanillas_nativas": 0,
+      "marcas_biometricas": {
+        "face": 49,
+        "shared-device": 1,
+        "enrollment": 3,
+        "rostro": 15,
+        "biometric": 1
+      },
+      "marcas_marcacion": {
+        "punch": 78,
+        "time_punch": 7,
+        "marcar": 6,
+        "selfie": 1
+      }
+    },
+    {
+      "ruta": "/dashboard/talento-humano/dispositivos-marcacion",
+      "status": 200,
+      "chunks": 14,
+      "kb": 926,
+      "chunks_faltantes": [],
+      "ventanillas_nativas": 0,
+      "marcas_biometricas": {
+        "face": 47,
+        "shared-device": 3,
+        "enrollment": 1
+      },
+      "marcas_marcacion": {
+        "punch": 78,
+        "time_punch": 7,
+        "marcar": 5,
+        "selfie": 1
+      }
+    }
+  ],
+  "veredicto": "ARTEFACTO_SERVIDO_COMPLETO_SIN_VENTANILLAS_NATIVAS"
+}

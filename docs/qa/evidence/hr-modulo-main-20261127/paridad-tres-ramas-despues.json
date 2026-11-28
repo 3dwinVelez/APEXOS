@@ -1,0 +1,79 @@
+{
+  "instrumento": "hr-module-parity-check",
+  "ejecutado_en": "2026-11-28T02:49:36.257Z",
+  "etiqueta": "despues",
+  "escrituras": 0,
+  "refs": {
+    "origen_de_la_lectura": "origin/main",
+    "desarrollo": "origin/desarrollo",
+    "develop": "origin/develop",
+    "main": "origin/main"
+  },
+  "nucleo_hr": {
+    "origin/main_vs_origin/desarrollo": {
+      "rutas": 65,
+      "blob_identico": 65,
+      "distintas": [],
+      "ausentes": [],
+      "completo": true
+    },
+    "origin/main_vs_origin/develop": {
+      "rutas": 65,
+      "blob_identico": 65,
+      "distintas": [],
+      "ausentes": [],
+      "completo": true
+    }
+  },
+  "rutas_compartidas": {
+    "origin/main_vs_origin/desarrollo": {
+      "rutas": 75,
+      "blob_identico": 69,
+      "distintas": [
+        {
+          "ruta": "apps/web/lib/api.ts",
+          "motivo": "fusion_a_tres_vias_declarada_compuerta_de_escrituras"
+        },
+        {
+          "ruta": "apps/web/lib/moduleAccess.ts",
+          "motivo": "frente_ajeno_en_desarrollo_telemetria_monitor"
+        },
+        {
+          "ruta": "apps/web/lib/moduleFunctions.ts",
+          "motivo": "frente_ajeno_en_desarrollo_telemetria_monitor"
+        },
+        {
+          "ruta": "apps/web/lib/modules.ts",
+          "motivo": "frente_ajeno_en_desarrollo_telemetria_monitor"
+        }
+      ]
+    },
+    "origin/main_vs_origin/develop": {
+      "rutas": 74,
+      "blob_identico": 71,
+      "distintas": [
+        {
+          "ruta": "apps/web/lib/api.ts",
+          "motivo": "fusion_a_tres_vias_declarada_compuerta_de_escrituras"
+        },
+        {
+          "ruta": "apps/web/lib/moduleFunctions.ts",
+          "motivo": "frente_ajeno_en_desarrollo_telemetria_monitor"
+        }
+      ],
+      "ausentes": [
+        {
+          "ruta": "apps/web/lib/installationIdentity.ts",
+          "solo_en": "origin/develop"
+        }
+      ],
+      "completo": false
+    }
+  },
+  "schema_prisma": {
+    "ruta": "apps/api/prisma/schema.prisma",
+    "igual_a_desarrollo": false,
+    "igual_a_develop": false
+  },
+  "veredicto": "FRENTE_HR_ALINEADO_MAIN_CON_TRES_RAMAS"
+}
