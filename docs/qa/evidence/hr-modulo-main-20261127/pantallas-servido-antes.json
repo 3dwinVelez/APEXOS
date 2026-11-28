@@ -1,0 +1,55 @@
+{
+  "base": "https://www.apexos.com.co",
+  "hora_utc": "2026-11-28T02:16:27.154Z",
+  "paginas": [
+    {
+      "ruta": "/dashboard/talento-humano",
+      "status": 200,
+      "chunks": 47,
+      "kb": 35
+    },
+    {
+      "ruta": "/dashboard/talento-humano/empleados",
+      "status": 200,
+      "chunks": 54,
+      "kb": 11
+    },
+    {
+      "ruta": "/dashboard/talento-humano/marcacion",
+      "status": 200,
+      "chunks": 57,
+      "kb": 11
+    },
+    {
+      "ruta": "/dashboard/talento-humano/reportes",
+      "status": 200,
+      "chunks": 54,
+      "kb": 11
+    },
+    {
+      "ruta": "/dashboard/talento-humano/nomina",
+      "status": 200,
+      "chunks": 54,
+      "kb": 12
+    }
+  ],
+  "chunks_unicos": 22,
+  "chunks_leidos": 22,
+  "kb_leidos": 1296,
+  "marcas": {
+    "biometrico": {
+      "shared-devices": 1,
+      "face-enrollment": 1,
+      "rostro": 2,
+      "reconocimiento": 1
+    },
+    "marcacion_web": {
+      "time_punch": 1,
+      "punch": 4,
+      "marcar": 6,
+      "selfie": 3
+    },
+    "control_ajeno": {}
+  },
+  "veredicto": "FRENTE_BIOMETRICO_SERVIDO_SIN_VENTANILLAS_NATIVAS"
+}

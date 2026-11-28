@@ -1,0 +1,90 @@
+{
+  "hora_utc": "2026-11-28T02:16:15.193Z",
+  "refs": {
+    "desarrollo": "origin/desarrollo",
+    "develop": "origin/develop",
+    "main": "origin/main"
+  },
+  "nucleo_hr": {
+    "main_vs_desarrollo": {
+      "rutas": 65,
+      "blob_identico": 63,
+      "distintas": [],
+      "ausentes": [
+        {
+          "ruta": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
+          "solo_en": "origin/desarrollo"
+        },
+        {
+          "ruta": "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
+          "solo_en": "origin/desarrollo"
+        }
+      ]
+    },
+    "main_vs_develop": {
+      "rutas": 65,
+      "blob_identico": 63,
+      "distintas": [],
+      "ausentes": [
+        {
+          "ruta": "apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx",
+          "solo_en": "origin/develop"
+        },
+        {
+          "ruta": "apps/web/app/dashboard/talento-humano/rostros/page.tsx",
+          "solo_en": "origin/develop"
+        }
+      ]
+    }
+  },
+  "rutas_compartidas": {
+    "main_vs_desarrollo": {
+      "rutas": 75,
+      "blob_identico": 69,
+      "distintas": [
+        {
+          "ruta": "apps/web/lib/api.ts",
+          "motivo": "fusion_a_tres_vias_declarada_compuerta_de_escrituras"
+        },
+        {
+          "ruta": "apps/web/lib/moduleAccess.ts",
+          "motivo": "frente_ajeno_en_desarrollo_telemetria_monitor"
+        },
+        {
+          "ruta": "apps/web/lib/moduleFunctions.ts",
+          "motivo": "frente_ajeno_en_desarrollo_telemetria_monitor"
+        },
+        {
+          "ruta": "apps/web/lib/modules.ts",
+          "motivo": "frente_ajeno_en_desarrollo_telemetria_monitor"
+        }
+      ]
+    },
+    "main_vs_develop": {
+      "rutas": 74,
+      "blob_identico": 71,
+      "distintas": [
+        {
+          "ruta": "apps/web/lib/api.ts",
+          "motivo": "fusion_a_tres_vias_declarada_compuerta_de_escrituras"
+        },
+        {
+          "ruta": "apps/web/lib/moduleFunctions.ts",
+          "motivo": "frente_ajeno_en_desarrollo_telemetria_monitor"
+        }
+      ],
+      "ausentes": [
+        {
+          "ruta": "apps/web/lib/installationIdentity.ts",
+          "solo_en": "origin/develop"
+        }
+      ]
+    }
+  },
+  "schema_prisma": {
+    "ruta": "apps/api/prisma/schema.prisma",
+    "desarrollo_igual_main": false,
+    "develop_igual_main": false
+  },
+  "veredicto": "HAY_RUTAS_AUSENTES_O_DISTINTAS"
+}
