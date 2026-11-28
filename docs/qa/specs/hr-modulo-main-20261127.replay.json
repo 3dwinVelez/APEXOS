@@ -1,0 +1,218 @@
+{
+  "change_id": "hr-modulo-main-20261127",
+  "base_ref": "origin/main",
+  "origin_ref": "origin/desarrollo",
+  "nota": "Las 34 rutas carry viajan byte a byte desde origin/desarrollo. Dos rutas se fusionan a tres vias porque main conserva contenido ajeno al cambio: schema.prisma solo recibe el bloque de los 3 modelos HR (lineas 2314..2407 de desarrollo, medido como 94 fisicas) y apps/api/package.json solo recibe las 4 dependencias biometricas. package-lock.json no entra en el spec: es generado, y su invariante real (version e integrity identicas a las de origin/desarrollo para el subarbol biometrico, y cero lineas eliminadas contra origin/main) se mide en evidencia-equivalencia-lock-biometrico.json.",
+  "carry": [
+    {
+      "file": "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql"
+    },
+    {
+      "file": "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql"
+    },
+    {
+      "file": "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.js"
+    },
+    {
+      "file": "apps/api/src/modules/auth/schema.js"
+    },
+    {
+      "file": "apps/api/src/modules/auth/service.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/face-consent.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/face-identity.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/personal-webauthn.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "file": "apps/api/src/modules/hr/shared-device-identity.js"
+    },
+    {
+      "file": "apps/api/test/auth-webauthn-login.test.js"
+    },
+    {
+      "file": "apps/api/test/hr-face-identity.test.js"
+    },
+    {
+      "file": "apps/api/test/hr-personal-webauthn.test.js"
+    },
+    {
+      "file": "apps/api/test/hr-shared-device-identity.test.js"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "file": "apps/web/components/hr/ConfirmWindow.tsx"
+    },
+    {
+      "file": "apps/web/components/operations/PhotoCapture.tsx"
+    },
+    {
+      "file": "apps/web/lib/hrMarkingCorrection.ts"
+    },
+    {
+      "file": "apps/web/lib/hrOfflineEvidence.ts"
+    },
+    {
+      "file": "apps/web/lib/hrOfflineMarking.ts"
+    },
+    {
+      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs"
+    },
+    {
+      "file": "apps/web/test/hr-offline-marking.test.mjs"
+    }
+  ],
+  "insert": [
+    {
+      "file": "apps/api/prisma/schema.prisma",
+      "add_lines": [
+        "// Maestro de celulares compartidos para marcar jornada (M-17).",
+        "// Un camion tiene UN celular y lo usan conductor y auxiliar. El celular se registra",
+        "// con una llave de acceso WebAuthn (huella del telefono): la firma prueba que la",
+        "// marcacion salio de ESE celular autorizado; la selfie de cada marcacion prueba",
+        "// QUIEN marco, porque el lector del telefono acepta cualquier huella inscrita.",
+        "// Pueden marcar en el celular los empleados con malla de HOY en la misma placa.",
+        "model HrSharedDevice {",
+        "id            Int       @id @default(autoincrement())",
+        "tenant_id     String",
+        "device_id     String",
+        "credential_id String",
+        "public_key    String",
+        "key_algorithm String    @default(\"WEBAUTHN_ES256\")",
+        "sign_count    Int       @default(0)",
+        "rp_id         String",
+        "vehicle_plate String",
+        "label         String?",
+        "device_model  String?",
+        "active        Boolean   @default(true)",
+        "enrolled_by   Int?",
+        "enrolled_at   DateTime  @default(now())",
+        "revoked_by    Int?",
+        "revoked_at    DateTime?",
+        "revoke_reason String?",
+        "last_used_at  DateTime?",
+        "created_at    DateTime  @default(now())",
+        "updated_at    DateTime  @updatedAt",
+        "@@map(\"hr_shared_devices\")",
+        "@@unique([tenant_id, device_id])",
+        "@@unique([tenant_id, credential_id])",
+        "@@index([tenant_id, vehicle_plate, active])",
+        "}",
+        "// Maestro de rostros para marcar jornada (M-17).",
+        "// Varios empleados marcan en el MISMO celular y el lector de huella del telefono no",
+        "// dice de quien es la huella. Cada empleado registra su rostro (con autorizacion de",
+        "// datos biometricos, Ley 1581) y cada selfie de marcacion se compara con el.",
+        "// embedding: vector del modelo (model); reference_photo: la foto del registro.",
+        "// Un registro activo por empleado: cambiarlo exige restablecimiento de un administrador.",
+        "model HrFaceEnrollment {",
+        "id                  Int       @id @default(autoincrement())",
+        "tenant_id           String",
+        "employee_id         Int",
+        "user_id             Int?",
+        "embedding           Json",
+        "model               String",
+        "reference_photo     Json",
+        "consent_version     String",
+        "consent_text_sha256 String",
+        "consent_at          DateTime",
+        "active              Boolean   @default(true)",
+        "enrolled_by         Int?",
+        "enrolled_at         DateTime  @default(now())",
+        "revoked_by          Int?",
+        "revoked_at          DateTime?",
+        "revoke_reason       String?",
+        "created_at          DateTime  @default(now())",
+        "updated_at          DateTime  @updatedAt",
+        "@@map(\"hr_face_enrollments\")",
+        "@@index([tenant_id, employee_id, active])",
+        "@@index([tenant_id, active])",
+        "}",
+        "// Huella propia de cada empleado para marcar desde el navegador (WebAuthn, M-17).",
+        "// Cada empleado registra con su usuario una llave de acceso en el celular (varios",
+        "// empleados pueden registrar la suya en el mismo celular). Cada marcacion va firmada",
+        "// con esa llave tras la huella; el rostro (HrFaceEnrollment) prueba quien marco.",
+        "model HrWebauthnCredential {",
+        "id            Int       @id @default(autoincrement())",
+        "tenant_id     String",
+        "employee_id   Int",
+        "user_id       Int",
+        "credential_id String",
+        "public_key    String",
+        "key_algorithm String    @default(\"WEBAUTHN_ES256\")",
+        "sign_count    Int       @default(0)",
+        "rp_id         String",
+        "device_label  String?",
+        "active        Boolean   @default(true)",
+        "enrolled_at   DateTime  @default(now())",
+        "last_used_at  DateTime?",
+        "revoked_by    Int?",
+        "revoked_at    DateTime?",
+        "revoke_reason String?",
+        "created_at    DateTime  @default(now())",
+        "updated_at    DateTime  @updatedAt",
+        "@@map(\"hr_webauthn_credentials\")",
+        "@@unique([tenant_id, credential_id])",
+        "@@index([tenant_id, employee_id, active])",
+        "}"
+      ],
+      "nota": "94 lineas fisicas de desarrollo, 82 no vacias; el resto son blancos"
+    },
+    {
+      "file": "apps/api/package.json",
+      "add_lines": [
+        "\"@tensorflow/tfjs-backend-wasm\": \"4.22.0\",",
+        "\"@tensorflow/tfjs-converter\": \"4.22.0\",",
+        "\"@tensorflow/tfjs-core\": \"4.22.0\",",
+        "\"@vladmandic/human\": \"3.3.6\","
+      ],
+      "nota": "solo las cuatro dependencias que el frente biometrico requiere en runtime"
+    }
+  ],
+  "delete": [],
+  "edit": []
+}
