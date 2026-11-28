@@ -1,0 +1,114 @@
+{
+  "change_id": "hr-modulo-main-pantallas-20261128",
+  "commit": "2d84b3f15f9a77029979fc076a1fe0939ed390f0",
+  "tree_evaluated": "punta tecnica del candidato de la ronda 2 (2d84b3f15f9a77029979fc076a1fe0939ed390f0, rama auxiliar codex/qa-hr-modulo-main-20261127 sobre origin/main b2012af2bc04b316b3808c238583548aaaee1ea3): 2 rutas de producto, ambas blob-identicas a origin/desarrollo, mas las 17 rutas documentales que este manifiesto y el de alcance citan (spec de la ronda 2, invariantes, control de mutacion, suites y build, equivalencia por blob, la medicion de Produccion y la actualizacion del brief y de la certificacion). El commit f9ff6b299405faceb3843e723b07a3ebd94fabcf separa el spec de la ronda 2 del de la ronda 1 sin tocar producto.",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "sello_utc": "2026-11-28T02:35:00Z",
+  "nota_fecha": "Hora del puesto 2026-11-27 21:35 -05:00 (equivalente a 2026-11-28T02:35Z). El change_id conserva 20261128 porque las corridas que sostienen la ronda (paridad por blob, sonda de rutas, invariantes y selftest) se sellaron despues de las 02:00Z del 28 en UTC. La autorizacion se consigna en la zona del puesto con su desplazamiento y su equivalencia UTC, que es la salvaguarda que la ronda 1 no tuvo.",
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-27T21:35:00-05:00",
+    "scope": "promotion_to_main",
+    "instruction": "verfica todo al finalziar debe quedar todo respaldado y funcionando de manera correcta sin elminar de produccion la aplicaicon de marcacion lo demas debe quedar alineado en todos los ambientes; no dejes pendientes procede a terminar todas las instrucciones al pie de la letra garantizando los protocolos adecuadas ya establecidos y con mi atorizacion completa para proceder sin detenerte",
+    "authorization_flags": {
+      "pull_request_a_main": true,
+      "migraciones_en_produccion": false,
+      "redeploy_railway": true,
+      "reason": "La ronda 1 ya dejo en main el motor, el esquema y los endpoints biométricos (b2012af2bc04, con las 3 migraciones aplicadas y medidas por ledger de solo lectura). Esta ronda lleva las dos pantallas del portal que el hub ya enlaza y que Produccion respondia 404: no hay cambio de esquema, no hay migracion nueva y el transporte es replay puntual sin excepciones de origen."
+    },
+    "authorization_basis": "La orden del propietario ampara el cierre del frente de Talento Humano en los tres ambientes y su verificacion en Produccion, con la acotacion expresa de no retirar la marcacion por web. No otorga force push, reescritura de historia compartida, borrado de ramas ajenas, cambios de secretos ni escritura de registros de cliente.",
+    "limits": "La autorizacion cubre el mecanismo y el despliegue, no salta compuertas: se exigen manifiesto v2 con inventario exacto de 19 rutas, qa:promotion:scope con verificacion de origen y cero waivers, qa:approval:evidence, invariantes del replay sobre el arbol commiteado, control de mutacion del instrumento, suite de regresión del portal y build de produccion dentro del mismo arbol. Ningun instrumento de esta ronda escribe en la base de Produccion: el ledger y la ventana de marcaciones son SELECT."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/rutas-nuevas-servidas-antes.json",
+        "../evidence/hr-modulo-main-20261127/paridad-tres-ramas-antes.json",
+        "../evidence/hr-modulo-main-20261127/suites-candidato-pantallas.txt"
+      ],
+      "notes": "La funcion pedida existe y se mide sobre el binario: ANTES, la sonda HTTP contra Produccion (b2012af2bc04) devuelve hub 200, /dashboard/talento-humano/rostros 404 y /dashboard/talento-humano/dispositivos-marcacion 404, y la paridad por blob del nucleo marca 63 de 65 identicas con 0 rutas distintas y 2 ausentes. El candidato trae las dos paginas blob-identicas a origin/desarrollo y el build de produccion las prerenderiza (ruta estatica con su .html). El DESPUES se mide por artefacto servido, no por lo que dice el PR."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/controls/selftest-instrumento-pantallas.json",
+        "../evidence/hr-modulo-main-20261127/invariantes-replay-pantallas.json",
+        "../evidence/hr-modulo-main-20261127/suites-candidato-pantallas.txt"
+      ],
+      "notes": "Los rojos que se exigian y salieron rojos: el control de mutacion inyecta 6 derivas (anadir linea en un hunk, tocar archivo llevado, revivir un borrado, y las tres variantes de la fusion que borra o reemplaza sin declarar) y las 6 quedan rojas, con el replay limpio 5/5 verde. La sonda de rutas tiene control positivo: la misma lectura que da 404 en las dos pantallas da 200 en el hub, asi que el check puede fallar y de hecho fallo. La suite del portal declaro ademas que ninguna prueba cubre esas dos rutas, y eso se dice en la evidencia en lugar de presentar 185/185 como prueba de la pantalla."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/invariantes-replay-pantallas.json",
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-pantallas.json",
+        "../evidence/hr-modulo-main-20261127/suites-candidato-pantallas.txt"
+      ],
+      "notes": "Instrumentos que corren en este viaje, todos versionados: scripts/certifications/promotion-migration-check.js (invariantes del replay y su selftest), scripts/validate-promotion-scope.js (porton de alcance con verificacion de origen contra origin/desarrollo), scripts/validate-change-approval-evidence.js (porton de aprobacion), y los tres instrumentos de medicion de esta ronda: script de paridad por blob del modulo, sonda de rutas y artefactos del portal servido, y ledger SQL de solo lectura. Las rutas de instrumentacion viajan blob-identicas a desarrollo."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/suites-candidato-pantallas.txt",
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-pantallas.json",
+        "../evidence/hr-modulo-main-20261127/invariantes-replay-pantallas.json"
+      ],
+      "notes": "Regresion corrida dentro del arbol candidato, no en el de otra rama: suite hr-*.test.mjs del portal 185 pruebas, 185 pasan, 0 fallan, y next build sale con exit 0 sobre el mismo arbol (154 rutas en el manifiesto). apps/api/** no aparece en el delta (0 rutas), por eso las 46 pruebas apuntadas del API no se re-corren: ya corrieron 46/46 sobre el mismo arbol de backend en la ronda 1. Equivalencia por blob medida sobre el arbol commiteado y 36/36 invariantes del spec de la ronda 2."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/ledger-produccion-comparacion.json",
+        "../evidence/hr-modulo-main-20261127/api-servido-produccion.json",
+        "../evidence/hr-modulo-main-20261127/marcaciones-produccion-dias7.json"
+      ],
+      "notes": "Esquema: cero migraciones nuevas en esta ronda; las 3 biométricas ya estan aplicadas y el ledger de solo lectura lo certifica en Produccion (72 a 75 aplicadas, 235 a 238 tablas, sellos movidos = [], protegidas sin cambio con employees 101/101, platform_settings 1/1 y platform_admins 2/2). Contrato servido: los dos maestros biométricos responden 401 (ruta construida, exige sesion), POST /api/v1/hr/self/time-punches responde 400 (marcacion web sigue registrada) y el control inexistente responde 404. Ventana de 7 dias: 8 rechazos de foto sobre 230 marcaciones aceptadas despues del corte contra 35 sobre 198 antes, con 0 escrituras del instrumento."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-paquete-main-qa.js",
+    "evidence": [
+      "../evidence/hr-alineacion-20261127/paquete-qa-desplegado/qa-campo-escritura.json",
+      "../certifications/hr-modulo-main-20261127.md",
+      "../evidence/hr-modulo-main-20261127/suites-candidato-pantallas.txt"
+    ],
+    "controls": 27,
+    "passed": 27,
+    "failed": 0,
+    "substrate": "certificacion de campo del frente en QA (27/27 APROBADO contra el API desplegado a440560d7f04, empresa modelo NYVORA, usuario efimero retirado por el endpoint), vigente para esta ronda porque el arbol de apps/api es idéntico: el delta de la ronda 2 no toca el backend. La prueba propia de la ronda 2 es el build prerenderizado y el artefacto servido en Produccion"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/hr-modulo-main-20261127/invariantes-replay-pantallas.json",
+      "../evidence/hr-modulo-main-20261127/controls/selftest-instrumento-pantallas.json",
+      "../evidence/hr-modulo-main-20261127/equivalencia-blob-pantallas.json"
+    ],
+    "basis": "El certificador transversal de la ronda 2 es el porton de replay con su control de mutacion, corrido sobre el arbol del candidato: 36/36 invariantes validas contra 2d84b3f15f9a77029979fc076a1fe0939ed390f0 y 6 de 6 derivas inyectadas quedando rojas. La suite de regresión del portal (185/185) y el build (exit 0) se corrieron en el mismo arbol."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-paquete-main-qa.js",
+    "evidence": [
+      "../evidence/hr-alineacion-20261127/paquete-qa-desplegado/qa-campo-escritura.json",
+      "../certifications/hr-modulo-main-20261127.md"
+    ],
+    "notes": "La pata de campo corre sobre la empresa modelo real NYVORA en QA: 27 piernas verdes, usuario efimero creado por el propio arnés y retirado por el endpoint administrativo. Esa corrida sigue siendo la ancla del frente porque el backend no cambia en esta ronda (0 rutas apps/api en el delta). Lo que la ronda 2 anade no es una pierna de campo nueva sino la existencia de dos pantallas del portal, y esa se prueba por build y por artefacto servido en Produccion, con su control negativo medido (los 404 del ANTES)."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "b2012af2bc04b316b3808c238583548aaaee1ea3",
+    "trigger": "Si despues del despliegue alguna de las dos rutas (/dashboard/talento-humano/rostros o /dashboard/talento-humano/dispositivos-marcacion) sigue respondiendo 404 o responde 500, si el hub de Talento Humano deja de servir sus tarjetas, si un maestro biométrico escribe en el respaldo de Supabase en lugar de reportar el rechazo, o si la marcacion por web deja de asentarse.",
+    "notes": "Revert controlado del commit de promocion sobre main (git revert, sin reescribir historia compartida) y redeploy de los dos servicios. El retroceso devuelve el arbol a b2012af2bc04, que es el estado que hoy sirve Produccion con las pantallas en 404: funcional, no deseado. No hay migracion que revertir, asi que no se toca ni una fila: las dos paginas nuevas solo leen tablas que ya existen. No hay borrado de datos ni escritura de registros de cliente en la promocion."
+  }
+}

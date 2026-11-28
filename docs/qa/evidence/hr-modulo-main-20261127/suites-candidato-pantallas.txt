@@ -1,0 +1,39 @@
+# Ronda 2 (las 2 pantallas ausentes): suites y build corridos dentro del arbol candidato
+# Arbol: worktree .tmp/wt-hr-main-20261126 sobre origin/main b2012af2bc04b316b3808c238583548aaaee1ea3
+# Punta tecnica medida: f9ff6b299405 (pantallas + spec) y su arbol de trabajo sin cambios de producto despues.
+# Se limpian las rutas absolutas del puesto; los contajes son los que imprimio el runner.
+
+## apps/web — suite hr-*.test.mjs completa (regresion del frente)
+# tests 185
+# pass 185
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13357
+
+# Alcance de esa suite sobre esta ronda: es REGRESION, no prueba de las pantallas nuevas.
+# `grep -rn "rostros|dispositivos-marcacion" apps/web/test/*.mjs` no devuelve ninguna coincidencia,
+# es decir ningun test del portal toca las dos rutas. La prueba de que las pantallas existen y se
+# sirven es el build de produccion (abajo) y el artefacto servido en Produccion
+# (rutas-nuevas-servidas-antes.json / rutas-nuevas-servidas-despues.json). El control puede fallar:
+# la sonda ANTES midio 404 en las dos rutas sobre el binario que ya estaba desplegado.
+
+## apps/api — no corre en esta ronda, y la razon es medible
+# El delta origin/main..candidato de la ronda 2 no toca ninguna ruta bajo apps/api/**
+# (git diff --name-status origin/main...HEAD: 2 paginas del portal + documentacion).
+# Las 46 pruebas apuntadas del API (auth WebAuthn, identidad de rostro, credencial personal,
+# maestro de celulares compartidos) ya corrieron 46/46 sobre el arbol de la ronda 1
+# (suites-candidato.txt), que es el mismo arbol de backend.
+
+## apps/web — build de produccion sobre el arbol candidato
+# exit 0
+# BUILD_ID: 8Hlh2iwN1CTASZlOTC2Ss
+# rutas del app-path-routes-manifest: 154
+# /dashboard/talento-humano/rostros/page -> /dashboard/talento-humano/rostros (○ estatico, .html prerenderizado existe)
+# /dashboard/talento-humano/dispositivos-marcacion/page -> /dashboard/talento-humano/dispositivos-marcacion (○ estatico, .html prerenderizado existe)
+
+## Porton de replay (ronda 2)
+# invariantes: 36/36 validas sobre el arbol commiteado (invariantes-replay-pantallas.json)
+# control de mutacion: 6 de 6 derivas inyectadas quedan rojas (controls/selftest-instrumento-pantallas.json,
+# conclusion versionada: "el instrumento detecta las seis derivas que justifica su existencia")
