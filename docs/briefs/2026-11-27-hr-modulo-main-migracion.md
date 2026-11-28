@@ -106,3 +106,33 @@ Sigue pendiente, con dueño y decisión:
 | Re-medición de rechazos de foto en Producción con `--days=7` para tener denominador | qa | Repetir con jornada completa |
 | Retiro alterno de la compuerta de marcación web en `develop`/`main` | dueño | Provisional: la web sigue marcando, según su orden expresa |
 | Alinear Comercio M-30, facturas recibidas y torre con Producción | dueño | No es alcance de este portón |
+
+## 11. Extensión ronda 2: las dos pantallas que no viajaron (medida el 2026-11-28T02:16Z, es decir 2026-11-27 21:16 -05:00)
+
+El dueño preguntó si faltaban funciones en Producción. Medido, la respuesta es sí en dos rutas exactas, y no por el motor: por cómo se armó el inventario de la ronda 1.
+
+**ANTES medido (no deducido):**
+
+- Paridad por blob del núcleo de Talento Humano (65 rutas bajo `apps/api/src/modules/hr/**`, `apps/web/app/dashboard/talento-humano/**`, `apps/web/components/hr/**`, `apps/web/components/operations/PhotoCapture.tsx` y las 3 migraciones biométricas): **63 de 65 idénticas** contra `origin/desarrollo` y **63 de 65** contra `origin/develop`. Las 2 diferencias son **ausencias**, no versiones distintas: `apps/web/app/dashboard/talento-humano/rostros/page.tsx` y `apps/web/app/dashboard/talento-humano/dispositivos-marcacion/page.tsx` viven en `desarrollo` y en `develop`, y no están en `main`.
+- El defecto es visible para el usuario: el hub de Talento Humano ya servido enlaza esas dos rutas desde `apps/web/app/dashboard/talento-humano/page.tsx:11-12` ("Celulares de marcación" y "Rostros registrados").
+- Sonda sobre el binario desplegado (`b2012af2bc04`): `/dashboard/talento-humano` **200**, `/dashboard/talento-humano/rostros` **404**, `/dashboard/talento-humano/dispositivos-marcacion` **404**. El 404 es el control de que la medición puede fallar: la misma sonda devuelve 200 en el hub.
+- Causa raíz: el inventario de la ronda 1 se construyó por **delta modificado** (lo que el frente cambió entre su base y `develop`), no por **existencia** de las rutas del módulo. Dos páginas que nacieron en otro commit del frente quedaron fuera del replay sin que ninguna compuerta lo advirtiera.
+
+**Ronda 2 (esta extensión):**
+
+- Transporte: `replay_puntual` **sin waivers** sobre la punta actual de `main` (`b2012af2bc04b316b3808c238583548aaaee1ea3`): cada ruta del candidato es blob-idéntica a `origin/desarrollo`. Sin fusión a tres vías: las tres fusiones de la ronda 1 quedan certificadas por su propio manifiesto y no se reabren.
+- Inventario: **19 rutas** — 2 de producto (las pantallas) y 17 documentales (spec de la ronda 2, evidencia ANTES y de medición, invariantes, control de mutación, suites y build, equivalencia por blob, los 2 manifiestos y la actualización de brief y certificación). **0 borrados**, así que no hay `allowed_deletions`.
+- Invariantes del replay: **36 de 36** válidas sobre el árbol commiteado (`docs/qa/evidence/hr-modulo-main-20261127/invariantes-replay-pantallas.json`).
+- Control de mutación del instrumento: **6 de 6** derivas inyectadas quedan rojas (`controls/selftest-instrumento-pantallas.json`); el replay limpio da 5/5 verdes, así que el rojo es del defecto y no del arnés.
+- Regresión: suite `apps/web/test/hr-*.test.mjs` **185/185**. Declaración honesta: **ninguna prueba del portal toca las dos rutas** (buscar `rostros` o `dispositivos-marcacion` en `apps/web/test/*.mjs` devuelve vacío), así que 185/185 prueba que no se dañó lo demás, no que las pantallas funcionen. Eso lo prueban el build y el artefacto servido.
+- Build de producción sobre el árbol candidato: **salida 0**, 154 rutas en el manifiesto, y las dos pantallas aparecen **prerenderizadas** (`○` estático con su `.html`).
+- `apps/api/**` no entra en el delta de esta ronda (0 rutas), por eso las 46 pruebas apuntadas del API no se re-corren: corrieron 46/46 sobre el mismo árbol de backend en la ronda 1.
+
+**Cuatro errores propios de esta extensión, declarados aquí:**
+
+1. **Di por alineado un frente al que le faltaban dos rutas.** La ronda 1 cerró con "53 rutas, 0 funciones ajenas dañadas" y eso era cierto para lo que medí; lo que no medí fue la existencia. La compuerta de paridad por blob (`scripts` de esta ronda) cierra ese ángulo ciego y queda versionada como regla de `apexos-qa`.
+2. **Edité después de promocionar el manifiesto que una evidencia ya cita.** Para listar las pantallas cambié `docs/qa/specs/hr-modulo-main-20261127.replay.json` a 36 carry; eso dejó la evidencia de la ronda 1 citando un spec cuyo inventario ya no cuadraba (las invariantes pasaban a 36/39 con 3 rojas porque los 3 `insert` ya habían aterrizado). Restauré el spec a su inventario certificado (34 carry + 3 insert, `git checkout fff98f1e~1 --`) y la ronda 2 llevó su propio spec. Un manifiesto que una evidencia cita se congela con esa evidencia.
+3. **Cité mal una cifra del control de mutación.** Leí el JSON con campos que no existen y salieron `derivas: 0`; el instrumento decía 6. Releí el artefacto con sus claves reales (`controles_de_mutacion[]`, cada caso con `rotos: 1`) y esa es la cifra que viaja.
+4. **Sellé los dos manifiestos con una hora del puesto que aún no llegaba** (`2026-11-28T02:40:00-05:00`, cuando el reloj del puesto marcaba las 21:32 -05:00 del 27: mezclé el sello UTC con el desplazamiento local). Corregido a `2026-11-27T21:35:00-05:00` con su `sello_utc` y su `nota_fecha` al lado, y el `change_id` conserva `20261128` porque las corridas sí se sellaron después de las 02:00Z del 28 en UTC. Es la misma familia de error que la ronda 1 declaró: la hora del puesto convertida a UTC se verifica, no se supone.
+
+**Hallazgo de gobernanza (no es defecto del producto, y no se arregla dentro de este portón):** la CI de `main` corre `npm run governance:ci` y la copia del guardián que vive en `main` (`scripts/git-governance-guard.js`, función `assertGithubRef`) solo acepta un PR hacia `main` cuyo head sea `develop`, con una excepción fija del 2026-11-23 para una rama nominal. Por eso el check "Git Governance Guard" sale rojo en un PR desde rama auxiliar, aunque el candidato esté verde en las compuertas humanas (`qa:promotion:scope` + `qa:approval:evidence`) y el árbol sea idéntico. No metí la evolución del guardián en este commit: es otra disciplina (gobernanza) y un commit cuyo asunto nombra un módulo no puede cambiar otro. Queda como pendiente con dueño.

@@ -1,0 +1,563 @@
+{
+  "instrumento": "promotion-migration-check selftest",
+  "ejecutado_en": "2026-11-28T02:19:04.131Z",
+  "passed": true,
+  "replay_correcto": {
+    "label": "replay correcto",
+    "passed": true,
+    "total": 5,
+    "rotos": 0,
+    "results": [
+      {
+        "tipo": "carry",
+        "file": "src/rule.js",
+        "esperado": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+        "actual": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+        "ok": true,
+        "detalle": "byte a byte con la rama de origen"
+      },
+      {
+        "tipo": "delete",
+        "file": "src/gate.js",
+        "esperado": null,
+        "actual": null,
+        "ok": true,
+        "detalle": "ausente en lo que se publica"
+      },
+      {
+        "tipo": "edit",
+        "file": "src/service.js",
+        "esperado": {
+          "anadidas": 0,
+          "eliminadas": 1
+        },
+        "actual": {
+          "anadidas": 0,
+          "eliminadas": 1
+        },
+        "lineas_sobran": [],
+        "lineas_faltan": [],
+        "ok": true,
+        "detalle": "replay exacto: 0 anadidas, 1 eliminadas declaradas"
+      },
+      {
+        "tipo": "insert",
+        "file": "src/schema.txt",
+        "esperado": {
+          "anadidas": 4,
+          "eliminadas": 0
+        },
+        "actual": {
+          "anadidas": 4,
+          "eliminadas": 0
+        },
+        "lineas_sobran": [],
+        "lineas_faltan": [],
+        "bajas_sobran": [],
+        "bajas_faltan": [],
+        "ok": true,
+        "detalle": "fusion exacta: 4 anadidas declaradas, 0 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+      },
+      {
+        "tipo": "insert",
+        "file": "src/model.txt",
+        "esperado": {
+          "anadidas": 4,
+          "eliminadas": 1
+        },
+        "actual": {
+          "anadidas": 4,
+          "eliminadas": 1
+        },
+        "lineas_sobran": [],
+        "lineas_faltan": [],
+        "bajas_sobran": [],
+        "bajas_faltan": [],
+        "ok": true,
+        "detalle": "fusion exacta: 4 anadidas declaradas, 1 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+      }
+    ]
+  },
+  "controles_de_mutacion": [
+    {
+      "name": "anadir_linea_en_hunk",
+      "esperado": "roto por lineas anadidas",
+      "label": "anadir_linea_en_hunk",
+      "passed": false,
+      "total": 5,
+      "rotos": 1,
+      "results": [
+        {
+          "tipo": "carry",
+          "file": "src/rule.js",
+          "esperado": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+          "actual": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+          "ok": true,
+          "detalle": "byte a byte con la rama de origen"
+        },
+        {
+          "tipo": "delete",
+          "file": "src/gate.js",
+          "esperado": null,
+          "actual": null,
+          "ok": true,
+          "detalle": "ausente en lo que se publica"
+        },
+        {
+          "tipo": "edit",
+          "file": "src/service.js",
+          "esperado": {
+            "anadidas": 0,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 1,
+            "eliminadas": 2
+          },
+          "lineas_sobran": [
+            "return run(input);"
+          ],
+          "lineas_faltan": [],
+          "ok": false,
+          "detalle": "un replay por hunks anadio 1 lineas en src/service.js"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/schema.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 0
+          },
+          "actual": {
+            "anadidas": 4,
+            "eliminadas": 0
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "bajas_sobran": [],
+          "bajas_faltan": [],
+          "ok": true,
+          "detalle": "fusion exacta: 4 anadidas declaradas, 0 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/model.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 4,
+            "eliminadas": 1
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "bajas_sobran": [],
+          "bajas_faltan": [],
+          "ok": true,
+          "detalle": "fusion exacta: 4 anadidas declaradas, 1 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+        }
+      ]
+    },
+    {
+      "name": "tocar_archivo_llevado",
+      "esperado": "roto porque el blob ya no es el de origen",
+      "label": "tocar_archivo_llevado",
+      "passed": false,
+      "total": 5,
+      "rotos": 1,
+      "results": [
+        {
+          "tipo": "carry",
+          "file": "src/rule.js",
+          "esperado": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+          "actual": "8384c0c9b7aa830390fa7b34495309c37de9faac",
+          "ok": false,
+          "detalle": "el contenido publicado no es el de origen"
+        },
+        {
+          "tipo": "delete",
+          "file": "src/gate.js",
+          "esperado": null,
+          "actual": null,
+          "ok": true,
+          "detalle": "ausente en lo que se publica"
+        },
+        {
+          "tipo": "edit",
+          "file": "src/service.js",
+          "esperado": {
+            "anadidas": 0,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 0,
+            "eliminadas": 1
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "ok": true,
+          "detalle": "replay exacto: 0 anadidas, 1 eliminadas declaradas"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/schema.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 0
+          },
+          "actual": {
+            "anadidas": 4,
+            "eliminadas": 0
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "bajas_sobran": [],
+          "bajas_faltan": [],
+          "ok": true,
+          "detalle": "fusion exacta: 4 anadidas declaradas, 0 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/model.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 4,
+            "eliminadas": 1
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "bajas_sobran": [],
+          "bajas_faltan": [],
+          "ok": true,
+          "detalle": "fusion exacta: 4 anadidas declaradas, 1 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+        }
+      ]
+    },
+    {
+      "name": "revivir_borrado",
+      "esperado": "roto porque la ruta borrada vuelve a existir",
+      "label": "revivir_borrado",
+      "passed": false,
+      "total": 5,
+      "rotos": 1,
+      "results": [
+        {
+          "tipo": "carry",
+          "file": "src/rule.js",
+          "esperado": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+          "actual": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+          "ok": true,
+          "detalle": "byte a byte con la rama de origen"
+        },
+        {
+          "tipo": "delete",
+          "file": "src/gate.js",
+          "esperado": null,
+          "actual": "8bf47a57a3b18a2c2ee443de61f88748a055d06a",
+          "ok": false,
+          "detalle": "la ruta sigue viva en lo que se publica"
+        },
+        {
+          "tipo": "edit",
+          "file": "src/service.js",
+          "esperado": {
+            "anadidas": 0,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 0,
+            "eliminadas": 1
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "ok": true,
+          "detalle": "replay exacto: 0 anadidas, 1 eliminadas declaradas"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/schema.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 0
+          },
+          "actual": {
+            "anadidas": 4,
+            "eliminadas": 0
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "bajas_sobran": [],
+          "bajas_faltan": [],
+          "ok": true,
+          "detalle": "fusion exacta: 4 anadidas declaradas, 0 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/model.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 4,
+            "eliminadas": 1
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "bajas_sobran": [],
+          "bajas_faltan": [],
+          "ok": true,
+          "detalle": "fusion exacta: 4 anadidas declaradas, 1 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+        }
+      ]
+    },
+    {
+      "name": "insert_borra_contenido_del_destino",
+      "esperado": "roto porque la insercion se llevo por delante el modelo propio del destino",
+      "label": "insert_borra_contenido_del_destino",
+      "passed": false,
+      "total": 5,
+      "rotos": 1,
+      "results": [
+        {
+          "tipo": "carry",
+          "file": "src/rule.js",
+          "esperado": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+          "actual": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+          "ok": true,
+          "detalle": "byte a byte con la rama de origen"
+        },
+        {
+          "tipo": "delete",
+          "file": "src/gate.js",
+          "esperado": null,
+          "actual": null,
+          "ok": true,
+          "detalle": "ausente en lo que se publica"
+        },
+        {
+          "tipo": "edit",
+          "file": "src/service.js",
+          "esperado": {
+            "anadidas": 0,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 0,
+            "eliminadas": 1
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "ok": true,
+          "detalle": "replay exacto: 0 anadidas, 1 eliminadas declaradas"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/schema.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 0
+          },
+          "actual": {
+            "anadidas": 3,
+            "eliminadas": 2
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [
+            "}"
+          ],
+          "bajas_sobran": [
+            "model GastosMenores {",
+            "// nota del destino que desarrollo no tiene"
+          ],
+          "bajas_faltan": [],
+          "ok": false,
+          "detalle": "la insercion borro 2 lineas propias del destino en src/schema.txt que nadie declaro"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/model.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 4,
+            "eliminadas": 1
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "bajas_sobran": [],
+          "bajas_faltan": [],
+          "ok": true,
+          "detalle": "fusion exacta: 4 anadidas declaradas, 1 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+        }
+      ]
+    },
+    {
+      "name": "insert_linea_no_declada",
+      "esperado": "roto porque la insercion anade una linea que nadie declaro",
+      "label": "insert_linea_no_declada",
+      "passed": false,
+      "total": 5,
+      "rotos": 1,
+      "results": [
+        {
+          "tipo": "carry",
+          "file": "src/rule.js",
+          "esperado": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+          "actual": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+          "ok": true,
+          "detalle": "byte a byte con la rama de origen"
+        },
+        {
+          "tipo": "delete",
+          "file": "src/gate.js",
+          "esperado": null,
+          "actual": null,
+          "ok": true,
+          "detalle": "ausente en lo que se publica"
+        },
+        {
+          "tipo": "edit",
+          "file": "src/service.js",
+          "esperado": {
+            "anadidas": 0,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 0,
+            "eliminadas": 1
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "ok": true,
+          "detalle": "replay exacto: 0 anadidas, 1 eliminadas declaradas"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/schema.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 0
+          },
+          "actual": {
+            "anadidas": 5,
+            "eliminadas": 0
+          },
+          "lineas_sobran": [
+            "extra String"
+          ],
+          "lineas_faltan": [],
+          "bajas_sobran": [],
+          "bajas_faltan": [],
+          "ok": false,
+          "detalle": "la insercion anadio 5 lineas, se declararon 4"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/model.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 4,
+            "eliminadas": 1
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "bajas_sobran": [],
+          "bajas_faltan": [],
+          "ok": true,
+          "detalle": "fusion exacta: 4 anadidas declaradas, 1 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+        }
+      ]
+    },
+    {
+      "name": "insert_reemplazo_no_declado",
+      "esperado": "roto porque la fusion se llevo por delante una linea del destino que el spec no declaro",
+      "label": "insert_reemplazo_no_declado",
+      "passed": false,
+      "total": 5,
+      "rotos": 1,
+      "results": [
+        {
+          "tipo": "carry",
+          "file": "src/rule.js",
+          "esperado": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+          "actual": "c2131b36cadc1e16e5b8e9d4ba148dd7ac5453b2",
+          "ok": true,
+          "detalle": "byte a byte con la rama de origen"
+        },
+        {
+          "tipo": "delete",
+          "file": "src/gate.js",
+          "esperado": null,
+          "actual": null,
+          "ok": true,
+          "detalle": "ausente en lo que se publica"
+        },
+        {
+          "tipo": "edit",
+          "file": "src/service.js",
+          "esperado": {
+            "anadidas": 0,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 0,
+            "eliminadas": 1
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "ok": true,
+          "detalle": "replay exacto: 0 anadidas, 1 eliminadas declaradas"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/schema.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 0
+          },
+          "actual": {
+            "anadidas": 4,
+            "eliminadas": 0
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [],
+          "bajas_sobran": [],
+          "bajas_faltan": [],
+          "ok": true,
+          "detalle": "fusion exacta: 4 anadidas declaradas, 0 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+        },
+        {
+          "tipo": "insert",
+          "file": "src/model.txt",
+          "esperado": {
+            "anadidas": 4,
+            "eliminadas": 1
+          },
+          "actual": {
+            "anadidas": 3,
+            "eliminadas": 1
+          },
+          "lineas_sobran": [],
+          "lineas_faltan": [
+            "id Int"
+          ],
+          "bajas_sobran": [],
+          "bajas_faltan": [],
+          "ok": false,
+          "detalle": "la insercion anadio 3 lineas, se declararon 4"
+        }
+      ]
+    }
+  ],
+  "conclusion": "el instrumento detecta las seis derivas que justifica su existencia"
+}
