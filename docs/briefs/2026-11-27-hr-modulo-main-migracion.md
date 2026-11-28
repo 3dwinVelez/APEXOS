@@ -9,15 +9,18 @@
 
 Llevar a `main` el Talento Humano completo que ya sirve `develop` —incluido el frente biométrico (WebAuthn, rostros, dispositivos compartidos)— sin adulterar un solo registro de cliente, sin dañar funciones ajenas al cambio y **conservando en Producción la marcación por la web tal como funciona hoy**. El transporte es por replay controlado (nunca `merge` a lo ancho): 34 rutas viajan byte a byte desde `origin/desarrollo` y 3 rutas —el esquema Prisma, el `package.json` de la API y el lockfile— van por fusión a tres vías porque `main` conserva contenido propio de otros módulos.
 
-## 2. Alcance exacto (36 rutas de producto)
+## 2. Alcance exacto (41 rutas de producto, 53 con la documentación del portón)
 
 | Invariante | Rutas | Qué viaja |
 |---|---|---|
-| `carry` (34) | `apps/api/src/modules/hr/*` (12 accesos de ficha, rostros, webauthn, dispositivos, identidad), `apps/web/app/dashboard/talento-humano/empleados/page.tsx`, `apps/web/components/hr/*`, `apps/web/lib/*` (3), `apps/api/test/*` (5), `apps/web/test/*` (3), migraciones Prisma (3), scripts/certificaciones (5), docs/qa | El frente biométrico completo que QA ya certificó en `develop`, tal cual se probó |
-| `insert` (2) | `apps/api/prisma/schema.prisma` (+94), `apps/api/package.json` (+4) | Solo lo declarado línea por línea; el contenido propio de `main` (comentarios de Gastos Menores, modelos Invoice/Apex ajenos, dependencias de buzón) queda intacto |
+| `carry` (34) | `apps/api/src/modules/hr/*` (7: rostro, consentimiento, webauthn personal, dispositivos compartidos, rutas, schema, servicio), `apps/api/src/modules/auth/*` (3), `apps/web/app/dashboard/talento-humano/*` (8 pantallas), `apps/web/components/*` (2: `hr/ConfirmWindow.tsx`, `operations/PhotoCapture.tsx`), `apps/web/lib/*` (3), `apps/api/test/*` (4), `apps/web/test/*` (4), migraciones Prisma (3) | El frente biométrico completo que QA ya certificó en `develop`, tal cual se probó (blob idéntico) |
+| `insert` (3) | `apps/api/prisma/schema.prisma` (+94/−0), `apps/api/package.json` (+4/−0), `apps/web/lib/api.ts` (+5/−1) | Solo lo declarado línea por línea; el contenido propio de `main` (comentarios de Gastos Menores, modelos Invoice/Apex ajenos, dependencias de buzón, telemetría del cliente) queda intacto |
 | generado | `package-lock.json` (+153/−0) | Subárbol biométrico idéntico en versión e integridad a `origin/desarrollo`; cero dependencias de otros módulos |
+| portón | `docs/qa/specs/hr-modulo-main-20261127.replay.json`, `scripts/certifications/promotion-migration-check.js`, `scripts/test/promotion-replay-instruments.test.js` | El spec y el verificador de invariantes viajan con el candidato, para que el replay sea reproducible y reversible |
 
-Las 36 rutas de producto se certificaron **36/36** con la invariante nueva y su control de mutación de 5 derivas, y **34 blobs** son idénticos a `origin/desarrollo`; las 3 divergencias nominales son exactamente las 3 vías declaradas (`equivalencia-blob-candidato.json`).
+Las 41 rutas de producto cierran **37/37 invariantes** del spec (34 `carry` + 3 `insert`) con su control de mutación de **6 derivas, 6 rojas**, y **37 de las 41** son blobs idénticos a `origin/desarrollo`; las 4 divergentes son exactamente las 3 vías declaradas más el lock generado (`equivalencia-blob-candidato.json`). Sobre ese árbol corrieron las suites: API **46/46**, portal `hr-*` **185/185**, portón **4/4** y `next build` de producción con **salida 0** (141 páginas).
+
+Las **12 rutas documentales** (1 brief, 1 certificación, 2 manifiestos, 7 piezas de evidencia y el instrumento de campo que las produjo) completan el inventario en **53**; viajan blob-idénticas a `origin/desarrollo` porque el validador de aprobación resuelve cada evidencia y cada script relativo al directorio del manifiesto.
 
 ### Módulos (`change_intent.modules`)
 
@@ -32,7 +35,7 @@ Las 36 rutas de producto se certificaron **36/36** con la invariante nueva y su 
 
 No viajan en esta promoción (medido y documentado en la equivalencia por blob):
 
-- Telemetría de cliente (`lib/api.ts`, `installationIdentity.ts`, `admin/public-routes.js`) y el buzón de adjuntos/facturas recibidas: frentes que solo viven en `desarrollo`.
+- Telemetría de cliente (`installationIdentity.ts`, `admin/public-routes.js` y 55 líneas de `lib/api.ts`: lectura de `health.commit` por petición) y el buzón de adjuntos/facturas recibidas: frentes que solo viven en `desarrollo`. **De `lib/api.ts` sí viaja la compuerta de escrituras** (`shouldBlockHrWriteFallback` para `shared-devices` y `face-enrollment`), no el archivo entero: ver `insert` en §2.
 - `apps/control-tower/**` (residencia solo en `desarrollo`).
 - Comercio M-30, hors de esta ronda.
 - El monitor de horarios en dieciséis horas y el rediseño de horarios/mallas (frente ajeno, no pedido).
@@ -41,7 +44,7 @@ No viajan en esta promoción (medido y documentado en la equivalencia por blob):
 ## 4. Restricciones
 
 - Adulterar registros: prohibido. Cero `UPDATE`/`DELETE` sobre datos de clientes; las migraciones solo crean 3 tablas nuevas.
-- Dañar funciones ajenas: prohibido y medido. Los 18 recortes internos del candidato respecto a `origin/desarrollo` (rutas con bajas de línea) se auditaron una por una en `equivalencia-blob-candidato.json`.
+- Dañar funciones ajenas: prohibido y medido. **0 borrados** en las 53 rutas del inventario; las 4 rutas cuyo blob no es el de `origin/desarrollo` son las 4 vías declaradas y las cuatro suman líneas sin eliminar ninguna del árbol de Producción (medido: `−0` en esquema, lock y manifest, y `−1` solo en la línea de condición de `lib/api.ts`, reemplazo declarado en el spec). Cada fusión la verifica la invariante `insert`, que rompe ante una baja no declarada.
 - La marcación web de Producción no se toca: `faceMatchForPunch` responde `{status:"no_disponible"}` ante cualquier falla (nunca tumba la marca) y Human carga perezoso.
 - Sin secretos ni credenciales en el diff.
 - PR y merge a `main` solo por la rama auxiliar `codex/qa-hr-modulo-main-20261127`, respaldada con tag `backup/pre-hr-modulo-main-20261127`.
@@ -63,19 +66,43 @@ No viajan en esta promoción (medido y documentado en la equivalencia por blob):
 
 ## 7. Riesgos y rollback
 
-- Riesgo: que el replay arrastre contenido ajeno → mitigado por las 4 invariantes con control de mutación (5 derivas) y la compuerta de origen blobs contra `origin/desarrollo`.
+- Riesgo: que el replay arrastre contenido ajeno → mitigado por las invariantes del spec con control de mutación (**6 derivas, 6 rojas**) y la compuerta de origen que compara cada blob contra `origin/desarrollo` con las 4 excepciones nombradas.
 - Riesgo: que Producción cambie entre el freeze y el deploy → el manifiesto de alcance ancla `base_commits.main` y la compuerta lo verifica.
 - Rollback: revert puntual del merge en `main` (replay inverso vía `git revert -m 1` o re-merge del padre), nunca un snapshot viejo del árbol; la marcación web no depende de los 3 blobs nuevos.
 
 ## 8. Evidencia y certificación exigida
 
-- `docs/qa/evidence/hr-modulo-main-20261127/invariantes-replay.json` (36/36)
-- `docs/qa/evidence/hr-modulo-main-20261127/controls/selftest-instrumento.json` (control de mutación, 5 derivas rojas)
+- `docs/qa/evidence/hr-modulo-main-20261127/invariantes-replay.json` (37/37 contra el árbol commiteado `303f0725`, no contra el índice del worktree)
+- `docs/qa/evidence/hr-modulo-main-20261127/controls/selftest-instrumento.json` (control de mutación, 6 derivas rojas) y `docs/qa/evidence/hr-modulo-main-20261127/suites-candidato.txt` (api 46/46, portal 185/185, portón 4/4, build salida 0, con las rutas del puesto limpiadas)
 - `docs/qa/evidence/hr-modulo-main-20261127/equivalencia-blob-candidato.json` y `equivalencia-lock-biometrico.json`
 - Evidencia funcional de campo en QA (Nyvora, paquete desplegado): `docs/qa/evidence/hr-alineacion-20261127/paquete-qa-desplegado/qa-campo-escritura.json`
 - Manifiestos `docs/qa/manifests/hr-modulo-main-20261127-scope.json` y `-approval.json`
 
 ## 9. Notas de gobernanza
 
-- El transporte es por ascendencia (`certified_commit` ancestro del candidato) con **waivers nominales** para las 3 rutas de fusión a tres vías; `replay_puntual` está reservado para destinos sin contenido propio que conservar.
+- El transporte es por ascendencia (`certified_commit` ancestro del candidato, registrado con un merge `-s ours` que no cambia un byte del árbol) con **4 waivers nominales** para las rutas de fusión a tres vías; `replay_puntual` está reservado para destinos sin contenido propio que conservar, y ese modo prohíbe cualquier waiver.
 - El instrumento `promotion-migration-check.js` aprendió la cuarta invariante (`insert`) en `desarrollo` (`e61608f6`): el replay de una fusión a tres vías declara línea por línea lo que agrega y una sola línea eliminada lo rompe.
+## 10. Resultado del candidato y errores declarados de esta intervención
+
+Medido sobre `303f0725` (rama auxiliar `codex/qa-hr-modulo-main-20261127`, base `origin/main` `91d43c79`):
+
+- Inventario: **53 rutas** (41 de producto e instrumentos + 12 documentales), **14 altas / 27 modificaciones / 0 borrados**.
+- Origen: **37/41** blobs idénticos a `origin/desarrollo`, **4** vías de fusión con waiver nominal, **0** rutas sin blob en `desarrollo`.
+- Compuertas: `qa:promotion:scope` y `qa:approval:evidence` **en verde** sobre la punta final del candidato; invariantes **37/37**; selftest **6/6 rojas**; suites **46/46**, **185/185**, **4/4**; `next build` **salida 0**.
+- Campo QA: **27/27 APROBADO** sobre el binario desplegado `a440560d7f04` (NYVORA).
+
+Tres errores propios, declarados aquí y corregidos en el mismo cierre:
+
+1. **Dejé fuera del candidato una ruta que no era mía dejar fuera.** Excluí `apps/web/lib/api.ts` por telemetría y el rojo del punto D mostró que ahí vive la compuerta que impide que el respaldo de Supabase escriba donde la API rechazó. El hallazgo no venía del diseño: lo trajo el arnés, y se corrigió con la cuarta vía de fusión.
+2. **El selftest viajó viejo.** El candidato llevaba el test con cinco derivas mientras el instrumento ya inyectaba la sexta, es decir un verde que no podía fallar por esa vía. Alineado por blob en `303f0725` y re-medido.
+3. **Escribí evidencia con datos de otra intervención.** `invariantes-replay.json` salió con el contenido de una corrida del 2026-11-24 (el `--output` del instrumento rechaza pisar evidencia, pero el copiado manual sí la pisó). Regenerado contra el árbol commiteado y verificado.
+
+Sigue pendiente, con dueño y decisión:
+
+| Pendiente | Responsable | Decisión |
+|---|---|---|
+| Aplicar las 3 migraciones biométricas en Producción (ledger de solo lectura antes y después) | db-nube + performance, con el dueño | Autorización ya otorgada dentro de la orden de migración |
+| Redeploy de `apexos-api-prod` y `apexos-web-prod` y verificación por artefacto servido | performance + qa | Proceder tras el merge |
+| Re-medición de rechazos de foto en Producción con `--days=7` para tener denominador | qa | Repetir con jornada completa |
+| Retiro alterno de la compuerta de marcación web en `develop`/`main` | dueño | Provisional: la web sigue marcando, según su orden expresa |
+| Alinear Comercio M-30, facturas recibidas y torre con Producción | dueño | No es alcance de este portón |

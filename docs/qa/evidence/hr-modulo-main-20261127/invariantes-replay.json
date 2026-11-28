@@ -1,0 +1,343 @@
+{
+  "instrumento": "promotion-migration-check",
+  "ejecutado_en": "2026-11-28T01:39:12.221Z",
+  "spec": "docs/qa/specs/hr-modulo-main-20261127.replay.json",
+  "base_ref": "origin/main",
+  "origin_ref": "origin/desarrollo",
+  "contra": "commit 303f07258236bc8a900738743a9e29e0739ae3e9",
+  "label": "invariantes del replay",
+  "passed": true,
+  "total": 37,
+  "rotos": 0,
+  "results": [
+    {
+      "tipo": "carry",
+      "file": "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql",
+      "esperado": "6df947f1e79cf15f09eeb8e141b60ed0c179f256",
+      "actual": "6df947f1e79cf15f09eeb8e141b60ed0c179f256",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql",
+      "esperado": "9f548b4118262f02fde03a82e69ab7a8f705f7c2",
+      "actual": "9f548b4118262f02fde03a82e69ab7a8f705f7c2",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql",
+      "esperado": "5da5c918fd9ad9dcf3b7a9d66ce5a58fae416830",
+      "actual": "5da5c918fd9ad9dcf3b7a9d66ce5a58fae416830",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/auth/routes.js",
+      "esperado": "a8acfa07e5dbf463f92e33eaa2297b28dface166",
+      "actual": "a8acfa07e5dbf463f92e33eaa2297b28dface166",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/auth/schema.js",
+      "esperado": "7f0383e24ae9d5d2666c29668f2b3e993239e482",
+      "actual": "7f0383e24ae9d5d2666c29668f2b3e993239e482",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/auth/service.js",
+      "esperado": "adc29f00292d79e62f0be31ebe410f13146277a5",
+      "actual": "adc29f00292d79e62f0be31ebe410f13146277a5",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/face-consent.js",
+      "esperado": "9a46f97c32e981375e51b5c4fa041ecba7d837b8",
+      "actual": "9a46f97c32e981375e51b5c4fa041ecba7d837b8",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/face-identity.js",
+      "esperado": "84edbfeaa04e9c8508c857846e9af3543d07b45a",
+      "actual": "84edbfeaa04e9c8508c857846e9af3543d07b45a",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/personal-webauthn.js",
+      "esperado": "2e337e7c3ebd7d5b35752c64b37b83031e0bb0b8",
+      "actual": "2e337e7c3ebd7d5b35752c64b37b83031e0bb0b8",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/routes.js",
+      "esperado": "a84086f4359d6ee75b3930208537ee03acbdadb8",
+      "actual": "a84086f4359d6ee75b3930208537ee03acbdadb8",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/schema.js",
+      "esperado": "b4bcfc415351285d98974b192d806a3a16f98e26",
+      "actual": "b4bcfc415351285d98974b192d806a3a16f98e26",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/service.js",
+      "esperado": "6f18bfa00e37d4270ec77609602f0a261bbcc866",
+      "actual": "6f18bfa00e37d4270ec77609602f0a261bbcc866",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/src/modules/hr/shared-device-identity.js",
+      "esperado": "d173afe8a986e701cde556a102fbd6260ef954c3",
+      "actual": "d173afe8a986e701cde556a102fbd6260ef954c3",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/auth-webauthn-login.test.js",
+      "esperado": "d06669e8ee68e38c49c03a11c641a1cd45562b61",
+      "actual": "d06669e8ee68e38c49c03a11c641a1cd45562b61",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-face-identity.test.js",
+      "esperado": "dc406ad04615e93ecddac9854d19e710c3ad0c2d",
+      "actual": "dc406ad04615e93ecddac9854d19e710c3ad0c2d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-personal-webauthn.test.js",
+      "esperado": "7c20ef4aee6eb7ba82ff973a097f54df02254005",
+      "actual": "7c20ef4aee6eb7ba82ff973a097f54df02254005",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/api/test/hr-shared-device-identity.test.js",
+      "esperado": "c194f03f4db2d088a78a1a1fe2870f4e95fececd",
+      "actual": "c194f03f4db2d088a78a1a1fe2870f4e95fececd",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+      "esperado": "78365807126e5eb0d739b3aed9f2b133ca47de11",
+      "actual": "78365807126e5eb0d739b3aed9f2b133ca47de11",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+      "esperado": "3c85aa537a84a2f7b793614f83c8c957328e1ed5",
+      "actual": "3c85aa537a84a2f7b793614f83c8c957328e1ed5",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+      "esperado": "1689fa4aeb54a1b928b29d72e3846fcfdfc8d83c",
+      "actual": "1689fa4aeb54a1b928b29d72e3846fcfdfc8d83c",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+      "esperado": "796ddee85057cb8d3c357f195d60f5e45c3db706",
+      "actual": "796ddee85057cb8d3c357f195d60f5e45c3db706",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+      "esperado": "8ea980321afe758c025f8a42df50a458b44d5af1",
+      "actual": "8ea980321afe758c025f8a42df50a458b44d5af1",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+      "esperado": "bb9e2be1667178f15ab36d154ce6405f36197c8d",
+      "actual": "bb9e2be1667178f15ab36d154ce6405f36197c8d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx",
+      "esperado": "00068c3d84d90cd8a2bda13315bf53dbd5a48774",
+      "actual": "00068c3d84d90cd8a2bda13315bf53dbd5a48774",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+      "esperado": "ae1ffb0235e0cb1108da96b813097ded20143125",
+      "actual": "ae1ffb0235e0cb1108da96b813097ded20143125",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/components/hr/ConfirmWindow.tsx",
+      "esperado": "a7a5f0eee83f2b61fe9ee2613b5a36448b4cde2f",
+      "actual": "a7a5f0eee83f2b61fe9ee2613b5a36448b4cde2f",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/components/operations/PhotoCapture.tsx",
+      "esperado": "9ebc79217831669b30b54ad3c1db6c1f99543c62",
+      "actual": "9ebc79217831669b30b54ad3c1db6c1f99543c62",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/hrMarkingCorrection.ts",
+      "esperado": "b5c9ce0c852b1fdf7ff4325f821ee1cb0e9818df",
+      "actual": "b5c9ce0c852b1fdf7ff4325f821ee1cb0e9818df",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/hrOfflineEvidence.ts",
+      "esperado": "23b9ff886c8fc8341ba3bcd73dba777332f07f48",
+      "actual": "23b9ff886c8fc8341ba3bcd73dba777332f07f48",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/lib/hrOfflineMarking.ts",
+      "esperado": "7f36e53dec5a02c29ab9a9b3ffca02c758ab5a69",
+      "actual": "7f36e53dec5a02c29ab9a9b3ffca02c758ab5a69",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs",
+      "esperado": "7adc6871d1b82e301530f9a88786a47fdb029150",
+      "actual": "7adc6871d1b82e301530f9a88786a47fdb029150",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs",
+      "esperado": "f3a5a25f32a48c8626c1d0c155db511917381432",
+      "actual": "f3a5a25f32a48c8626c1d0c155db511917381432",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+      "esperado": "010d968afd3971f87ea22e6a4c8e69732b40eddd",
+      "actual": "010d968afd3971f87ea22e6a4c8e69732b40eddd",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "carry",
+      "file": "apps/web/test/hr-offline-marking.test.mjs",
+      "esperado": "267bbf25215af7a413285f5c897564f20d6f3b5d",
+      "actual": "267bbf25215af7a413285f5c897564f20d6f3b5d",
+      "ok": true,
+      "detalle": "byte a byte con la rama de origen"
+    },
+    {
+      "tipo": "insert",
+      "file": "apps/api/prisma/schema.prisma",
+      "esperado": {
+        "anadidas": 88,
+        "eliminadas": 0
+      },
+      "actual": {
+        "anadidas": 88,
+        "eliminadas": 0
+      },
+      "lineas_sobran": [],
+      "lineas_faltan": [],
+      "bajas_sobran": [],
+      "bajas_faltan": [],
+      "ok": true,
+      "detalle": "fusion exacta: 88 anadidas declaradas, 0 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+    },
+    {
+      "tipo": "insert",
+      "file": "apps/api/package.json",
+      "esperado": {
+        "anadidas": 4,
+        "eliminadas": 0
+      },
+      "actual": {
+        "anadidas": 4,
+        "eliminadas": 0
+      },
+      "lineas_sobran": [],
+      "lineas_faltan": [],
+      "bajas_sobran": [],
+      "bajas_faltan": [],
+      "ok": true,
+      "detalle": "fusion exacta: 4 anadidas declaradas, 0 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+    },
+    {
+      "tipo": "insert",
+      "file": "apps/web/lib/api.ts",
+      "esperado": {
+        "anadidas": 5,
+        "eliminadas": 1
+      },
+      "actual": {
+        "anadidas": 5,
+        "eliminadas": 1
+      },
+      "lineas_sobran": [],
+      "lineas_faltan": [],
+      "bajas_sobran": [],
+      "bajas_faltan": [],
+      "ok": true,
+      "detalle": "fusion exacta: 5 anadidas declaradas, 1 eliminadas declaradas (el resto del contenido del destino queda intacto)"
+    }
+  ],
+  "evidencia_dir": "docs/qa/evidence/hr-modulo-main-20261127",
+  "candidato_ref": "303f07258236bc8a900738743a9e29e0739ae3e9",
+  "nota": "Corrida del porton de replay contra el arbol commiteado del candidato (no contra el indice): la invariante que se certifica es la del commit que se promociona."
+}
