@@ -1,0 +1,91 @@
+{
+  "etapa": "antes",
+  "destino": "produccion (pooler de sesion)",
+  "hora_utc": "2026-11-28T02:04:47.161Z",
+  "migraciones_aplicadas": [
+    {
+      "total": 72,
+      "ultima_aplicada": "2026-11-26T18:32:05.850Z"
+    }
+  ],
+  "ultimas_cinco": [
+    {
+      "migration_name": "20261125183000_platform_settings",
+      "finished_at": "2026-11-26T18:32:05.850Z"
+    },
+    {
+      "migration_name": "20261113120000_hr_nomina_legal_2026",
+      "finished_at": "2026-11-17T22:17:40.180Z"
+    },
+    {
+      "migration_name": "20261030130000_hr_ibc_caps_floors_2026",
+      "finished_at": "2026-11-17T22:17:02.458Z"
+    },
+    {
+      "migration_name": "20261030120000_hr_labor_rates_vigencia_2026",
+      "finished_at": "2026-11-17T22:16:25.515Z"
+    },
+    {
+      "migration_name": "20261019134505_transport_settlement_vehicle",
+      "finished_at": "2026-11-13T23:55:05.744Z"
+    }
+  ],
+  "tablas_biometricas": [
+    {
+      "nombre": "hr_shared_devices",
+      "existe": false
+    },
+    {
+      "nombre": "hr_face_enrollments",
+      "existe": false
+    },
+    {
+      "nombre": "hr_webauthn_credentials",
+      "existe": false
+    }
+  ],
+  "protegidas": [
+    {
+      "nombre": "TimePunch",
+      "existe": false
+    },
+    {
+      "nombre": "Employee",
+      "existe": false
+    },
+    {
+      "nombre": "Tenant",
+      "existe": false
+    },
+    {
+      "nombre": "TimeRoute",
+      "existe": false
+    },
+    {
+      "nombre": "employees",
+      "existe": true,
+      "filas": "101",
+      "max_id": "f72c0016-5a37-4807-bb81-31e9329e31af",
+      "ultimo_cambio": "2026-11-28 01:49:01.100337+00"
+    },
+    {
+      "nombre": "platform_settings",
+      "existe": true,
+      "filas": "1",
+      "max_id": "1",
+      "ultimo_cambio": "2026-11-27 11:26:22.77"
+    },
+    {
+      "nombre": "platform_admins",
+      "existe": true,
+      "filas": "2",
+      "max_id": "1f326a0f-238b-4d78-a5df-62acd6b19a91",
+      "ultimo_cambio": "2026-11-27 11:26:22.769616+00"
+    }
+  ],
+  "tablas_total": [
+    {
+      "tablas": 235
+    }
+  ]
+}

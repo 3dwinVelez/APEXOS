@@ -1,0 +1,77 @@
+{
+  "etapa": "comparacion_antes_despues",
+  "hora_utc": "2026-11-28T02:05:52.445Z",
+  "migraciones_aplicadas_antes": 72,
+  "migraciones_aplicadas_despues": 75,
+  "ultimas_aplicadas_despues": [
+    "20261122120000_hr_webauthn_credentials",
+    "20261122060000_hr_face_enrollments",
+    "20261121230000_hr_shared_devices",
+    "20261125183000_platform_settings",
+    "20261113120000_hr_nomina_legal_2026"
+  ],
+  "tablas_nuevas": [
+    {
+      "tabla": "hr_shared_devices",
+      "existe_antes": false,
+      "existe_despues": true
+    },
+    {
+      "tabla": "hr_face_enrollments",
+      "existe_antes": false,
+      "existe_despues": true
+    },
+    {
+      "tabla": "hr_webauthn_credentials",
+      "existe_antes": false,
+      "existe_despues": true
+    }
+  ],
+  "protegidas_sin_cambio": true,
+  "detalle_protegidas": [
+    {
+      "tabla": "TimePunch",
+      "max_id_igual": true
+    },
+    {
+      "tabla": "Employee",
+      "max_id_igual": true
+    },
+    {
+      "tabla": "Tenant",
+      "max_id_igual": true
+    },
+    {
+      "tabla": "TimeRoute",
+      "max_id_igual": true
+    },
+    {
+      "tabla": "employees",
+      "filas_antes": "101",
+      "filas_despues": "101",
+      "max_id_igual": true,
+      "sello_antes": "2026-11-28 01:49:01.100337+00",
+      "sello_despues": "2026-11-28 01:49:01.100337+00"
+    },
+    {
+      "tabla": "platform_settings",
+      "filas_antes": "1",
+      "filas_despues": "1",
+      "max_id_igual": true,
+      "sello_antes": "2026-11-27 11:26:22.77",
+      "sello_despues": "2026-11-27 11:26:22.77"
+    },
+    {
+      "tabla": "platform_admins",
+      "filas_antes": "2",
+      "filas_despues": "2",
+      "max_id_igual": true,
+      "sello_antes": "2026-11-27 11:26:22.769616+00",
+      "sello_despues": "2026-11-27 11:26:22.769616+00"
+    }
+  ],
+  "tablas_totales_antes": 235,
+  "tablas_totales_despues": 238,
+  "sellos_movidos": [],
+  "veredicto": "ADITIVO:SIN_ESCRITURA_EN_PROTEGIDAS"
+}
