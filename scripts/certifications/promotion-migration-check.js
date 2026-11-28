@@ -24,7 +24,9 @@
 // otros modulos. Copiar el blob de desarrollo habria borrado ese contenido ajeno en
 // silencio. La invariante exige que lo unico que cambia sea lo declarado, linea por linea:
 // `add_lines` para el conjunto exacto o `added_exact` cuando el volumen hace inviable
-// enumerarlo (el lockfile, por ejemplo). En ambas variantes, una sola linea eliminada rompe.
+// enumerarlo (el lockfile, por ejemplo). Si ademas hay que reemplazar una linea propia del
+// destino (`apps/web/lib/api.ts`: el return del gate se reescribe), esa baja se declara en
+// `remove_lines`. En cualquier variante, una linea eliminada sin declarar rompe.
 //
 // Uso:
 //   node scripts/certifications/promotion-migration-check.js --spec <spec.json> \
@@ -152,7 +154,10 @@ function checkSpec(spec, cwd, against, ref) {
   return results;
 }
 
-// Fusion a tres vias: el destino conserva su contenido y solo recibe lo declarado.
+// Fusion a tres vias: el destino conserva su contenido y solo recibe lo declarado. Cuando la
+// fusion tambien reemplaza una linea propia del destino (el gate de escrituras biométricas en
+// `apps/web/lib/api.ts`, 2026-11-27), esa baja tiene que estar declarada linea por linea en
+// `remove_lines`: una eliminacion no declarada, o una declarada que no se materializo, rompe.
 function checkInsert(spec, item, cwd, against, ref) {
   const change = diffAgainstBase(spec.base_ref, item.file, cwd, against, ref);
   const anadidas = change.added.filter((line) => line.length > 0);
@@ -162,24 +167,31 @@ function checkInsert(spec, item, cwd, against, ref) {
   const sobran = declared ? anadidas.filter((line) => !declared.includes(line)) : [];
   const cuentaDeclarada = declared ? declared.length : item.added_exact;
   const cuentaCoincide = typeof cuentaDeclarada === "number" ? anadidas.length === cuentaDeclarada : anadidas.length > 0;
-  const ok = eliminadas.length === 0 && faltan.length === 0 && sobran.length === 0 && cuentaCoincide && anadidas.length > 0;
+  const bajasDeclaradas = Array.isArray(item.remove_lines) ? item.remove_lines.map((line) => String(line).trim()) : [];
+  const bajasFaltan = bajasDeclaradas.filter((line) => !eliminadas.includes(line));
+  const bajasSobran = eliminadas.filter((line) => !bajasDeclaradas.includes(line));
+  const ok = bajasFaltan.length === 0 && bajasSobran.length === 0 && faltan.length === 0 && sobran.length === 0 && cuentaCoincide && anadidas.length > 0;
   return {
     tipo: "insert",
     file: item.file,
-    esperado: { anadidas: cuentaDeclarada ?? ">0", eliminadas: 0 },
+    esperado: { anadidas: cuentaDeclarada ?? ">0", eliminadas: bajasDeclaradas.length },
     actual: { anadidas: anadidas.length, eliminadas: eliminadas.length },
     lineas_sobran: sobran,
     lineas_faltan: faltan,
+    bajas_sobran: bajasSobran,
+    bajas_faltan: bajasFaltan,
     ok,
     detalle: ok
-      ? `fusion exacta: ${anadidas.length} anadidas declaradas, 0 eliminadas (el contenido del destino queda intacto)`
-      : eliminadas.length
-        ? `la insercion borro ${eliminadas.length} lineas propias del destino en ${item.file}`
-        : !cuentaCoincide
-          ? `la insercion anadio ${anadidas.length} lineas, se declararon ${cuentaDeclarada}`
-          : sobran.length || faltan.length
-            ? "las lineas anadidas no son las declaradas en el spec"
-            : `la ruta no recibio ninguna linea en ${item.file}`
+      ? `fusion exacta: ${anadidas.length} anadidas declaradas, ${eliminadas.length} eliminadas declaradas (el resto del contenido del destino queda intacto)`
+      : bajasSobran.length
+        ? `la insercion borro ${bajasSobran.length} lineas propias del destino en ${item.file} que nadie declaro`
+        : bajasFaltan.length
+          ? "la fusion no quito la linea del destino que el spec declaraba reemplazar"
+          : !cuentaCoincide
+            ? `la insercion anadio ${anadidas.length} lineas, se declararon ${cuentaDeclarada}`
+            : sobran.length || faltan.length
+              ? "las lineas anadidas no son las declaradas en el spec"
+              : `la ruta no recibio ninguna linea en ${item.file}`
   };
 }
 
@@ -189,9 +201,10 @@ function summarize(label, results) {
 }
 
 // Control de mutacion hermetico: un repositorio Git temporan con el arbol base, el replay
-// correcto y tres derivas (anadir una linea, tocar un archivo llevado, revivir un borrado).
-// Exige verde en el replay correcto y rojo en cada deriva: si el instrumento no puede
-// fallar, no esta certificando nada.
+// correcto y seis derivas (anadir una linea al hunks, tocar un archivo llevado, revivir un
+// borrado, borrar contenido propio del destino, anadir una linea no declarada y reemplazar
+// una linea del destino sin declararla). Exige verde en el replay correcto y rojo en cada
+// deriva: si el instrumento no puede fallar, no esta certificando nada.
 function selftest() {
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), "apexos-migration-check-"));
   const cwd = repo;
@@ -209,6 +222,7 @@ function selftest() {
     write("src/gate.js", "module.exports = { strict: true };\n");
     write("src/service.js", "async function mark(input) {\n  input = strict(input);\n  return run(input);\n}\n");
     write("src/schema.txt", "model TimePunch {\n  id Int\n}\n\nmodel GastosMenores {\n  // nota del destino que desarrollo no tiene\n}\n");
+    write("src/model.txt", "model Route {\n  id Int\n  legacy String\n}\n");
     run(["add", "-A"]);
     run(["commit", "-qm", "destino antes de la promocion"]);
 
@@ -217,6 +231,7 @@ function selftest() {
     run(["rm", "-q", "src/gate.js"]);
     write("src/service.js", "async function mark(input) {\n  return run(input);\n}\n");
     write("src/schema.txt", "model TimePunch {\n  id Int\n}\n\n// maestro nuevo\nmodel HrShared {\n  id Int\n}\n\nmodel GastosMenores {\n  // nota del destino que desarrollo no tiene\n}\n");
+    write("src/model.txt", "model Route {\n  id Int\n  vigencia String\n}\n\nmodel HrBiometric {\n  id Int\n}\n");
     run(["add", "-A"]);
     run(["commit", "-qm", "replay exacto del hunks, del carry y de la fusion a tres vias"]);
 
@@ -226,7 +241,10 @@ function selftest() {
       carry: [{ file: "src/rule.js" }],
       delete: ["src/gate.js"],
       edit: [{ file: "src/service.js", remove_lines: ["  input = strict(input);"] }],
-      insert: [{ file: "src/schema.txt", add_lines: ["// maestro nuevo", "model HrShared {", "  id Int", "}"] }]
+      insert: [
+        { file: "src/schema.txt", add_lines: ["// maestro nuevo", "model HrShared {", "  id Int", "}"] },
+        { file: "src/model.txt", add_lines: ["  vigencia String", "model HrBiometric {", "  id Int", "}"], remove_lines: ["  legacy String"] }
+      ]
     };
 
     const bueno = summarize("replay correcto", checkSpec(spec, cwd, "commit", "work"));
@@ -259,6 +277,11 @@ function selftest() {
     drift("insert_linea_no_declada", () => {
       write("src/schema.txt", "model TimePunch {\n  id Int\n}\n\n// maestro nuevo\nmodel HrShared {\n  id Int\n  extra String\n}\n\nmodel GastosMenores {\n  // nota del destino que desarrollo no tiene\n}\n");
     }, "roto porque la insercion anade una linea que nadie declaro");
+    drift("insert_reemplazo_no_declado", () => {
+      // La fusion declare reemplazar `legacy String` por `vigencia String`, pero aqui tambien
+      // desaparece `id Int` del modelo propio del destino: una baja no declarada.
+      write("src/model.txt", "model Route {\n  vigencia String\n}\n\nmodel HrBiometric {\n  id Int\n}\n");
+    }, "roto porque la fusion se llevo por delante una linea del destino que el spec no declaro");
 
     const derivasRojas = derivas.filter((deriva) => !deriva.passed);
     return {
@@ -269,7 +292,7 @@ function selftest() {
       controles_de_mutacion: derivas,
       conclusion:
         bueno.passed && derivasRojas.length === derivas.length
-          ? "el instrumento detecta las cinco derivas que justifica su existencia"
+          ? "el instrumento detecta las seis derivas que justifica su existencia"
           : "el instrumento puede quedar verde con el replay roto: no es evidencia de nada"
     };
   } finally {

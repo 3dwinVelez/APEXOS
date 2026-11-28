@@ -1,0 +1,370 @@
+{
+  "instrumento": "equivalencia-blob-candidato",
+  "candidato": "f51509a8",
+  "base": "91d43c79220d",
+  "desarrollo": "e61608f6f63a",
+  "rutas": 40,
+  "identicas_a_desarrollo": 37,
+  "recortes_internos": 18,
+  "detalle_recortes": [
+    {
+      "ruta": "apps/api/src/modules/auth/routes.js",
+      "bajas": 1
+    },
+    {
+      "ruta": "apps/api/src/modules/auth/schema.js",
+      "bajas": 1
+    },
+    {
+      "ruta": "apps/api/src/modules/auth/service.js",
+      "bajas": 1
+    },
+    {
+      "ruta": "apps/api/src/modules/hr/service.js",
+      "bajas": 5
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+      "bajas": 2
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+      "bajas": 15
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+      "bajas": 2
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+      "bajas": 1
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+      "bajas": 132
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+      "bajas": 6
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+      "bajas": 4
+    },
+    {
+      "ruta": "apps/web/components/operations/PhotoCapture.tsx",
+      "bajas": 26
+    },
+    {
+      "ruta": "apps/web/test/hr-employee-biometric-reset.test.mjs",
+      "bajas": 2
+    },
+    {
+      "ruta": "apps/web/test/hr-landing-information-architecture.test.mjs",
+      "bajas": 5
+    },
+    {
+      "ruta": "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+      "bajas": 5
+    },
+    {
+      "ruta": "apps/web/test/hr-offline-marking.test.mjs",
+      "bajas": 1
+    },
+    {
+      "ruta": "scripts/certifications/promotion-migration-check.js",
+      "bajas": 5
+    },
+    {
+      "ruta": "scripts/test/promotion-replay-instruments.test.js",
+      "bajas": 2
+    }
+  ],
+  "divergencias_nominales": [
+    "apps/api/package.json",
+    "apps/api/prisma/schema.prisma",
+    "package-lock.json"
+  ],
+  "filas": [
+    {
+      "ruta": "apps/api/package.json",
+      "main": "b1aac68861cd",
+      "candidato": "52ada3a83792",
+      "desarrollo": "04d09aff9c0d",
+      "igual_a_desarrollo": false
+    },
+    {
+      "ruta": "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql",
+      "main": "AUSENTE_EN_M",
+      "candidato": "6df947f1e79c",
+      "desarrollo": "6df947f1e79c",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/prisma/migrations/20261122060000_hr_face_enrollments/migration.sql",
+      "main": "AUSENTE_EN_M",
+      "candidato": "9f548b411826",
+      "desarrollo": "9f548b411826",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/prisma/migrations/20261122120000_hr_webauthn_credentials/migration.sql",
+      "main": "AUSENTE_EN_M",
+      "candidato": "5da5c918fd9a",
+      "desarrollo": "5da5c918fd9a",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/prisma/schema.prisma",
+      "main": "a0d4c6b7f217",
+      "candidato": "29140460d603",
+      "desarrollo": "a34ea70f91e1",
+      "igual_a_desarrollo": false
+    },
+    {
+      "ruta": "apps/api/src/modules/auth/routes.js",
+      "main": "6fd7144626ef",
+      "candidato": "a8acfa07e5db",
+      "desarrollo": "a8acfa07e5db",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/src/modules/auth/schema.js",
+      "main": "ad60bad818e2",
+      "candidato": "7f0383e24ae9",
+      "desarrollo": "7f0383e24ae9",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/src/modules/auth/service.js",
+      "main": "1041c4efe75b",
+      "candidato": "adc29f00292d",
+      "desarrollo": "adc29f00292d",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/src/modules/hr/face-consent.js",
+      "main": "AUSENTE_EN_M",
+      "candidato": "9a46f97c32e9",
+      "desarrollo": "9a46f97c32e9",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/src/modules/hr/face-identity.js",
+      "main": "AUSENTE_EN_M",
+      "candidato": "84edbfeaa04e",
+      "desarrollo": "84edbfeaa04e",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/src/modules/hr/personal-webauthn.js",
+      "main": "AUSENTE_EN_M",
+      "candidato": "2e337e7c3ebd",
+      "desarrollo": "2e337e7c3ebd",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/src/modules/hr/routes.js",
+      "main": "00442b329df9",
+      "candidato": "a84086f4359d",
+      "desarrollo": "a84086f4359d",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/src/modules/hr/schema.js",
+      "main": "af159e9366e7",
+      "candidato": "b4bcfc415351",
+      "desarrollo": "b4bcfc415351",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/src/modules/hr/service.js",
+      "main": "651bcfdfb862",
+      "candidato": "6f18bfa00e37",
+      "desarrollo": "6f18bfa00e37",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/src/modules/hr/shared-device-identity.js",
+      "main": "AUSENTE_EN_M",
+      "candidato": "d173afe8a986",
+      "desarrollo": "d173afe8a986",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/test/auth-webauthn-login.test.js",
+      "main": "AUSENTE_EN_M",
+      "candidato": "d06669e8ee68",
+      "desarrollo": "d06669e8ee68",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/test/hr-face-identity.test.js",
+      "main": "AUSENTE_EN_M",
+      "candidato": "dc406ad04615",
+      "desarrollo": "dc406ad04615",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/test/hr-personal-webauthn.test.js",
+      "main": "AUSENTE_EN_M",
+      "candidato": "7c20ef4aee6e",
+      "desarrollo": "7c20ef4aee6e",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/api/test/hr-shared-device-identity.test.js",
+      "main": "AUSENTE_EN_M",
+      "candidato": "c194f03f4db2",
+      "desarrollo": "c194f03f4db2",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+      "main": "640ce98758b2",
+      "candidato": "78365807126e",
+      "desarrollo": "78365807126e",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+      "main": "dc73e0b1f4eb",
+      "candidato": "3c85aa537a84",
+      "desarrollo": "3c85aa537a84",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+      "main": "612e48fa4691",
+      "candidato": "1689fa4aeb54",
+      "desarrollo": "1689fa4aeb54",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+      "main": "45ec7dba17cf",
+      "candidato": "796ddee85057",
+      "desarrollo": "796ddee85057",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+      "main": "c13f7b4e3c08",
+      "candidato": "8ea980321afe",
+      "desarrollo": "8ea980321afe",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+      "main": "771d4dcbf7ac",
+      "candidato": "bb9e2be16671",
+      "desarrollo": "bb9e2be16671",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/page.tsx",
+      "main": "b60fe54028b3",
+      "candidato": "00068c3d84d9",
+      "desarrollo": "00068c3d84d9",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+      "main": "8e7adad136e9",
+      "candidato": "ae1ffb0235e0",
+      "desarrollo": "ae1ffb0235e0",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/components/hr/ConfirmWindow.tsx",
+      "main": "AUSENTE_EN_M",
+      "candidato": "a7a5f0eee83f",
+      "desarrollo": "a7a5f0eee83f",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/components/operations/PhotoCapture.tsx",
+      "main": "a828bed7b677",
+      "candidato": "9ebc79217831",
+      "desarrollo": "9ebc79217831",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/lib/hrMarkingCorrection.ts",
+      "main": "AUSENTE_EN_M",
+      "candidato": "b5c9ce0c852b",
+      "desarrollo": "b5c9ce0c852b",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/lib/hrOfflineEvidence.ts",
+      "main": "59d5eefc9f45",
+      "candidato": "23b9ff886c8f",
+      "desarrollo": "23b9ff886c8f",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/lib/hrOfflineMarking.ts",
+      "main": "4debed9a948f",
+      "candidato": "7f36e53dec5a",
+      "desarrollo": "7f36e53dec5a",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/test/hr-employee-biometric-reset.test.mjs",
+      "main": "61b617b48f7a",
+      "candidato": "7adc6871d1b8",
+      "desarrollo": "7adc6871d1b8",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/test/hr-landing-information-architecture.test.mjs",
+      "main": "ec85d10c4172",
+      "candidato": "f3a5a25f32a4",
+      "desarrollo": "f3a5a25f32a4",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+      "main": "897225706601",
+      "candidato": "010d968afd39",
+      "desarrollo": "010d968afd39",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "apps/web/test/hr-offline-marking.test.mjs",
+      "main": "3a091fd34286",
+      "candidato": "267bbf25215a",
+      "desarrollo": "267bbf25215a",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "docs/qa/specs/hr-modulo-main-20261127.replay.json",
+      "main": "AUSENTE_EN_M",
+      "candidato": "46bd4349c126",
+      "desarrollo": "46bd4349c126",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "package-lock.json",
+      "main": "6a62f9317f3b",
+      "candidato": "bf753440d305",
+      "desarrollo": "a24fa2e165cf",
+      "igual_a_desarrollo": false
+    },
+    {
+      "ruta": "scripts/certifications/promotion-migration-check.js",
+      "main": "309ddadea1f4",
+      "candidato": "34523f9de084",
+      "desarrollo": "34523f9de084",
+      "igual_a_desarrollo": true
+    },
+    {
+      "ruta": "scripts/test/promotion-replay-instruments.test.js",
+      "main": "edecb7853f2e",
+      "candidato": "a1b4a1234b71",
+      "desarrollo": "a1b4a1234b71",
+      "igual_a_desarrollo": true
+    }
+  ]
+}

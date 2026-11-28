@@ -2,7 +2,7 @@
   "change_id": "hr-modulo-main-20261127",
   "base_ref": "origin/main",
   "origin_ref": "origin/desarrollo",
-  "nota": "Las 34 rutas carry viajan byte a byte desde origin/desarrollo. Dos rutas se fusionan a tres vias porque main conserva contenido ajeno al cambio: schema.prisma solo recibe el bloque de los 3 modelos HR (lineas 2314..2407 de desarrollo, medido como 94 fisicas) y apps/api/package.json solo recibe las 4 dependencias biometricas. package-lock.json no entra en el spec: es generado, y su invariante real (version e integrity identicas a las de origin/desarrollo para el subarbol biometrico, y cero lineas eliminadas contra origin/main) se mide en evidencia-equivalencia-lock-biometrico.json.",
+  "nota": "Las 34 rutas carry viajan byte a byte desde origin/desarrollo. Dos rutas se fusionan a tres vias porque main conserva contenido ajeno al cambio: schema.prisma solo recibe el bloque de los 3 modelos HR (lineas 2314..2407 de desarrollo, medido como 94 fisicas) y apps/api/package.json solo recibe las 4 dependencias biometricas. package-lock.json no entra en el spec: es generado, y su invariante real (version e integrity identicas a las de origin/desarrollo para el subarbol biometrico, y cero lineas eliminadas contra origin/main) se mide en evidencia-equivalencia-lock-biometrico.json.; api.ts via fusion con una linea reemplazada declarada",
   "carry": [
     {
       "file": "apps/api/prisma/migrations/20261121230000_hr_shared_devices/migration.sql"
@@ -211,6 +211,20 @@
         "\"@vladmandic/human\": \"3.3.6\","
       ],
       "nota": "solo las cuatro dependencias que el frente biometrico requiere en runtime"
+    },
+    {
+      "file": "apps/web/lib/api.ts",
+      "add_lines": [
+        "// Maestro de celulares del camion y sus marcaciones: solo existen en la API operativa.",
+        "const hrSharedDeviceWrite = pathname.startsWith(\"/api/v1/hr/shared-devices\");",
+        "// Maestro de rostros: el restablecimiento solo existe en la API operativa.",
+        "const hrFaceWrite = /^/api/v1/hr/employees/[^/]+/face-enrollment$/.test(pathname);",
+        "return method !== \"GET\" && (criticalWritePaths.has(pathname) || hrRouteDetailWrite || hrSelfServiceWrite || hrSharedDeviceWrite || hrFaceWrite);"
+      ],
+      "remove_lines": [
+        "return method !== \"GET\" && (criticalWritePaths.has(pathname) || hrRouteDetailWrite || hrSelfServiceWrite);"
+      ],
+      "nota": "cuarta via de fusion a tres vias: el gate de escrituras biométricas (shared-devices y face-enrollment) acompana al modulo; la telemetria de cliente de desarrollo queda fuera"
     }
   ],
   "delete": [],
