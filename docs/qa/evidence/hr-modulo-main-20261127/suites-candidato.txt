@@ -1,0 +1,39 @@
+# Suites corrídas dentro del árbol candidato 303f0725 (worktree auxiliar de la promoción develop -> main)
+# Se limpian las rutas absolutas del puesto; los contajes son los que imprimió el runner.
+
+## apps/api — suites apuntadas (auth WebAuthn, rostro, credencial personal, maestro compartido)
+# tests 46
+# pass 46
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+
+## apps/web — suite hr-*.test.mjs completa
+# tests 185
+# pass 185
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+
+## scripts/test — selftest del portón de replay (seis derivas)
+  ok 1 - el control de mutacion del verificador de replay detecta las seis derivas
+  ok 2 - el verificador se niega a pisar evidencia existente sin decirlo
+  ok 3 - las compuertas se corren por codigo y un rojo no se publica como verde
+  ok 4 - el analizador de banderas acepta las dos formas y no se traga la salida
+  # tests 4
+  # pass 4
+  # fail 0
+
+## apps/web — next build de producción (Turbopack) sobre el árbol candidato
+  ▲ Next.js 16.3.5 (Turbopack)
+  ✓ Running next.config.ts took 1891ms
+  ✓ Compiled successfully in 4.0min
+    Running TypeScript ...
+    Generating static pages using 3 workers (0/141) ...
+    Generating static pages using 3 workers (35/141) 
+    Generating static pages using 3 workers (70/141) 
+    Generating static pages using 3 workers (105/141) 
+  ✓ Generating static pages using 3 workers (141/141) in 22.4s
+  build exit=0

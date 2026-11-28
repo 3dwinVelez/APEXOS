@@ -1,0 +1,61 @@
+{
+  "instrumento": "equivalencia-blob-candidato",
+  "ejecutado_en": "2026-11-28T01:43:25.286Z",
+  "candidato_ref": "303f07258236bc8a900738743a9e29e0739ae3e9",
+  "base_ref": "origin/main",
+  "origen_ref": "origin/desarrollo",
+  "origen_punta": "aa2659854a2e9781717c13c81936bfe66c7041ff",
+  "rutas_netas": 41,
+  "altas": 14,
+  "modificaciones": 27,
+  "eliminaciones": 0,
+  "blob_identico_con_desarrollo": 37,
+  "vias_de_fusion_a_tres_vias": [
+    {
+      "file": "apps/api/package.json",
+      "vs_desarrollo": {
+        "agregadas": 1,
+        "eliminadas": 11
+      },
+      "vs_main": {
+        "agregadas": 4,
+        "eliminadas": 0
+      }
+    },
+    {
+      "file": "apps/api/prisma/schema.prisma",
+      "vs_desarrollo": {
+        "agregadas": 18,
+        "eliminadas": 324
+      },
+      "vs_main": {
+        "agregadas": 94,
+        "eliminadas": 0
+      }
+    },
+    {
+      "file": "apps/web/lib/api.ts",
+      "vs_desarrollo": {
+        "agregadas": 9,
+        "eliminadas": 55
+      },
+      "vs_main": {
+        "agregadas": 5,
+        "eliminadas": 1
+      }
+    },
+    {
+      "file": "package-lock.json",
+      "vs_desarrollo": {
+        "agregadas": 0,
+        "eliminadas": 449
+      },
+      "vs_main": {
+        "agregadas": 153,
+        "eliminadas": 0
+      }
+    }
+  ],
+  "rutas_sin_blob_en_desarrollo": [],
+  "control": "Blob identico = la ruta llega byte a byte desde origin/desarrollo, es decir es el codigo que QA certifico en campo. Via de fusion = el candidato NO pisa el blob de desarrollo sobre main: agrega sobre el blob del destino las lineas declaradas en docs/qa/specs/hr-modulo-main-20261127.replay.json, verificadas por la invariante insert (37/37). vs_main = delta del candidato contra el arbol de Produccion; vs_desarrollo = lo que el candidato NO trae de desarrollo (telemetria, frentes ajenos al modulo)."
+}

@@ -1,0 +1,112 @@
+{
+  "change_id": "hr-modulo-main-20261127",
+  "commit": "303f07258236bc8a900738743a9e29e0739ae3e9",
+  "tree_evaluated": "punta tecnica del candidato 303f07258236bc8a900738743a9e29e0739ae3e9 (worktree .tmp/wt-hr-main-20261126 sobre origin/main 91d43c79220dec00995284118a8ef30d3ea061cd): 41 rutas de producto e instrumentos, 37 blob-identicas a origin/desarrollo y 4 fusiones linea-declaradas, mas las 12 rutas documentales que este manifiesto y el de alcance citan",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-27T21:20:00-05:00",
+    "scope": "promotion_to_main",
+    "instruction": "validar el modulo de talento humano con los cambios que se han realizado y migrarlo de manera correcta desde develop hasta el main, sin adulterar registros, danar funciones agenas al cambio; los 3 ambientes alineados con la version ya trabajada en develop; dejar provisionalmente en produccion la aplicacion de marcacion mediante la web y que lo demas migre completo y sano",
+    "authorization_flags": {
+      "pull_request_a_main": true,
+      "migraciones_en_produccion": true,
+      "redeploy_railway": true,
+      "reason": "main y develop estan divergentes (173 commits de un lado, 220 del otro), asi que el transporte es un replay puntual con cuatro hunks fusionados sobre el arbol de Produccion. Las rutas de producto que cambian son blob-identicas a las que QA certifico en campo contra el API desplegado a440560d7f04, y las cuatro fusiones suman lineas sin borrar ninguna del destino."
+    },
+    "authorization_basis": "La orden del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas, el despliegue en los servicios de Produccion y la aplicacion de las 3 migraciones del frente. No otorga force push, reescritura de historia compartida, borrado de ramas ajenas, cambios de secretos ni el retiro de la marcacion web en Produccion.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen y se corren manifiesto v2 con inventario exacto de 53 rutas, qa:promotion:scope con verificacion de origen y sus cuatro excepciones nombradas, qa:approval:evidence, invariantes del replay contra el arbol commiteado, control de mutacion del instrumento, suites sobre el arbol candidato, build de produccion y verificacion de Produccion por artefacto servido."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-alineacion-20261127/paquete-qa-desplegado/qa-campo-escritura.json",
+        "../evidence/hr-modulo-main-20261127/suites-candidato.txt",
+        "../evidence/hr-modulo-main-20261127/invariantes-replay.json"
+      ],
+      "notes": "Certificacion de campo contra el API desplegado en QA (ancla commit servido a440560d7f04, empresa modelo NYVORA, usuario efimero retirado por el endpoint administrativo): 27/27 APROBADO, con paridad de blobs contra el candidato de develop 3e7fabf5. Sobre el arbol de este candidato corren aparte las suites apuntadas del API (46/46: login WebAuthn, identidad de rostro, credencial personal, maestro de celulares compartidos) y las 185 pruebas del portal de Talento Humano. Las filas se releen del ambiente, no del cuerpo de la respuesta."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/suites-candidato.txt",
+        "../evidence/hr-modulo-main-20261127/controls/selftest-instrumento.json",
+        "../evidence/hr-alineacion-20261127/absorcion-sincronia/certification.json"
+      ],
+      "notes": "Los rojos que se exigian y salieron rojos: el control de mutacion del porton inyecta 6 derivas y las 6 quedan rojas (incluida la sexta, la fusion que borra una linea del destino sin declararla); el verifier se niega a pisar evidencia existente (prueba 2/4); el punto D de hr-offline-marking se puso rojo cuando la compuerta del cliente quedo fuera del candidato y volvio a verde cuando la fusion la trajo, es decir el control puede fallar. El retiro de cuenta efimera y la marcacion sin selfie degradada quedan ejercitados en la certificacion local de identidad movil."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/suites-candidato.txt",
+        "../evidence/hr-modulo-main-20261127/invariantes-replay.json",
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-candidato.json"
+      ],
+      "notes": "Instrumentos versionados que corren en este viaje: scripts/certifications/promotion-migration-check.js (invariantes del replay, modo --against commit y --selftest), scripts/certifications/hr-paquete-main-qa.js (campo QA, sha256 2d080496781ec2c3), scripts/certifications/hr-mobile-identity-local.js (base hermetica de identidad) y las suites del arbol candidato. La version del instrumento de campo que viaja en este candidato es la que produjo la evidencia citada: se lleva su blob de origin/desarrollo porque el de main estaba dos versiones atras."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-candidato.json",
+        "../evidence/hr-modulo-main-20261127/invariantes-replay.json",
+        "../evidence/hr-modulo-main-20261127/suites-candidato.txt"
+      ],
+      "notes": "Equivalencia por blob contra origin/desarrollo medida sobre el arbol commiteado: 41 rutas netas (14 A / 27 M / 0 D), 37 byte-identicas, 4 fusiones aditivas y 0 rutas sin origen en desarrollo. Las invariantes del replay cierran 37/37 contra 303f07258236bc8a900738743a9e29e0739ae3e9. El build de produccion del portal sale exit 0 sobre el mismo arbol (141 paginas), y las suites del API y del portal corrieron dentro del arbol candidato, no en el de otra rama."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-modulo-main-20261127/equivalencia-lock-biometrico.json",
+        "../evidence/hr-modulo-main-20261127/equivalencia-blob-candidato.json",
+        "../evidence/hr-modulo-main-20261127/invariantes-replay.json"
+      ],
+      "notes": "Esquema: schema.prisma suma 94 lineas con 0 eliminaciones sobre el arbol de Produccion y viajan las 3 migraciones del frente (20261121230000_hr_shared_devices, 20261122060000_hr_face_enrollments, 20261122120000_hr_webauthn_credentials). Ninguna tabla existente se altera ni se borra, y este porton no ejecuta escritura remota: la aplicacion en Produccion se mide con ledger de solo lectura antes y despues. Dependencias: el lock de la raiz no pierde ni cambia entradas y suma 153 lineas; el subarbol biometrico queda identico en version e integrity (4/4). El despliegue usa npm ci, por eso el lock viaja en el mismo commit."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-paquete-main-qa.js",
+    "evidence": [
+      "../evidence/hr-alineacion-20261127/paquete-qa-desplegado/qa-campo-escritura.json",
+      "../certifications/hr-modulo-main-20261127.md",
+      "../evidence/hr-modulo-main-20261127/suites-candidato.txt"
+    ],
+    "controls": 27,
+    "passed": 27,
+    "failed": 0,
+    "substrate": "ambiente QA desplegado desde la promocion a develop (API servido a440560d7f04, ancla medida en la propia corrida); empresa modelo NYVORA; el arnés no escribe en la base del ambiente mas alla de las marcaciones que el propio usuario efimero produce y desactiva"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promotion-migration-check.js",
+    "evidence": [
+      "../evidence/hr-modulo-main-20261127/invariantes-replay.json",
+      "../evidence/hr-modulo-main-20261127/controls/selftest-instrumento.json",
+      "../evidence/hr-modulo-main-20261127/equivalencia-blob-candidato.json"
+    ],
+    "basis": "El certificador transversal de este viaje es el porton de replay con su control de mutacion: corre sobre el arbol del candidato (no sobre el de otra rama) y exige las 6 derivas rojas despues de demostrar que el replay exacto da verde. Las suites del arbol candidato (api 46/46, portal 185/185, porton 4/4) y el build exit 0 se corrieron en el mismo arbol, con las dependencias biométricas del lock instaladas."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-paquete-main-qa.js",
+    "evidence": [
+      "../evidence/hr-alineacion-20261127/paquete-qa-desplegado/qa-campo-escritura.json",
+      "../certifications/hr-modulo-main-20261127.md"
+    ],
+    "notes": "Corrida sobre la empresa modelo real NYVORA en QA: 27 piernas verdes, con usuario efimero creado por el propio arnés, rol Empleado, sesiones obtenidas, tanda de marcacion asentada y cuenta retirada por el endpoint administrativo al terminar. Los registros y la telemetria del tenant quedan intactos; el resumen versionado en la evidencia declara total 27, verdes 27, rojas 0."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "91d43c79220dec00995284118a8ef30d3ea061cd",
+    "trigger": "Si en Produccion una marcacion web deja de asentarse, si un maestro biométrico (celulares compartidos o rostros) responde 500 o escribe en el respaldo de Supabase en lugar de reportar el rechazo, si la correccion administrativa de marcacion o el reporte de evidencia degradada vuelven a mostrar la version anterior, o si el ledger de migraciones queda distinto del arbol servido.",
+    "notes": "Revert controlado del commit de promocion sobre main (git revert, sin reescribir historia compartida) y redeploy de apexos-api-prod y apexos-web-prod. El revert devuelve el arbol a 91d43c79220dec00995284118a8ef30d3ea061cd y no toca ninguna tabla: las 3 migraciones del frente son aditivas (crean tablas y columnas nuevas que el codigo anterior no lee), asi que al revertir no se borra dato alguno y la marcacion por web sigue operando igual que hoy. El spec de replay queda versionado con la transformacion exacta, por lo que el revert es simetrico y verificable ruta por ruta."
+  }
+}

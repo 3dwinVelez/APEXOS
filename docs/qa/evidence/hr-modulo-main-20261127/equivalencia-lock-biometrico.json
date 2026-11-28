@@ -1,0 +1,89 @@
+{
+  "instrumento": "equivalencia-lock-biometrico",
+  "candidato": "f51509a8",
+  "dep_raiz_eliminadas_vs_main": 0,
+  "dep_raiz_bajas_medidas": 0,
+  "dep_raiz_cambiadas": [],
+  "subarbol_biometrico_en_raiz": [
+    {
+      "pkg": "node_modules/@tensorflow/tfjs-backend-wasm",
+      "candidato": {
+        "version": "4.22.0",
+        "integrity": "sha512-/IYhReRIp4jg/wYW0OwbbJZG8"
+      },
+      "desarrollo": {
+        "version": "4.22.0",
+        "integrity": "sha512-/IYhReRIp4jg/wYW0OwbbJZG8"
+      },
+      "identico": true
+    },
+    {
+      "pkg": "node_modules/@tensorflow/tfjs-converter",
+      "candidato": {
+        "version": "4.22.0",
+        "integrity": "sha512-PT43MGlnzIo+YfbsjM79Lxk9l"
+      },
+      "desarrollo": {
+        "version": "4.22.0",
+        "integrity": "sha512-PT43MGlnzIo+YfbsjM79Lxk9l"
+      },
+      "identico": true
+    },
+    {
+      "pkg": "node_modules/@tensorflow/tfjs-core",
+      "candidato": {
+        "version": "4.22.0",
+        "integrity": "sha512-LEkOyzbknKFoWUwfkr59vSB68"
+      },
+      "desarrollo": {
+        "version": "4.22.0",
+        "integrity": "sha512-LEkOyzbknKFoWUwfkr59vSB68"
+      },
+      "identico": true
+    },
+    {
+      "pkg": "node_modules/@vladmandic/human",
+      "candidato": {
+        "version": "3.3.6",
+        "integrity": "sha512-Nr5mPfq1gQ+uKeXY5uM3Fj8Ux"
+      },
+      "desarrollo": {
+        "version": "3.3.6",
+        "integrity": "sha512-Nr5mPfq1gQ+uKeXY5uM3Fj8Ux"
+      },
+      "identico": true
+    }
+  ],
+  "vendors": [],
+  "dep_apps_api": {
+    "bajas_vs_main": [],
+    "agregadas": [
+      {
+        "dep": "@tensorflow/tfjs-backend-wasm",
+        "candidato": "4.22.0",
+        "desarrollo": "4.22.0",
+        "identico": true
+      },
+      {
+        "dep": "@tensorflow/tfjs-converter",
+        "candidato": "4.22.0",
+        "desarrollo": "4.22.0",
+        "identico": true
+      },
+      {
+        "dep": "@tensorflow/tfjs-core",
+        "candidato": "4.22.0",
+        "desarrollo": "4.22.0",
+        "identico": true
+      },
+      {
+        "dep": "@vladmandic/human",
+        "candidato": "3.3.6",
+        "desarrollo": "3.3.6",
+        "identico": true
+      }
+    ],
+    "coincidentes_con_desarrollo": 4,
+    "cambiadas_vs_main": []
+  }
+}
